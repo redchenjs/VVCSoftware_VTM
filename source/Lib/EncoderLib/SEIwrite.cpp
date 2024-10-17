@@ -161,6 +161,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::ANNOTATED_REGIONS:
     xWriteSEIAnnotatedRegions(*static_cast<const SEIAnnotatedRegions *>(&sei));
     break;
+#if JVET_AI0153_OMI_SEI
+  case SEI::PayloadType::OBJECT_MASK_INFO:
+    xWriteSEIObjectMaskInfos(*static_cast<const SEIObjectMaskInfos*>(&sei));
+    break;
+#endif
   case SEI::PayloadType::SEI_MANIFEST:
     CHECK((SEIPrefixIndicationIdx), "wrong SEI prefix indication message");
     xWriteSEISEIManifest(*static_cast<const SEIManifest *>(&sei));
@@ -904,6 +909,102 @@ void SEIWriter::xWriteSEIAnnotatedRegions(const SEIAnnotatedRegions &sei)
     }
   }
 }
+
+#if JVET_AI0153_OMI_SEI
+void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
+{
+  xWriteFlag(sei.m_hdr.m_cancelFlag, "omi_cancel_flag");
+  if (!sei.m_hdr.m_cancelFlag)
+  {
+    xWriteFlag(sei.m_hdr.m_persistenceFlag, "omi_persistence_flag");
+    xWriteUvlc((uint32_t) sei.m_hdr.m_numAuxPicLayerMinus1, "omi_num_aux_pic_layer_minus1");
+    xWriteUvlc((uint32_t) sei.m_hdr.m_maskIdLengthMinus1, "omi_mask_id_length_minus1");
+    xWriteUvlc((uint32_t) sei.m_hdr.m_maskSampleValueLengthMinus8, "omi_mask_sample_value_length_minus8");
+    xWriteFlag(sei.m_hdr.m_maskConfidenceInfoPresentFlag, "omi_mask_confidence_info_present_flag");
+    if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
+    {
+      CHECK((sei.m_hdr.m_maskConfidenceLengthMinus1 > 15 || sei.m_hdr.m_maskConfidenceLengthMinus1 < 0), "The range of omi_mask_confidence_length_minus1 must be [0, 15]");
+      xWriteCode((sei.m_hdr.m_maskConfidenceLengthMinus1), 4, "omi_mask_confidence_length_minus1");
+    }
+    xWriteFlag(sei.m_hdr.m_maskDepthInfoPresentFlag, "omi_mask_depth_info_present_flag");
+    if (sei.m_hdr.m_maskDepthInfoPresentFlag)
+    {
+      CHECK((sei.m_hdr.m_maskDepthLengthMinus1 > 15 || sei.m_hdr.m_maskDepthLengthMinus1 < 0), "The range of omi_mask_depth_length_minus1 must be [0, 15]");
+      xWriteCode((sei.m_hdr.m_maskDepthLengthMinus1), 4, "omi_mask_depth_length_minus1");
+    }
+    xWriteFlag(sei.m_hdr.m_maskLabelInfoPresentFlag, "omi_mask_label_info_present_flag");
+    if (sei.m_hdr.m_maskLabelInfoPresentFlag)
+    {
+      xWriteFlag(sei.m_hdr.m_maskLabelLanguagePresentFlag, "omi_mask_label_language_present_flag");
+      if (sei.m_hdr.m_maskLabelLanguagePresentFlag)
+      {
+        while (!isByteAligned())
+        {
+          xWriteFlag(0, "omi_bit_equal_to_zero");
+        }
+        CHECK(sei.m_hdr.m_maskLabelLanguage.size() > 255, "label oversize");
+        for (uint32_t m = 0; m < sei.m_hdr.m_maskLabelLanguage.size(); m++)
+        {
+          char ch = sei.m_hdr.m_maskLabelLanguage[m];
+          xWriteCode(ch, 8, "omi_mask_lable_language");
+        }
+        xWriteCode('\0', 8, "omi_mask_lable_language");
+      }
+    }
+
+    uint32_t maskCnt = 0;
+    for (uint32_t i = 0; i <= sei.m_hdr.m_numAuxPicLayerMinus1; i++)
+    {
+      xWriteFlag(sei.m_maskPicUpdateFlag[i], "omi_mask_pic_update_flag[i]");
+      if (sei.m_maskPicUpdateFlag[i])
+      {
+        xWriteUvlc((uint32_t) sei.m_numMaskInPicUpdate[i], "omi_num_mask_in_pic_update[i]");
+        for (uint32_t j = 0; j < sei.m_numMaskInPicUpdate[i]; j++)
+        {
+          xWriteCode(sei.m_objectMaskInfos[maskCnt].maskId, sei.m_hdr.m_maskIdLengthMinus1 + 1, "omi_mask_id[i][j]");
+          xWriteCode(sei.m_objectMaskInfos[maskCnt].auxSampleValue, sei.m_hdr.m_maskSampleValueLengthMinus8 + 8, "omi_aux_sample_value[i][j]");
+          xWriteFlag(sei.m_objectMaskInfos[maskCnt].maskCancel, "omi_mask_cancel[i][j]");
+          if (!sei.m_objectMaskInfos[maskCnt].maskCancel)
+          {
+            xWriteFlag(sei.m_objectMaskInfos[maskCnt].maskBoundingBoxPresentFlag, "omi_mask_bounding_box_present_flag[i][j]");
+            if (sei.m_objectMaskInfos[maskCnt].maskBoundingBoxPresentFlag)
+            {
+              xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskTop, 16, "omi_mask_top[i][j]");
+              xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskLeft, 16, "omi_mask_left[i][j]");
+              xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskWidth, 16, "omi_mask_width[i][j]");
+              xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskHeight, 16, "omi_mask_height[i][j]");
+            }
+            if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
+            {
+              xWriteCode(sei.m_objectMaskInfos[maskCnt].maskConfidence, sei.m_hdr.m_maskConfidenceLengthMinus1 + 1, "omi_mask_confidence[i][j]");
+            }
+            if (sei.m_hdr.m_maskDepthInfoPresentFlag)
+            {
+              xWriteCode(sei.m_objectMaskInfos[maskCnt].maskDepth, sei.m_hdr.m_maskDepthLengthMinus1 + 1, "omi_mask_depth[i][j]");
+            }
+            while (!isByteAligned())
+            {
+              xWriteFlag(0, "omi_bit_equal_to_zero");
+            }
+            if (sei.m_hdr.m_maskLabelInfoPresentFlag)
+            {
+              CHECK(sei.m_objectMaskInfos[maskCnt].maskLabel.size() > 255, "label oversize");
+              for (uint32_t m = 0; m < sei.m_objectMaskInfos[maskCnt].maskLabel.size(); m++)
+              {
+                char ch = sei.m_objectMaskInfos[maskCnt].maskLabel[m];
+                xWriteCode(ch, 8, "omi_mask_label");
+              }
+              xWriteCode('\0', 8, "omi_mask_label");
+            }
+          }
+          maskCnt++;
+        }
+      }
+    }
+  }
+}
+#endif
+
 void SEIWriter::xWriteByteAlign()
 {
   if( m_pcBitIf->getNumberOfWrittenBits() % 8 != 0)
@@ -1829,6 +1930,16 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     {
       xWriteUvlc(sei.m_numberExtrapolatedPicturesMinus1, "nnpfc_extrapolated_pics_minus1");
     }
+
+#if NNPFC_SPATIAL_EXTRAPOLATION
+    if((sei.m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
+    {
+      xWriteSvlc(sei.m_spatialExtrapolationLeftOffset, "nnpfc_spatial_extrapolation_left_offset");
+      xWriteSvlc(sei.m_spatialExtrapolationRightOffset, "nnpfc_spatial_extrapolation_right_offset");
+      xWriteSvlc(sei.m_spatialExtrapolationTopOffset, "nnpfc_spatial_extrapolation_top_offset");
+      xWriteSvlc(sei.m_spatialExtrapolationBottomOffset, "nnpfc_spatial_extrapolation_right_offset");
+    }
+#endif
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");

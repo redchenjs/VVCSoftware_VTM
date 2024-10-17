@@ -773,6 +773,12 @@ protected:
   uint32_t                m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t>   m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
+#if NNPFC_SPATIAL_EXTRAPOLATION
+  int32_t                 m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[MAX_NUM_NN_POST_FILTERS];
+  int32_t                 m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[MAX_NUM_NN_POST_FILTERS];
+  int32_t                 m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[MAX_NUM_NN_POST_FILTERS];
+  int32_t                 m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[MAX_NUM_NN_POST_FILTERS];
+#endif
   std::vector<bool>       m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
 
@@ -886,6 +892,9 @@ protected:
   std::vector<uint32_t>  m_sdiSEIViewIdVal;
   std::vector<uint32_t>  m_sdiSEIAuxId;
   std::vector<uint32_t>  m_sdiSEINumAssociatedPrimaryLayersMinus1;
+#if JVET_AI0153_OMI_SEI
+  std::vector<uint32_t> m_sdiSEIAssociatedPrimaryLayerIdx;
+#endif
   // mai sei
   bool              m_maiSEIEnabled;
   bool              m_maiSEIIntrinsicParamFlag;
@@ -941,6 +950,9 @@ protected:
   int       m_driSEINonlinearNumMinus1;
   std::vector<uint32_t> m_driSEINonlinearModel;
   std::string           m_arSEIFileRoot;  // Annotated region SEI - initialized from external file
+#if JVET_AI0153_OMI_SEI
+  std::string           m_omiSEIFileRoot;   // Object mask information SEI - initialized from external file
+#endif
 
   bool m_SEIManifestSEIEnabled;
   bool m_SEIPrefixIndicationSEIEnabled;
@@ -2173,6 +2185,16 @@ public:
   const       std::vector<uint32_t>& getNNPostFilterSEICharacteristicsNumberInterpolatedPictures(int filterIdx)         { return m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1(uint32_t value, int filterIdx)          { m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[filterIdx] = value; }
   uint32_t    getNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1(int filterIdx)                          { return m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[filterIdx]; }
+#if NNPFC_SPATIAL_EXTRAPOLATION
+  void        setNNPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset(int32_t value, int filterIdx)             { m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[filterIdx] = value; }
+  int32_t     getNNPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset(int filterIdx)                            { return m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsSpatialExtrapolationRightOffset(int32_t value, int filterIdx)            { m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[filterIdx] = value; }
+  int32_t     getNNPostFilterSEICharacteristicsSpatialExtrapolationRightOffset(int filterIdx)                           { return m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset(int32_t value, int filterIdx)              { m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[filterIdx] = value; }
+  int32_t     getNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset(int filterIdx)                             { return m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(int32_t value, int filterIdx)           { m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[filterIdx] = value; }
+  int32_t     getNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(int filterIdx)                          { return m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[filterIdx]; }
+#endif
   void        setNNPostFilterSEICharacteristicsInputPicOutputFlag(std::vector<bool> value, int filterIdx)   { m_nnPostFilterSEICharacteristicsInputPicOutputFlag[filterIdx] = value; }
   const       std::vector<bool>& getNNPostFilterSEICharacteristicsInputPicOutputFlag(int filterIdx)         { return m_nnPostFilterSEICharacteristicsInputPicOutputFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(bool absentInputPicZeroFlag, int filterIdx)       { m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[filterIdx] = absentInputPicZeroFlag; }
@@ -2310,6 +2332,10 @@ public:
   uint32_t  getOmniViewportSEIVerRange(int idx)                      { return m_omniViewportSEIVerRange[idx]; }
   void  setAnnotatedRegionSEIFileRoot(const std::string &s)          { m_arSEIFileRoot = s; m_arObjects.clear();}
   const std::string &getAnnotatedRegionSEIFileRoot() const           { return m_arSEIFileRoot; }
+#if JVET_AI0153_OMI_SEI
+  void  setObjectMaskInfoSEIFileRoot(const std::string& s)           { m_omiSEIFileRoot = s; }
+  const std::string& getObjectMaskInfoSEIFileRoot() const            { return m_omiSEIFileRoot; }
+#endif
   void     setRwpSEIEnabled(bool b)                                                                     { m_rwpSEIEnabled = b; }
   bool     getRwpSEIEnabled()                                                                           { return m_rwpSEIEnabled; }
   void     setRwpSEIRwpCancelFlag(bool b)                                                               { m_rwpSEIRwpCancelFlag = b; }
@@ -2622,6 +2648,10 @@ public:
   uint32_t getSdiSEIAuxId(int idx) const                             { return m_sdiSEIAuxId[idx]; }
   void     setSdiSEINumAssociatedPrimaryLayersMinus1(const std::vector<uint32_t>& sdiSEINumAssociatedPrimaryLayersMinus1)   { m_sdiSEINumAssociatedPrimaryLayersMinus1 = sdiSEINumAssociatedPrimaryLayersMinus1; }
   uint32_t getSdiSEINumAssociatedPrimaryLayersMinus1(int idx) const  { return m_sdiSEINumAssociatedPrimaryLayersMinus1[idx]; }
+#if JVET_AI0153_OMI_SEI
+  void     setSdiSEIAssociatedPrimaryLayerIdx(const std::vector<uint32_t>& sdiSEIAssociatedPrimaryLayerIdx) { m_sdiSEIAssociatedPrimaryLayerIdx = sdiSEIAssociatedPrimaryLayerIdx; }
+  uint32_t getSdiSEIAssociatedPrimaryLayerIdx(int idx) const                                                { return m_sdiSEIAssociatedPrimaryLayerIdx[idx]; }
+#endif
   // multiview acquisition information SEI
   void     setMaiSEIEnabled(bool b)                                  { m_maiSEIEnabled = b; }
   bool     getMaiSEIEnabled() const                                  { return m_maiSEIEnabled; }

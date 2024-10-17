@@ -99,6 +99,9 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
   ("SEICTIFilename",            m_SEICTIFileName,                      std::string(""), "CTI YUV output file name. If empty, no Colour Transform is applied (ignore SEI message)\n")
   ("SEIFGSFilename",            m_SEIFGSFileName,                      std::string(""), "FGS YUV output file name. If empty, no film grain is applied (ignore SEI message)\n")
   ("SEIAnnotatedRegionsInfoFilename", m_annotatedRegionsSEIFileName,   std::string(""), "Annotated regions output file name. If empty, no object information will be saved (ignore SEI message)\n")
+#if JVET_AI0153_OMI_SEI
+  ("SEIObjectMaskInfosFilename", m_objectMaskInfoSEIFileName,          std::string(""), "Object mask information output file name. If empty, no object mask information will be saved (ignore SEI message)\n")
+#endif
   ("OutputDecodedSEIMessagesFilename", m_outputDecodedSEIMessagesFilename, std::string(""), "When non empty, output decoded SEI messages to the indicated file. If file is '-', then output to stdout\n")
 #if JVET_S0257_DUMP_360SEI_MESSAGE
   ("360DumpFile",               m_outputDecoded360SEIMessagesFilename, std::string(""), "When non empty, output decoded 360 SEI messages to the indicated file.\n")
@@ -270,6 +273,9 @@ DecAppCfg::DecAppCfg()
   , m_SEICTIFileName()
   , m_SEIFGSFileName()
   , m_annotatedRegionsSEIFileName()
+#if JVET_AI0153_OMI_SEI
+  , m_objectMaskInfoSEIFileName()
+#endif
   , m_targetDecLayerIdSet()
   , m_outputDecodedSEIMessagesFilename()
 #if JVET_S0257_DUMP_360SEI_MESSAGE

@@ -54,15 +54,11 @@
 
 // clang-format off
 
-#define JVET_AI0180   1   // JVET AI0180: "AHG9: Adding original source picture dimensions to EOI SEI"
-
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AH0078_DPF                                   1 // JVET-AH0078: AhG10: Distortion Propagation Factor for VVC Low-Delay Configuration
+#define JVET_AI0180 1   // JVET AI0180: "AHG9: Adding original source picture dimensions to EOI SEI"
 
-
-
-
+#define JVET_AH0078_DPF 1 // JVET-AH0078: AhG10: Distortion Propagation Factor for VVC Low-Delay Configuration
 
 #define JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING 1 // JVET-AF2032: Conditionally signal application tag URI presence flag and tag URI in the NNPFC metadata extension
 
@@ -71,6 +67,8 @@
 #define JVET_AI0073_BREADTH_FIRST_FLAG 1 // Handling of a processing chain specified by an SPO SEI message
 
 #define JVET_AI0071_NNPFC_SPO_USAGE_IDCS 1  // Indication of the user viewing and/or machine analysis usage in the NNPFC and SPO SEI messages
+
+#define JVET_AI0153_OMI_SEI 1 // JVET-AI0153: OMI-SEI Implementation as JVET-AH0346
 
 //########### place macros to be be kept below this line ###############
 
@@ -93,6 +91,8 @@
 #define JVET_AD0067_INCLUDE_SYNTAX                        1 // include nnpfc_full_range_flag syntax element in the nnpfc sei message when nnpfc_separate_colour_description_present_flag is equal to 1 and when nnpfc_out_format_idc is equal to 1.
 
 #define JVET_AH2006_EOI_SEI                               1 // Implementation of Encoder Optimizaion Information SEI message 
+
+#define NNPFC_SPATIAL_EXTRAPOLATION                       1 // Implementation of the spatial extrapolation purpose
 
 #define JVET_AH2006_TXTDESCRINFO_SEI                      1 // Text description information message 
 
@@ -826,7 +826,10 @@ enum NNPC_PurposeType
   FRAME_RATE_UPSAMPLING      = 8,
   BIT_DEPTH_UPSAMPLING       = 16,
   COLOURIZATION              = 32,
-  TEMPORAL_EXTRAPOLATION     = 64
+  TEMPORAL_EXTRAPOLATION     = 64,
+#if NNPFC_SPATIAL_EXTRAPOLATION
+  SPATIAL_EXTRAPOLATION      = 128
+#endif
 };
 
 enum POST_FILTER_MODE

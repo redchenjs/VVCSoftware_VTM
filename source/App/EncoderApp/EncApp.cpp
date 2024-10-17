@@ -998,6 +998,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setOmniViewportSEIHorRange                           ( m_omniViewportSEIHorRange );
   m_cEncLib.setOmniViewportSEIVerRange                           ( m_omniViewportSEIVerRange );
   m_cEncLib.setAnnotatedRegionSEIFileRoot                        (m_arSEIFileRoot);
+#if JVET_AI0153_OMI_SEI
+  m_cEncLib.setObjectMaskInfoSEIFileRoot                         (m_omiSEIFileRoot);
+#endif
   m_cEncLib.setRwpSEIEnabled                                     (m_rwpSEIEnabled);
   m_cEncLib.setRwpSEIRwpCancelFlag                               (m_rwpSEIRwpCancelFlag);
   m_cEncLib.setRwpSEIRwpPersistenceFlag                          (m_rwpSEIRwpPersistenceFlag);
@@ -1172,6 +1175,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setSdiSEIViewIdVal                                   (m_sdiSEIViewIdVal);
   m_cEncLib.setSdiSEIAuxId                                       (m_sdiSEIAuxId);
   m_cEncLib.setSdiSEINumAssociatedPrimaryLayersMinus1            (m_sdiSEINumAssociatedPrimaryLayersMinus1);
+#if JVET_AI0153_OMI_SEI
+  m_cEncLib.setSdiSEIAssociatedPrimaryLayerIdx                   (m_sdiSEIAssociatedPrimaryLayerIdx);
+#endif
   // multiview acquisition information sei
   m_cEncLib.setMaiSEIEnabled                                     (m_maiSEIEnabled);
   m_cEncLib.setMaiSEIIntrinsicParamFlag                          (m_maiSEIIntrinsicParamFlag);
@@ -1280,6 +1286,15 @@ void EncApp::xInitLibCfg( int layerIdx )
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1( m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i], i);
       }
+#if NNPFC_SPATIAL_EXTRAPOLATION
+      if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset  (m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationRightOffset (m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset   (m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[i], i);
+        m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i], i);
+      }
+#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag  (m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsInpFormatIdc            (m_nnPostFilterSEICharacteristicsInpFormatIdc[i], i);

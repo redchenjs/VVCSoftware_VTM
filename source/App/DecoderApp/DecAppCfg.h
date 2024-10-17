@@ -78,6 +78,9 @@ protected:
   std::string   m_SEICTIFileName;                     ///< output Recon with CTI file name
   std::string   m_SEIFGSFileName;                     ///< output file name for reconstructed sequence with film grain
   std::string   m_annotatedRegionsSEIFileName;        ///< annotated regions file name
+#if JVET_AI0153_OMI_SEI
+  std::string m_objectMaskInfoSEIFileName;            ///< object mask information file name
+#endif
   std::vector<int> m_targetDecLayerIdSet;             ///< set of LayerIds to be included in the sub-bitstream extraction process.
   std::string   m_outputDecodedSEIMessagesFilename;   ///< filename to output decoded SEI messages to. If '-', then use stdout. If empty, do not output details.
 #if JVET_S0257_DUMP_360SEI_MESSAGE

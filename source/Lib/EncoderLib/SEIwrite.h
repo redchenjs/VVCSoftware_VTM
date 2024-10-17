@@ -102,6 +102,9 @@ protected:
 
   void xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei);
   void xWriteSEIAnnotatedRegions                  (const SEIAnnotatedRegions& sei);
+#if JVET_AI0153_OMI_SEI
+  void xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei);
+#endif
   void xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &hrd, const uint32_t temporalId,
                             int SEIPrefixIndicationIdx = 0);
   void xWriteSEIShutterInterval(const SEIShutterIntervalInfo& sei);

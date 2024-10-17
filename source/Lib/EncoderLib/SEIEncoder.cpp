@@ -932,6 +932,141 @@ void SEIEncoder::readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *
   }
 }
 
+#if JVET_AI0153_OMI_SEI
+void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* seiObjMask, bool& failed)
+{
+  readTokenValue(seiObjMask->m_hdr.m_cancelFlag, failed, fic, "SEIOmiCancelFlag");
+  if (!seiObjMask->m_hdr.m_cancelFlag)
+  {
+    readTokenValue(seiObjMask->m_hdr.m_persistenceFlag, failed, fic, "SEIOmiPersistenceFlag");
+    readTokenValueAndValidate<uint32_t>(seiObjMask->m_hdr.m_numAuxPicLayerMinus1, failed, fic, "SEIOmiNumAuxPicLayerMinus1", uint32_t(0), uint32_t(255));
+
+    if (m_pcCfg->getSdiSEIEnabled())
+    {
+      // Conformance Check: the value of omi_num_aux_pic_layer shall be equal to numAuxLayer
+      std::vector<std::vector<uint32_t>> associatedPrimaryLayerIdx;
+      uint32_t                           associatedPrimaryLayerIdxCnt = 0;
+      for (uint32_t i = 0; i <= m_pcCfg->getSdiSEIMaxLayersMinus1(); i++)
+      {
+        if (m_pcCfg->getSdiSEIAuxId(i))
+        {
+          associatedPrimaryLayerIdx.push_back(std::vector<uint32_t>(m_pcCfg->getSdiSEINumAssociatedPrimaryLayersMinus1(i) + 1));
+          for (uint32_t j = 0; j <= m_pcCfg->getSdiSEINumAssociatedPrimaryLayersMinus1(i); j++)
+          {
+            associatedPrimaryLayerIdx[i][j] = m_pcCfg->getSdiSEIAssociatedPrimaryLayerIdx(associatedPrimaryLayerIdxCnt++);
+          }
+        }
+        else
+        {
+          associatedPrimaryLayerIdx.push_back(std::vector<uint32_t>());
+        }
+      }
+
+      int      primaryLayerId = m_pcEncLib->getLayerId();
+      uint32_t numAuxLayer    = 0;
+      for (uint32_t i = 0; i <= m_pcCfg->getSdiSEIMaxLayersMinus1(); i++)
+      {
+        if (m_pcCfg->getSdiSEIAuxId(i) == 3)
+        {
+          for (uint32_t j = 0; j <= m_pcCfg->getSdiSEINumAssociatedPrimaryLayersMinus1(i); j++)
+          {
+            if (m_pcCfg->getSdiSEILayerId(associatedPrimaryLayerIdx[i][j]) == primaryLayerId)
+            {
+              numAuxLayer++;
+            }
+          }
+        }
+      }
+      CHECK(((seiObjMask->m_hdr.m_numAuxPicLayerMinus1 + 1) != numAuxLayer), "The value of omi_num_aux_pic_layer shall be equal to numAuxLayer.");
+    }
+
+    readTokenValueAndValidate<uint32_t>(seiObjMask->m_hdr.m_maskIdLengthMinus1, failed, fic, "SEIOmiMaskIdLengthMinus1",uint32_t(0), uint32_t(255));
+    readTokenValueAndValidate<uint32_t>(seiObjMask->m_hdr.m_maskSampleValueLengthMinus8, failed, fic,"SEIOmiMaskSampleValueLengthMinus8", uint32_t(0), uint32_t(8));
+    readTokenValue(seiObjMask->m_hdr.m_maskConfidenceInfoPresentFlag, failed, fic,"SEIOmiMaskConfidenceInfoPresentFlag");
+    if (seiObjMask->m_hdr.m_maskConfidenceInfoPresentFlag)
+    {
+      readTokenValueAndValidate<uint32_t>(seiObjMask->m_hdr.m_maskConfidenceLengthMinus1, failed, fic,"SEIOmiMaskConfidenceLengthMinus1", uint32_t(0), uint32_t(31));
+    }
+    readTokenValue(seiObjMask->m_hdr.m_maskDepthInfoPresentFlag, failed, fic, "SEIOmiMaskDepthInfoPresentFlag");
+    if (seiObjMask->m_hdr.m_maskDepthInfoPresentFlag)
+    {
+      readTokenValueAndValidate<uint32_t>(seiObjMask->m_hdr.m_maskDepthLengthMinus1, failed, fic,"SEIOmiMaskDepthLengthMinus1", uint32_t(0), uint32_t(31));
+    }
+    readTokenValue(seiObjMask->m_hdr.m_maskLabelInfoPresentFlag, failed, fic, "SEIOmiMaskLabelInfoPresentFlag");
+    if (seiObjMask->m_hdr.m_maskLabelInfoPresentFlag)
+    {
+      readTokenValue(seiObjMask->m_hdr.m_maskLabelLanguagePresentFlag, failed, fic,"SEIOmiMaskLabelLanguagePresentFlag");
+      if (seiObjMask->m_hdr.m_maskLabelLanguagePresentFlag)
+      {
+        readTokenValue(seiObjMask->m_hdr.m_maskLabelLanguage, failed, fic, "SEIOmiMaskLabelLanguage");
+      }
+    }
+
+    uint32_t objMaskInfoCnt = 0;
+    seiObjMask->m_maskPicUpdateFlag.resize(seiObjMask->m_hdr.m_numAuxPicLayerMinus1 + 1);
+    seiObjMask->m_numMaskInPicUpdate.resize(seiObjMask->m_hdr.m_numAuxPicLayerMinus1 + 1);
+    for (uint32_t i = 0; i <= seiObjMask->m_hdr.m_numAuxPicLayerMinus1; i++)
+    {
+      std::string cfgMaskPicUpdateFlagStr = "SEIOmiMaskPicUpdateFlag[" + std::to_string(i) + "]";
+      readTokenValue(seiObjMask->m_maskPicUpdateFlag[i], failed, fic, cfgMaskPicUpdateFlagStr.c_str());
+      if (seiObjMask->m_maskPicUpdateFlag[i])
+      {
+        std::string cfgNumMaskInPicUpdataStr = "SEIOmiNumMaskInPicUpdate[" + std::to_string(i) + "]";
+        readTokenValueAndValidate<uint32_t>(seiObjMask->m_numMaskInPicUpdate[i], failed, fic, cfgNumMaskInPicUpdataStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskIdLengthMinus1 + 1)) - 1));
+        seiObjMask->m_objectMaskInfos.resize(objMaskInfoCnt + seiObjMask->m_numMaskInPicUpdate[i]);
+        for (uint32_t j = 0; j < seiObjMask->m_numMaskInPicUpdate[i]; j++)
+        {
+          SEIObjectMaskInfos::ObjectMaskInfo& omi = seiObjMask->m_objectMaskInfos[objMaskInfoCnt];
+
+          std::string cfgMaskIdStr = "SEIOmiMaskId[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+          std::string cfgAuxSampleValueStr = "SEIOmiAuxSampleValue[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+          std::string cfgMaskCancelStr = "SEIOmiMaskCancel[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+          readTokenValueAndValidate<uint32_t>(omi.maskId, failed, fic, cfgMaskIdStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskIdLengthMinus1 + 1)) - 1));
+          readTokenValueAndValidate<uint32_t>(omi.auxSampleValue, failed, fic, cfgAuxSampleValueStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskSampleValueLengthMinus8 + 8)) - 1));
+          readTokenValue(omi.maskCancel, failed, fic, cfgMaskCancelStr.c_str());
+          if (!omi.maskCancel)
+          {
+            std::string cfgMaskBoundingBoxPresentFlagStr = "SEIOmiBoundingBoxPresentFlag[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+            readTokenValue(omi.maskBoundingBoxPresentFlag, failed, fic, cfgMaskBoundingBoxPresentFlagStr.c_str());
+
+            if (omi.maskBoundingBoxPresentFlag)
+            {
+              std::string cfgMaskTopStr    = "SEIOmiMaskTop[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+              std::string cfgMaskLeftStr   = "SEIOmiMaskLeft[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+              std::string cfgMaskWidthStr  = "SEIOmiMaskWidth[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+              std::string cfgMaskHeightStr = "SEIOmiMaskHeight[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+              readTokenValueAndValidate(omi.maskTop, failed, fic, cfgMaskTopStr.c_str(), uint32_t(0), uint32_t(0xffff));
+              readTokenValueAndValidate(omi.maskLeft, failed, fic, cfgMaskLeftStr.c_str(), uint32_t(0), uint32_t(0xffff));
+              readTokenValueAndValidate(omi.maskWidth, failed, fic, cfgMaskWidthStr.c_str(), uint32_t(0),uint32_t(0xffff));
+              readTokenValueAndValidate(omi.maskHeight, failed, fic, cfgMaskHeightStr.c_str(), uint32_t(0),uint32_t(0xffff));
+            }
+
+            if (seiObjMask->m_hdr.m_maskConfidenceInfoPresentFlag)
+            {
+              std::string cfgMaskConfidenceStr = "SEIOmiMaskConfidence[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+              readTokenValueAndValidate(omi.maskConfidence, failed, fic, cfgMaskConfidenceStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskConfidenceLengthMinus1 + 1)) - 1));
+            }
+
+            if (seiObjMask->m_hdr.m_maskDepthInfoPresentFlag)
+            {
+              std::string cfgMaskDepthStr = "SEIOmiMaskDepth[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+              readTokenValueAndValidate(omi.maskDepth, failed, fic, cfgMaskDepthStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskDepthLengthMinus1 + 1)) - 1));
+            }
+
+            if (seiObjMask->m_hdr.m_maskLabelInfoPresentFlag)
+            {
+              std::string cfgMaskLabelStr = "SEIOmiMaskLabel[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+              readTokenValue(omi.maskLabel, failed, fic, cfgMaskLabelStr.c_str());
+            }
+          }
+          objMaskInfoCnt++;
+        }
+      }
+    }
+  }
+}
+#endif
+
 bool SEIEncoder::initSEIAnnotatedRegions(SEIAnnotatedRegions* SEIAnnoReg, int currPOC)
 {
   assert(m_isInitialized);
@@ -965,6 +1100,38 @@ bool SEIEncoder::initSEIAnnotatedRegions(SEIAnnotatedRegions* SEIAnnoReg, int cu
   return true;
 }
 
+#if JVET_AI0153_OMI_SEI
+bool SEIEncoder::initSEIObjectMaskInfos(SEIObjectMaskInfos* SEIObjMask, int currPOC)
+{
+  CHECK(m_isInitialized == 0, "SEI is uninitialized");
+  CHECK(SEIObjMask == nullptr, "ObjectMaskInfo SEI is undefined");
+  if (!m_pcCfg->getObjectMaskInfoSEIFileRoot().empty())
+  {
+    bool        failed = false;
+    std::string ObjMaskSEIFileWithPoc(m_pcCfg->getObjectMaskInfoSEIFileRoot());
+    {
+      std::stringstream suffix;
+      suffix << "_" << currPOC << ".txt";
+      ObjMaskSEIFileWithPoc += suffix.str();
+    }
+    std::ifstream fic(ObjMaskSEIFileWithPoc.c_str());
+    if (!fic.good() || !fic.is_open())
+    {
+      std::cerr << "No Object Mask Informations SEI parameters file " << ObjMaskSEIFileWithPoc << " for POC " << currPOC
+                << std::endl;
+      return false;
+    }
+
+    readObjectMaskInfoSEI(fic, SEIObjMask, failed);
+    if (failed)
+    {
+      std::cerr << "Error while reading Object Mask Informations SEI parameters file '" << ObjMaskSEIFileWithPoc << "'" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+  return true;
+}
+#endif
 
 void SEIEncoder::initSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics *seiAltTransCharacteristics)
 {
@@ -1093,6 +1260,9 @@ void SEIEncoder::initSEIScalabilityDimensionInfo(SEIScalabilityDimensionInfo *se
       sei->m_sdiViewIdLenMinus1 = m_pcCfg->getSdiSEIViewIdLenMinus1();
     }
     sei->m_sdiLayerId.resize(sei->m_sdiMaxLayersMinus1 + 1);
+#if JVET_AI0153_OMI_SEI
+    uint32_t associatedPrimaryLayerIdxCnt = 0;
+#endif
     for (int i = 0; i <= sei->m_sdiMaxLayersMinus1; i++)
     {
       sei->m_sdiLayerId[i] = m_pcCfg->getSdiSEILayerId(i);
@@ -1113,7 +1283,11 @@ void SEIEncoder::initSEIScalabilityDimensionInfo(SEIScalabilityDimensionInfo *se
           sei->m_sdiAssociatedPrimaryLayerIdx[i].resize(sei->m_sdiNumAssociatedPrimaryLayersMinus1[i] + 1);
           for (int j = 0; j <= sei->m_sdiNumAssociatedPrimaryLayersMinus1[i]; j++)
           {
+#if JVET_AI0153_OMI_SEI
+            sei->m_sdiAssociatedPrimaryLayerIdx[i][j] = m_pcCfg->getSdiSEIAssociatedPrimaryLayerIdx(associatedPrimaryLayerIdxCnt++);
+#else
             sei->m_sdiAssociatedPrimaryLayerIdx[i][j] = 0;
+#endif
           }
         }
       }
@@ -1478,6 +1652,15 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       sei->m_numberExtrapolatedPicturesMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1(filterIdx);
     }
+#if NNPFC_SPATIAL_EXTRAPOLATION
+    if((sei->m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
+    {
+      sei->m_spatialExtrapolationLeftOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset(filterIdx);
+      sei->m_spatialExtrapolationRightOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationRightOffset(filterIdx);
+      sei->m_spatialExtrapolationTopOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset(filterIdx);
+      sei->m_spatialExtrapolationBottomOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(filterIdx);
+    }
+#endif
 
     sei->m_componentLastFlag = m_pcCfg->getNNPostFilterSEICharacteristicsComponentLastFlag(filterIdx);
     sei->m_inpFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpFormatIdc(filterIdx);
