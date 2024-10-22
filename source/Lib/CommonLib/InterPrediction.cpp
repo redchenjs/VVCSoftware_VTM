@@ -685,7 +685,7 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
   bool useAltHpelIf = pu.cu->imv == IMV_HPEL;
 
   if (!isIBC
-      && xPredInterBlkRPR(scalingRatio, *pu.cs->pps, CompArea(compID, chFmt, pu.blocks[compID], dstPic.bufs[compID]),
+      && xPredInterBlkRPR(scalingRatio, *pu.cs->sps, *pu.cs->pps, CompArea(compID, chFmt, pu.blocks[compID], dstPic.bufs[compID]),
                           refPic, mv, dstPic.bufs[compID].buf, dstPic.bufs[compID].stride, bi, wrapRef, clpRng,
                           InterpolationFilter::Filter::DEFAULT, useAltHpelIf))
   {
@@ -1074,7 +1074,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
       if( isRefScaled )
       {
         CHECK(enableProf, "PROF should be disabled with RPR");
-        xPredInterBlkRPR(scalingRatio, pps,
+        xPredInterBlkRPR(scalingRatio, sps, pps,
                          CompArea(compID, chFmt, pu.blocks[compID].offset(w, h), Size(sbWidth, sbHeight)), refPic,
                          curMv, dstBuf.buf + w + h * dstBuf.stride, dstBuf.stride, bi, wrapRef, clpRng, filterIdx);
       }
@@ -2169,7 +2169,7 @@ bool InterPrediction::isLumaBvValid(const int ctuSize, const int xCb, const int 
   return true;
 }
 
-bool InterPrediction::xPredInterBlkRPR(const ScalingRatio scalingRatio, const PPS &pps, const CompArea &blk,
+bool InterPrediction::xPredInterBlkRPR(const ScalingRatio scalingRatio,const SPS &sps, const PPS &pps, const CompArea &blk,
                                        const Picture *refPic, const Mv &mv, Pel *dst, const ptrdiff_t dstStride,
                                        const bool bi, const bool wrapRef, const ClpRng &clpRng,
                                        const InterpolationFilter::Filter filterIndex, const bool useAltHpelIf)
@@ -2268,9 +2268,9 @@ bool InterPrediction::xPredInterBlkRPR(const ScalingRatio scalingRatio, const PP
       ((blk.pos().y << scaleY) - (pps.getScalingWindow().getWindowTopOffset() * SPS::getWinUnitY(chFmt))) >> scaleY;
 
     int addX =
-      isLuma(compID) ? 0 : int(1 - refPic->cs->sps->getHorCollocatedChromaFlag()) * 8 * (scalingRatio.x - SCALE_1X.x);
+      isLuma(compID) ? 0 : int(1 - sps.getHorCollocatedChromaFlag()) * 8 * (scalingRatio.x - SCALE_1X.x);
     int addY =
-      isLuma(compID) ? 0 : int(1 - refPic->cs->sps->getVerCollocatedChromaFlag()) * 8 * (scalingRatio.y - SCALE_1X.y);
+      isLuma(compID) ? 0 : int(1 - sps.getVerCollocatedChromaFlag()) * 8 * (scalingRatio.y - SCALE_1X.y);
 
     int boundLeft   = 0;
     int boundRight  = refPicWidth >> scaleX;
