@@ -2268,9 +2268,9 @@ bool InterPrediction::xPredInterBlkRPR(const ScalingRatio scalingRatio, const SP
       ((blk.pos().y << scaleY) - (pps.getScalingWindow().getWindowTopOffset() * SPS::getWinUnitY(chFmt))) >> scaleY;
 
     int addX =
-      isLuma(compID) ? 0 : int(1 - refPic->cs->sps->getHorCollocatedChromaFlag()) * 8 * (scalingRatio.x - SCALE_1X.x);
+      isLuma(compID) ? 0 : int(1 - sps.getHorCollocatedChromaFlag()) * 8 * (scalingRatio.x - SCALE_1X.x);
     int addY =
-      isLuma(compID) ? 0 : int(1 - refPic->cs->sps->getVerCollocatedChromaFlag()) * 8 * (scalingRatio.y - SCALE_1X.y);
+      isLuma(compID) ? 0 : int(1 - sps.getVerCollocatedChromaFlag()) * 8 * (scalingRatio.y - SCALE_1X.y);
 
     int boundLeft   = 0;
     int boundRight  = refPicWidth >> scaleX;
