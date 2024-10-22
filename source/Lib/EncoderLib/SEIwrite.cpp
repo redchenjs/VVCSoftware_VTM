@@ -1933,6 +1933,17 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteSvlc(sei.m_spatialExtrapolationRightOffset, "nnpfc_spatial_extrapolation_right_offset");
       xWriteSvlc(sei.m_spatialExtrapolationTopOffset, "nnpfc_spatial_extrapolation_top_offset");
       xWriteSvlc(sei.m_spatialExtrapolationBottomOffset, "nnpfc_spatial_extrapolation_right_offset");
+#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
+      xWriteFlag(sei.m_spatialExtrapolationPromptPresentFlag, "nnpfc_spatial_extrapolation_prompt_present_flag");
+      if (sei.m_spatialExtrapolationPromptPresentFlag)
+      {
+        while (!isByteAligned())
+        {
+          xWriteFlag(0, "nnpfc_alignment_zero_bit_c");
+        }
+        xWriteString(sei.m_prompt, "nnpfc_prompt");
+      }
+#endif
     }
 #endif
 

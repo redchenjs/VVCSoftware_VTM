@@ -1027,6 +1027,10 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_spatialExtrapolationRightOffset = sei.m_spatialExtrapolationRightOffset;
   m_spatialExtrapolationTopOffset = sei.m_spatialExtrapolationTopOffset;
   m_spatialExtrapolationBottomOffset = sei.m_spatialExtrapolationBottomOffset;
+#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
+  m_spatialExtrapolationPromptPresentFlag = sei.m_spatialExtrapolationPromptPresentFlag;
+  m_prompt =  sei.m_prompt;
+#endif
 #endif
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
 }
@@ -1095,6 +1099,10 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_spatialExtrapolationRightOffset == sei.m_spatialExtrapolationRightOffset &&
   m_spatialExtrapolationTopOffset == sei.m_spatialExtrapolationTopOffset &&
   m_spatialExtrapolationBottomOffset == sei.m_spatialExtrapolationBottomOffset &&
+#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
+  m_spatialExtrapolationPromptPresentFlag == sei.m_spatialExtrapolationPromptPresentFlag  &&
+  m_prompt ==  sei.m_prompt  &&
+#endif
 #endif
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
   m_payloadLength == sei.m_payloadLength;

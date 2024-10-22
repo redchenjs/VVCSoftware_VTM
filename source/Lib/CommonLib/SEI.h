@@ -1440,6 +1440,10 @@ public:
     , m_spatialExtrapolationRightOffset(0)
     , m_spatialExtrapolationTopOffset(0)
     , m_spatialExtrapolationBottomOffset(0)
+#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
+    , m_spatialExtrapolationPromptPresentFlag(false)
+    , m_prompt("")
+#endif
 #endif
     , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
@@ -1527,6 +1531,10 @@ public:
   int32_t        m_spatialExtrapolationRightOffset;
   int32_t        m_spatialExtrapolationTopOffset;
   int32_t        m_spatialExtrapolationBottomOffset;
+#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
+  bool          m_spatialExtrapolationPromptPresentFlag;
+  std::string   m_prompt;
+#endif
 #endif
   std::vector<bool> m_inputPicOutputFlag;
   bool           m_absentInputPicZeroFlag;
