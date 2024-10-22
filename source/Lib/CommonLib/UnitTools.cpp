@@ -3841,7 +3841,7 @@ bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx &mrgCtx, c
   if ( count )
   {
     if ((mrgCtx.interDirNeighbours[0] & (1 << REF_PIC_LIST_0))
-        && slice.getRefPic(REF_PIC_LIST_0, mrgCtx.mvFieldNeighbours[0][REF_PIC_LIST_0].refIdx) == pColPic)
+        && slice.getRefPOC(REF_PIC_LIST_0, mrgCtx.mvFieldNeighbours[0][REF_PIC_LIST_0].refIdx) == pColPic->getPOC())
     {
       cTMv = mrgCtx.mvFieldNeighbours[0][REF_PIC_LIST_0].mv;
 #if GDR_ENABLED
@@ -3852,7 +3852,7 @@ bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx &mrgCtx, c
 #endif
     }
     else if (slice.isInterB() && (mrgCtx.interDirNeighbours[0] & (1 << REF_PIC_LIST_1))
-             && slice.getRefPic(REF_PIC_LIST_1, mrgCtx.mvFieldNeighbours[0][REF_PIC_LIST_1].refIdx) == pColPic)
+             && slice.getRefPOC(REF_PIC_LIST_1, mrgCtx.mvFieldNeighbours[0][REF_PIC_LIST_1].refIdx) == pColPic->getPOC())
     {
       cTMv = mrgCtx.mvFieldNeighbours[0][REF_PIC_LIST_1].mv;
 #if GDR_ENABLED
