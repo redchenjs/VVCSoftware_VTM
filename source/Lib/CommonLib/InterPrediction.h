@@ -297,7 +297,7 @@ public:
                        const int yPos);
   bool isLumaBvValid(const int ctuSize, const int xCb, const int yCb, const int width, const int height, const int xBv, const int yBv);
 
-  bool xPredInterBlkRPR(const ScalingRatio scalingRatio, const PPS &pps, const CompArea &blk,
+  bool xPredInterBlkRPR(const ScalingRatio scalingRatio, const SPS& sps, const PPS& pps, const CompArea& blk,
                         const Picture *refPic, const Mv &mv, Pel *dst, const ptrdiff_t dstStride, const bool bi,
                         const bool wrapRef, const ClpRng &clpRng, const InterpolationFilter::Filter filterIndex,
                         const bool useAltHpelIf = false);

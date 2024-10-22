@@ -182,7 +182,7 @@ bool CU::getRprScaling(const SPS *sps, const PPS *curPPS, Picture *refPic, Scali
         "The value of SubHeightC * ( pps_scaling_win_top_offset + pps_scaling_win_bottom_offset ) shall be less than "
         "pps_pic_height_in_luma_samples");
 
-  return refPic->isRefScaled( curPPS );
+  return refPic->isRefScaled( sps, curPPS );
 }
 
 void CU::checkConformanceILRP(Slice *slice)
@@ -1685,7 +1685,7 @@ bool PU::checkDMVRCondition(const PredictionUnit& pu)
     {
       const int refIdx = pu.refIdx[listIdx];
       return refIdx >= 0 && refIdx < MAX_NUM_ACTIVE_REF
-             && pu.cu->slice->getRefPic(listIdx, refIdx)->isRefScaled(pu.cs->pps);
+             && pu.cu->slice->getRefPic(listIdx, refIdx)->isRefScaled(pu.cs->sps, pu.cs->pps);
     };
 
     return pu.mergeFlag && pu.mergeType == MergeType::DEFAULT_N && !pu.ciipFlag && !pu.cu->affine && !pu.mmvdMergeFlag
@@ -5274,8 +5274,9 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
             dmvrApplied      = PU::checkDMVRCondition(pu);
 
             bool refIsScaled =
-              (refIdx0 < 0 ? false : pu.cu->slice->getRefPic(REF_PIC_LIST_0, refIdx0)->isRefScaled(pu.cs->pps))
-              || (refIdx1 < 0 ? false : pu.cu->slice->getRefPic(REF_PIC_LIST_1, refIdx1)->isRefScaled(pu.cs->pps));
+              (refIdx0 < 0 ? false
+                           : pu.cu->slice->getRefPic(REF_PIC_LIST_0, refIdx0)->isRefScaled(pu.cs->sps, pu.cs->pps))
+              || (refIdx1 < 0 ? false : pu.cu->slice->getRefPic(REF_PIC_LIST_1, refIdx1)->isRefScaled(pu.cs->sps, pu.cs->pps));
             dmvrApplied = dmvrApplied && !refIsScaled;
             bioApplied  = bioApplied && !refIsScaled;
 
