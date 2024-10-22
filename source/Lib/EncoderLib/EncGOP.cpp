@@ -3020,7 +3020,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         CHECK( pcSlice->getRefPic( REF_PIC_LIST_0, refIdx )->unscaledPic == nullptr, "unscaledPic is not set for L0 reference picture" );
 
-        if( pcSlice->getRefPic( REF_PIC_LIST_0, refIdx )->isRefScaled( pcSlice->getPPS() ) == false )
+        if( pcSlice->getRefPic( REF_PIC_LIST_0, refIdx )->isRefScaled(pcSlice->getSPS(), pcSlice->getPPS() ) == false )
         {
           colRefIdxL0 = refIdx;
           break;
@@ -3033,7 +3033,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         {
           CHECK( pcSlice->getRefPic( REF_PIC_LIST_1, refIdx )->unscaledPic == nullptr, "unscaledPic is not set for L1 reference picture" );
 
-          if( pcSlice->getRefPic( REF_PIC_LIST_1, refIdx )->isRefScaled( pcSlice->getPPS() ) == false )
+          if( pcSlice->getRefPic( REF_PIC_LIST_1, refIdx )->isRefScaled(pcSlice->getSPS(), pcSlice->getPPS() ) == false )
           {
             colRefIdxL1 = refIdx;
             break;
@@ -6502,7 +6502,7 @@ void EncGOP::updateCompositeReference(Slice* pcSlice, PicList& rcListPic, int po
   // Update background reference
   if (pcSlice->isIRAP())//(pocCurr == 0)
   {
-    curPic->extendPicBorder( pcSlice->getPPS() );
+    curPic->extendPicBorder( pcSlice->getSPS(), pcSlice->getPPS() );
     curPic->setBorderExtension(true);
 
     m_picBg->getRecoBuf().copyFrom(curPic->getRecoBuf());
@@ -6541,15 +6541,15 @@ void EncGOP::updateCompositeReference(Slice* pcSlice, PicList& rcListPic, int po
       }
     }
     m_picBg->setBorderExtension(false);
-    m_picBg->extendPicBorder( pcSlice->getPPS() );
+    m_picBg->extendPicBorder(pcSlice->getSPS(), pcSlice->getPPS());
     m_picBg->setBorderExtension(true);
 
-    curPic->extendPicBorder( pcSlice->getPPS() );
+    curPic->extendPicBorder(pcSlice->getSPS(), pcSlice->getPPS());
     curPic->setBorderExtension(true);
     m_picOrig->getOrigBuf().copyFrom(curPic->getOrigBuf());
 
     m_picBg->setBorderExtension(false);
-    m_picBg->extendPicBorder( pcSlice->getPPS() );
+    m_picBg->extendPicBorder(pcSlice->getSPS(), pcSlice->getPPS());
     m_picBg->setBorderExtension(true);
   }
 }

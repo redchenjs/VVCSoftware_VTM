@@ -1125,11 +1125,11 @@ void Picture::restoreSubPicBorder(int POC, int subPicX0, int subPicY0, int subPi
   m_bufWrapSubPicBelow.destroy();
 }
 
-void Picture::extendPicBorder( const PPS *pps )
+void Picture::extendPicBorder( const SPS *sps, const PPS *pps )
 {
   if (m_extendedBorder)
   {
-    if( isWrapAroundEnabled( pps ) && ( !m_wrapAroundValid || m_wrapAroundOffset != pps->getWrapAroundOffset() ) )
+    if( isWrapAroundEnabled( sps, pps ) && ( !m_wrapAroundValid || m_wrapAroundOffset != pps->getWrapAroundOffset() ) )
     {
       extendWrapBorder( pps );
     }
@@ -1173,7 +1173,7 @@ void Picture::extendPicBorder( const PPS *pps )
     }
 
     // reference picture with horizontal wrapped boundary
-    if ( isWrapAroundEnabled( pps ) )
+    if ( isWrapAroundEnabled(sps, pps ) )
     {
       extendWrapBorder( pps );
     }
