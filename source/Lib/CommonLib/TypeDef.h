@@ -96,6 +96,10 @@
 
 #define JVET_AH2006_TXTDESCRINFO_SEI                      1 // Text description information message 
 
+#if JVET_AH2006_TXTDESCRINFO_SEI
+#define JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE          1 // Define persistence scop for text description information SEI to be purpose specific
+#endif
+
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
 #define REUSE_CU_RESULTS_WITH_MULTIPLE_TUS                1
