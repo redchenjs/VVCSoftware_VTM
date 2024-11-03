@@ -1845,8 +1845,8 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
 #if JVET_AG0322_MODALITY_INFORMATION
 void SEIEncoder::initSEIModalityInfo(SEIModalityInfo *seiMI)
 {
-  CHECK(!(m_isInitialized), "Unspecified error");
-  CHECK(seiMI == nullptr, "Unspecified error");
+  CHECK(!(m_isInitialized), "Modality Information SEI is already initialised");
+  CHECK(seiMI == nullptr, "Modality Information SEI: Cannot initialise from nullptr");
   //  Set SEI message parameters read from command line options
   seiMI->m_miCancelFlag = m_pcCfg->getMiCancelFlag(); 
   if (!seiMI->m_miCancelFlag)
