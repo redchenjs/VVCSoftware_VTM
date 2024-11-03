@@ -569,6 +569,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEISourcePictureTimingInfo((SEISourcePictureTimingInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
+#if JVET_AG0322_MODALITY_INFORMATION    
+    case SEI::PayloadType::MODALITY_INFORMATION:
+      sei = new SEIModalityInfo; 
+      xParseSEIModalityInfo((SEIModalityInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -2076,6 +2082,35 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
   }
 }
 #endif 
+
+#if JVET_AG0322_MODALITY_INFORMATION
+void SEIReader::xParseSEIModalityInfo(SEIModalityInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+{
+  uint32_t code;
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  sei_read_flag( pDecodedMessageOutputStream,           code,    "mi_modality_info_cancel_flag" );                      sei.m_miCancelFlag = code;
+  if (!sei.m_miCancelFlag)
+   {
+    sei_read_flag( pDecodedMessageOutputStream,         code,    "mi_modality_info_persistence_flag" );                 sei.m_miPersistenceFlag = code;
+    sei_read_code( pDecodedMessageOutputStream,     5,  code,    "mi_modality_type" );                                  sei.m_miModalityType = code;
+    sei_read_flag( pDecodedMessageOutputStream,         code,    "mi_spectrum_range_present_flag" );                    sei.m_miSpectrumRangePresentFlag = code;
+    if (sei.m_miSpectrumRangePresentFlag)
+    {
+      sei_read_code( pDecodedMessageOutputStream,  11,  code,    "mi_min_wavelength_mantissa " );                       sei.m_miMinWavelengthMantissa = code;
+      sei_read_code( pDecodedMessageOutputStream,  5,   code,    "mi_min_wavelength_exponent_plus15" );                 sei.m_miMinWavelengthExponentPlus15 = code;
+      sei_read_code( pDecodedMessageOutputStream,  11,  code,    "mi_max_wavelength_mantissa " );                       sei.m_miMaxWavelengthMantissa = code;
+      sei_read_code( pDecodedMessageOutputStream,  5,   code,    "mi_max_wavelength_exponent_plus15" );                 sei.m_miMaxWavelengthExponentPlus15 = code;
+    }
+    sei_read_uvlc(pDecodedMessageOutputStream,          code,    "mi_modality_type_extension_bits");   // mi_modality_type_extension_bits shall be equal to 0 in the current edition
+    CHECK(code > 2048, "Values of mi_modality_type_extension_bits greater than 2048 shall not be present in bitstreams");
+    for (uint32_t i = 0; i < code; i++)
+    {
+      uint32_t code2;
+      sei_read_code(pDecodedMessageOutputStream, 1, code2, "mi_reserved_modality_type_extension");   // Decoders shall ignore the presence and value of mi_reserved_modality_type_extension                                                   
+    }
+  }
+}
+#endif
 
 void SEIReader::xParseSEIFrameFieldinfo(SEIFrameFieldInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {

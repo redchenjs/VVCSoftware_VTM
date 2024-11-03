@@ -97,6 +97,9 @@ protected:
 #if JVET_AH2006_EOI_SEI
   void xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
 #endif 
+#if JVET_AG0322_MODALITY_INFORMATION
+  void xParseSEIModalityInfo                  (SEIModalityInfo& sei,                  uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
+#endif 
   void xParseSEIEquirectangularProjection     (SEIEquirectangularProjection &sei,     uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEISphereRotation                (SEISphereRotation &sei,                uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIOmniViewport                  (SEIOmniViewport& sei,                  uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);

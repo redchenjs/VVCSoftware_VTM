@@ -1845,4 +1845,27 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
 }
 #endif
 
+#if JVET_AG0322_MODALITY_INFORMATION
+void SEIEncoder::initSEIModalityInfo(SEIModalityInfo *seiMI)
+{
+  CHECK(!(m_isInitialized), "Modality Information SEI is already initialised");
+  CHECK(seiMI == nullptr, "Modality Information SEI: Cannot initialise from nullptr");
+  //  Set SEI message parameters read from command line options
+  seiMI->m_miCancelFlag = m_pcCfg->getMiCancelFlag(); 
+  if (!seiMI->m_miCancelFlag)
+  {
+    seiMI->m_miPersistenceFlag            = m_pcCfg->getMiPersistenceFlag();
+    seiMI->m_miModalityType               = m_pcCfg->getMiModalityType();
+    seiMI->m_miSpectrumRangePresentFlag   = m_pcCfg->getMiSpectrumRangePresentFlag();
+    if (seiMI->m_miSpectrumRangePresentFlag)
+    {
+      seiMI->m_miMinWavelengthMantissa         = m_pcCfg->getMiMinWavelengthMantissa();
+      seiMI->m_miMinWavelengthExponentPlus15   = m_pcCfg->getMiMinWavelengthExponentPlus15();
+      seiMI->m_miMaxWavelengthMantissa         = m_pcCfg->getMiMaxWavelengthMantissa();
+      seiMI->m_miMaxWavelengthExponentPlus15   = m_pcCfg->getMiMaxWavelengthExponentPlus15();
+    }
+  }
+}
+#endif
+
 //! \}

@@ -4025,6 +4025,7 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
   212 & Phase indication                         & Table \ref{tab:sei-phase-indication} \\
   213 & Processing order SEI messages            & Table \ref{tab:sei-processing order}\\
   216 & Source Picture Timing Information        & Table \ref{tab:sei-source-picture-timing-info}\\
+  218 & Modality Information SEI messages        & Table \ref{tab:sei-modality-info}\\
 \end{SEIListTable}
 %%
 %% SEI messages
@@ -6248,6 +6249,52 @@ Specifies the number of time units that pass in one second.
 \Option{SEISPTINumUnitsInElementalInterval} &
 \Default{1080000} &
 Specifies the number of time units of a clock operating at the frequency spti_time_scale Hz that corresponds to the indicated elemental source picture interval of consecutive pictures in output order in the CLVS.
+\\
+\end{OptionTableNoShorthand}
+
+\begin{OptionTableNoShorthand}{Modality Information SEI messages }{tab:sei-modality-info}
+\Option{SEIModalityInfoEnabled} &
+\Default{true} &
+Enables (true) or disables (false) the insertion of modality information SEI message.
+\\
+\Option{SEIMiCancelFlag} &
+\Default{false} &
+Indicates that modality information SEI message cancels the persistence (true) or follows (false).
+\\
+\Option{SEIMiPersistenceFlag} &
+\Default{true} &
+Specifies the persistence of the Modality Information SEI message.
+\\
+\Option{SEIMiModalityType} &
+\Default{1} &
+Specifies the type of modality
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+0 & Unspecified \\
+1 & Visible picture \\
+2 & Infrared Picture \\
+3 & Ultraviolet Picture \\
+\end{tabular}
+\\
+\Option{SEIMiSpectrumRangePresentFlag} &
+\Default{false} &
+Specifies the presence of the spectrum band of the optical radiation wavelength.
+\\
+\Option{SEIMiMinWavelengthMantissa} &
+\Default{0} &
+Specifies the mantissa part of the minimum wavelength indicating the spectral band of optical radiation.
+\\
+\Option{SEIMiMinWavelengthExponentPlus15} &
+\Default{0} &
+Specifies the exponent part of the minimum wavelength indicating the spectral band of optical radiation.
+\\
+\Option{SEIMiMaxWavelengthMantissa} &
+\Default{0} &
+Specifies the mantissa part of the maximum wavelength indicating the spectral band of optical radiation.
+\\
+\Option{SEIMiMaxWavelengthExponentPlus15} &
+\Default{0} &
+Specifies the exponent part of the maximum wavelength indicating the spectral band of optical radiation.
 \\
 \end{OptionTableNoShorthand}
 %\Option{SEITimeCode} &

@@ -813,6 +813,19 @@ protected:
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
 #endif 
 
+#if JVET_AG0322_MODALITY_INFORMATION
+  // Modality Information SEI
+  bool        m_miSEIEnabled;
+  bool        m_miCancelFlag;
+  bool        m_miPersistenceFlag;
+  int         m_miModalityType; 
+  bool        m_miSpectrumRangePresentFlag;
+  int         m_miMinWavelengthMantissa; 
+  int         m_miMinWavelengthExponentPlus15; 
+  int         m_miMaxWavelengthMantissa; 
+  int         m_miMaxWavelengthExponentPlus15; 
+#endif 
+
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
   bool      m_fgcSEICancelFlag;
@@ -2488,6 +2501,29 @@ public:
   void setEOISEIPrivacyProtectedInfoType(uint32_t privacyProtectedInfoType) { m_eoiSEIPrivacyProtectedInfoType = privacyProtectedInfoType; }
   uint32_t getEOISEIPrivacyProtectedInfoType() const { return m_eoiSEIPrivacyProtectedInfoType; }
 #endif 
+
+#if JVET_AG0322_MODALITY_INFORMATION
+  //Modality Information SEI 
+  void     setMiSEIEnabled(bool b) { m_miSEIEnabled = b; }
+  bool     getMiSEIEnabled()                                                                              { return m_miSEIEnabled; }
+  void     setMiCancelFlag(const bool val) { m_miCancelFlag = val; }
+  bool     getMiCancelFlag() const                                                                        { return m_miCancelFlag; }
+  void     setMiPersistenceFlag(const bool val) { m_miPersistenceFlag = val; }
+  bool     getMiPersistenceFlag() const                                                                   { return m_miPersistenceFlag; }
+  void     setMiModalityType(const int val) { m_miModalityType = val; }
+  int      getMiModalityType() const                                                                      { return m_miModalityType; }
+  void     setMiSpectrumRangePresentFlag(const bool val) { m_miSpectrumRangePresentFlag = val; }
+  bool     getMiSpectrumRangePresentFlag() const                                                          { return m_miSpectrumRangePresentFlag; }
+  void     setMiMinWavelengthMantissa(const int val) { m_miMinWavelengthMantissa = val; }
+  int      getMiMinWavelengthMantissa() const                                                             { return m_miMinWavelengthMantissa; }
+  void     setMiMinWavelengthExponentPlus15(const int val) { m_miMinWavelengthExponentPlus15 = val; }
+  int      getMiMinWavelengthExponentPlus15() const                                                       { return m_miMinWavelengthExponentPlus15; }
+  void     setMiMaxWavelengthMantissa(const int val) { m_miMaxWavelengthMantissa = val; }
+  int      getMiMaxWavelengthMantissa() const                                                             { return m_miMaxWavelengthMantissa; }
+  void     setMiMaxWavelengthExponentPlus15(const int val) { m_miMaxWavelengthExponentPlus15 = val; }
+  int      getMiMaxWavelengthExponentPlus15() const                                                       { return m_miMaxWavelengthExponentPlus15; }
+#endif
+
   // film grain SEI
   void  setFilmGrainCharactersticsSEIEnabled (bool b)                { m_fgcSEIEnabled = b; }
   bool  getFilmGrainCharactersticsSEIEnabled()                       { return m_fgcSEIEnabled; }

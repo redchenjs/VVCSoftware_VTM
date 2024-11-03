@@ -94,13 +94,15 @@
 
 #define JVET_AH2006_EOI_SEI                               1 // Implementation of Encoder Optimizaion Information SEI message 
 
+#define JVET_AG0322_MODALITY_INFORMATION                  1 // Implementation of Modality Information SEI message
+
 #define NNPFC_SPATIAL_EXTRAPOLATION                       1 // Implementation of the spatial extrapolation purpose
 
 #define JVET_AH2006_TXTDESCRINFO_SEI                      1 // Text description information message 
-
 #if JVET_AH2006_TXTDESCRINFO_SEI
 #define JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE          1 // Define persistence scop for text description information SEI to be purpose specific
 #endif
+
 
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS

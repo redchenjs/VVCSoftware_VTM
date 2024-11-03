@@ -127,6 +127,9 @@ protected:
 #if JVET_AG2034_SPTI_SEI
   void xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
 #endif
+#if JVET_AG0322_MODALITY_INFORMATION
+  void xWriteSEIModalityInfo(const SEIModalityInfo &sei);
+#endif
 protected:
   HRD m_nestingHrd;
 };

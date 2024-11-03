@@ -486,6 +486,9 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
 #if JVET_AG2034_SPTI_SEI
   { SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO, "Source picture timing info" },
 #endif
+#if JVET_AG0322_MODALITY_INFORMATION
+  { SEI::PayloadType::MODALITY_INFORMATION, "Modality information" }
+#endif
 };
 
 const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
@@ -1194,4 +1197,19 @@ SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
 
 }
 #endif
+
+#if JVET_AG0322_MODALITY_INFORMATION
+SEIModalityInfo::SEIModalityInfo(const SEIModalityInfo& sei)
+{
+  m_miCancelFlag = sei.m_miCancelFlag;
+  m_miPersistenceFlag = sei.m_miPersistenceFlag;
+  m_miModalityType = sei.m_miModalityType;
+  m_miSpectrumRangePresentFlag = sei.m_miSpectrumRangePresentFlag;
+  m_miMinWavelengthMantissa = sei.m_miMinWavelengthMantissa;
+  m_miMinWavelengthExponentPlus15 = sei.m_miMinWavelengthExponentPlus15;
+  m_miMaxWavelengthMantissa = sei.m_miMaxWavelengthMantissa;
+  m_miMaxWavelengthExponentPlus15 = sei.m_miMaxWavelengthExponentPlus15;
+}
+#endif
+
 
