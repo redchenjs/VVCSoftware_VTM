@@ -1109,6 +1109,8 @@ protected:
   bool        m_allIndependentLayersFlag;
   std::string m_predDirectionArray;
   bool        m_explicitILRP;
+  bool        m_encILOpt;
+  double      m_encILOptLambdaModifier;
 
   int         m_numRefLayers[MAX_VPS_LAYERS];
   std::string m_refLayerIdxStr[MAX_VPS_LAYERS];

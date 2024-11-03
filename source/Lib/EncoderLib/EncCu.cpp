@@ -1154,7 +1154,10 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
   const double cost = costTemp;
 
   m_CABACEstimator->getCtx() = SubCtx(Ctx::ctxPartition, ctxStart);
-  if (cost > bestCS->cost + bestCS->costDbOffset
+  if ((cost > bestCS->cost + bestCS->costDbOffset
+       && (!m_pcEncCfg->getEncILOpt()
+           || tempCS->slice->getRpl(REF_PIC_LIST_0)->getNumberOfInterLayerPictures() + tempCS->slice->getRpl(REF_PIC_LIST_1)->getNumberOfInterLayerPictures() == 0
+           || bestCS->useInterlayerRef))
 #if ENABLE_QPA_SUB_CTU
     || (m_pcEncCfg->getUsePerceptQPA() && !m_pcEncCfg->getUseRateCtrl() && pps.getUseDQP() && (slice.getCuQpDeltaSubdiv() > 0) && (split == CU_HORZ_SPLIT || split == CU_VERT_SPLIT) &&
         (currDepth == 0)) // force quad-split or no split at CTU level
@@ -2280,6 +2283,10 @@ void EncCu::xCheckRDCostUnifiedMerge(CodingStructure *&tempCS, CodingStructure *
 
   // 1. Pass: get SATD-cost for selected candidates and reduce their count
   m_mergeItemList.resetList(numMergeSatdCand);
+  if (m_pcEncCfg->getEncILOpt())
+  {
+    m_mergeItemList.resetBackupList(1);
+  }
   const TempCtx ctxStart(m_ctxPool, m_CABACEstimator->getCtx());
   DistParam distParam;
   const bool bUseHadamard = !tempCS->slice->getDisableSATDForRD();
@@ -2308,6 +2315,11 @@ void EncCu::xCheckRDCostUnifiedMerge(CodingStructure *&tempCS, CodingStructure *
   if (toAddGpmCand)
   {
     addGpmCandsToPruningList(gpmMergeCtx, localUnitArea, sqrtLambdaForFirstPass, ctxStart, comboList, geoBuffer, distParam, pu);
+  }
+
+  if (m_pcEncCfg->getEncILOpt())
+  {
+    m_mergeItemList.insertBackupItemsToList();
   }
 
   // Try to limit number of candidates using SATD-costs
@@ -2781,6 +2793,10 @@ void EncCu::generateMergePrediction(const UnitArea& unitArea, MergeItem* mergeIt
   CHECK((luma && mergeItem->lumaPredReady) || (chroma && mergeItem->chromaPredReady), "Prediction has been avaiable");
   // update Pu info
   mergeItem->exportMergeInfo(pu, forceNoResidual);
+  if (!finalRd)
+  {
+    mergeItem->useInterLayerRef = pu.checkUseInterLayerRef();
+  }
 
   switch (mergeItem->mergeItemType)
   {
@@ -2890,6 +2906,7 @@ double EncCu::calcLumaCost4MergePrediction(const TempCtx& ctxStart, const PelUni
 unsigned int EncCu::updateRdCheckingNum(double threshold, unsigned int numMergeSatdCand)
 {
   numMergeSatdCand = std::min(numMergeSatdCand, (unsigned int) m_mergeItemList.size());
+  int numMergeSatdCandOrig = numMergeSatdCand;
 
   for (uint32_t i = 0; i < numMergeSatdCand; i++)
   {
@@ -2900,6 +2917,20 @@ unsigned int EncCu::updateRdCheckingNum(double threshold, unsigned int numMergeS
       break;
     }
   }
+
+  if (m_pcEncCfg->getEncILOpt())
+  {
+    for (uint32_t i = numMergeSatdCand; i < numMergeSatdCandOrig; i++)
+    {
+      const auto mergeItem = m_mergeItemList.getMergeItemInList(i);
+      if (mergeItem->useInterLayerRef)
+      {
+        m_mergeItemList.swapItems(i, numMergeSatdCand);
+        ++numMergeSatdCand;
+      }
+    }
+  }
+
   return numMergeSatdCand;
 }
 
@@ -2968,7 +2999,7 @@ void EncCu::addRegularCandsToPruningList(const MergeCtx& mergeCtx, const UnitAre
         regularMerge->cost = MAX_DOUBLE;
       }
     }
-    m_mergeItemList.insertMergeItemToList(regularMerge);
+    m_mergeItemList.insertMergeItemToList(regularMerge, m_pcEncCfg->getEncILOpt());
   }
   m_pcInterSearch->xDmvrSetEncoderCheckFlag(false);
 }
@@ -3024,7 +3055,7 @@ void EncCu::addCiipCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& 
     {
       ciipMerge->cost = calcLumaCost4MergePrediction(ctxStart, dstBuf, sqrtLambdaForFirstPassIntra, *pu, distParam);
     }
-    m_mergeItemList.insertMergeItemToList(ciipMerge);
+    m_mergeItemList.insertMergeItemToList(ciipMerge, m_pcEncCfg->getEncILOpt());
   }
 }
 
@@ -3046,7 +3077,7 @@ void EncCu::addMmvdCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& 
     auto dstBuf = mmvdMerge->getPredBuf(localUnitArea);
     generateMergePrediction(localUnitArea, mmvdMerge, *pu, true, false, dstBuf, false, false, nullptr, nullptr);
     mmvdMerge->cost = calcLumaCost4MergePrediction(ctxStart, dstBuf, sqrtLambdaForFirstPassIntra, *pu, distParam);
-    m_mergeItemList.insertMergeItemToList(mmvdMerge);
+    m_mergeItemList.insertMergeItemToList(mmvdMerge, m_pcEncCfg->getEncILOpt());
   }
 }
 
@@ -3094,7 +3125,7 @@ void EncCu::addAffineCandsToPruningList(AffineMergeCtx& affineMergeCtx, const Un
       }
     }
 #endif
-    m_mergeItemList.insertMergeItemToList(mergeItem);
+    m_mergeItemList.insertMergeItemToList(mergeItem, m_pcEncCfg->getEncILOpt());
   }
 }
 
@@ -3115,7 +3146,7 @@ void EncCu::addGpmCandsToPruningList(const MergeCtx& mergeCtx, const UnitArea& l
     generateMergePrediction(localUnitArea, mergeItem, *pu, true, false, dstBuf, false, false,
       geoBuffer[mergeIdxPair[0]], geoBuffer[mergeIdxPair[1]]);
     mergeItem->cost = calcLumaCost4MergePrediction(ctxStart, dstBuf, sqrtLambdaForFirstPass, *pu, distParamSAD2);
-    m_mergeItemList.insertMergeItemToList(mergeItem);
+    m_mergeItemList.insertMergeItemToList(mergeItem, m_pcEncCfg->getEncILOpt());
   }
 }
 
@@ -4095,6 +4126,11 @@ void EncCu::xEncodeInterResidual(CodingStructure *&tempCS, CodingStructure *&bes
     }
   }
 
+  if (m_pcEncCfg->getEncILOpt())
+  {
+    tempCS->useInterlayerRef = pu.checkUseInterLayerRef();
+  }
+
   const bool mtsAllowed = tempCS->sps->getExplicitMtsInterEnabled() && CU::isInter(*cu)
                           && partitioner.currArea().lwidth() <= MTS_INTER_MAX_CU_SIZE
                           && partitioner.currArea().lheight() <= MTS_INTER_MAX_CU_SIZE;
@@ -4514,6 +4550,10 @@ void EncCu::xReuseCachedResult( CodingStructure *&tempCS, CodingStructure *&best
     tempCS->dist     = finalDistortion;
     tempCS->fracBits = m_CABACEstimator->getEstFracBits();
     tempCS->cost     = m_pcRdCost->calcRdCost( tempCS->fracBits, tempCS->dist );
+    if (m_pcEncCfg->getEncILOpt())
+    {
+      tempCS->useInterlayerRef = cu.firstPU->checkUseInterLayerRef();
+    }
 
     xEncodeDontSplit( *tempCS,         partitioner );
     xCheckDQP       ( *tempCS,         partitioner );
@@ -4550,6 +4590,7 @@ void MergeItem::create(ChromaFormat chromaFormat, const Area& area)
   bcwIdx = 0;
   interDir = 0;
   useAltHpelIf = false;
+  useInterLayerRef = false;
   affineType = AffineModel::_4_PARAMS;
   mergeItemType = MergeItemType::NUM;
 
@@ -4763,12 +4804,18 @@ MergeItemList::~MergeItemList()
   {
     m_mergeItemPool.giveBack(p);
   }
+  for (auto p : m_backupList)
+  {
+    m_mergeItemPool.giveBack(p);
+  }
   m_list.clear();
+  m_backupList.clear();
 }
 
 void MergeItemList::init(size_t maxSize, ChromaFormat chromaFormat, int ctuWidth, int ctuHeight)
 {
   m_list.reserve(maxSize + 1); // to avoid reallocation when inserting a new item
+  m_backupList.reserve(2);
   m_chromaFormat = chromaFormat;
   m_ctuArea.x = 0;
   m_ctuArea.y = 0;
@@ -4784,25 +4831,41 @@ MergeItem* MergeItemList::allocateNewMergeItem()
   return p;
 }
 
-void MergeItemList::insertMergeItemToList(MergeItem* p)
+void MergeItemList::insertMergeItemToList(MergeItem* p, bool trackInterLayerCand)
 {
   if (m_list.empty())
   {
     m_list.push_back(p);
+    m_numInterLayers += (trackInterLayerCand && p->useInterLayerRef) ? 1 : 0;
   }
   else if (m_list.size() == m_maxTrackingNum && p->cost >= m_list.back()->cost)
   {
-    m_mergeItemPool.giveBack(p);
+    if (trackInterLayerCand && p->useInterLayerRef && m_numInterLayers < m_maxTrackingBackupNum)
+    {
+      insertMergeItemToBackupList(p);
+    }
+    else
+    {
+      m_mergeItemPool.giveBack(p);
+    }
   }
   else
   {
     if (m_list.size() == m_maxTrackingNum)
     {
-      m_mergeItemPool.giveBack(m_list.back());
+      if (trackInterLayerCand && m_list.back()->useInterLayerRef && (--m_numInterLayers) < m_maxTrackingBackupNum)
+      {
+        insertMergeItemToBackupList(m_list.back());
+      }
+      else
+      {
+        m_mergeItemPool.giveBack(m_list.back());
+      }
       m_list.pop_back();
     }
     auto it = std::find_if(m_list.begin(), m_list.end(), [&p](const MergeItem *mi) { return p->cost < mi->cost; });
     m_list.insert(it, p);
+    m_numInterLayers += (trackInterLayerCand && p->useInterLayerRef) ? 1 : 0;
   }
 }
 
@@ -4820,6 +4883,78 @@ void MergeItemList::resetList(size_t maxTrackingNum)
   m_list.clear();
   m_list.reserve(maxTrackingNum);
   m_maxTrackingNum = maxTrackingNum;
+  m_numInterLayers = 0;
+}
+
+
+
+void MergeItemList::insertMergeItemToBackupList(MergeItem* p)
+{
+  if (m_backupList.empty())
+  {
+    m_backupList.push_back(p);
+  }
+  else if (m_backupList.size() == m_maxTrackingBackupNum && p->cost >= m_backupList.back()->cost)
+  {
+    m_mergeItemPool.giveBack(p);
+  }
+  else
+  {
+    if (m_backupList.size() == m_maxTrackingBackupNum)
+    {
+      m_mergeItemPool.giveBack(m_backupList.back());
+      m_backupList.pop_back();
+    }
+    auto it = std::find_if(m_backupList.begin(), m_backupList.end(), [&p](const MergeItem *mi) { return p->cost < mi->cost; });
+    m_backupList.insert(it, p);
+  }
+}
+
+void MergeItemList::resetBackupList(size_t maxTrackingBackupNum)
+{
+  for (auto p : m_backupList)
+  {
+    m_mergeItemPool.giveBack(p);
+  }
+  m_backupList.clear();
+  m_backupList.reserve(2*maxTrackingBackupNum-1);
+  m_maxTrackingBackupNum = maxTrackingBackupNum;
+}
+
+void MergeItemList::insertBackupItemsToList()
+{
+  if (m_backupList.size() == 0 || m_numInterLayers >= m_maxTrackingBackupNum)
+  {
+    return;
+  }
+
+  size_t backupSize          = m_backupList.size();
+  size_t maxNumReplacedItems = std::min(m_backupList.size(), m_maxTrackingBackupNum - m_numInterLayers);
+  int    numReplacedItems    = 0;
+  while ( numReplacedItems < maxNumReplacedItems && m_list.size()>0 )
+  {
+    if (m_list.back()->useInterLayerRef)
+    {
+      m_backupList.push_back(m_list.back()); //temporarily insert in backup
+      m_list.pop_back();
+    }
+    else
+    {
+      m_mergeItemPool.giveBack(m_list.back());
+      m_list.pop_back();
+      ++numReplacedItems;
+    }
+  }
+
+  m_list.insert( m_list.end(), m_backupList.begin() + backupSize, m_backupList.end() );         //re-insert IL items temporarily placed in backup list.
+  m_list.insert( m_list.end(), m_backupList.begin(), m_backupList.begin() + numReplacedItems ); //insert IL item initially in backup in replacement of removed non-IL items.
+  m_numInterLayers += numReplacedItems;
+
+  for (int i = 0; i < m_backupList.size() - numReplacedItems; i++)
+  {
+    m_mergeItemPool.giveBack(m_backupList.back());
+  }
+  m_backupList.clear();
 }
 
 //! \}

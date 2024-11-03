@@ -1154,6 +1154,8 @@ protected:
   bool        m_rprRASLtoolSwitch;
   bool        m_refLayerMetricsEnabled;
   bool        m_explicitILRP;
+  bool        m_encILOpt;
+  double      m_encILOptLambdaModifier;
   
 public:
   EncCfg()
@@ -3161,6 +3163,10 @@ public:
   bool        getAvoidIntraInDepLayer()                        const { return m_avoidIntraInDepLayer; }
   void        setExplicitILRP(bool b)                        { m_explicitILRP = b; }
   bool        getExplicitILRP()                        const { return m_explicitILRP; }
+  void        setEncILOpt(bool b)                            { m_encILOpt = b; }
+  bool        getEncILOpt()                            const { return m_encILOpt; }
+  void        setEncILOptLambdaModifier(double dValue)       { m_encILOptLambdaModifier = dValue; }
+  double      getEncILOptLambdaModifier()              const { return m_encILOptLambdaModifier; }
 
   const EncCfgParam::CfgVPSParameters &getVPSParameters() const
   {
