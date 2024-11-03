@@ -61,7 +61,7 @@ using DistFunc = std::function<Distortion(const DistParam &)>;
 
 #if WCG_EXT
 class RdCost;
-using DistFuncWtd = std::function<Distortion(RdCost *, const DistParam &)>;
+using DistFuncWtd = std::function<Distortion(const RdCost *, const DistParam &)>;
 #endif
 // ====================================================================================================================
 // Class definition
@@ -388,15 +388,15 @@ private:
   static Distortion xGetSSE16N        ( const DistParam& pcDtParam );
 
 #if WCG_EXT
-  Distortion getWeightedMSE(int compIdx, const Pel org, const Pel cur, const uint32_t shift, const Pel orgLuma);
-  Distortion xGetSSE_WTD       ( const DistParam& pcDtParam );
-  Distortion xGetSSE2_WTD      ( const DistParam& pcDtParam );
-  Distortion xGetSSE4_WTD      ( const DistParam& pcDtParam );
-  Distortion xGetSSE8_WTD      ( const DistParam& pcDtParam );
-  Distortion xGetSSE16_WTD     ( const DistParam& pcDtParam );
-  Distortion xGetSSE32_WTD     ( const DistParam& pcDtParam );
-  Distortion xGetSSE64_WTD     ( const DistParam& pcDtParam );
-  Distortion xGetSSE16N_WTD    ( const DistParam& pcDtParam );
+  Distortion getWeightedMSE(const int compIdx, const Pel org, const Pel cur, const uint32_t shift, const Pel orgLuma) const;
+  Distortion xGetSSE_WTD       ( const DistParam& pcDtParam ) const;
+  Distortion xGetSSE2_WTD      ( const DistParam& pcDtParam ) const;
+  Distortion xGetSSE4_WTD      ( const DistParam& pcDtParam ) const;
+  Distortion xGetSSE8_WTD      ( const DistParam& pcDtParam ) const;
+  Distortion xGetSSE16_WTD     ( const DistParam& pcDtParam ) const;
+  Distortion xGetSSE32_WTD     ( const DistParam& pcDtParam ) const;
+  Distortion xGetSSE64_WTD     ( const DistParam& pcDtParam ) const;
+  Distortion xGetSSE16N_WTD    ( const DistParam& pcDtParam ) const;
 #endif
 
   static Distortion xGetSAD           ( const DistParam& pcDtParam );
@@ -476,10 +476,10 @@ public:
 
 #if WCG_EXT
   Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID, DFuncWtd distFuncWtd,
-                         const CPelBuf &orgLuma);
+                         const CPelBuf &orgLuma) const;
 #endif
   Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID,
-                         DFunc distFunc);
+                         DFunc distFunc) const;
 
   Distortion getDistPart(const CPelBuf &org, const CPelBuf &cur, const Pel *mask, int bitDepth,
                          const ComponentID compID, DFunc distFunc);

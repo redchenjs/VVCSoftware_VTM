@@ -186,6 +186,15 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
     for (auto sei : currCodedPic->m_nnpfcActivated)
     {
       auto currNnpfc = (SEINeuralNetworkPostFilterCharacteristics*) sei;
+#if JVET_AI0061_PROPOSAL2_SPATIAL_EXTRAPOLATION
+      if ((currNnpfc->m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
+      {
+        currNnpfc->m_overlap = 0;
+        currNnpfc->m_constantPatchSizeFlag = 1;
+        currNnpfc->m_patchWidthMinus1 = croppedWidth - 1;
+        currNnpfc->m_patchHeightMinus1 = croppedHeight - 1;
+      }
+#endif
       checkInputPics(currCodedPic, currNnpfc, sourceWidth, sourceHeight, croppedWidth, croppedHeight);
     }
 

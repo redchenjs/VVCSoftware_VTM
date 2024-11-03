@@ -881,6 +881,9 @@ protected:
 
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+  bool                 m_SEITextIDCancelFlag;
+#endif
   bool                 m_postFilterHintSEIPersistenceFlag;
   uint32_t             m_postFilterHintSEISizeY;
   uint32_t             m_postFilterHintSEISizeX;

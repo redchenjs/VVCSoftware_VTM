@@ -592,25 +592,20 @@ public:
   int                   m_verPhaseDenMinus1;
 };
 
-static constexpr uint32_t ISO_IEC_11578_LEN=16;
-
-class SEIuserDataUnregistered : public SEI
+class SEIUserDataUnregistered : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::USER_DATA_UNREGISTERED; }
 
-  SEIuserDataUnregistered()
-    {}
-  SEIuserDataUnregistered(const SEIuserDataUnregistered& sei);
+  SEIUserDataUnregistered() {}
+  SEIUserDataUnregistered(const SEIUserDataUnregistered& sei) = default;
 
-  virtual ~SEIuserDataUnregistered()
-  {
-    delete userData;
-  }
+  virtual ~SEIUserDataUnregistered() {}
 
-  uint8_t uuid_iso_iec_11578[ISO_IEC_11578_LEN];
-  uint32_t  userDataLength;
-  uint8_t *userData = nullptr;
+  static constexpr uint32_t ISO_IEC_11578_LEN = 16;
+
+  std::array<uint8_t, ISO_IEC_11578_LEN> uuid;
+  std::vector<uint8_t>                   data;
 };
 
 class SEIDecodedPictureHash : public SEI
@@ -1591,6 +1586,9 @@ public:
 
   uint16_t                 m_textDescriptionID;
   bool                     m_textCancelFlag;
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+  bool                     m_textIDCancelFlag;
+#endif
   bool                     m_textPersistenceFlag;
   uint8_t                  m_textDescriptionPurpose;
   uint8_t                  m_textNumStringsMinus1;

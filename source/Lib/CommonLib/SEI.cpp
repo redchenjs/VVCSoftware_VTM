@@ -734,16 +734,6 @@ SEIPhaseIndication::SEIPhaseIndication(const SEIPhaseIndication& sei)
   m_verPhaseDenMinus1 = sei.m_verPhaseDenMinus1;
 }
 
-SEIuserDataUnregistered::SEIuserDataUnregistered(const SEIuserDataUnregistered& sei)
-{
-  std::memcpy(uuid_iso_iec_11578, sei.uuid_iso_iec_11578, sizeof(sei.uuid_iso_iec_11578));
-  userDataLength = sei.userDataLength;
-  if (nullptr != userData)
-  {
-    userData = new uint8_t(*sei.userData);
-  }
-}
-
 SEIDecodedPictureHash::SEIDecodedPictureHash(const SEIDecodedPictureHash& sei)
 {
   method = sei.method;
@@ -1142,6 +1132,9 @@ SEIPostFilterHint::SEIPostFilterHint(const SEIPostFilterHint& sei)
   {
     m_textDescriptionID = sei.m_textDescriptionID;
     m_textCancelFlag = sei.m_textCancelFlag;
+  #if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+    m_textIDCancelFlag = sei.m_textIDCancelFlag;
+#endif
     m_textPersistenceFlag = sei.m_textPersistenceFlag;
     m_textDescriptionPurpose = sei.m_textDescriptionPurpose;
     m_textNumStringsMinus1 = sei.m_textNumStringsMinus1;
