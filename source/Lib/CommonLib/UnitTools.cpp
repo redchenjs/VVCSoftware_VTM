@@ -2201,8 +2201,8 @@ void PU::fillMvpCand(PredictionUnit &pu, const RefPicList &eRefPicList, const in
 
   if (pInfo->numCand < AMVP_MAX_NUM_CANDS)
   {
-    const int currRefPOC = cs.slice->getRefPic(eRefPicList, refIdx)->getPOC();
-    addAMVPHMVPCand(pu, eRefPicList, currRefPOC, *pInfo);
+    Picture* currRefPic = cs.slice->getRefPic(eRefPicList, refIdx);
+    addAMVPHMVPCand(pu, eRefPicList, currRefPic, *pInfo);
   }
 
   if (pInfo->numCand > AMVP_MAX_NUM_CANDS)
@@ -2970,7 +2970,7 @@ bool PU::addMVPCandUnscaled(const PredictionUnit &pu, const RefPicList &eRefPicL
   return false;
 }
 
-void PU::addAMVPHMVPCand(const PredictionUnit &pu, const RefPicList eRefPicList, const int currRefPOC, AMVPInfo &info)
+void PU::addAMVPHMVPCand(const PredictionUnit &pu, const RefPicList eRefPicList, const Picture* currRefPic, AMVPInfo &info)
 {
   const Slice &slice = *(*pu.cs).slice;
 
@@ -3011,7 +3011,7 @@ void PU::addAMVPHMVPCand(const PredictionUnit &pu, const RefPicList eRefPicList,
       const RefPicList eRefPicListIndex = (predictorSource == 0) ? eRefPicList : eRefPicList2nd;
       const int        neibRefIdx = neibMi.refIdx[eRefPicListIndex];
 
-      if (neibRefIdx >= 0 && (CU::isIBC(*pu.cu) || (currRefPOC == slice.getRefPOC(eRefPicListIndex, neibRefIdx))))
+      if (neibRefIdx >= 0 && (CU::isIBC(*pu.cu) || (currRefPic == slice.getRefPic(eRefPicListIndex, neibRefIdx))))
       {
         Mv pmv = neibMi.mv[eRefPicListIndex];
         pmv.roundTransPrecInternal2Amvr(pu.cu->imv);

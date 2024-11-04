@@ -110,6 +110,9 @@ public:
 #if JVET_AH2006_EOI_SEI
   void initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei);
 #endif 
+#if JVET_AG0322_MODALITY_INFORMATION
+  void initSEIModalityInfo(SEIModalityInfo *sei);
+#endif
 #if JVET_AH2006_TXTDESCRINFO_SEI
   void initSEITextDescription(SEITextDescription *sei);
 #endif

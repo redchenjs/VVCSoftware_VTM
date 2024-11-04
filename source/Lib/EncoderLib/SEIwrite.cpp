@@ -48,7 +48,7 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   switch (sei.payloadType())
   {
   case SEI::PayloadType::USER_DATA_UNREGISTERED:
-    xWriteSEIuserDataUnregistered(*static_cast<const SEIuserDataUnregistered*>(&sei));
+    xWriteSEIuserDataUnregistered(reinterpret_cast<const SEIUserDataUnregistered&>(sei));
     break;
   case SEI::PayloadType::DECODING_UNIT_INFO:
     bp = hrd.getBufferingPeriodSEI();
@@ -206,6 +206,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEISourcePictureTimingInfo(*static_cast<const SEISourcePictureTimingInfo*>(&sei));
     break;
 #endif
+#if JVET_AG0322_MODALITY_INFORMATION
+  case SEI::PayloadType::MODALITY_INFORMATION:
+    xWriteSEIModalityInfo(*static_cast<const SEIModalityInfo *>(&sei));
+    break;
+#endif 
 #if JVET_AH2006_TXTDESCRINFO_SEI
   case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
     xWriteSEITextDescription(*static_cast<const SEITextDescription*>(&sei));
@@ -287,16 +292,16 @@ void SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList
  * marshal a user_data_unregistered SEI message sei, storing the marshalled
  * representation in bitstream bs.
  */
-void SEIWriter::xWriteSEIuserDataUnregistered(const SEIuserDataUnregistered &sei)
+void SEIWriter::xWriteSEIuserDataUnregistered(const SEIUserDataUnregistered& sei)
 {
-  for (uint32_t i = 0; i < ISO_IEC_11578_LEN; i++)
+  for (uint32_t i = 0; i < sei.uuid.size(); i++)
   {
-    xWriteCode(sei.uuid_iso_iec_11578[i], 8 , "uuid_iso_iec_11578[i]");
+    xWriteCode(sei.uuid[i], 8, "uuid_iso_iec_11578[i]");
   }
 
-  for (uint32_t i = 0; i < sei.userDataLength; i++)
+  for (uint32_t i = 0; i < sei.data.size(); i++)
   {
-    xWriteCode(sei.userData[i], 8 , "user_data_payload_byte");
+    xWriteCode(sei.data[i], 8, "user_data_payload_byte");
   }
 }
 
@@ -1993,18 +1998,25 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(to_underlying(sei.m_chromaSampleLocTypeFrame), "nnpfc_chroma_sample_loc_type_frame");
     }
     
-    xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
-    xWriteFlag(sei.m_constantPatchSizeFlag, "nnpfc_constant_patch_size_flag");
-    if (sei.m_constantPatchSizeFlag)
+#if JVET_AI0061_PROPOSAL2_SPATIAL_EXTRAPOLATION
+    if((sei.m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) == 0)
     {
-    xWriteUvlc(sei.m_patchWidthMinus1, "nnpfc_patch_width_minus1");
-    xWriteUvlc(sei.m_patchHeightMinus1, "nnpfc_patch_height_minus1");
+#endif
+      xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
+      xWriteFlag(sei.m_constantPatchSizeFlag, "nnpfc_constant_patch_size_flag");
+      if (sei.m_constantPatchSizeFlag)
+      {
+        xWriteUvlc(sei.m_patchWidthMinus1, "nnpfc_patch_width_minus1");
+        xWriteUvlc(sei.m_patchHeightMinus1, "nnpfc_patch_height_minus1");
+      }
+      else
+      {
+        xWriteUvlc(sei.m_extendedPatchWidthCdDeltaMinus1, "extended_nnpfc_patch_width_cd_delta_minus1");
+        xWriteUvlc(sei.m_extendedPatchHeightCdDeltaMinus1, "extended_nnpfc_patch_height_cd_delta_minus1");
+      }
+#if JVET_AI0061_PROPOSAL2_SPATIAL_EXTRAPOLATION
     }
-    else
-    {
-      xWriteUvlc(sei.m_extendedPatchWidthCdDeltaMinus1, "extended_nnpfc_patch_width_cd_delta_minus1");
-      xWriteUvlc(sei.m_extendedPatchHeightCdDeltaMinus1, "extended_nnpfc_patch_height_cd_delta_minus1");
-    }
+#endif
     xWriteUvlc(sei.m_paddingType, "nnpfc_padding_type");
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {
@@ -2119,21 +2131,38 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
 #if JVET_AH2006_TXTDESCRINFO_SEI
 void SEIWriter::xWriteSEITextDescription(const SEITextDescription &sei)
 {
-  CHECK((sei.m_textDescriptionID < 1 || sei.m_textDescriptionID > 16383) , "text description id must be in the range 1-16383");
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+  CHECK(sei.m_textDescriptionPurpose > 5, "txt_descr_purpose shall be in the range 0-5");
+  xWriteCode(sei.m_textDescriptionPurpose, 8, "txt_descr_purpose");
+#else
+  CHECK((sei.m_textDescriptionID < 1 || sei.m_textDescriptionID > 16383), "text description id must be in the range 1-16383");
   xWriteCode(sei.m_textDescriptionID, 14, "txt_descr_id");
+#endif
   xWriteFlag(sei.m_textCancelFlag, "txt_cancel_flag");
   if (!sei.m_textCancelFlag) 
   {
-    xWriteFlag(sei.m_textPersistenceFlag, "txt_persistence_flag");
-    CHECK(sei.m_textDescriptionPurpose>5, "txt_descr_purpose shall be in the range 0-5");
-    xWriteCode(sei.m_textDescriptionPurpose, 8, "txt_descr_purpose");
-    xWriteCode(sei.m_textNumStringsMinus1, 8, "txt_num_strings_minus1");
-    for (int i=0; i<=sei.m_textNumStringsMinus1; i++)
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+    CHECK((sei.m_textDescriptionID < 1 || sei.m_textDescriptionID > 16383), "text description id must be in the range 1-16383");
+    xWriteCode(sei.m_textDescriptionID, 13, "txt_descr_id");
+    xWriteFlag(sei.m_textIDCancelFlag, "txt_id_cancel_flag");
+    if (!sei.m_textIDCancelFlag) 
     {
-      CHECK(sei.m_textDescriptionStringLang[i].length() > 49, "The length of the text description language string must be in the range 0-49");
-      xWriteString(sei.m_textDescriptionStringLang[i], "txt_descr_string_lang[i]");
-      xWriteString(sei.m_textDescriptionString[i], "txt_descr_string[i]");
+#endif
+      xWriteFlag(sei.m_textPersistenceFlag, "txt_persistence_flag");
+#if !JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+      CHECK(sei.m_textDescriptionPurpose>5, "txt_descr_purpose shall be in the range 0-5");
+      xWriteCode(sei.m_textDescriptionPurpose, 8, "txt_descr_purpose");
+#endif
+      xWriteCode(sei.m_textNumStringsMinus1, 8, "txt_num_strings_minus1");
+      for (int i=0; i<=sei.m_textNumStringsMinus1; i++)
+      {
+        CHECK(sei.m_textDescriptionStringLang[i].length() > 49, "The length of the text description language string must be in the range 0-49");
+        xWriteString(sei.m_textDescriptionStringLang[i], "txt_descr_string_lang[i]");
+        xWriteString(sei.m_textDescriptionString[i], "txt_descr_string[i]");
+      }
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
     }
+#endif
   }
 }
 #endif
@@ -2239,4 +2268,26 @@ void SEIWriter::xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInf
   }
 }
 #endif
+
+#if JVET_AG0322_MODALITY_INFORMATION
+void SEIWriter::xWriteSEIModalityInfo(const SEIModalityInfo& sei)
+{
+  xWriteFlag( sei.m_miCancelFlag,                                            "mi_modality_info_cancel_flag" );
+  if(!sei.m_miCancelFlag)
+  {
+    xWriteFlag( sei.m_miPersistenceFlag,                                     "mi_modality_info_persistence_flag" );
+    xWriteCode( (uint32_t)sei.m_miModalityType, 5,                           "mi_modality_type");
+    xWriteFlag( sei.m_miSpectrumRangePresentFlag,                            "mi_spectrum_range_present_flag" );
+    if (sei.m_miSpectrumRangePresentFlag)
+    {
+      xWriteCode( (uint32_t)sei.m_miMinWavelengthMantissa, 11,               "mi_min_wavelength_mantissa ");
+      xWriteCode( (uint32_t)sei.m_miMinWavelengthExponentPlus15, 5,          "mi_min_wavelength_exponent_plus15 ");
+      xWriteCode( (uint32_t)sei.m_miMaxWavelengthMantissa, 11,               "mi_max_wavelength_mantissa ");
+      xWriteCode( (uint32_t)sei.m_miMaxWavelengthExponentPlus15, 5,          "mi_max_wavelength_exponent_plus15 ");
+    }
+    xWriteUvlc(0, "mi_modality_type_extension_bits");   // mi_modality_type_extension_bits shall be equal to 0 in the current edition 
+  }
+}
+#endif 
+
 //! \}

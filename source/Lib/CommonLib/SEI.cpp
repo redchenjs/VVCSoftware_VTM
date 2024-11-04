@@ -486,6 +486,9 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
 #if JVET_AG2034_SPTI_SEI
   { SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO, "Source picture timing info" },
 #endif
+#if JVET_AG0322_MODALITY_INFORMATION
+  { SEI::PayloadType::MODALITY_INFORMATION, "Modality information" }
+#endif
 };
 
 const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
@@ -729,16 +732,6 @@ SEIPhaseIndication::SEIPhaseIndication(const SEIPhaseIndication& sei)
   m_horPhaseDenMinus1 = sei.m_horPhaseDenMinus1;
   m_verPhaseNum = sei.m_verPhaseNum;
   m_verPhaseDenMinus1 = sei.m_verPhaseDenMinus1;
-}
-
-SEIuserDataUnregistered::SEIuserDataUnregistered(const SEIuserDataUnregistered& sei)
-{
-  std::memcpy(uuid_iso_iec_11578, sei.uuid_iso_iec_11578, sizeof(sei.uuid_iso_iec_11578));
-  userDataLength = sei.userDataLength;
-  if (nullptr != userData)
-  {
-    userData = new uint8_t(*sei.userData);
-  }
 }
 
 SEIDecodedPictureHash::SEIDecodedPictureHash(const SEIDecodedPictureHash& sei)
@@ -1139,6 +1132,9 @@ SEIPostFilterHint::SEIPostFilterHint(const SEIPostFilterHint& sei)
   {
     m_textDescriptionID = sei.m_textDescriptionID;
     m_textCancelFlag = sei.m_textCancelFlag;
+  #if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+    m_textIDCancelFlag = sei.m_textIDCancelFlag;
+#endif
     m_textPersistenceFlag = sei.m_textPersistenceFlag;
     m_textDescriptionPurpose = sei.m_textDescriptionPurpose;
     m_textNumStringsMinus1 = sei.m_textNumStringsMinus1;
@@ -1201,4 +1197,19 @@ SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
 
 }
 #endif
+
+#if JVET_AG0322_MODALITY_INFORMATION
+SEIModalityInfo::SEIModalityInfo(const SEIModalityInfo& sei)
+{
+  m_miCancelFlag = sei.m_miCancelFlag;
+  m_miPersistenceFlag = sei.m_miPersistenceFlag;
+  m_miModalityType = sei.m_miModalityType;
+  m_miSpectrumRangePresentFlag = sei.m_miSpectrumRangePresentFlag;
+  m_miMinWavelengthMantissa = sei.m_miMinWavelengthMantissa;
+  m_miMinWavelengthExponentPlus15 = sei.m_miMinWavelengthExponentPlus15;
+  m_miMaxWavelengthMantissa = sei.m_miMaxWavelengthMantissa;
+  m_miMaxWavelengthExponentPlus15 = sei.m_miMaxWavelengthExponentPlus15;
+}
+#endif
+
 

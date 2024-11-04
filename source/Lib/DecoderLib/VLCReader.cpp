@@ -185,13 +185,13 @@ void VLCReader::xReadFlag( uint32_t& value, const char* )
 }
 
 #if ENABLE_TRACING || RExt__DECODER_DEBUG_BIT_STATISTICS
-void VLCReader::xReadString( std::string& value, const char *symbolName )
+void VLCReader::xReadString( std::string& valueOut, const char *symbolName )
 #else
-void VLCReader::xReadString( std::string& value, const char*  )
+void VLCReader::xReadString( std::string& valueOut, const char*  )
 #endif
 {
   uint32_t code;
-  value = "";
+  std::string value( "" );;
   do
   {
     m_pcBitstream->read(8, code);
@@ -204,6 +204,7 @@ void VLCReader::xReadString( std::string& value, const char*  )
 #if ENABLE_TRACING
   DTRACE(g_trace_ctx, D_HEADER, "%-50s u(1)  : %s\n", symbolName, value.c_str());
 #endif
+  valueOut = value;
 }
 
 #if RExt__DECODER_DEBUG_BIT_STATISTICS || ENABLE_TRACING

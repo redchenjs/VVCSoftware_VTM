@@ -1531,6 +1531,20 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEIEOIPrivacyProtectedInfoType", m_eoiSEIPrivacyProtectedInfoType, 0u, "indicates the types of protected information")
 #endif 
 
+#if JVET_AG0322_MODALITY_INFORMATION
+// Modality Information SEI 
+  ("SEIModalityInfoEnabled",                          m_miSEIEnabled,                                    false, "Control generation of Modality Information SEI messages")
+  ("SEIMiCancelFlag",                                 m_miCancelFlag,                                    false, "Indicates that Modality Information SEI message cancels the persistence or follows")
+  ("SEIMiPersistenceFlag",                            m_miPersistenceFlag,                                true, "Specifies the persistence of the Modality Information SEI message")
+  ("SEIMiModalityType",                               m_miModalityType,                                      1, "Specifies the type of modality. 0: unspecified; 1: visible picture; 2: Infrared Picture; 3: Ultraviolet Picture")
+  ("SEIMiSpectrumRangePresentFlag",                   m_miSpectrumRangePresentFlag,                      false, "Specifies the presence of the spectrum band of the optical radiation wavelength")
+  ("SEIMiMinWavelengthMantissa",                      m_miMinWavelengthMantissa,                             0, "Specifies the mantissa part of the minimum wavelength indicating the spectral band of optical radiation")
+  ("SEIMiMinWavelengthExponentPlus15",                m_miMinWavelengthExponentPlus15,                       0, "Specifies the exponent part of the minimum wavelength indicating the spectral band of optical radiation")
+  ("SEIMiMaxWavelengthMantissa",                      m_miMaxWavelengthMantissa,                             0, "Specifies the mantissa part of the maximum wavelength indicating the spectral band of optical radiation")
+  ("SEIMiMaxWavelengthExponentPlus15",                m_miMaxWavelengthExponentPlus15,                       0, "Specifies the exponent part of the maximum wavelength indicating the spectral band of optical radiation")
+#endif
+
+
 // film grain characteristics SEI
   ("SEIFGCEnabled",                                   m_fgcSEIEnabled,                                   false, "Control generation of the film grain characteristics SEI message")
   ("SEIFGCCancelFlag",                                m_fgcSEICancelFlag,                                 true, "Specifies the persistence of any previous film grain characteristics SEI message in output order.")
@@ -2098,7 +2112,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
 #if JVET_AH2006_TXTDESCRINFO_SEI
   opts.addOptions()("SEITextDescriptionID", m_SEITextDescriptionID, 1u, "Identifier value of this text description information SEI message, must be in the range 1-16383");
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+  opts.addOptions()("SEITextDescriptionCancelFlag", m_SEITextCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_purpose");
+  opts.addOptions()("SEITextDescriptionIDCancelFlag", m_SEITextIDCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_id and the same txt_descr_purpose");
+#else
   opts.addOptions()("SEITextDescriptionCancelFlag", m_SEITextCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_id");
+#endif
   opts.addOptions()("SEITextDescriptionPersistenceFlag", m_SEITextPersistenceFlag, true, "Specifies the persistence of the text information description message for the current layer");
   opts.addOptions()("SEITextDescriptionPurpose", m_SEITextDescriptionPurpose, 0u, "Indicates the purpose of the text description, must be in the range 0-5");
   opts.addOptions()("SEITextDescriptionsNumStringsMinus1", m_SEITextNumStringsMinus1, 0u, "Indicates the number of entries plus 1 for txt_descr_string_lang[ i ] and txt_descr_string[ i ]");

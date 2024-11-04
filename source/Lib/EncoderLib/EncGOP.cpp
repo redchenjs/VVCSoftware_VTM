@@ -1047,6 +1047,17 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
   }
 #endif
 
+
+#if JVET_AG0322_MODALITY_INFORMATION
+  // modality information SEI
+  if (m_pcCfg->getMiSEIEnabled())
+  {
+    SEIModalityInfo* seiMI = new SEIModalityInfo;
+    m_seiEncoder.initSEIModalityInfo(seiMI);
+    seiMessages.push_back(seiMI);
+  }
+#endif
+
   if (m_pcCfg->getNnPostFilterSEIActivationEnabled() && !m_pcCfg->getNnPostFilterSEIActivationUseSuffixSEI())
   {
     xCreateNNPostFilterActivationSEIMessage(seiMessages, slice);
