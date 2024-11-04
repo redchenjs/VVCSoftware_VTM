@@ -281,6 +281,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   cs->lmcsAps = lmcsAps;
   cs->scalinglistAps = scalingListAps;
   cs->pcv     = pps.pcv;
+  m_numSubPic = sps.getNumSubPics();
   m_conformanceWindow = pps.getConformanceWindow();
   m_scalingWindow = pps.getScalingWindow();
   mixedNaluTypesInPicFlag = pps.getMixedNaluTypesInPicFlag();
