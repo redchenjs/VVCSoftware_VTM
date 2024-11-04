@@ -5943,6 +5943,18 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies the bottom offset of spatial extrapolation for the \emph{i}-th neural network post-filter.
   \\
+  \Option{SEINNPFCAapplicationPurposeTagUriPresentFlag\emph{i}} &
+  \Default{false} &
+  Specifies the nnpfc_application_purpose_tag_uri_present_flag syntax element for the \emph{i}-th neural network post-filter.
+  \par
+    When true (non-zero) specifies the presence of the nnpfc_application_purpose_tag_uri syntax element in the NNPFC SEI message.
+  \par
+    When false specifies the absence of the nnpfc_application_purpose_tag_uri syntax element in the NNPFC SEI message.
+  \\
+  \Option{SEINNPFCApplicationPurposeTagUri\emph{i}} &
+  \Default{""} &
+  specifies a tag URI with syntax and semantics as specified in IETF RFC 4151 identifying the application determined purpose of the NNPF, when nnpfc_purpose is equal to 0 of the \emph{i}-th neural network post-filter.
+  \\
   \Option{SEINNPFCInputPicOutputFlag\emph{i}} &
   \Default{false} &
   Indicates whether the i-th neural network post filter generates a corresponding output picture for the i-th input picture. 
