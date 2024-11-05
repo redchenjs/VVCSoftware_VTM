@@ -1743,6 +1743,19 @@ inter-layer reference pictures are no longer inserted automatically.
 \par
 \\
 
+\Option{EncInterLayerOpt} &
+%\ShortOption{\None} &
+\Default{false} &
+Enables or disables the encoder optimization to favor inter-layer predictions.
+\\
+
+\Option{EncInterLayerOptLambdaModifier} &
+%\ShortOption{\None} &
+\Default{0.1} &
+Specifies a value that is multiplied with the Lagrange multiplier
+$\lambda$, for use in the modified rate-distortion cost calculation when comparing inter-layer with intra-layer modes (only used if EncInterLayerOpt is enabled).
+\\
+
 \Option{LayerId\emph{i}} &
 %\ShortOption{\None} &
 \Default{0} &
