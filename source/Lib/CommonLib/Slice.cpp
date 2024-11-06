@@ -483,7 +483,7 @@ void Slice::constructRefPicList(PicList& rcListPic)
       if (isActiveRef)
       {
         CHECK(refPic == nullptr, "Active reference picture not found");
-        refPic->extendPicBorder(getPPS());
+        refPic->extendPicBorder(getSPS(), getPPS());
         m_apcRefPicList[l][refIdx]     = refPic;
         m_bIsUsedAsLongTerm[l][refIdx] = refPic->longTerm;
       }
@@ -2969,7 +2969,7 @@ void Slice::scaleRefPicList( Picture *scaledRefPic[ ], PicHeader *picHeader, APS
 
       CHECK( m_apcRefPicList[refList][rIdx]->unscaledPic == nullptr, "unscaledPic is not properly set" );
 
-      if( m_apcRefPicList[refList][rIdx]->isRefScaled( pps ) == false )
+      if( m_apcRefPicList[refList][rIdx]->isRefScaled( sps, pps ) == false )
       {
         refPicIsSameRes = true;
       }
@@ -3037,7 +3037,7 @@ void Slice::scaleRefPicList( Picture *scaledRefPic[ ], PicHeader *picHeader, APS
                                   sps->getBitDepths(), true, downsampling, sps->getHorCollocatedChromaFlag(),
                                   sps->getVerCollocatedChromaFlag());
           scaledRefPic[j]->unscaledPic = m_apcRefPicList[refList][rIdx];
-          scaledRefPic[j]->extendPicBorder( getPPS() );
+          scaledRefPic[j]->extendPicBorder(getSPS(), getPPS() );
 
           m_scaledRefPicList[refList][rIdx] = scaledRefPic[j];
         }
