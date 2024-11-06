@@ -3308,8 +3308,7 @@ void PU::getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx
   affMrgCtx.numValidMergeCand = 0;
   affMrgCtx.maxNumMergeCand = maxNumAffineMergeCand;
 
-  bool sbTmvpEnableFlag = slice.getSPS()->getSbTMVPEnabledFlag()
-                          && !(slice.getPOC() == slice.getRefPic(REF_PIC_LIST_0, 0)->getPOC() && slice.isIRAP());
+  bool sbTmvpEnableFlag = slice.getSPS()->getSbTMVPEnabledFlag();
   bool isAvailableSubPu = false;
   if (sbTmvpEnableFlag && slice.getPicHeader()->getEnableTMVPFlag())
   {
