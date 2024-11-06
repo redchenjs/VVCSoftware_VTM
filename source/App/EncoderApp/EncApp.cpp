@@ -301,6 +301,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setFramesToBeEncoded                                 ( m_framesToBeEncoded );
   m_cEncLib.setValidFrames(m_firstValidFrame, m_lastValidFrame);
   m_cEncLib.setAvoidIntraInDepLayer                              ( m_avoidIntraInDepLayer );
+  m_cEncLib.setExplicitILRP                                      ( m_explicitILRP );
 
   m_cEncLib.setRefLayerMetricsEnabled(m_refMetricsEnabled);
   m_cEncLib.setRefLayerRescaledAvailable(false);
@@ -1629,7 +1630,9 @@ void EncApp::createLib( const int layerIdx )
   {
     m_cEncLib.getTemporalFilter().init(m_frameSkip, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
                           sourceHeight, m_sourcePadding, m_clipInputVideoToRec709Range, m_inputFileName,
-                          m_chromaFormatIdc, m_inputColourSpaceConvert, m_iQP, m_gopBasedTemporalFilterStrengths,
+                          m_chromaFormatIdc, m_sourceWidthBeforeScale, m_sourceHeightBeforeScale,
+                          m_horCollocatedChromaFlag, m_verCollocatedChromaFlag,
+                          m_inputColourSpaceConvert, m_iQP, m_gopBasedTemporalFilterStrengths,
                           m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs, m_firstValidFrame,
                           m_lastValidFrame, m_gopBasedTemporalFilterEnabled, m_cEncLib.getAdaptQPmap(),
                           m_cEncLib.getBIM(), m_ctuSize);
@@ -1638,7 +1641,9 @@ void EncApp::createLib( const int layerIdx )
   {
     m_cEncLib.getTemporalFilterForFG().init(m_frameSkip, m_inputBitDepth, m_msbExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
                                sourceHeight, m_sourcePadding, m_clipInputVideoToRec709Range, m_inputFileName,
-                               m_chromaFormatIdc, m_inputColourSpaceConvert, m_iQP, m_fgcSEITemporalFilterStrengths,
+                               m_chromaFormatIdc, m_sourceWidthBeforeScale, m_sourceHeightBeforeScale,
+                               m_horCollocatedChromaFlag, m_verCollocatedChromaFlag,
+                               m_inputColourSpaceConvert, m_iQP, m_fgcSEITemporalFilterStrengths,
                                m_fgcSEITemporalFilterPastRefs, m_fgcSEITemporalFilterFutureRefs, m_firstValidFrame,
                                m_lastValidFrame, true, m_cEncLib.getAdaptQPmap(), m_cEncLib.getBIM(), m_ctuSize);
   }
@@ -1728,12 +1733,12 @@ bool EncApp::encodePrep( bool& eos )
                                 m_clipInputVideoToRec709Range);
     int w0 = m_sourceWidthBeforeScale;
     int h0 = m_sourceHeightBeforeScale;
-    int w1 = m_orgPic->get(COMPONENT_Y).width - SPS::getWinUnitX(m_chromaFormatIdc) * (m_confWinLeft + m_confWinRight);
-    int h1 = m_orgPic->get(COMPONENT_Y).height - SPS::getWinUnitY(m_chromaFormatIdc) * (m_confWinTop + m_confWinBottom);
+    int w1 = m_orgPic->get(COMPONENT_Y).width - m_sourcePadding[0];
+    int h1 = m_orgPic->get(COMPONENT_Y).height - m_sourcePadding[1];
     int xScale = ((w0 << ScalingRatio::BITS) + (w1 >> 1)) / w1;
     int yScale = ((h0 << ScalingRatio::BITS) + (h1 >> 1)) / h1;
     ScalingRatio scalingRatio = { xScale, yScale };
-    Window       conformanceWindow1(m_confWinLeft, m_confWinRight, m_confWinTop, m_confWinBottom);
+    Window conformanceWindow1(0, m_sourcePadding[0] / SPS::getWinUnitX(m_inputChromaFormatIDC), 0, m_sourcePadding[1] / SPS::getWinUnitY(m_inputChromaFormatIDC));
 
     bool downsampling = (m_sourceWidthBeforeScale > m_sourceWidth) || (m_sourceHeightBeforeScale > m_sourceHeight);
     bool useLumaFilter = downsampling;
@@ -1914,11 +1919,12 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
           ppsID = ((sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) && !m_explicitScalingWindowEnabled) ? m_resChangeInClvsEnabled ? (ENC_PPS_ID_RPR + layerId) : layerId : layerId;
         }
         const PPS& pps = *m_cEncLib.getPPS(ppsID);
-        if( m_cEncLib.isResChangeInClvsEnabled() && m_cEncLib.getUpscaledOutput() )
+        if( (m_cEncLib.isResChangeInClvsEnabled() || m_upscaledOutputWidth || m_upscaledOutputHeight) && m_cEncLib.getUpscaledOutput() )
         {
           m_cVideoIOYuvReconFile.writeUpscaledPicture(sps, pps, *pcPicYuvRec, ipCSC, m_packedYUVMode,
                                                       m_cEncLib.getUpscaledOutput(), ChromaFormat::UNDEFINED,
-                                                      m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay);
+                                                      m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay,
+                                                      m_upscaledOutputWidth, m_upscaledOutputHeight);
         }
         else
         {

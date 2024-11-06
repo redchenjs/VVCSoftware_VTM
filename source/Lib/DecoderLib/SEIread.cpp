@@ -164,7 +164,7 @@ void SEIReader::parseAndExtractSEIScalableNesting(InputBitstream *bs, const NalU
 {
   SEIScalableNesting sn;
   setBitstream(bs);
-  xParseSEIScalableNesting(sn, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd, nullptr, seiList);
+  xParseSEIScalableNesting(sn, nalUnitType, nuh_layer_id, payloadSize, vps, sps, m_nestedHrd, nullptr, seiList);
   int payloadBitsRemaining = getBitstream()->getNumBitsLeft();
   if (payloadBitsRemaining) /* more_data_in_payload() */
   {
@@ -204,7 +204,6 @@ void SEIReader::getSEIDecodingUnitInfoDuiIdx(InputBitstream* bs, const uint32_t 
   const SEIBufferingPeriod* bp = hrd.getBufferingPeriodSEI();
   if (bp != nullptr)
   {
-    InputBitstream* bs = getBitstream();
     InputBitstream  bsTmp(*bs);
     setBitstream(&bsTmp);
 
@@ -308,9 +307,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIFillerPayload((SEIFillerPayload&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
     case SEI::PayloadType::USER_DATA_UNREGISTERED:
-      sei = new SEIuserDataUnregistered;
-      xParseSEIuserDataUnregistered((SEIuserDataUnregistered&) *sei, payloadSize, pDecodedMessageOutputStream);
-      break;
+      {
+        auto udu = new SEIUserDataUnregistered;
+        xParseSEIuserDataUnregistered(*udu, payloadSize, pDecodedMessageOutputStream);
+        sei = udu;
+        break;
+      }
     case SEI::PayloadType::DECODING_UNIT_INFO:
       {
         const SEIBufferingPeriod* bp = hrd.getBufferingPeriodSEI();
@@ -549,9 +551,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
     switch (SEI::PayloadType(payloadType))
     {
     case SEI::PayloadType::USER_DATA_UNREGISTERED:
-      sei = new SEIuserDataUnregistered;
-      xParseSEIuserDataUnregistered((SEIuserDataUnregistered &) *sei, payloadSize, pDecodedMessageOutputStream);
-      break;
+      {
+        auto udu = new SEIUserDataUnregistered;
+        xParseSEIuserDataUnregistered(*udu, payloadSize, pDecodedMessageOutputStream);
+        sei = udu;
+        break;
+      }
     case SEI::PayloadType::DECODED_PICTURE_HASH:
       sei = new SEIDecodedPictureHash;
       xParseSEIDecodedPictureHash((SEIDecodedPictureHash &) *sei, payloadSize, pDecodedMessageOutputStream);
@@ -678,34 +683,30 @@ void SEIReader::xParseSEIFillerPayload(SEIFillerPayload &sei, uint32_t payloadSi
  * of payloasSize bytes into sei.
  */
 
-void SEIReader::xParseSEIuserDataUnregistered(SEIuserDataUnregistered &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+void SEIReader::xParseSEIuserDataUnregistered(SEIUserDataUnregistered& sei, uint32_t payloadSize,
+                                              std::ostream* pDecodedMessageOutputStream)
 {
-  CHECK(payloadSize < ISO_IEC_11578_LEN, "Payload too small");
+  CHECK(payloadSize < sei.uuid.size(), "Payload too small");
   uint32_t val;
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
 
-  for (uint32_t i = 0; i < ISO_IEC_11578_LEN; i++)
+  for (uint32_t i = 0; i < sei.uuid.size(); i++)
   {
-    sei_read_code( pDecodedMessageOutputStream, 8, val, "uuid_iso_iec_11578");
-    sei.uuid_iso_iec_11578[i] = val;
+    sei_read_code(pDecodedMessageOutputStream, 8, val, "uuid_iso_iec_11578");
+    sei.uuid[i] = val;
   }
 
-  sei.userDataLength = payloadSize - ISO_IEC_11578_LEN;
-  if (!sei.userDataLength)
-  {
-    sei.userData = 0;
-    return;
-  }
+  sei.data.resize(payloadSize - sei.uuid.size());
 
-  sei.userData = new uint8_t[sei.userDataLength];
-  for (uint32_t i = 0; i < sei.userDataLength; i++)
+  for (uint32_t i = 0; i < sei.data.size(); i++)
   {
     sei_read_code(nullptr, 8, val, "user_data_payload_byte");
-    sei.userData[i] = val;
+    sei.data[i] = val;
   }
+
   if (pDecodedMessageOutputStream)
   {
-    (*pDecodedMessageOutputStream) << "  User data payload size: " << sei.userDataLength << "\n";
+    (*pDecodedMessageOutputStream) << "  User data payload size: " << sei.data.size() << "\n";
   }
 }
 
@@ -2176,7 +2177,7 @@ void SEIReader::xParseSEIRegionWisePacking(SEIRegionWisePacking& sei, uint32_t p
       sei_read_flag( pDecodedMessageOutputStream,         val,    "rwp_guard_band_flag" );                   sei.m_rwpGuardBandFlag[i] = val;
       sei_read_code( pDecodedMessageOutputStream,     32, val,    "rwp_proj_region_width" );                 sei.m_projRegionWidth[i] = val;
       sei_read_code( pDecodedMessageOutputStream,     32, val,    "rwp_proj_region_height" );                sei.m_projRegionHeight[i] = val;
-      sei_read_code( pDecodedMessageOutputStream,     32, val,    "rwp_rwp_proj_region_top" );               sei.m_rwpProjRegionTop[i] = val;
+      sei_read_code( pDecodedMessageOutputStream,     32, val,    "rwp_proj_region_top" );                   sei.m_rwpProjRegionTop[i] = val;
       sei_read_code( pDecodedMessageOutputStream,     32, val,    "rwp_proj_region_left" );                  sei.m_projRegionLeft[i] = val;
       sei_read_code( pDecodedMessageOutputStream,     16, val,    "rwp_packed_region_width" );               sei.m_packedRegionWidth[i] = val;
       sei_read_code( pDecodedMessageOutputStream,     16, val,    "rwp_packed_region_height" );              sei.m_packedRegionHeight[i] = val;

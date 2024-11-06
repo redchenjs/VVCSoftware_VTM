@@ -1567,19 +1567,22 @@ cabac_zero_word_padding(const Slice *const pcSlice,
       const std::size_t numberOfAdditionalBytesNeeded= std::max<std::size_t>(0, targetNumBytesInVclNalUnits - numBytesInVclNalUnits - numZeroWordsAlreadyInserted * 3);
       const std::size_t numberOfAdditionalCabacZeroWords=(numberOfAdditionalBytesNeeded+2)/3;
       const std::size_t numberOfAdditionalCabacZeroBytes=numberOfAdditionalCabacZeroWords*3;
-      if (cabacZeroWordPaddingEnabled)
+      if(numberOfAdditionalCabacZeroBytes > 0)
       {
-        std::vector<uint8_t> zeroBytesPadding(numberOfAdditionalCabacZeroBytes, uint8_t(0));
-        for(std::size_t i=0; i<numberOfAdditionalCabacZeroWords; i++)
+        if (cabacZeroWordPaddingEnabled)
         {
-          zeroBytesPadding[i*3+2]=3;  // 00 00 03
+          std::vector<uint8_t> zeroBytesPadding(numberOfAdditionalCabacZeroBytes, uint8_t(0));
+          for(std::size_t i=0; i<numberOfAdditionalCabacZeroWords; i++)
+          {
+            zeroBytesPadding[i*3+2]=3;  // 00 00 03
+          }
+          nalUnitData.write(reinterpret_cast<const char*>(&(zeroBytesPadding[0])), numberOfAdditionalCabacZeroBytes);
+          msg( NOTICE, "Adding %d bytes of padding\n", uint32_t( numberOfAdditionalCabacZeroWords * 3 ) );
         }
-        nalUnitData.write(reinterpret_cast<const char*>(&(zeroBytesPadding[0])), numberOfAdditionalCabacZeroBytes);
-        msg( NOTICE, "Adding %d bytes of padding\n", uint32_t( numberOfAdditionalCabacZeroWords * 3 ) );
-      }
-      else
-      {
-        msg( NOTICE, "Standard would normally require adding %d bytes of padding\n", uint32_t( numberOfAdditionalCabacZeroWords * 3 ) );
+        else
+        {
+          msg( NOTICE, "Standard would normally require adding %d bytes of padding\n", uint32_t( numberOfAdditionalCabacZeroWords * 3 ) );
+        }
       }
       return numberOfAdditionalCabacZeroWords;
     }
@@ -3017,7 +3020,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         CHECK( pcSlice->getRefPic( REF_PIC_LIST_0, refIdx )->unscaledPic == nullptr, "unscaledPic is not set for L0 reference picture" );
 
-        if( pcSlice->getRefPic( REF_PIC_LIST_0, refIdx )->isRefScaled( pcSlice->getPPS() ) == false )
+        if( pcSlice->getRefPic( REF_PIC_LIST_0, refIdx )->isRefScaled(pcSlice->getSPS(), pcSlice->getPPS() ) == false )
         {
           colRefIdxL0 = refIdx;
           break;
@@ -3030,7 +3033,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         {
           CHECK( pcSlice->getRefPic( REF_PIC_LIST_1, refIdx )->unscaledPic == nullptr, "unscaledPic is not set for L1 reference picture" );
 
-          if( pcSlice->getRefPic( REF_PIC_LIST_1, refIdx )->isRefScaled( pcSlice->getPPS() ) == false )
+          if( pcSlice->getRefPic( REF_PIC_LIST_1, refIdx )->isRefScaled(pcSlice->getSPS(), pcSlice->getPPS() ) == false )
           {
             colRefIdxL1 = refIdx;
             break;
@@ -5310,7 +5313,13 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
       const uint64_t upscaledSSD = xFindDistortionPlane(p, o, 0);
 #endif
       upscaledPSNR[comp] = upscaledSSD ? 10.0 * log10((double) fRefValue / (double) upscaledSSD) : 999.99;
-     }
+      if (printMSSSIM)
+      {
+        const uint32_t upscaledWidth = o.width - ( m_pcEncLib->getSourcePadding( 0 ) >> ::getComponentScaleX( compID, format ) );
+        const uint32_t upscaledHeight = o.height - ( m_pcEncLib->getSourcePadding( 1 ) >> ( !!bPicIsField + ::getComponentScaleY( compID, format ) ) );
+        upscaledMsssim[comp] = xCalculateMSSSIM(o.bufAt(0, 0), o.stride, p.bufAt(0, 0), p.stride, upscaledWidth, upscaledHeight, bitDepth);
+      }
+    }
   }
 
 #if EXTENSION_360_VIDEO
@@ -5569,16 +5578,14 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
       }
       msg( NOTICE, "]" );
     }
-    if (m_pcEncLib->isResChangeInClvsEnabled())
+    if (m_pcEncLib->isResChangeInClvsEnabled() || m_pcEncLib->isRefLayerRescaledAvailable())
     {
       msg( NOTICE, " [Y2 %6.4lf dB  U2 %6.4lf dB  V2 %6.4lf dB]", upscaledPSNR[COMPONENT_Y], upscaledPSNR[COMPONENT_Cb], upscaledPSNR[COMPONENT_Cr] );
-      msg( NOTICE, " MS-SSIM2: [Y %6.4lf  U %6.4lf  V %6.4lf ]", upscaledMsssim[COMPONENT_Y], upscaledMsssim[COMPONENT_Cb], upscaledMsssim[COMPONENT_Cr] );
+      if (printMSSSIM)
+      {
+        msg( NOTICE, " MS-SSIM2: [Y %1.6lf  U %1.6lf  V %1.6lf ]", upscaledMsssim[COMPONENT_Y], upscaledMsssim[COMPONENT_Cb], upscaledMsssim[COMPONENT_Cr] );
+      }
     }
-    else if (m_pcEncLib->isRefLayerRescaledAvailable())
-    {
-      msg(NOTICE, " [Y2 %6.4lf dB  U2 %6.4lf dB  V2 %6.4lf dB]", upscaledPSNR[COMPONENT_Y], upscaledPSNR[COMPONENT_Cb], upscaledPSNR[COMPONENT_Cr]);
-    } 
-
   }
   else if( g_verbosity >= INFO )
   {
@@ -6495,7 +6502,7 @@ void EncGOP::updateCompositeReference(Slice* pcSlice, PicList& rcListPic, int po
   // Update background reference
   if (pcSlice->isIRAP())//(pocCurr == 0)
   {
-    curPic->extendPicBorder( pcSlice->getPPS() );
+    curPic->extendPicBorder( pcSlice->getSPS(), pcSlice->getPPS() );
     curPic->setBorderExtension(true);
 
     m_picBg->getRecoBuf().copyFrom(curPic->getRecoBuf());
@@ -6534,15 +6541,15 @@ void EncGOP::updateCompositeReference(Slice* pcSlice, PicList& rcListPic, int po
       }
     }
     m_picBg->setBorderExtension(false);
-    m_picBg->extendPicBorder( pcSlice->getPPS() );
+    m_picBg->extendPicBorder(pcSlice->getSPS(), pcSlice->getPPS());
     m_picBg->setBorderExtension(true);
 
-    curPic->extendPicBorder( pcSlice->getPPS() );
+    curPic->extendPicBorder(pcSlice->getSPS(), pcSlice->getPPS());
     curPic->setBorderExtension(true);
     m_picOrig->getOrigBuf().copyFrom(curPic->getOrigBuf());
 
     m_picBg->setBorderExtension(false);
-    m_picBg->extendPicBorder( pcSlice->getPPS() );
+    m_picBg->extendPicBorder(pcSlice->getSPS(), pcSlice->getPPS());
     m_picBg->setBorderExtension(true);
   }
 }
@@ -6914,10 +6921,11 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
                 }
                 else if (num[l] >= rpl->getNumberOfActivePictures() - rpl->getNumberOfInterLayerPictures()
                          && layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag()
-                         && isInterLayerPredAllowed)
+                         && isInterLayerPredAllowed && !m_pcEncLib->getExplicitILRP())
                 {
                   inactiveRefs[l].push_back(ii);
                 }
+
                 else
                 {
                   localRpl[l].setRefPicIdentifier(num[l], rpl->getRefPicIdentifier(ii), rpl->isRefPicLongterm(ii),
@@ -6931,21 +6939,60 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
             }
           }
         }
+        else if (m_pcEncLib->getExplicitILRP() && layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
+        {
+          for (const auto &pic: rcListPic)
+          {
+            int refLayerIdx = vps->getGeneralLayerIdx(pic->layerId);
+            if (refLayerIdx == rpl->getInterLayerRefPicIdx(ii) && pic->referenced && pic->getPOC() == curPic->getPOC()
+                && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx) && xCheckMaxTidILRefPics(layerIdx, pic, slice->isIRAP()))
+            {
+              localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
+              num[l]++;
+              numIlrp[l]++;
+            }
+          }
+        }
       }
     }
 
-    // inter-layer reference pictures are added to the end of the reference picture list
-    if (layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
+    // AvoidIntraInDepLayer IRAPs in dependent layers are replaced with inter slices but may have empty L0 list (e.g. if no IL ref specified in config)
+    // In this case implicitly add an inter-layer ref to avoid inter slices with no ref
+    if (m_pcEncLib->getExplicitILRP())
     {
-      for (const auto &pic: rcListPic)
+      if(l==REF_PIC_LIST_0 && num[l]==0 && (slice->isIRAP() && m_pcEncLib->getAvoidIntraInDepLayer())
+        && m_pcEncLib->getNumRefLayers(layerIdx) && !vps->getAllIndependentLayersFlag())
       {
-        int refLayerIdx = vps->getGeneralLayerIdx(pic->layerId);
-        if (pic->referenced && pic->getPOC() == curPic->getPOC() && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)
-            && xCheckMaxTidILRefPics(layerIdx, pic, slice->isIRAP()))
+        for (const auto &pic: rcListPic)
         {
-          localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
-          num[l]++;
-          numIlrp[l]++;
+          int refLayerIdx = vps->getGeneralLayerIdx(pic->layerId);
+          if (pic->referenced && pic->getPOC() == curPic->getPOC() && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)
+              && xCheckMaxTidILRefPics(layerIdx, pic, slice->isIRAP()))
+          {
+            localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
+            num[l]++;
+            numIlrp[l]++;
+            msg(WARNING, "WARNING: inter slice at POC %d and LId %d has an ampty L0 list => Automatically adding inter-layer reference from LId %d\n", slice->getPOC(), curPic->layerId, pic->layerId);
+            break;//only add 1 Inter-layer ref pic automatically.
+          }
+        }
+      }
+    }
+    else
+    {
+      // inter-layer reference pictures are added to the end of the reference picture list
+      if (layerIdx != 0 && vps != nullptr && !vps->getAllIndependentLayersFlag() && isInterLayerPredAllowed)
+      {
+        for (const auto &pic: rcListPic)
+        {
+          int refLayerIdx = vps->getGeneralLayerIdx(pic->layerId);
+          if (pic->referenced && pic->getPOC() == curPic->getPOC() && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx)
+              && xCheckMaxTidILRefPics(layerIdx, pic, slice->isIRAP()))
+          {
+            localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
+            num[l]++;
+            numIlrp[l]++;
+          }
         }
       }
     }
@@ -6969,6 +7016,10 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
       const int  identifier   = localRpl[k].getRefPicIdentifier(ii);
       const bool isLongTerm   = localRpl[k].isRefPicLongterm(ii);
       const bool isInterLayer = localRpl[k].isInterLayerRefPic(ii);
+      if (m_pcEncLib->getExplicitILRP() && isInterLayer)
+      {
+        continue;//do not implicitly add inter layer refs from other list if explicitILRP is enabled.
+      }
 
       // Make sure this copy is not already present
       bool canIncludeThis = true;

@@ -182,7 +182,7 @@ bool CU::getRprScaling(const SPS *sps, const PPS *curPPS, Picture *refPic, Scali
         "The value of SubHeightC * ( pps_scaling_win_top_offset + pps_scaling_win_bottom_offset ) shall be less than "
         "pps_pic_height_in_luma_samples");
 
-  return refPic->isRefScaled( curPPS );
+  return refPic->isRefScaled( sps, curPPS );
 }
 
 void CU::checkConformanceILRP(Slice *slice)
@@ -1685,7 +1685,7 @@ bool PU::checkDMVRCondition(const PredictionUnit& pu)
     {
       const int refIdx = pu.refIdx[listIdx];
       return refIdx >= 0 && refIdx < MAX_NUM_ACTIVE_REF
-             && pu.cu->slice->getRefPic(listIdx, refIdx)->isRefScaled(pu.cs->pps);
+             && pu.cu->slice->getRefPic(listIdx, refIdx)->isRefScaled(pu.cs->sps, pu.cs->pps);
     };
 
     return pu.mergeFlag && pu.mergeType == MergeType::DEFAULT_N && !pu.ciipFlag && !pu.cu->affine && !pu.mmvdMergeFlag
@@ -2201,8 +2201,8 @@ void PU::fillMvpCand(PredictionUnit &pu, const RefPicList &eRefPicList, const in
 
   if (pInfo->numCand < AMVP_MAX_NUM_CANDS)
   {
-    const int currRefPOC = cs.slice->getRefPic(eRefPicList, refIdx)->getPOC();
-    addAMVPHMVPCand(pu, eRefPicList, currRefPOC, *pInfo);
+    Picture* currRefPic = cs.slice->getRefPic(eRefPicList, refIdx);
+    addAMVPHMVPCand(pu, eRefPicList, currRefPic, *pInfo);
   }
 
   if (pInfo->numCand > AMVP_MAX_NUM_CANDS)
@@ -2970,7 +2970,7 @@ bool PU::addMVPCandUnscaled(const PredictionUnit &pu, const RefPicList &eRefPicL
   return false;
 }
 
-void PU::addAMVPHMVPCand(const PredictionUnit &pu, const RefPicList eRefPicList, const int currRefPOC, AMVPInfo &info)
+void PU::addAMVPHMVPCand(const PredictionUnit &pu, const RefPicList eRefPicList, const Picture* currRefPic, AMVPInfo &info)
 {
   const Slice &slice = *(*pu.cs).slice;
 
@@ -3011,7 +3011,7 @@ void PU::addAMVPHMVPCand(const PredictionUnit &pu, const RefPicList eRefPicList,
       const RefPicList eRefPicListIndex = (predictorSource == 0) ? eRefPicList : eRefPicList2nd;
       const int        neibRefIdx = neibMi.refIdx[eRefPicListIndex];
 
-      if (neibRefIdx >= 0 && (CU::isIBC(*pu.cu) || (currRefPOC == slice.getRefPOC(eRefPicListIndex, neibRefIdx))))
+      if (neibRefIdx >= 0 && (CU::isIBC(*pu.cu) || (currRefPic == slice.getRefPic(eRefPicListIndex, neibRefIdx))))
       {
         Mv pmv = neibMi.mv[eRefPicListIndex];
         pmv.roundTransPrecInternal2Amvr(pu.cu->imv);
@@ -3308,8 +3308,7 @@ void PU::getAffineMergeCand( const PredictionUnit &pu, AffineMergeCtx& affMrgCtx
   affMrgCtx.numValidMergeCand = 0;
   affMrgCtx.maxNumMergeCand = maxNumAffineMergeCand;
 
-  bool sbTmvpEnableFlag = slice.getSPS()->getSbTMVPEnabledFlag()
-                          && !(slice.getPOC() == slice.getRefPic(REF_PIC_LIST_0, 0)->getPOC() && slice.isIRAP());
+  bool sbTmvpEnableFlag = slice.getSPS()->getSbTMVPEnabledFlag();
   bool isAvailableSubPu = false;
   if (sbTmvpEnableFlag && slice.getPicHeader()->getEnableTMVPFlag())
   {
@@ -3841,7 +3840,7 @@ bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx &mrgCtx, c
   if ( count )
   {
     if ((mrgCtx.interDirNeighbours[0] & (1 << REF_PIC_LIST_0))
-        && slice.getRefPic(REF_PIC_LIST_0, mrgCtx.mvFieldNeighbours[0][REF_PIC_LIST_0].refIdx) == pColPic)
+        && slice.getRefPOC(REF_PIC_LIST_0, mrgCtx.mvFieldNeighbours[0][REF_PIC_LIST_0].refIdx) == pColPic->getPOC())
     {
       cTMv = mrgCtx.mvFieldNeighbours[0][REF_PIC_LIST_0].mv;
 #if GDR_ENABLED
@@ -3852,7 +3851,7 @@ bool PU::getInterMergeSubPuMvpCand(const PredictionUnit &pu, MergeCtx &mrgCtx, c
 #endif
     }
     else if (slice.isInterB() && (mrgCtx.interDirNeighbours[0] & (1 << REF_PIC_LIST_1))
-             && slice.getRefPic(REF_PIC_LIST_1, mrgCtx.mvFieldNeighbours[0][REF_PIC_LIST_1].refIdx) == pColPic)
+             && slice.getRefPOC(REF_PIC_LIST_1, mrgCtx.mvFieldNeighbours[0][REF_PIC_LIST_1].refIdx) == pColPic->getPOC())
     {
       cTMv = mrgCtx.mvFieldNeighbours[0][REF_PIC_LIST_1].mv;
 #if GDR_ENABLED
@@ -5274,8 +5273,9 @@ void countFeatures(FeatureCounterStruct& featureCounter, CodingStructure& cs, co
             dmvrApplied      = PU::checkDMVRCondition(pu);
 
             bool refIsScaled =
-              (refIdx0 < 0 ? false : pu.cu->slice->getRefPic(REF_PIC_LIST_0, refIdx0)->isRefScaled(pu.cs->pps))
-              || (refIdx1 < 0 ? false : pu.cu->slice->getRefPic(REF_PIC_LIST_1, refIdx1)->isRefScaled(pu.cs->pps));
+              (refIdx0 < 0 ? false
+                           : pu.cu->slice->getRefPic(REF_PIC_LIST_0, refIdx0)->isRefScaled(pu.cs->sps, pu.cs->pps))
+              || (refIdx1 < 0 ? false : pu.cu->slice->getRefPic(REF_PIC_LIST_1, refIdx1)->isRefScaled(pu.cs->sps, pu.cs->pps));
             dmvrApplied = dmvrApplied && !refIsScaled;
             bioApplied  = bioApplied && !refIsScaled;
 

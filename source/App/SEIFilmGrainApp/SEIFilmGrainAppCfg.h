@@ -73,7 +73,7 @@ protected:
   uint32_t      m_fgcSEINumIntensityIntervalMinus1    [MAX_NUM_COMPONENT];
   uint32_t      m_fgcSEIIntensityIntervalLowerBound   [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES];
   uint32_t      m_fgcSEIIntensityIntervalUpperBound   [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES];
-  uint32_t      m_fgcSEICompModelValue                [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES][MAX_NUM_MODEL_VALUES];
+  int32_t       m_fgcSEICompModelValue                [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES][MAX_NUM_MODEL_VALUES];
 
 public:
   SEIFilmGrainAppCfg();

@@ -361,7 +361,7 @@ int IbcHashMap::calHashBlkMatchPerc(const Area& lumaArea)
   int          maxUsage[100];
   unsigned int mostSelHash[100];
 
-  static   int numExcludedHashValue = 36;
+  static constexpr int numExcludedHashValue = 36;
 
   for (int i = 0; i < numExcludedHashValue; i++)
   {

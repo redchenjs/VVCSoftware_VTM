@@ -59,6 +59,7 @@ RdCost::~RdCost()
 }
 
 #if WCG_EXT
+EnumArray<DistFuncWtd, DFuncWtd> RdCost::m_distortionFuncWtd;
 double RdCost::calcRdCost( uint64_t fracBits, Distortion distortion, bool useUnadjustedLambda )
 #else
 double RdCost::calcRdCost( uint64_t fracBits, Distortion distortion )
@@ -193,14 +194,14 @@ void RdCost::init()
   m_distortionFunc[DFunc::SAD_FULL_NBIT16N] = RdCost::xGetSAD_full;
 
 #if WCG_EXT
-  m_distortionFunc[DFunc::SSE_WTD]    = RdCost::xGetSSE_WTD;
-  m_distortionFunc[DFunc::SSE2_WTD]   = RdCost::xGetSSE2_WTD;
-  m_distortionFunc[DFunc::SSE4_WTD]   = RdCost::xGetSSE4_WTD;
-  m_distortionFunc[DFunc::SSE8_WTD]   = RdCost::xGetSSE8_WTD;
-  m_distortionFunc[DFunc::SSE16_WTD]  = RdCost::xGetSSE16_WTD;
-  m_distortionFunc[DFunc::SSE32_WTD]  = RdCost::xGetSSE32_WTD;
-  m_distortionFunc[DFunc::SSE64_WTD]  = RdCost::xGetSSE64_WTD;
-  m_distortionFunc[DFunc::SSE16N_WTD] = RdCost::xGetSSE16N_WTD;
+  m_distortionFuncWtd[DFuncWtd::SSE_WTD]    = &RdCost::xGetSSE_WTD;
+  m_distortionFuncWtd[DFuncWtd::SSE2_WTD]   = &RdCost::xGetSSE2_WTD;
+  m_distortionFuncWtd[DFuncWtd::SSE4_WTD]   = &RdCost::xGetSSE4_WTD;
+  m_distortionFuncWtd[DFuncWtd::SSE8_WTD]   = &RdCost::xGetSSE8_WTD;
+  m_distortionFuncWtd[DFuncWtd::SSE16_WTD]  = &RdCost::xGetSSE16_WTD;
+  m_distortionFuncWtd[DFuncWtd::SSE32_WTD]  = &RdCost::xGetSSE32_WTD;
+  m_distortionFuncWtd[DFuncWtd::SSE64_WTD]  = &RdCost::xGetSSE64_WTD;
+  m_distortionFuncWtd[DFuncWtd::SSE16N_WTD] = &RdCost::xGetSSE16N_WTD;
 #endif
 
   m_distortionFunc[DFunc::SAD_INTERMEDIATE_BITDEPTH] = RdCost::xGetSAD;
@@ -346,11 +347,7 @@ void RdCost::setDistParam(DistParam &rcDP, const Pel *pOrg, const Pel *piRefY, p
 
 #if WCG_EXT
 Distortion RdCost::getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID,
-                               DFunc distFunc, const CPelBuf *orgLuma)
-#else
-    Distortion RdCost::getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID,
-                                   DFunc distFunc)
-#endif
+                               DFuncWtd distFuncWtd, const CPelBuf &orgLuma)
 {
   DistParam cDtParam;
 
@@ -360,21 +357,36 @@ Distortion RdCost::getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDe
   cDtParam.bitDepth   = bitDepth;
   cDtParam.compID     = compID;
 
-#if WCG_EXT
-  if( orgLuma )
+  cDtParam.cShiftX = getComponentScaleX(compID,  m_cf);
+  cDtParam.cShiftY = getComponentScaleY(compID,  m_cf);
+  if (isChroma(compID))
   {
-    cDtParam.cShiftX = getComponentScaleX(compID,  m_cf);
-    cDtParam.cShiftY = getComponentScaleY(compID,  m_cf);
-    if( isChroma(compID) )
-    {
-      cDtParam.orgLuma  = *orgLuma;
-    }
-    else
-    {
-      cDtParam.orgLuma  = org;
-    }
+    cDtParam.orgLuma  = orgLuma;
   }
+  else
+  {
+    cDtParam.orgLuma  = org;
+  }
+
+  cDtParam.distFuncWtd = m_distortionFuncWtd[distFuncWtd + sizeOffset<false>(org.width)];
+  Distortion dist = cDtParam.distFuncWtd(this, cDtParam);
+  if (isChroma(compID))
+  {
+    dist = (Distortion)(m_distortionWeight[MAP_CHROMA(compID)] * dist);
+  }
+  return dist;
+}
 #endif
+Distortion RdCost::getDistPart(const CPelBuf &org, const CPelBuf &cur, int bitDepth, const ComponentID compID,
+                                   DFunc distFunc)
+{
+  DistParam cDtParam;
+
+  cDtParam.org        = org;
+  cDtParam.cur        = cur;
+  cDtParam.step       = 1;
+  cDtParam.bitDepth   = bitDepth;
+  cDtParam.compID     = compID;
 
   cDtParam.distFunc = m_distortionFunc[distFunc + sizeOffset<false>(org.width)];
 
@@ -3004,13 +3016,6 @@ Distortion RdCost::xGetHADs( const DistParam &rcDtParam )
 
 
 #if WCG_EXT
-uint32_t RdCost::m_signalType   = RESHAPE_SIGNAL_NULL;
-int32_t  RdCost::m_chromaWeight = MSE_WEIGHT_ONE;
-int      RdCost::m_lumaBD       = 10;
-
-std::vector<int32_t> RdCost::m_reshapeLumaLevelToWeightPLUT;
-std::vector<double> RdCost::m_lumaLevelToWeightPLUT;
-
 void RdCost::saveUnadjustedLambda()
 {
   m_dLambda_unadjusted = m_dLambda;

@@ -48,7 +48,7 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   switch (sei.payloadType())
   {
   case SEI::PayloadType::USER_DATA_UNREGISTERED:
-    xWriteSEIuserDataUnregistered(*static_cast<const SEIuserDataUnregistered*>(&sei));
+    xWriteSEIuserDataUnregistered(reinterpret_cast<const SEIUserDataUnregistered&>(sei));
     break;
   case SEI::PayloadType::DECODING_UNIT_INFO:
     bp = hrd.getBufferingPeriodSEI();
@@ -258,16 +258,16 @@ void SEIWriter::writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList
  * marshal a user_data_unregistered SEI message sei, storing the marshalled
  * representation in bitstream bs.
  */
-void SEIWriter::xWriteSEIuserDataUnregistered(const SEIuserDataUnregistered &sei)
+void SEIWriter::xWriteSEIuserDataUnregistered(const SEIUserDataUnregistered& sei)
 {
-  for (uint32_t i = 0; i < ISO_IEC_11578_LEN; i++)
+  for (uint32_t i = 0; i < sei.uuid.size(); i++)
   {
-    xWriteCode(sei.uuid_iso_iec_11578[i], 8 , "uuid_iso_iec_11578[i]");
+    xWriteCode(sei.uuid[i], 8, "uuid_iso_iec_11578[i]");
   }
 
-  for (uint32_t i = 0; i < sei.userDataLength; i++)
+  for (uint32_t i = 0; i < sei.data.size(); i++)
   {
-    xWriteCode(sei.userData[i], 8 , "user_data_payload_byte");
+    xWriteCode(sei.data[i], 8, "user_data_payload_byte");
   }
 }
 

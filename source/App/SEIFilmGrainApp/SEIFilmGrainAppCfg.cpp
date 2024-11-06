@@ -142,9 +142,9 @@ bool SEIFilmGrainAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>    cfg_FgcSEIIntensityIntervalUpperBoundComp0(0, 255, 0, 256);
   SMultiValueInput<uint32_t>    cfg_FgcSEIIntensityIntervalUpperBoundComp1(0, 255, 0, 256);
   SMultiValueInput<uint32_t>    cfg_FgcSEIIntensityIntervalUpperBoundComp2(0, 255, 0, 256);
-  SMultiValueInput<uint32_t>    cfg_FgcSEICompModelValueComp0(0, 65535, 0, 256 * 6);
-  SMultiValueInput<uint32_t>    cfg_FgcSEICompModelValueComp1(0, 65535, 0, 256 * 6);
-  SMultiValueInput<uint32_t>    cfg_FgcSEICompModelValueComp2(0, 65535, 0, 256 * 6);
+  SMultiValueInput<int32_t>     cfg_FgcSEICompModelValueComp0(-32768, 32767, 0, 256 * 6);
+  SMultiValueInput<int32_t>     cfg_FgcSEICompModelValueComp1(-32768, 32767, 0, 256 * 6);
+  SMultiValueInput<int32_t>     cfg_FgcSEICompModelValueComp2(-32768, 32767, 0, 256 * 6);
 
   po::Options opts;
 
@@ -273,7 +273,7 @@ bool SEIFilmGrainAppCfg::parseCfg( int argc, char* argv[] )
         m_fgcSEIIntensityIntervalUpperBound[0][i] = uint32_t((cfg_FgcSEIIntensityIntervalUpperBoundComp0.values.size() > i) ? cfg_FgcSEIIntensityIntervalUpperBoundComp0.values[i] : 250);
         for (uint8_t j = 0; j <= m_fgcSEINumModelValuesMinus1[0]; j++)
         {
-          m_fgcSEICompModelValue[0][i][j] = uint32_t((cfg_FgcSEICompModelValueComp0.values.size() > numModelCtr) ? cfg_FgcSEICompModelValueComp0.values[numModelCtr] : 24);
+          m_fgcSEICompModelValue[0][i][j] = int32_t((cfg_FgcSEICompModelValueComp0.values.size() > numModelCtr) ? cfg_FgcSEICompModelValueComp0.values[numModelCtr] : 24);
           numModelCtr++;
         }
       }
@@ -288,7 +288,7 @@ bool SEIFilmGrainAppCfg::parseCfg( int argc, char* argv[] )
 
         for (uint8_t j = 0; j <= m_fgcSEINumModelValuesMinus1[1]; j++)
         {
-          m_fgcSEICompModelValue[1][i][j] = uint32_t((cfg_FgcSEICompModelValueComp1.values.size() > numModelCtr) ? cfg_FgcSEICompModelValueComp1.values[numModelCtr] : 16);
+          m_fgcSEICompModelValue[1][i][j] = int32_t((cfg_FgcSEICompModelValueComp1.values.size() > numModelCtr) ? cfg_FgcSEICompModelValueComp1.values[numModelCtr] : 16);
           numModelCtr++;
         }
       }
@@ -303,7 +303,7 @@ bool SEIFilmGrainAppCfg::parseCfg( int argc, char* argv[] )
 
         for (uint8_t j = 0; j <= m_fgcSEINumModelValuesMinus1[2]; j++)
         {
-          m_fgcSEICompModelValue[2][i][j] = uint32_t((cfg_FgcSEICompModelValueComp2.values.size() > numModelCtr) ? cfg_FgcSEICompModelValueComp2.values[numModelCtr] : 12);
+          m_fgcSEICompModelValue[2][i][j] = int32_t((cfg_FgcSEICompModelValueComp2.values.size() > numModelCtr) ? cfg_FgcSEICompModelValueComp2.values[numModelCtr] : 12);
           numModelCtr++;
         }
       }

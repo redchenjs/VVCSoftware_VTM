@@ -80,7 +80,6 @@ struct Picture : public UnitArea
   void destroyTempBuffers();
 
   int                       m_padValue;
-  bool                      m_isMctfFiltered;
   SEIFilmGrainSynthesizer*  m_grainCharacteristic;
   PelStorage*               m_grainBuf;
   void              createGrainSynthesizer(bool firstPictureInSequence, SEIFilmGrainSynthesizer* grainCharacteristics, PelStorage* grainBuf, int width, int height, ChromaFormat fmt, int bitDepth);
@@ -148,7 +147,7 @@ struct Picture : public UnitArea
         PelUnitBuf getPostRecBuf();
   const CPelUnitBuf getPostRecBuf() const;
 
-  void extendPicBorder( const PPS *pps );
+  void extendPicBorder(const SPS* sps, const PPS* pps);
   void extendWrapBorder( const PPS *pps );
   void finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHeader *picHeader, APS** alfApss, APS* lmcsAps, APS* scalingListAps );
 
@@ -204,6 +203,7 @@ public:
   PelStorage m_bufSubPicBelow;
   PelStorage m_bufSubPicLeft;
   PelStorage m_bufSubPicRight;
+  int m_numSubPic;
 
   PelStorage m_bufWrapSubPicAbove;
   PelStorage m_bufWrapSubPicBelow;
@@ -271,15 +271,18 @@ public:
   const Window&      getConformanceWindow() const                                    { return  m_conformanceWindow; }
   Window&            getScalingWindow()                                              { return  m_scalingWindow; }
   const Window&      getScalingWindow()                                        const { return  m_scalingWindow; }
+  int                getNumSubPic()                                            const { return  m_numSubPic; }
 
-  bool isRefScaled(const PPS* pps) const
+  bool isRefScaled(const SPS* sps, const PPS* pps) const
   {
     return unscaledPic->getPicWidthInLumaSamples() != pps->getPicWidthInLumaSamples()
            || unscaledPic->getPicHeightInLumaSamples() != pps->getPicHeightInLumaSamples()
-           || unscaledPic->getScalingWindow() != pps->getScalingWindow();
+           || unscaledPic->getScalingWindow() != pps->getScalingWindow()
+           || unscaledPic->getNumSubPic() != sps->getNumSubPics()
+           ;
   }
 
-  bool               isWrapAroundEnabled( const PPS* pps ) const                     { return  pps->getWrapAroundEnabledFlag() && !isRefScaled( pps ); }
+  bool               isWrapAroundEnabled(const SPS* sps, const PPS* pps ) const                     { return  pps->getWrapAroundEnabledFlag() && !isRefScaled( sps, pps ); }
 
   void         allocateNewSlice();
   Slice        *swapSliceObject(Slice * p, uint32_t i);
