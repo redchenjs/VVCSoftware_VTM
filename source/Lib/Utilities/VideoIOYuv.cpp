@@ -1478,8 +1478,10 @@ bool VideoIOYuv::writeUpscaledPicture(const SPS &sps, const PPS &pps, const CPel
     else
     {
       const Window &conf = pps.getConformanceWindow();
+      int curPicWidth = maxWidth   - SPS::getWinUnitX( sps.getChromaFormatIdc() ) * ( afterScaleWindowFullResolution.getWindowLeftOffset() + afterScaleWindowFullResolution.getWindowRightOffset() );
+      int curPicHeight = maxHeight - SPS::getWinUnitY( sps.getChromaFormatIdc() ) * ( afterScaleWindowFullResolution.getWindowTopOffset()  + afterScaleWindowFullResolution.getWindowBottomOffset() );
 
-      ret = write(maxWidth, maxHeight, pic, ipCSC,
+      ret = write(curPicWidth, curPicHeight, pic, ipCSC,
                   packedYuvOutputMode, conf.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
                   conf.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIdc),
                   conf.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc),

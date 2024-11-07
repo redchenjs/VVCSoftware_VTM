@@ -54,7 +54,7 @@ public:
   void writeSEImessages(OutputBitstream& bs, const SEIMessages &seiList, HRD &hrd, bool isNested, const uint32_t temporalId);
 
 protected:
-  void xWriteSEIuserDataUnregistered(const SEIuserDataUnregistered &sei);
+  void xWriteSEIuserDataUnregistered(const SEIUserDataUnregistered& sei);
   void xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& dui, const SEIBufferingPeriod& bp,
                                  const uint32_t temporalId);
   void xWriteSEIDecodedPictureHash(const SEIDecodedPictureHash& sei);
@@ -126,6 +126,9 @@ protected:
 #endif
 #if JVET_AG2034_SPTI_SEI
   void xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
+#endif
+#if JVET_AG0322_MODALITY_INFORMATION
+  void xWriteSEIModalityInfo(const SEIModalityInfo &sei);
 #endif
 protected:
   HRD m_nestingHrd;

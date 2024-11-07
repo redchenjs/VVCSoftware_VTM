@@ -742,6 +742,9 @@ void SEIEncoder::initSEITextDescription(SEITextDescription *seiTestDescrition)
   CHECK(!(seiTestDescrition != nullptr), "Need a seiTtestDescribtion for initialization (got nullptr)");
   seiTestDescrition->m_textDescriptionID = m_pcCfg->getTextDescriptionSEIId();
   seiTestDescrition->m_textCancelFlag = m_pcCfg->getTextSEICancelFlag();
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+  seiTestDescrition->m_textIDCancelFlag = m_pcCfg->getTextSEIIDCancelFlag();
+#endif
   seiTestDescrition->m_textPersistenceFlag = m_pcCfg->getTextSEIPersistenceFlag();
   seiTestDescrition->m_textDescriptionPurpose = m_pcCfg->getTextSEIPurpose();
   seiTestDescrition->m_textNumStringsMinus1 = m_pcCfg->getTextSEINumStringsMinus1();
@@ -1659,6 +1662,13 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_spatialExtrapolationRightOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationRightOffset(filterIdx);
       sei->m_spatialExtrapolationTopOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset(filterIdx);
       sei->m_spatialExtrapolationBottomOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(filterIdx);
+#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
+      sei->m_spatialExtrapolationPromptPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag(filterIdx);
+      if (sei->m_spatialExtrapolationPromptPresentFlag)
+      {
+        sei->m_prompt = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExrapolationPrompt(filterIdx);
+      }
+#endif
     }
 #endif
 
@@ -1837,6 +1847,29 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
     {
       sei->m_privacyProtectionTypeIdc = m_pcCfg->getEOISEIPrivacyProtectionTypeIdc();
       sei->m_privacyProtectedInfoType = m_pcCfg->getEOISEIPrivacyProtectedInfoType();
+    }
+  }
+}
+#endif
+
+#if JVET_AG0322_MODALITY_INFORMATION
+void SEIEncoder::initSEIModalityInfo(SEIModalityInfo *seiMI)
+{
+  CHECK(!(m_isInitialized), "Modality Information SEI is already initialised");
+  CHECK(seiMI == nullptr, "Modality Information SEI: Cannot initialise from nullptr");
+  //  Set SEI message parameters read from command line options
+  seiMI->m_miCancelFlag = m_pcCfg->getMiCancelFlag(); 
+  if (!seiMI->m_miCancelFlag)
+  {
+    seiMI->m_miPersistenceFlag            = m_pcCfg->getMiPersistenceFlag();
+    seiMI->m_miModalityType               = m_pcCfg->getMiModalityType();
+    seiMI->m_miSpectrumRangePresentFlag   = m_pcCfg->getMiSpectrumRangePresentFlag();
+    if (seiMI->m_miSpectrumRangePresentFlag)
+    {
+      seiMI->m_miMinWavelengthMantissa         = m_pcCfg->getMiMinWavelengthMantissa();
+      seiMI->m_miMinWavelengthExponentPlus15   = m_pcCfg->getMiMinWavelengthExponentPlus15();
+      seiMI->m_miMaxWavelengthMantissa         = m_pcCfg->getMiMaxWavelengthMantissa();
+      seiMI->m_miMaxWavelengthExponentPlus15   = m_pcCfg->getMiMaxWavelengthExponentPlus15();
     }
   }
 }

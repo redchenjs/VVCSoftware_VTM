@@ -110,6 +110,9 @@ public:
 #if JVET_AI0153_OMI_SEI
     OBJECT_MASK_INFO = 217,
 #endif
+#if JVET_AG0322_MODALITY_INFORMATION
+    MODALITY_INFORMATION = 218,
+#endif
 #if JVET_AH2006_TXTDESCRINFO_SEI
     SEI_TEXT_DESCRIPTION                       = 219,
 #endif
@@ -589,25 +592,20 @@ public:
   int                   m_verPhaseDenMinus1;
 };
 
-static constexpr uint32_t ISO_IEC_11578_LEN=16;
-
-class SEIuserDataUnregistered : public SEI
+class SEIUserDataUnregistered : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::USER_DATA_UNREGISTERED; }
 
-  SEIuserDataUnregistered()
-    {}
-  SEIuserDataUnregistered(const SEIuserDataUnregistered& sei);
+  SEIUserDataUnregistered() {}
+  SEIUserDataUnregistered(const SEIUserDataUnregistered& sei) = default;
 
-  virtual ~SEIuserDataUnregistered()
-  {
-    delete userData;
-  }
+  virtual ~SEIUserDataUnregistered() {}
 
-  uint8_t uuid_iso_iec_11578[ISO_IEC_11578_LEN];
-  uint32_t  userDataLength;
-  uint8_t *userData = nullptr;
+  static constexpr uint32_t ISO_IEC_11578_LEN = 16;
+
+  std::array<uint8_t, ISO_IEC_11578_LEN> uuid;
+  std::vector<uint8_t>                   data;
 };
 
 class SEIDecodedPictureHash : public SEI
@@ -1440,6 +1438,10 @@ public:
     , m_spatialExtrapolationRightOffset(0)
     , m_spatialExtrapolationTopOffset(0)
     , m_spatialExtrapolationBottomOffset(0)
+#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
+    , m_spatialExtrapolationPromptPresentFlag(false)
+    , m_prompt("")
+#endif
 #endif
     , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
@@ -1527,6 +1529,10 @@ public:
   int32_t        m_spatialExtrapolationRightOffset;
   int32_t        m_spatialExtrapolationTopOffset;
   int32_t        m_spatialExtrapolationBottomOffset;
+#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
+  bool          m_spatialExtrapolationPromptPresentFlag;
+  std::string   m_prompt;
+#endif
 #endif
   std::vector<bool> m_inputPicOutputFlag;
   bool           m_absentInputPicZeroFlag;
@@ -1588,6 +1594,9 @@ public:
 
   uint16_t                 m_textDescriptionID;
   bool                     m_textCancelFlag;
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+  bool                     m_textIDCancelFlag;
+#endif
   bool                     m_textPersistenceFlag;
   uint8_t                  m_textDescriptionPurpose;
   uint8_t                  m_textNumStringsMinus1;
@@ -1646,6 +1655,37 @@ public:
 };
 
 #endif
+
+#if JVET_AG0322_MODALITY_INFORMATION
+class SEIModalityInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::MODALITY_INFORMATION; }
+  SEIModalityInfo() 
+    : m_miCancelFlag(false)
+    , m_miPersistenceFlag(true)
+    , m_miModalityType(1)
+    , m_miSpectrumRangePresentFlag(false)
+    , m_miMinWavelengthMantissa(0)
+    , m_miMinWavelengthExponentPlus15(0)
+    , m_miMaxWavelengthMantissa(0)
+    , m_miMaxWavelengthExponentPlus15(0)
+  { }
+  SEIModalityInfo(const SEIModalityInfo& sei);
+
+  virtual ~SEIModalityInfo() { }
+
+  bool             m_miCancelFlag;
+  bool             m_miPersistenceFlag;
+  uint8_t          m_miModalityType;  
+  bool             m_miSpectrumRangePresentFlag; 
+  uint16_t         m_miMinWavelengthMantissa; 
+  uint8_t          m_miMinWavelengthExponentPlus15; 
+  uint16_t         m_miMaxWavelengthMantissa;  
+  uint8_t          m_miMaxWavelengthExponentPlus15;  
+};
+#endif
+
 //! \}
 
 

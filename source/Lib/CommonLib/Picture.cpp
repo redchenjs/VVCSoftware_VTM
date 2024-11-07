@@ -281,6 +281,7 @@ void Picture::finalInit( const VPS* vps, const SPS& sps, const PPS& pps, PicHead
   cs->lmcsAps = lmcsAps;
   cs->scalinglistAps = scalingListAps;
   cs->pcv     = pps.pcv;
+  m_numSubPic = sps.getNumSubPics();
   m_conformanceWindow = pps.getConformanceWindow();
   m_scalingWindow = pps.getScalingWindow();
   mixedNaluTypesInPicFlag = pps.getMixedNaluTypesInPicFlag();
@@ -1125,11 +1126,11 @@ void Picture::restoreSubPicBorder(int POC, int subPicX0, int subPicY0, int subPi
   m_bufWrapSubPicBelow.destroy();
 }
 
-void Picture::extendPicBorder( const PPS *pps )
+void Picture::extendPicBorder( const SPS *sps, const PPS *pps )
 {
   if (m_extendedBorder)
   {
-    if( isWrapAroundEnabled( pps ) && ( !m_wrapAroundValid || m_wrapAroundOffset != pps->getWrapAroundOffset() ) )
+    if( isWrapAroundEnabled( sps, pps ) && ( !m_wrapAroundValid || m_wrapAroundOffset != pps->getWrapAroundOffset() ) )
     {
       extendWrapBorder( pps );
     }
@@ -1173,7 +1174,7 @@ void Picture::extendPicBorder( const PPS *pps )
     }
 
     // reference picture with horizontal wrapped boundary
-    if ( isWrapAroundEnabled( pps ) )
+    if ( isWrapAroundEnabled(sps, pps ) )
     {
       extendWrapBorder( pps );
     }

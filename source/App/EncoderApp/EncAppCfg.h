@@ -560,6 +560,18 @@ protected:
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
 #endif 
 
+#if JVET_AG0322_MODALITY_INFORMATION
+  bool      m_miSEIEnabled;
+  bool      m_miCancelFlag;
+  bool      m_miPersistenceFlag;
+  int       m_miModalityType; 
+  bool      m_miSpectrumRangePresentFlag;
+  int       m_miMinWavelengthMantissa; 
+  int       m_miMinWavelengthExponentPlus15; 
+  int       m_miMaxWavelengthMantissa; 
+  int       m_miMaxWavelengthExponentPlus15; 
+#endif
+
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
   bool      m_fgcSEICancelFlag;
@@ -829,6 +841,10 @@ protected:
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
+  bool                  m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[MAX_NUM_NN_POST_FILTERS];
+  std::string           m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[MAX_NUM_NN_POST_FILTERS];
+#endif
 #endif
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
@@ -869,6 +885,9 @@ protected:
 
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
+#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
+  bool                 m_SEITextIDCancelFlag;
+#endif
   bool                 m_postFilterHintSEIPersistenceFlag;
   uint32_t             m_postFilterHintSEISizeY;
   uint32_t             m_postFilterHintSEISizeX;

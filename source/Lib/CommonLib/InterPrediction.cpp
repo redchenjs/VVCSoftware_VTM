@@ -323,7 +323,7 @@ void InterPrediction::xSubPuMC(PredictionUnit &pu, PelUnitBuf &predBuf, const Re
   int  fstStep = (!verMC ? puHeight : puWidth);
   int  secStep = (!verMC ? puWidth : puHeight);
 
-  bool scaled = pu.cu->slice->getRefPic( REF_PIC_LIST_0, 0 )->isRefScaled( pu.cs->pps ) || ( pu.cs->slice->getSliceType() == B_SLICE ? pu.cu->slice->getRefPic( REF_PIC_LIST_1, 0 )->isRefScaled( pu.cs->pps ) : false );
+  bool scaled = pu.cu->slice->getRefPic( REF_PIC_LIST_0, 0 )->isRefScaled( pu.cs->sps, pu.cs->pps ) || ( pu.cs->slice->getSliceType() == B_SLICE ? pu.cu->slice->getRefPic( REF_PIC_LIST_1, 0 )->isRefScaled( pu.cs->sps, pu.cs->pps ) : false );
 
   for (int fstDim = fstStart; fstDim < fstEnd; fstDim += fstStep)
   {
@@ -385,7 +385,7 @@ void InterPrediction::xSubPuBio(PredictionUnit &pu, PelUnitBuf &predBuf, const R
       int filtersize = (compID == (COMPONENT_Y)) ? NTAPS_LUMA : NTAPS_CHROMA;
       cMv += Mv(-(((filtersize >> 1) - 1) << mvshiftTemp), -(((filtersize >> 1) - 1) << mvshiftTemp));
       bool wrapRef = false;
-      if ( pu.cu->slice->getRefPic(refId, pu.refIdx[refId])->isWrapAroundEnabled( pu.cs->pps ) )
+      if ( pu.cu->slice->getRefPic(refId, pu.refIdx[refId])->isWrapAroundEnabled(pu.cs->sps, pu.cs->pps ) )
       {
         wrapRef = wrapClipMv(cMv, pu.blocks[0].pos(), pu.blocks[0].size(), pu.cs->sps, pu.cs->pps);
       }
@@ -488,7 +488,7 @@ void InterPrediction::xPredInterUni(const PredictionUnit &pu, const RefPicList &
 
   if( !pu.cu->affine )
   {
-    if (!isIBC && pu.cu->slice->getRefPic(eRefPicList, refIdx)->isRefScaled(pu.cs->pps) == false)
+    if (!isIBC && pu.cu->slice->getRefPic(eRefPicList, refIdx)->isRefScaled(pu.cs->sps, pu.cs->pps) == false)
     {
       if( !pu.cs->pps->getWrapAroundEnabledFlag() )
       {
@@ -568,8 +568,8 @@ void InterPrediction::xPredInterBi(PredictionUnit &pu, PelUnitBuf &pcYuvPred, co
 
   bool dmvrApplied = !isSubPu && PU::checkDMVRCondition(pu);
 
-  bool refIsScaled = ( refIdx0 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_0, refIdx0 )->isRefScaled( pu.cs->pps ) ) ||
-                     ( refIdx1 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_1, refIdx1 )->isRefScaled( pu.cs->pps ) );
+  bool refIsScaled = ( refIdx0 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_0, refIdx0 )->isRefScaled( pu.cs->sps, pu.cs->pps ) ) ||
+                     ( refIdx1 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_1, refIdx1 )->isRefScaled( pu.cs->sps, pu.cs->pps ) );
   dmvrApplied = dmvrApplied && !refIsScaled;
   bioApplied = bioApplied && !refIsScaled;
 
@@ -677,7 +677,7 @@ void InterPrediction::xPredInterBlk(const ComponentID compID, const PredictionUn
 
   bool  wrapRef = false;
   Mv    mv(_mv);
-  if( !isIBC && refPic->isWrapAroundEnabled( pu.cs->pps ) )
+  if( !isIBC && refPic->isWrapAroundEnabled(pu.cs->sps, pu.cs->pps ) )
   {
     wrapRef = wrapClipMv( mv, pu.blocks[0].pos(), pu.blocks[0].size(), pu.cs->sps, pu.cs->pps );
   }
@@ -883,7 +883,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
   const int sbWidth  = AFFINE_SUBBLOCK_SIZE;
   const int sbHeight = AFFINE_SUBBLOCK_SIZE;
 
-  const bool isRefScaled = refPic->isRefScaled(&pps);
+  const bool isRefScaled = refPic->isRefScaled(&sps, &pps);
 
   const int dstExtW = (sbWidth + PROF_BORDER_EXT_W * 2 + 7) & ~7;
   const int dstExtH = sbHeight + PROF_BORDER_EXT_H * 2;
@@ -894,7 +894,7 @@ void InterPrediction::xPredAffineBlk(const ComponentID &compID, const Prediction
 
   PelBuf &dstBuf = dstPic.bufs[compID];
 
-  const bool wrapAroundEnabled = refPic->isWrapAroundEnabled(&pps);
+  const bool wrapAroundEnabled = refPic->isWrapAroundEnabled(&sps, &pps);
 
   int dmvHorX = 0;
   int dmvHorY = 0;
@@ -1470,8 +1470,8 @@ void InterPrediction::motionCompensation(PredictionUnit &pu, PelUnitBuf &predBuf
       }
     }
 
-    bool refIsScaled = ( refIdx0 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_0, refIdx0 )->isRefScaled( pu.cs->pps ) ) ||
-                       ( refIdx1 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_1, refIdx1 )->isRefScaled( pu.cs->pps ) );
+    bool refIsScaled = ( refIdx0 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_0, refIdx0 )->isRefScaled( pu.cs->sps, pu.cs->pps ) ) ||
+                       ( refIdx1 < 0 ? false : pu.cu->slice->getRefPic( REF_PIC_LIST_1, refIdx1 )->isRefScaled( pu.cs->sps, pu.cs->pps ) );
     bioApplied = refIsScaled ? false : bioApplied;
     bool dmvrApplied = !isSubPu && PU::checkDMVRCondition(pu);
     if ((pu.lumaSize().width > MAX_BDOF_APPLICATION_REGION || pu.lumaSize().height > MAX_BDOF_APPLICATION_REGION)
@@ -1599,7 +1599,7 @@ void InterPrediction::xDmvrPrefetch(const PredictionUnit &pu, const bool forLuma
       Mv cMv = pu.mv[l] - Mv(halfFilterSize << mvshiftTempHor, halfFilterSize << mvshiftTempVer);
 
       bool wrapRef = false;
-      if (refPic->isWrapAroundEnabled(pu.cs->pps))
+      if (refPic->isWrapAroundEnabled(pu.cs->sps, pu.cs->pps))
       {
         wrapRef = wrapClipMv(cMv, pu.blocks[0].pos(), pu.blocks[0].size(), pu.cs->sps, pu.cs->pps);
       }
@@ -2169,7 +2169,7 @@ bool InterPrediction::isLumaBvValid(const int ctuSize, const int xCb, const int 
   return true;
 }
 
-bool InterPrediction::xPredInterBlkRPR(const ScalingRatio scalingRatio,const SPS &sps, const PPS &pps, const CompArea &blk,
+bool InterPrediction::xPredInterBlkRPR(const ScalingRatio scalingRatio, const SPS &sps, const PPS &pps, const CompArea &blk,
                                        const Picture *refPic, const Mv &mv, Pel *dst, const ptrdiff_t dstStride,
                                        const bool bi, const bool wrapRef, const ClpRng &clpRng,
                                        const InterpolationFilter::Filter filterIndex, const bool useAltHpelIf)
@@ -2185,7 +2185,7 @@ bool InterPrediction::xPredInterBlkRPR(const ScalingRatio scalingRatio,const SPS
   int height = blk.height;
   CPelBuf refBuf;
 
-  const bool scaled = refPic->isRefScaled( &pps );
+  const bool scaled = refPic->isRefScaled( &sps, &pps );
 
   if( scaled )
   {
