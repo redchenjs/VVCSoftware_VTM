@@ -203,7 +203,7 @@ public:
   PelStorage m_bufSubPicBelow;
   PelStorage m_bufSubPicLeft;
   PelStorage m_bufSubPicRight;
-  int m_numSubPic;
+  int m_numSubPic = 1;
 
   PelStorage m_bufWrapSubPicAbove;
   PelStorage m_bufWrapSubPicBelow;
