@@ -1153,7 +1153,6 @@ void  DecLib::xCreateUnavailablePicture( const PPS *pps, const int iUnavailableP
   cFillPic->temporalId = temporalId;
   cFillPic->nonReferencePictureFlag = false;
   cFillPic->slices[0]->setPPS( pps );
-  cFillPic->m_numSubPic = sps->getNumSubPics();
 
   if (m_pocRandomAccess == MAX_INT)
   {
