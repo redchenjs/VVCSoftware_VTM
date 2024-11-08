@@ -203,7 +203,6 @@ public:
   PelStorage m_bufSubPicBelow;
   PelStorage m_bufSubPicLeft;
   PelStorage m_bufSubPicRight;
-  int m_numSubPic = 1;
 
   PelStorage m_bufWrapSubPicAbove;
   PelStorage m_bufWrapSubPicBelow;
@@ -271,14 +270,13 @@ public:
   const Window&      getConformanceWindow() const                                    { return  m_conformanceWindow; }
   Window&            getScalingWindow()                                              { return  m_scalingWindow; }
   const Window&      getScalingWindow()                                        const { return  m_scalingWindow; }
-  int                getNumSubPic()                                            const { return  m_numSubPic; }
 
   bool isRefScaled(const SPS* sps, const PPS* pps) const
   {
     return unscaledPic->getPicWidthInLumaSamples() != pps->getPicWidthInLumaSamples()
            || unscaledPic->getPicHeightInLumaSamples() != pps->getPicHeightInLumaSamples()
            || unscaledPic->getScalingWindow() != pps->getScalingWindow()
-           || unscaledPic->getNumSubPic() != sps->getNumSubPics()
+           || unscaledPic->cs->sps->getNumSubPics() != sps->getNumSubPics()
            ;
   }
 
