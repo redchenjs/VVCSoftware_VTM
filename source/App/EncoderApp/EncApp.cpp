@@ -998,9 +998,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setOmniViewportSEIHorRange                           ( m_omniViewportSEIHorRange );
   m_cEncLib.setOmniViewportSEIVerRange                           ( m_omniViewportSEIVerRange );
   m_cEncLib.setAnnotatedRegionSEIFileRoot                        (m_arSEIFileRoot);
-#if JVET_AI0153_OMI_SEI
   m_cEncLib.setObjectMaskInfoSEIFileRoot                         (m_omiSEIFileRoot);
-#endif
   m_cEncLib.setRwpSEIEnabled                                     (m_rwpSEIEnabled);
   m_cEncLib.setRwpSEIRwpCancelFlag                               (m_rwpSEIRwpCancelFlag);
   m_cEncLib.setRwpSEIRwpPersistenceFlag                          (m_rwpSEIRwpPersistenceFlag);
@@ -1173,9 +1171,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setSdiSEIViewIdVal                                   (m_sdiSEIViewIdVal);
   m_cEncLib.setSdiSEIAuxId                                       (m_sdiSEIAuxId);
   m_cEncLib.setSdiSEINumAssociatedPrimaryLayersMinus1            (m_sdiSEINumAssociatedPrimaryLayersMinus1);
-#if JVET_AI0153_OMI_SEI
   m_cEncLib.setSdiSEIAssociatedPrimaryLayerIdx                   (m_sdiSEIAssociatedPrimaryLayerIdx);
-#endif
   // multiview acquisition information sei
   m_cEncLib.setMaiSEIEnabled                                     (m_maiSEIEnabled);
   m_cEncLib.setMaiSEIIntrinsicParamFlag                          (m_maiSEIIntrinsicParamFlag);

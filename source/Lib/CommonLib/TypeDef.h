@@ -62,7 +62,6 @@
 
 
 
-#define JVET_AI0153_OMI_SEI 1 // JVET-AI0153: OMI-SEI Implementation as JVET-AH0346
 
 #define JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1  1 //JVET-AI0061 proposal 1: signal a NNPFC prompt for spatial extrapolation
 

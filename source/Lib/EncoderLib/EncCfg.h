@@ -886,9 +886,7 @@ protected:
   std::vector<uint32_t>  m_sdiSEIViewIdVal;
   std::vector<uint32_t>  m_sdiSEIAuxId;
   std::vector<uint32_t>  m_sdiSEINumAssociatedPrimaryLayersMinus1;
-#if JVET_AI0153_OMI_SEI
   std::vector<uint32_t> m_sdiSEIAssociatedPrimaryLayerIdx;
-#endif
   // mai sei
   bool              m_maiSEIEnabled;
   bool              m_maiSEIIntrinsicParamFlag;
@@ -944,9 +942,7 @@ protected:
   int       m_driSEINonlinearNumMinus1;
   std::vector<uint32_t> m_driSEINonlinearModel;
   std::string           m_arSEIFileRoot;  // Annotated region SEI - initialized from external file
-#if JVET_AI0153_OMI_SEI
   std::string           m_omiSEIFileRoot;   // Object mask information SEI - initialized from external file
-#endif
 
   bool m_SEIManifestSEIEnabled;
   bool m_SEIPrefixIndicationSEIEnabled;
@@ -2323,10 +2319,8 @@ public:
   uint32_t  getOmniViewportSEIVerRange(int idx)                      { return m_omniViewportSEIVerRange[idx]; }
   void  setAnnotatedRegionSEIFileRoot(const std::string &s)          { m_arSEIFileRoot = s; m_arObjects.clear();}
   const std::string &getAnnotatedRegionSEIFileRoot() const           { return m_arSEIFileRoot; }
-#if JVET_AI0153_OMI_SEI
   void  setObjectMaskInfoSEIFileRoot(const std::string& s)           { m_omiSEIFileRoot = s; }
   const std::string& getObjectMaskInfoSEIFileRoot() const            { return m_omiSEIFileRoot; }
-#endif
   void     setRwpSEIEnabled(bool b)                                                                     { m_rwpSEIEnabled = b; }
   bool     getRwpSEIEnabled()                                                                           { return m_rwpSEIEnabled; }
   void     setRwpSEIRwpCancelFlag(bool b)                                                               { m_rwpSEIRwpCancelFlag = b; }
@@ -2637,10 +2631,8 @@ public:
   uint32_t getSdiSEIAuxId(int idx) const                             { return m_sdiSEIAuxId[idx]; }
   void     setSdiSEINumAssociatedPrimaryLayersMinus1(const std::vector<uint32_t>& sdiSEINumAssociatedPrimaryLayersMinus1)   { m_sdiSEINumAssociatedPrimaryLayersMinus1 = sdiSEINumAssociatedPrimaryLayersMinus1; }
   uint32_t getSdiSEINumAssociatedPrimaryLayersMinus1(int idx) const  { return m_sdiSEINumAssociatedPrimaryLayersMinus1[idx]; }
-#if JVET_AI0153_OMI_SEI
   void     setSdiSEIAssociatedPrimaryLayerIdx(const std::vector<uint32_t>& sdiSEIAssociatedPrimaryLayerIdx) { m_sdiSEIAssociatedPrimaryLayerIdx = sdiSEIAssociatedPrimaryLayerIdx; }
   uint32_t getSdiSEIAssociatedPrimaryLayerIdx(int idx) const                                                { return m_sdiSEIAssociatedPrimaryLayerIdx[idx]; }
-#endif
   // multiview acquisition information SEI
   void     setMaiSEIEnabled(bool b)                                  { m_maiSEIEnabled = b; }
   bool     getMaiSEIEnabled() const                                  { return m_maiSEIEnabled; }

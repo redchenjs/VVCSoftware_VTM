@@ -385,12 +385,10 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIAnnotatedRegions;
       xParseSEIAnnotatedRegions((SEIAnnotatedRegions &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_AI0153_OMI_SEI
     case SEI::PayloadType::OBJECT_MASK_INFO:
       sei = new SEIObjectMaskInfos;
       xParseSEIObjectMaskInfos((SEIObjectMaskInfos&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     case SEI::PayloadType::PARAMETER_SETS_INCLUSION_INDICATION:
       sei = new SEIParameterSetsInclusionIndication;
       xParseSEIParameterSetsInclusionIndication((SEIParameterSetsInclusionIndication &) *sei, payloadSize,
@@ -1875,7 +1873,6 @@ void SEIReader::xParseSEIAnnotatedRegions(SEIAnnotatedRegions& sei, uint32_t pay
   }
 }
 
-#if JVET_AI0153_OMI_SEI
 void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
@@ -2008,7 +2005,6 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
     }
   }
 }
-#endif
 
 #if JVET_AH2006_EOI_SEI
 void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)

@@ -145,7 +145,6 @@ uint32_t DecApp::decode()
     }
   }
 
-#if JVET_AI0153_OMI_SEI
   if (!m_objectMaskInfoSEIFileName.empty())
   {
     std::ofstream ofile(m_objectMaskInfoSEIFileName.c_str());
@@ -155,7 +154,6 @@ uint32_t DecApp::decode()
       exit(EXIT_FAILURE);
     }
   }
-#endif
 
   // main decoder loop
   bool loopFiltered[MAX_VPS_LAYERS] = { false };
@@ -1219,12 +1217,10 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         }
         writeLineToOutputLog(pcPic);
 
-#if JVET_AI0153_OMI_SEI
         if (!m_objectMaskInfoSEIFileName.empty())
         {
           xOutputObjectMaskInfos(pcPic);
         }
-#endif
         // update POC of display order
         m_iPOCLastDisplay = pcPic->getPOC();
 
@@ -1438,12 +1434,10 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
             }
           }
           writeLineToOutputLog(pcPic);
-#if JVET_AI0153_OMI_SEI
           if (!m_objectMaskInfoSEIFileName.empty())
           {
             xOutputObjectMaskInfos(pcPic);
           }
-#endif
         // update POC of display order
         m_iPOCLastDisplay = pcPic->getPOC();
 
@@ -1623,7 +1617,6 @@ void DecApp::xOutputAnnotatedRegions(PicList* pcListPic)
   }
 }
 
-#if JVET_AI0153_OMI_SEI
 void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
 {
   SEIMessages objectMaskInfoSEIs = getSeisByType(pcPic->SEIs, SEI::PayloadType::OBJECT_MASK_INFO);
@@ -1740,7 +1733,6 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
     }
   }
 }
-#endif
 
 /** \param nalu Input nalu to check whether its LayerId is within targetDecLayerIdSet
  */

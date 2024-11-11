@@ -161,11 +161,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::ANNOTATED_REGIONS:
     xWriteSEIAnnotatedRegions(*static_cast<const SEIAnnotatedRegions *>(&sei));
     break;
-#if JVET_AI0153_OMI_SEI
   case SEI::PayloadType::OBJECT_MASK_INFO:
     xWriteSEIObjectMaskInfos(*static_cast<const SEIObjectMaskInfos*>(&sei));
     break;
-#endif
   case SEI::PayloadType::SEI_MANIFEST:
     CHECK((SEIPrefixIndicationIdx), "wrong SEI prefix indication message");
     xWriteSEISEIManifest(*static_cast<const SEIManifest *>(&sei));
@@ -908,7 +906,6 @@ void SEIWriter::xWriteSEIAnnotatedRegions(const SEIAnnotatedRegions &sei)
   }
 }
 
-#if JVET_AI0153_OMI_SEI
 void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
 {
   xWriteFlag(sei.m_hdr.m_cancelFlag, "omi_cancel_flag");
@@ -1001,7 +998,6 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
     }
   }
 }
-#endif
 
 void SEIWriter::xWriteByteAlign()
 {

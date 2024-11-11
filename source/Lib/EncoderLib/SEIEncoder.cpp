@@ -929,7 +929,6 @@ void SEIEncoder::readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *
   }
 }
 
-#if JVET_AI0153_OMI_SEI
 void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* seiObjMask, bool& failed)
 {
   readTokenValue(seiObjMask->m_hdr.m_cancelFlag, failed, fic, "SEIOmiCancelFlag");
@@ -1062,7 +1061,6 @@ void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* se
     }
   }
 }
-#endif
 
 bool SEIEncoder::initSEIAnnotatedRegions(SEIAnnotatedRegions* SEIAnnoReg, int currPOC)
 {
@@ -1097,7 +1095,6 @@ bool SEIEncoder::initSEIAnnotatedRegions(SEIAnnotatedRegions* SEIAnnoReg, int cu
   return true;
 }
 
-#if JVET_AI0153_OMI_SEI
 bool SEIEncoder::initSEIObjectMaskInfos(SEIObjectMaskInfos* SEIObjMask, int currPOC)
 {
   CHECK(m_isInitialized == 0, "SEI is uninitialized");
@@ -1128,7 +1125,6 @@ bool SEIEncoder::initSEIObjectMaskInfos(SEIObjectMaskInfos* SEIObjMask, int curr
   }
   return true;
 }
-#endif
 
 void SEIEncoder::initSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics *seiAltTransCharacteristics)
 {
@@ -1257,9 +1253,7 @@ void SEIEncoder::initSEIScalabilityDimensionInfo(SEIScalabilityDimensionInfo *se
       sei->m_sdiViewIdLenMinus1 = m_pcCfg->getSdiSEIViewIdLenMinus1();
     }
     sei->m_sdiLayerId.resize(sei->m_sdiMaxLayersMinus1 + 1);
-#if JVET_AI0153_OMI_SEI
     uint32_t associatedPrimaryLayerIdxCnt = 0;
-#endif
     for (int i = 0; i <= sei->m_sdiMaxLayersMinus1; i++)
     {
       sei->m_sdiLayerId[i] = m_pcCfg->getSdiSEILayerId(i);
@@ -1280,11 +1274,7 @@ void SEIEncoder::initSEIScalabilityDimensionInfo(SEIScalabilityDimensionInfo *se
           sei->m_sdiAssociatedPrimaryLayerIdx[i].resize(sei->m_sdiNumAssociatedPrimaryLayersMinus1[i] + 1);
           for (int j = 0; j <= sei->m_sdiNumAssociatedPrimaryLayersMinus1[i]; j++)
           {
-#if JVET_AI0153_OMI_SEI
             sei->m_sdiAssociatedPrimaryLayerIdx[i][j] = m_pcCfg->getSdiSEIAssociatedPrimaryLayerIdx(associatedPrimaryLayerIdxCnt++);
-#else
-            sei->m_sdiAssociatedPrimaryLayerIdx[i][j] = 0;
-#endif
           }
         }
       }

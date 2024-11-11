@@ -105,9 +105,7 @@ public:
     ENCODER_OPTIMIZATION_INFO = 215,
 #endif 
     SOURCE_PICTURE_TIMING_INFO = 216,
-#if JVET_AI0153_OMI_SEI
     OBJECT_MASK_INFO = 217,
-#endif
 #if JVET_AG0322_MODALITY_INFORMATION
     MODALITY_INFORMATION = 218,
 #endif
@@ -1269,7 +1267,6 @@ public:
   std::vector<std::pair<AnnotatedRegionLabelIndex,  AnnotatedRegionLabel>  > m_annotatedLabels;
 };
 
-#if JVET_AI0153_OMI_SEI
 class SEIObjectMaskInfos : public SEI
 {
 public:
@@ -1321,7 +1318,6 @@ public:
   std::vector<uint32_t>       m_numMaskInPicUpdate;
   std::vector<ObjectMaskInfo> m_objectMaskInfos;
 };
-#endif
 
 class SEIExtendedDrapIndication : public SEI
 {
