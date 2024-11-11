@@ -197,10 +197,8 @@ public:
 
   bool                   m_posEnabled;
   uint32_t               m_posId;
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   uint32_t               m_posForHumanViewingIdc;
   uint32_t               m_posForMachineAnalysisIdc;
-#endif
   uint32_t               m_posNumMinus2;
   bool                   m_posBreadthFirstFlag;
   std::vector<bool>      m_posWrappingFlag;
@@ -1500,10 +1498,8 @@ public:
   bool           m_complexityInfoPresentFlag;
   bool           m_applicationPurposeTagUriPresentFlag;
   std::string    m_applicationPurposeTagUri;
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   uint32_t       m_forHumanViewingIdc;
   uint32_t       m_forMachineAnalysisIdc;
-#endif
   std::string    m_uriTag;
   std::string    m_uri;
   uint32_t       m_parameterTypeIdc;

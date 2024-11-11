@@ -524,10 +524,8 @@ SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei
 {
   m_posEnabled = sei.m_posEnabled;
   m_posId = sei.m_posId;
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   m_posForHumanViewingIdc = sei.m_posForHumanViewingIdc;
   m_posForMachineAnalysisIdc = sei.m_posForMachineAnalysisIdc;
-#endif
   m_posNumMinus2 = sei.m_posNumMinus2;
   m_posBreadthFirstFlag = sei.m_posBreadthFirstFlag;
   m_posWrappingFlag = sei.m_posWrappingFlag;
@@ -993,10 +991,8 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_complexityInfoPresentFlag = sei.m_complexityInfoPresentFlag;
   m_applicationPurposeTagUriPresentFlag = sei.m_applicationPurposeTagUriPresentFlag;
   m_applicationPurposeTagUri = sei.m_applicationPurposeTagUri;
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   m_forHumanViewingIdc = sei.m_forHumanViewingIdc;
   m_forMachineAnalysisIdc = sei.m_forMachineAnalysisIdc;
-#endif
   m_uriTag = sei.m_uriTag;
   m_uri = sei.m_uri;
   m_parameterTypeIdc = sei.m_parameterTypeIdc;

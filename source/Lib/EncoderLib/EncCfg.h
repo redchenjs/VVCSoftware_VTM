@@ -753,10 +753,8 @@ protected:
   bool                    m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[MAX_NUM_NN_POST_FILTERS];
   std::string             m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   uint32_t                m_nnPostFilterSEICharacteristicsForHumanViewingIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::string             m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
   std::string             m_nnPostFilterSEICharacteristicsUri[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsParameterTypeIdc[MAX_NUM_NN_POST_FILTERS];
@@ -955,10 +953,8 @@ protected:
   //SEI message processing order
   bool                  m_poSEIEnabled;
   uint32_t              m_poSEIId;
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   uint32_t              m_poSEIForHumanViewingIdc;
   uint32_t              m_poSEIForMachineAnalysisIdc;
-#endif
   uint32_t              m_poSEINumMinus2;
   bool                  m_poSEIBreadthFirstFlag;
   std::vector<bool>     m_poSEIWrappingFlag;
@@ -2147,12 +2143,10 @@ public:
   bool        getNNPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag(int filterIdx) const                 { return m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsApplicationPurposeTagUri(std::string applicationPurposeTagUri, int filterIdx) { m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[filterIdx] = applicationPurposeTagUri; }
   std::string getNNPostFilterSEICharacteristicsApplicationPurposeTagUri(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[filterIdx]; }
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   void        setNNPostFilterSEICharacteristicsForHumanViewingIdc(uint32_t forHumanViewingIdc, int filterIdx)           { m_nnPostFilterSEICharacteristicsForHumanViewingIdc[filterIdx] = forHumanViewingIdc; }
   uint32_t    getNNPostFilterSEICharacteristicsForHumanViewingIdc(int filterIdx) const                                  { return m_nnPostFilterSEICharacteristicsForHumanViewingIdc[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsForMachineAnalysisIdc(uint32_t forMachineAnalysisIdc, int filterIdx)     { m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[filterIdx] = forMachineAnalysisIdc; }
   uint32_t    getNNPostFilterSEICharacteristicsForMachineAnalysisIdc(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[filterIdx]; }
-#endif
   void        setNNPostFilterSEICharacteristicsUriTag(std::string uriTag, int filterIdx)                                { m_nnPostFilterSEICharacteristicsUriTag[filterIdx] = uriTag; }
   std::string getNNPostFilterSEICharacteristicsUriTag(int filterIdx) const                                              { return m_nnPostFilterSEICharacteristicsUriTag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsUri(std::string uri, int filterIdx)                                      { m_nnPostFilterSEICharacteristicsUri[filterIdx] = uri; }
@@ -2771,12 +2765,10 @@ public:
   bool     getPoSEIEnabled()                                         { return m_poSEIEnabled; }
   void     setPoSEIId(uint32_t i)                                    { m_poSEIId = i; }
   uint32_t getPoSEIId()                                              { return m_poSEIId; }
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   void     setPoSEIForHumanViewingIdc(uint32_t i)                    { m_poSEIForHumanViewingIdc = i; }
   uint32_t getPoSEIForHumanViewingIdc()                              { return m_poSEIForHumanViewingIdc; }
   void     setPoSEIForMachineAnalysisIdc(uint32_t i)                 { m_poSEIForMachineAnalysisIdc = i; }
   uint32_t getPoSEIForMachineAnalysisIdc()                           { return m_poSEIForMachineAnalysisIdc; }
-#endif
   void     setPoSEINumMinus2(uint32_t i)                             { m_poSEINumMinus2 = i; }
   uint32_t getPoSEINumMinus2()                                       { return m_poSEINumMinus2; }
   void     setPoSEIBreadthFirstFlag(bool b)                          { m_poSEIBreadthFirstFlag = b; }

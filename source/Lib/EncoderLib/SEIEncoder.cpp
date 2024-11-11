@@ -605,10 +605,8 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
 
   seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
   seiProcessingOrderInfo->m_posId               = m_pcCfg->getPoSEIId();
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   seiProcessingOrderInfo->m_posForHumanViewingIdc    = m_pcCfg->getPoSEIForHumanViewingIdc();
   seiProcessingOrderInfo->m_posForMachineAnalysisIdc = m_pcCfg->getPoSEIForMachineAnalysisIdc();
-#endif
   seiProcessingOrderInfo->m_posNumMinus2        = m_pcCfg->getPoSEINumMinus2();
   seiProcessingOrderInfo->m_posBreadthFirstFlag = m_pcCfg->getPoSEIBreadthFirstFlag();
   seiProcessingOrderInfo->m_posWrappingFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
@@ -1758,10 +1756,8 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_applicationPurposeTagUri = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUri(filterIdx);
       }
     }
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
     sei->m_forHumanViewingIdc = m_pcCfg->getNNPostFilterSEICharacteristicsForHumanViewingIdc(filterIdx);
     sei->m_forMachineAnalysisIdc = m_pcCfg->getNNPostFilterSEICharacteristicsForMachineAnalysisIdc(filterIdx);
-#endif
   }
   if (sei->m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)
   {

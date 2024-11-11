@@ -788,13 +788,11 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
 
   sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_id");
   sei.m_posId = val;
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   sei_read_code(decodedMessageOutputStream, 2, val, "po_for_human_viewing_idc");
   sei.m_posForHumanViewingIdc = val;
   sei_read_code(decodedMessageOutputStream, 2, val, "po_for_machine_analysis_idc");
   sei.m_posForMachineAnalysisIdc = val;
   sei_read_code(decodedMessageOutputStream, 4, val, "po_reserved_zero_4bits");  // Decoders shall allow any value of po_reserved_zero_4bits in the range of 0 to 15, inclusive
-#endif
   sei_read_code(decodedMessageOutputStream, 7, val, "po_sei_num_minus2");
   sei.m_posNumMinus2 = val;
   sei_read_flag(decodedMessageOutputStream, val, "po_breadth_first_flag");
@@ -3447,14 +3445,12 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
           numberExtensionBitsUsed += (static_cast<uint32_t>(sei.m_applicationPurposeTagUri.length() + 1) * 8);
         }
       }
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
       sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_for_human_viewing_idc");
       sei.m_forHumanViewingIdc = val;
       numberExtensionBitsUsed += 2;
       sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_for_machine_analysis_idc");
       sei.m_forMachineAnalysisIdc = val;
       numberExtensionBitsUsed += 2;
-#endif
       uint32_t numberExtensionBitRemaining = metadataExtensionNumBits - numberExtensionBitsUsed;
       for (uint32_t i = 0; i < numberExtensionBitRemaining; i++)
       {
