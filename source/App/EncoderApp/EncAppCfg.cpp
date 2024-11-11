@@ -2071,14 +2071,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream spatialExtrapolationBottomOffset;
     spatialExtrapolationBottomOffset << "SEINNPFCSpatialExtrapolationLeftOffset" << i; 
     opts.addOptions()(spatialExtrapolationBottomOffset.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i], 0, "Bottom offset of spatial extrapolation");
-#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
     std::ostringstream spatialextrapolationPromptPresentFlag;
     spatialextrapolationPromptPresentFlag << "SEINNPFCSpatialExtrapolationPromptPresentFlag" << i;
     opts.addOptions()(spatialextrapolationPromptPresentFlag.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[i], false, "equal to 1 specifies that nnpfc_prompt syntax element is present and nnpfc_alignment_zero_bit_c syntax element may be present. nnpfc_spatial_extrapolation_prompt_present_flag equal to 0 specifies that nnpfc_prompt syntax element and nnpfc_alignment_zero_bit_c syntax element are not present.");
     std::ostringstream spatialextrapolationPrompt;
     spatialextrapolationPrompt << "SEINNPFCSpatialExtrapolationPrompt" << i;
     opts.addOptions()(spatialextrapolationPrompt.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[i], std::string(""), "specifies the text string prompt used for generating the contents of the spatial extrapolation image area.");
-#endif
 #endif
     std::ostringstream InputPicOutputFlag;
     InputPicOutputFlag << "SEINNPFCInputPicOutputFlag" << i;

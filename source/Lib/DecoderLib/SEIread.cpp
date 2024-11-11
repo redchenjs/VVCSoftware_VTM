@@ -3207,7 +3207,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_spatialExtrapolationTopOffset = value;
       sei_read_svlc(pDecodedMessageOutputStream, value, "nnpfc_spatial_extrapolation_bottom_offset");
       sei.m_spatialExtrapolationBottomOffset = value;
-#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_spatial_extrapolation_prompt_present_flag");
       sei.m_spatialExtrapolationPromptPresentFlag = val;
       if (sei.m_spatialExtrapolationPromptPresentFlag)
@@ -3221,7 +3220,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei_read_string(pDecodedMessageOutputStream, valp, "nnpfc_prompt");
         sei.m_prompt = valp;
       }
-#endif
     }
 #endif
 

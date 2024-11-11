@@ -1646,13 +1646,11 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_spatialExtrapolationRightOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationRightOffset(filterIdx);
       sei->m_spatialExtrapolationTopOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset(filterIdx);
       sei->m_spatialExtrapolationBottomOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(filterIdx);
-#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
       sei->m_spatialExtrapolationPromptPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag(filterIdx);
       if (sei->m_spatialExtrapolationPromptPresentFlag)
       {
         sei->m_prompt = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExrapolationPrompt(filterIdx);
       }
-#endif
     }
 #endif
 

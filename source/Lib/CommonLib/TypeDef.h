@@ -63,7 +63,6 @@
 
 
 
-#define JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1  1 //JVET-AI0061 proposal 1: signal a NNPFC prompt for spatial extrapolation
 
 #define JVET_AI0061_PROPOSAL2_SPATIAL_EXTRAPOLATION 1 // JVET AI0061-Proposal2: Ensure spatial extrapolation works correctly (Option 1)
 
