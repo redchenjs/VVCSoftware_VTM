@@ -1828,7 +1828,6 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
     }
     if ((sei->m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)
     {
-#if JVET_AI0180
       sei->m_origPicDimensionsFlag = m_pcCfg->getEOISEIOrigPicDimensionsFlag();
       if (sei->m_origPicDimensionsFlag)
       {
@@ -1839,9 +1838,6 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
       {
         sei->m_spatialResamplingTypeFlag = m_pcCfg->getEOISEISpatialResamplingTypeFlag();
       }
-#else
-      sei->m_spatialResamplingTypeFlag = m_pcCfg->getEOISEISpatialResamplingTypeFlag();
-#endif
     }
     if ((sei->m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
     {
