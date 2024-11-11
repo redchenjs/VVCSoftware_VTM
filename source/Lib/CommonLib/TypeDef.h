@@ -57,14 +57,6 @@
 //########### place macros to be removed in next cycle below this line ###############
 
 
-
-
-
-
-
-
-
-
 //########### place macros to be be kept below this line ###############
 
 #define GDR_ENABLED   1
