@@ -563,12 +563,10 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIEncoderOptimizationInfo((SEIEncoderOptimizationInfo &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
-#if JVET_AG2034_SPTI_SEI
     case SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO:
       sei = new SEISourcePictureTimingInfo;
       xParseSEISourcePictureTimingInfo((SEISourcePictureTimingInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
 #if JVET_AG0322_MODALITY_INFORMATION    
     case SEI::PayloadType::MODALITY_INFORMATION:
       sei = new SEIModalityInfo; 
@@ -3583,7 +3581,6 @@ void SEIReader::xParseSEIPostFilterHint(SEIPostFilterHint &sei, uint32_t payload
   }
 }
 
-#if JVET_AG2034_SPTI_SEI
 void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei, uint32_t payloadSize,
                                                  std::ostream* pDecodedMessageOutputStream)
 {
@@ -3632,7 +3629,6 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
     }
   }
 }
-#endif
 
 #if JVET_AH2006_TXTDESCRINFO_SEI
   void SEIReader::xParseSEITextDescription(SEITextDescription &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)

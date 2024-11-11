@@ -572,7 +572,6 @@ void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIn
     }
   }
 }
-#if JVET_AG2034_SPTI_SEI
 void SEIEncoder::initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEISourcePictureTimingInfo)
 {
 
@@ -598,7 +597,6 @@ void SEIEncoder::initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEIS
       1 << (SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 - i));
   }
 }
-#endif
 void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting)
 {
   assert(m_isInitialized);

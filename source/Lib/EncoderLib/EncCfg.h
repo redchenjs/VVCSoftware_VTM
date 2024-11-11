@@ -700,13 +700,11 @@ protected:
   uint32_t                m_siiSEINumUnitsInShutterInterval;
   uint32_t                m_siiSEITimeScale;
   std::vector<uint32_t>   m_siiSEISubLayerNumUnitsInSI;
-#if JVET_AG2034_SPTI_SEI
   bool     m_sptiSEIEnabled;
   bool     m_sptiSourceTimingEqualsOutputTimingFlag;
   uint32_t m_sptiSourceType;
   uint32_t m_sptiTimeScale;
   uint32_t m_sptiNumUnitsInElementalInterval;
-#endif
 
   bool                    m_nnPostFilterSEICharacteristicsEnabled;
   bool                    m_nnPostFilterSEICharacteristicsUseSuffixSEI;
@@ -2028,7 +2026,6 @@ public:
   void     setSiiSEISubLayerNumUnitsInSI(const std::vector<uint32_t>& b) { m_siiSEISubLayerNumUnitsInSI = b; }
   uint32_t getSiiSEISubLayerNumUnitsInSI(uint32_t idx) const { return m_siiSEISubLayerNumUnitsInSI[idx]; }
 
-#if JVET_AG2034_SPTI_SEI
   void     setSptiSEIEnabled(bool b) { m_sptiSEIEnabled = b; }
   bool     getSptiSEIEnabled() { return m_sptiSEIEnabled; }
   void     setmSptiSEISourceTimingEqualsOutputTimingFlag(bool b) { m_sptiSourceTimingEqualsOutputTimingFlag = b; }
@@ -2039,7 +2036,6 @@ public:
   uint32_t getmSptiSEITimeScale() { return m_sptiTimeScale; }
   void     setmSptiSEINumUnitsInElementalInterval(uint32_t b) { m_sptiNumUnitsInElementalInterval = b; }
   uint32_t getmSptiSEINumUnitsInElementalInterval() { return m_sptiNumUnitsInElementalInterval; }
-#endif
 
   void        setNNPostFilterSEICharacteristicsEnabled(bool enabledFlag)                                                { m_nnPostFilterSEICharacteristicsEnabled = enabledFlag; }
   bool        getNNPostFilterSEICharacteristicsEnabled() const                                                          { return m_nnPostFilterSEICharacteristicsEnabled; }

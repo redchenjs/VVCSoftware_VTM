@@ -104,9 +104,7 @@ public:
 #if JVET_AH2006_EOI_SEI
     ENCODER_OPTIMIZATION_INFO = 215,
 #endif 
-#if JVET_AG2034_SPTI_SEI
     SOURCE_PICTURE_TIMING_INFO = 216,
-#endif
 #if JVET_AI0153_OMI_SEI
     OBJECT_MASK_INFO = 217,
 #endif
@@ -168,7 +166,6 @@ public:
   std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
 };
 
-#if JVET_AG2034_SPTI_SEI
 class SEISourcePictureTimingInfo : public SEI
 {
 public:
@@ -190,7 +187,6 @@ public:
   std::vector<uint32_t> m_sptiSublayerIntervalScaleFactor;
   std::vector<bool>     m_sptiSublayerSynthesizedPictureFlag;
 };
-#endif
 class SEIProcessingOrderInfo : public SEI
 {
 public:

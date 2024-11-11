@@ -483,9 +483,7 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION, "Neural network post-filter activation" },
   { SEI::PayloadType::PHASE_INDICATION, "Phase Indication" },
   { SEI::PayloadType::SEI_PROCESSING_ORDER, "SEI messages Processing order" },
-#if JVET_AG2034_SPTI_SEI
   { SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO, "Source picture timing info" },
-#endif
 #if JVET_AG0322_MODALITY_INFORMATION
   { SEI::PayloadType::MODALITY_INFORMATION, "Modality information" }
 #endif
@@ -513,7 +511,6 @@ SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei
   m_siiFixedSIwithinCLVS = sei.m_siiFixedSIwithinCLVS;
   m_siiSubLayerNumUnitsInSI = sei.m_siiSubLayerNumUnitsInSI;
 }
-#if JVET_AG2034_SPTI_SEI
 SEISourcePictureTimingInfo::SEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei)
 {
   m_sptiSEIEnabled                         = sei.m_sptiSEIEnabled;
@@ -522,7 +519,6 @@ SEISourcePictureTimingInfo::SEISourcePictureTimingInfo(const SEISourcePictureTim
   m_sptiTimeScale                          = sei.m_sptiTimeScale;
   m_sptiNumUnitsInElementalInterval        = sei.m_sptiNumUnitsInElementalInterval;
 }
-#endif
 
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
 {

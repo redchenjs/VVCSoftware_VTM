@@ -201,11 +201,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIEncoderOptimizationInfo(*static_cast<const SEIEncoderOptimizationInfo *>(&sei));
     break;
 #endif 
-#if JVET_AG2034_SPTI_SEI
   case SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO:
     xWriteSEISourcePictureTimingInfo(*static_cast<const SEISourcePictureTimingInfo*>(&sei));
     break;
-#endif
 #if JVET_AG0322_MODALITY_INFORMATION
   case SEI::PayloadType::MODALITY_INFORMATION:
     xWriteSEIModalityInfo(*static_cast<const SEIModalityInfo *>(&sei));
@@ -2235,7 +2233,6 @@ void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInf
   }
 }
 #endif
-#if JVET_AG2034_SPTI_SEI
 void SEIWriter::xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei)
 {
   xWriteFlag(sei.m_sptiCancelFlag, "spti_cancel_flag");
@@ -2270,7 +2267,6 @@ void SEIWriter::xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInf
     }
   }
 }
-#endif
 
 #if JVET_AG0322_MODALITY_INFORMATION
 void SEIWriter::xWriteSEIModalityInfo(const SEIModalityInfo& sei)

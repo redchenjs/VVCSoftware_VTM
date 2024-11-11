@@ -1442,7 +1442,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPoSEIForMachineAnalysisIdc                        (m_poSEIForMachineAnalysisIdc);
 #endif
 
-#if JVET_AG2034_SPTI_SEI
   m_cEncLib.setSptiSEIEnabled(m_sptiSEIEnabled);
   if (m_sptiSEIEnabled)
   {
@@ -1451,7 +1450,6 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setmSptiSEITimeScale(m_sptiTimeScale);
     m_cEncLib.setmSptiSEINumUnitsInElementalInterval(m_sptiNumUnitsInElementalInterval);
   }
-#endif
 
   m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
 #if JVET_AI0073_BREADTH_FIRST_FLAG

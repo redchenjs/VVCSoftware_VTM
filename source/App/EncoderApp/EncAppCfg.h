@@ -993,13 +993,11 @@ protected:
   std::string m_shutterIntervalPreFileName;                   ///< output Pre-Filtering video
   int         m_SII_BlendingRatio;
   void        setBlendingRatioSII(int value) { m_SII_BlendingRatio = value; }
-#if JVET_AG2034_SPTI_SEI
   bool     m_sptiSEIEnabled;
   bool     m_sptiSourceTimingEqualsOutputTimingFlag;
   uint32_t m_sptiSourceType;
   uint32_t m_sptiTimeScale;
   uint32_t m_sptiNumUnitsInElementalInterval;
-#endif
 #if GREEN_METADATA_SEI_ENABLED
 public:
   std::string getGMFAFile ();

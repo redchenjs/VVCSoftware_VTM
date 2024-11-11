@@ -98,9 +98,7 @@ public:
   bool initSEIObjectMaskInfos(SEIObjectMaskInfos* sei, int currPOC);
 #endif
 
-#if JVET_AG2034_SPTI_SEI
   void initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEISourcePictureTimingInfo);
-#endif
   void initSEIMultiviewViewPosition(SEIMultiviewViewPosition *sei);
   void initSEIShutterIntervalInfo(SEIShutterIntervalInfo *sei);
   void initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkPostFilterCharacteristics *sei, int filterIdx);
