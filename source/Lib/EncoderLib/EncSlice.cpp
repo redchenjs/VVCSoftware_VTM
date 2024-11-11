@@ -79,7 +79,6 @@ void EncSlice::destroy()
   m_vdRdPicQp.clear();
   m_viRdPicQp.clear();
 
-#if JVET_AH0078_DPF
   if (m_pcCfg->getDPF())
   {
     m_lambdaWeight.clear();
@@ -104,7 +103,6 @@ void EncSlice::destroy()
       m_pixelPredErr = nullptr;
     }
   }
-#endif
 }
 
 void EncSlice::init( EncLib* pcEncLib, const SPS& sps )
@@ -127,7 +125,6 @@ void EncSlice::init( EncLib* pcEncLib, const SPS& sps )
   m_viRdPicQp.resize(    m_pcCfg->getDeltaQpRD() * 2 + 1 );
   m_pcRateCtrl        = pcEncLib->getRateCtrl();
 
-#if JVET_AH0078_DPF
   if (m_pcCfg->getDPF())
   {
     m_maxPicHeight = sps.getMaxPicHeightInLumaSamples();
@@ -140,7 +137,6 @@ void EncSlice::init( EncLib* pcEncLib, const SPS& sps )
       m_pixelRecDis[i] = new int[m_maxPicWidth];
     }
   }
-#endif
 }
 
 void EncSlice::setUpLambda(Slice *slice, const double dLambda, int qp)
@@ -635,13 +631,11 @@ void EncSlice::initEncSlice(Picture *pcPic, const int pocLast, const int pocCurr
   m_pcRdCost->setDistortionWeight (COMPONENT_Y, 1.0); // no chroma weighting for luma
 #endif
   setUpLambda(rpcSlice, dLambda, qp);
-#if JVET_AH0078_DPF
   if (m_pcCfg->getDPF())
   {
     m_lambda = dLambda;
     m_qpCtu = qp;
   }
-#endif
 
 #if WCG_EXT
   // cost = Distortion + Lambda*R,
@@ -1396,12 +1390,10 @@ void EncSlice::setLosslessSlice(Picture* pcPic, bool islossless)
  */
 void EncSlice::precompressSlice( Picture* pcPic )
 {
-#if JVET_AH0078_DPF
   if (m_pcCfg->getDPF())
   {
     setLambdaWeightByDPF(pcPic);
   }
-#endif
   // if deltaQP RD is not used, simply return
   if ( m_pcCfg->getDeltaQpRD() == 0 )
   {
@@ -1923,12 +1915,10 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
       currQP.fill(adaptedQP);
     }
 #endif
-#if JVET_AH0078_DPF
     if (m_pcCfg->getDPF() && m_pcLib->getEncType() == ENC_FULL && !pcPic->slices[0]->isIntra())
     {
       setCTULambdaQpByWeight(ctuIdx, pTrQuant, pRdCost, pcSlice);
     }
-#endif
 
     bool updateBcwCodingOrder = cs.slice->getSliceType() == B_SLICE && ctuIdx == 0;
     if( updateBcwCodingOrder )
@@ -1971,12 +1961,10 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
       cs.storePrevPLT(pEncLib->m_palettePredictorSyncState);
     }
 
-#if JVET_AH0078_DPF
     if (m_pcCfg->getDPF() && m_pcLib->getEncType() == ENC_FULL && !pcPic->slices[0]->isIntra())
     {
       pRdCost->setLambda(oldLambda, pcSlice->getSPS()->getBitDepths());
     }
-#endif
 
     int actualBits = int(cs.fracBits >> SCALE_BITS);
     actualBits    -= (int)m_uiPicTotalBits;
@@ -2064,7 +2052,6 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
         }
       }
     }
-#if JVET_AH0078_DPF
     if (m_pcCfg->getDPF() && m_pcLib->getEncType() == ENC_PRE)
     {
       // merge clipped pred buffer
@@ -2077,7 +2064,6 @@ void EncSlice::encodeCtus( Picture* pcPic, const bool bCompressEntireSlice, cons
       CPelUnitBuf srcBuf = pcPic->getPredBuf(clipArea);
       dstBuf.copyFrom(srcBuf, true);
     }
-#endif
   }
 }
 
@@ -2208,7 +2194,6 @@ double EncSlice::xGetQPValueAccordingToLambda ( double lambda )
   return 4.2005*log(lambda) + 13.7122;
 }
 
-#if JVET_AH0078_DPF
 void EncSlice::setCTULambdaQpByWeight(uint32_t ctuIdx, TrQuant* pTrQuant, RdCost* pRdCost, Slice* pcSlice)
 {
   const double lambdaCTU = m_lambda * m_lambdaWeight[ctuIdx];
@@ -2392,6 +2377,5 @@ void EncSlice::setLambdaWeightByDPF(Picture* pcPic)
   m_factorBlk.clear();
   m_pre.destroy();
 }
-#endif
 
 //! \}
