@@ -919,14 +919,12 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     m_seiEncoder.initSEIShutterIntervalInfo(seiShutterInterval);
     seiMessages.push_back(seiShutterInterval);
   }
-#if JVET_AG2034_SPTI_SEI
   if (m_pcCfg->getSptiSEIEnabled())
   {
     SEISourcePictureTimingInfo* seiSourcePictureTimingInfo = new SEISourcePictureTimingInfo;
     m_seiEncoder.initSEISourcePictureTimingInfo(seiSourcePictureTimingInfo);
     seiMessages.push_back(seiSourcePictureTimingInfo);
   }
-#endif
   if (m_pcCfg->getNNPostFilterSEICharacteristicsEnabled() && !m_pcCfg->getNNPostFilterSEICharacteristicsUseSuffixSEI())
   {
     xCreateNNPostFilterCharacteristicsSEIMessages(seiMessages);
@@ -1002,7 +1000,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     }
   }
 
-#if JVET_AI0153_OMI_SEI
   if (!m_pcCfg->getObjectMaskInfoSEIFileRoot().empty())
   {
     // CHECK(!m_pcCfg->getSdiSEIEnabled(), "SDI-SEI has not enabled. (OMI-SEI depends on SDI-SEI)");
@@ -1018,7 +1015,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
       delete seiObjectMaskInfo;
     }
   }
-#endif
 
   if (m_pcCfg->getFilmGrainCharactersticsSEIEnabled() && m_pcCfg->getFilmGrainCharactersticsSEIPerPictureSEI())
   {

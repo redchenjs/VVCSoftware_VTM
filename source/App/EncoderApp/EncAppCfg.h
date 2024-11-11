@@ -550,11 +550,9 @@ protected:
   uint32_t m_eoiSEIObjectBasedIdc;
   bool m_eoiSEITemporalResamplingTypeFlag;
   uint32_t m_eoiSEINumIntPics;
-#if JVET_AI0180
   bool     m_eoiSEIOrigPicDimensionsFlag;
   uint32_t m_eoiSEIOrigPicWidth;
   uint32_t m_eoiSEIOrigPicHeight;
-#endif
   bool m_eoiSEISpatialResamplingTypeFlag;
   uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
@@ -638,9 +636,7 @@ protected:
   std::vector<uint32_t>  m_sdiSEIViewIdVal;
   std::vector<uint32_t>  m_sdiSEIAuxId;
   std::vector<uint32_t>  m_sdiSEINumAssociatedPrimaryLayersMinus1;
-#if JVET_AI0153_OMI_SEI
   std::vector<uint32_t>  m_sdiSEIAssociatedPrimaryLayerIdx;
-#endif
   // multiview acquisition information sei
   bool              m_maiSEIEnabled;
   bool              m_maiSEIIntrinsicParamFlag;
@@ -722,9 +718,7 @@ protected:
   std::vector<uint32_t> m_omniViewportSEIHorRange;
   std::vector<uint32_t> m_omniViewportSEIVerRange;
   std::string           m_arSEIFileRoot;  // Annotated region SEI - initialized from external file
-#if JVET_AI0153_OMI_SEI
   std::string           m_omiSEIFileRoot;   // Object mask information SEI - initialized from external file
-#endif
   bool                  m_rwpSEIEnabled;
   bool                  m_rwpSEIRwpCancelFlag;
   bool                  m_rwpSEIRwpPersistenceFlag;
@@ -814,14 +808,10 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsCrPadding[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsPayloadFilename[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING 
   bool                  m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[MAX_NUM_NN_POST_FILTERS];
-#endif 
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   uint32_t              m_nnPostFilterSEICharacteristicsForHumanViewingIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::string           m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsUri[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsParameterTypeIdc[MAX_NUM_NN_POST_FILTERS];
@@ -841,10 +831,8 @@ protected:
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
   bool                  m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[MAX_NUM_NN_POST_FILTERS];
-#endif
 #endif
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
@@ -857,14 +845,10 @@ protected:
 
   bool                  m_poSEIEnabled;
   uint32_t              m_poSEIId;
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   uint32_t              m_poSEIForHumanViewingIdc;
   uint32_t              m_poSEIForMachineAnalysisIdc;
-#endif
   uint32_t              m_poSEINumMinus2;
-#if JVET_AI0073_BREADTH_FIRST_FLAG
   bool                  m_poSEIBreadthFirstFlag;
-#endif
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
   std::vector<bool>     m_poSEIPrefixFlag;
@@ -997,13 +981,11 @@ protected:
   std::string m_shutterIntervalPreFileName;                   ///< output Pre-Filtering video
   int         m_SII_BlendingRatio;
   void        setBlendingRatioSII(int value) { m_SII_BlendingRatio = value; }
-#if JVET_AG2034_SPTI_SEI
   bool     m_sptiSEIEnabled;
   bool     m_sptiSourceTimingEqualsOutputTimingFlag;
   uint32_t m_sptiSourceType;
   uint32_t m_sptiTimeScale;
   uint32_t m_sptiNumUnitsInElementalInterval;
-#endif
 #if GREEN_METADATA_SEI_ENABLED
 public:
   std::string getGMFAFile ();
@@ -1097,11 +1079,9 @@ protected:
   int                   m_gopBasedTemporalFilterFutureRefs;
   std::map<int, double> m_gopBasedTemporalFilterStrengths;             ///< Filter strength per frame for the GOP-based Temporal Filter
   bool                  m_bimEnabled;
-#if JVET_AH0078_DPF
   bool                  m_dpfEnabled;
   int                   m_dpfKeyLen;
   int                   m_dpfNonkeyLen;
-#endif
 
   int         m_maxLayers;
   int         m_targetOlsIdx;

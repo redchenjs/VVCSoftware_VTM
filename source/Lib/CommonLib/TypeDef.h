@@ -56,23 +56,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AI0180 1   // JVET AI0180: "AHG9: Adding original source picture dimensions to EOI SEI"
-
-#define JVET_AH0078_DPF 1 // JVET-AH0078: AhG10: Distortion Propagation Factor for VVC Low-Delay Configuration
-
-#define JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING 1 // JVET-AF2032: Conditionally signal application tag URI presence flag and tag URI in the NNPFC metadata extension
-
-#define JVET_AG2034_SPTI_SEI 1 //JVET-AE0079, JVET-AF0055, JVET-AF0069, JVET-AF0097, JVET-AG0191, JVET-AG0188 
-
-#define JVET_AI0073_BREADTH_FIRST_FLAG 1 // Handling of a processing chain specified by an SPO SEI message
-
-#define JVET_AI0071_NNPFC_SPO_USAGE_IDCS 1  // Indication of the user viewing and/or machine analysis usage in the NNPFC and SPO SEI messages
-
-#define JVET_AI0153_OMI_SEI 1 // JVET-AI0153: OMI-SEI Implementation as JVET-AH0346
-
-#define JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1  1 //JVET-AI0061 proposal 1: signal a NNPFC prompt for spatial extrapolation
-
-#define JVET_AI0061_PROPOSAL2_SPATIAL_EXTRAPOLATION 1 // JVET AI0061-Proposal2: Ensure spatial extrapolation works correctly (Option 1)
 
 //########### place macros to be be kept below this line ###############
 
@@ -1310,13 +1293,11 @@ enum RESHAPE_SIGNAL_TYPE
   RESHAPE_SIGNAL_NULL = 100,
 };
 
-#if JVET_AH0078_DPF
 enum EncType
 {
   ENC_PRE = 0,
   ENC_FULL = 1,
 };
-#endif
 
 // ---------------------------------------------------------------------------
 // exception class

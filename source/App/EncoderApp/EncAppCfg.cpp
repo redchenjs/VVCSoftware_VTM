@@ -696,9 +696,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>        cfg_sdiSEIViewIdVal                (0, 63, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t>        cfg_sdiSEIAuxId                    (0, 255, 0, 63);
   SMultiValueInput<uint32_t>        cfg_sdiSEINumAssociatedPrimaryLayersMinus1 (0, 63, 0, 63);
-#if JVET_AI0153_OMI_SEI
   SMultiValueInput<uint32_t>        cfg_sdiSEIAssociatedPrimaryLayerIdx(0, 63, 0, 63);
-#endif
   SMultiValueInput<bool>            cfg_maiSEISignFocalLengthX         (0, 1,   0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t>        cfg_maiSEIExponentFocalLengthX     (0, 63, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t>        cfg_maiSEIMantissaFocalLengthX     (0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
@@ -1246,11 +1244,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("RDOQ",                                            m_useRDOQ,                                         true)
   ("RDOQTS",                                          m_useRDOQTS,                                       true)
   ("SelectiveRDOQ",                                   m_useSelectiveRDOQ,                               false, "Enable selective RDOQ")
-#if JVET_AH0078_DPF
   ("DPF",                                             m_dpfEnabled,                                     false, "Distortion Propagation Factor, CTU-Level Lagrange Multiplier and QP Adaptation")
   ("DPFKeyLength",                                    m_dpfKeyLen,                                   8, "DPF Propagation Length for key frames")
   ("DPFNonkeyLength",                                 m_dpfNonkeyLen,                                0, "DPF Propagation Length for non-key frames")
-#endif
 
   // Deblocking filter parameters
   ("DeblockingFilterDisable",                         m_deblockingFilterDisable,                        false)
@@ -1470,9 +1466,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEISubpicLevelInfoExplicitFraction", m_cfgSubpictureLevelInfoSEI.m_explicitFraction, false, "Enable sending of explicit fractions in Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoNumSubpics", m_cfgSubpictureLevelInfoSEI.m_numSubpictures, 1, "Number of subpictures for Subpicture Level Information SEI messages")
 ("SEIAnnotatedRegionsFileRoot,-ar", m_arSEIFileRoot, std::string(""), "Annotated region SEI parameters root file name (wo num ext); only the file name base is to be added. Underscore and POC would be automatically addded to . E.g. \"-ar ar\" will search for files ar_0.txt, ar_1.txt, ...")
-#if JVET_AI0153_OMI_SEI
 ("SEIObjectMaskFileRoot,-omi", m_omiSEIFileRoot, std::string(""), "Object mask information SEI parameters root file name (wo num ext); only the file name base is to be added. Underscore and POC would be automatically added to . E.g. \"-omi omi\" will search for files omi_0.txt, omi_1.txt, ...")
-#endif
 ("SEISubpicLevelInfoMaxSublayers", m_cfgSubpictureLevelInfoSEI.m_sliMaxSublayers, 1, "Number of sublayers for Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoSublayerInfoPresentFlag", m_cfgSubpictureLevelInfoSEI.hasSublayerInfo, false, "Enable sending of level information for all sublayers in Subpicture Level Information SEI messages")
 ("SEISubpicLevelInfoRefLevelFractions", cfg_sliFractions, cfg_sliFractions, "List of subpicture level fractions for Subpicture Level Information SEI messages")
@@ -1498,13 +1492,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEISiiTimeScale", m_siiSEITimeScale, 27000000u, "Specifies sii_time_scale")
 ("SEISiiInputNumUnitsInShutterInterval", cfg_siiSEIInputNumUnitsInSI, cfg_siiSEIInputNumUnitsInSI, "Specifies sub_layer_num_units_in_shutter_interval")
 
-#if JVET_AG2034_SPTI_SEI
 ("SEISourcePictureTimingInfo", m_sptiSEIEnabled, false, "Controls if source picture timing information SEI message is enabled")
 ("SEISPTISourceTimingEqualsOutputTimingFlag", m_sptiSourceTimingEqualsOutputTimingFlag, true, "Indicates the timing of source pictures is the same as the timing of corresponding decoded output pictures")
 ("SEISPTISourceType", m_sptiSourceType, 0u, "Indicates the timing relationship between source pictures and corresponding decoded output pictures.")
 ("SEISPTITimeScale", m_sptiTimeScale, 27000000u, "Specifies the number of time units that pass in one second.")
 ("SEISPTINumUnitsInElementalInterval", m_sptiNumUnitsInElementalInterval, 1080000u, "Specifies the number of time units of a clock operating at the frequency spti_time_scale Hz that corresponds to the indicated elemental source picture interval of consecutive pictures in output order in the CLVS.")
-#endif
 #if ENABLE_TRACING
 ("TraceChannelsList", bTracingChannelsList, false, "List all available tracing channels")
 ("TraceRule", sTracingRule, std::string(""), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")")
@@ -1521,11 +1513,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEIEOIObjectBasedIdc", m_eoiSEIObjectBasedIdc, 0u, "Indicates the type of object-based optimization")
 ("SEIEOITemporalResamplingTypeFlag", m_eoiSEITemporalResamplingTypeFlag, false, "specifies the type of the temporal resampling optimization.")
 ("SEIEOINumIntPics", m_eoiSEINumIntPics, 0u, "indicates that the count of pictures that the encoding system excluded or added between each pair of coded pictures in output order within the persistence of this SEI message is constant")
-#if JVET_AI0180
 ("SEIEOIOrigPicDimensionsFlag",m_eoiSEIOrigPicDimensionsFlag, false, "specifies if original source picture dimensions are present.")
 ("SEIEOIOrigPicWidth", m_eoiSEIOrigPicWidth, 0u, "indicates the width of the original source picture.")
 ("SEIEOIOrigPicHeight", m_eoiSEIOrigPicHeight, 0u, "indicates the height of the original source picture.")
-#endif
 ("SEIEOISpatialResamplingTypeFlag", m_eoiSEISpatialResamplingTypeFlag, false, "specifies the type of the spatial resampling optimization.")
 ("SEIEOIPrivacyProtectionTypeIdc", m_eoiSEIPrivacyProtectionTypeIdc, 0u, "indicates the type of privacy protection optimization")
 ("SEIEOIPrivacyProtectedInfoType", m_eoiSEIPrivacyProtectedInfoType, 0u, "indicates the types of protected information")
@@ -1633,9 +1623,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEISDIViewIdVal",                                 cfg_sdiSEIViewIdVal,        cfg_sdiSEIViewIdVal, "List of the view identifiers in the scalaibility dimension information SEI message")
   ("SEISDIAuxId",                                     cfg_sdiSEIAuxId,                cfg_sdiSEIAuxId, "List of the auxiliary identifiers in the scalaibility dimension information SEI message")
   ("SEISDINumAssociatedPrimaryLayersMinus1",          cfg_sdiSEINumAssociatedPrimaryLayersMinus1, cfg_sdiSEINumAssociatedPrimaryLayersMinus1, "List of the numbers of associated primary layers of i-th layer, which is an auxiliary layer.")
-#if JVET_AI0153_OMI_SEI
   ("SEISDIAssociatedPrimaryLayerIdx",                 cfg_sdiSEIAssociatedPrimaryLayerIdx, cfg_sdiSEIAssociatedPrimaryLayerIdx, "List of the layer index of the j-th associated primary layer of the i-th layer, which is an auxiliary layer. It is a 1-d list and the number of the associated primary layer of the i-th auxiliary layer is indicated by cfg_sdiSEINumAssociatedPrimaryLayersMinus1 and cfg_sdiSEIAuxId.")
-#endif
   // multiview acquisition information SEI
   ("SEIMAIEnabled",                                   m_maiSEIEnabled,                                    false, "Control generation of multiview acquisition information SEI message")
   ("SEIMAIIntrinsicParamFlag",                        m_maiSEIIntrinsicParamFlag,                         false, "Specifies the presence of intrinsic camera parameters in the multiview acquisition information SEI message")
@@ -1695,14 +1683,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   //Processing order of SEI (pos)
   ("SEIPOEnabled",                                    m_poSEIEnabled,                                    false, "Specifies whether SEI processing order is applied or not")
   ("SEIPOId",                                         m_poSEIId,                                            0u, "Specifies the id of the SEI processing order SEI message")
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   ("SEIPOForHumanViewingIdc",                         m_poSEIForHumanViewingIdc,                            0u, "Specifies the user viewing usage level of video resulting from processing chain specified by SPO SEI: optimal for human viewing (3), suitable (2), unsuitable (1), unknown (0, default)")
   ("SEIPOForMachineAnalysisIdc",                      m_poSEIForMachineAnalysisIdc,                         0u, "Specifies the machine analysis usage level of video resulting from processing chain specified by SPO SEI: optimal for machine analysis (3), suitable (2), unsuitable (1), unknown (0, default)")
-#endif
   ("SEIPONumMinus2",                                  m_poSEINumMinus2,                                     0u, "Specifies the number of SEIs minus 2 in the SEI processing order SEI message")
-#if JVET_AI0073_BREADTH_FIRST_FLAG
   ("SEIPOBreadthFirstFlag",                           m_poSEIBreadthFirstFlag,                           false, "Specifies that breadth-first handling of processing chain is applied (1), or that either breadth-first or depth-first can be applied (0, default)")
-#endif
   ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,             cfg_poSEIWrappingFlag, "Specifies whether a correspoding processing-order-nested SEI message exists or not")
   ("SEIPOImportanceFlag",                             cfg_poSEIImportanceFlag,         cfg_poSEIImportanceFlag, "Specifies degree of importance for the SEI messages")
   ("SEIPOPrefixFlag",                                 cfg_poSEIPrefixFlag,                 cfg_poSEIPrefixFlag, "Specifies whether SEI message prefix is present or not")
@@ -2009,7 +1993,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     complexityInfoPresentFlag << "SEINNPFCComplexityInfoPresentFlag" << i;
     opts.addOptions()(complexityInfoPresentFlag.str(), m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[i], false, "Specifies the value of nnpfc_complexity_info_present_flag in the Neural Network Post Filter Characteristics SEI message");
 
-#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
     std::ostringstream applicationPurposeTagUriPresentFlag;
     applicationPurposeTagUriPresentFlag << "SEINNPFCApplicationPurposeTagUriPresentFlag" << i;
     opts.addOptions()(applicationPurposeTagUriPresentFlag.str(), m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[i], false, "equal to 1 indicates that the nnpfc_application_purpose_tag_uri syntax element is present in this NNPFC SEI message. nnpfc_application_purpose_tag_uri_present_flag equal to 0 indicates that the nnpfc_application_purpose_tag_uri syntax element is not present in this NNPFC SEI message.");
@@ -2017,9 +2000,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream applicationPurposeTagUri;
     applicationPurposeTagUri << "SEINNPFCApplicationPurposeTagUri" << i;
     opts.addOptions()(applicationPurposeTagUri.str(), m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[i], std::string(""), "specifies a tag URI with syntax and semantics as specified in IETF RFC 4151 identifying the application determined purpose of the NNPF, when nnpfc_purpose is equal to 0.");
-#endif
 
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
     std::ostringstream forHumanViewingIdc;
     forHumanViewingIdc << "SEINNPFCForHumanViewingIdc" << i;
     opts.addOptions()(forHumanViewingIdc.str(), m_nnPostFilterSEICharacteristicsForHumanViewingIdc[i], 0u, "Specifies the user viewing usage level of a neural-network post-filter: optimal for human viewing (3), suitable (2), unsuitable (1), unknown (0)");
@@ -2027,7 +2008,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream forMachineAnalysis;
     forMachineAnalysis << "SEINNPFCForMachineAnalysisIdc" << i;
     opts.addOptions()(forMachineAnalysis.str(), m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[i], 0u, "Specifies the machine analysis usage level of a neural-network post-filter: optimal for machine analysis (3), suitable (2), unsuitable (1), unknown (0)");
-#endif
 
     std::ostringstream uriTag;
     uriTag << "SEINNPFCUriTag" << i;
@@ -2091,14 +2071,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream spatialExtrapolationBottomOffset;
     spatialExtrapolationBottomOffset << "SEINNPFCSpatialExtrapolationLeftOffset" << i; 
     opts.addOptions()(spatialExtrapolationBottomOffset.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i], 0, "Bottom offset of spatial extrapolation");
-#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
     std::ostringstream spatialextrapolationPromptPresentFlag;
     spatialextrapolationPromptPresentFlag << "SEINNPFCSpatialExtrapolationPromptPresentFlag" << i;
     opts.addOptions()(spatialextrapolationPromptPresentFlag.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[i], false, "equal to 1 specifies that nnpfc_prompt syntax element is present and nnpfc_alignment_zero_bit_c syntax element may be present. nnpfc_spatial_extrapolation_prompt_present_flag equal to 0 specifies that nnpfc_prompt syntax element and nnpfc_alignment_zero_bit_c syntax element are not present.");
     std::ostringstream spatialextrapolationPrompt;
     spatialextrapolationPrompt << "SEINNPFCSpatialExtrapolationPrompt" << i;
     opts.addOptions()(spatialextrapolationPrompt.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[i], std::string(""), "specifies the text string prompt used for generating the contents of the spatial extrapolation image area.");
-#endif
 #endif
     std::ostringstream InputPicOutputFlag;
     InputPicOutputFlag << "SEINNPFCInputPicOutputFlag" << i;
@@ -3550,9 +3528,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_sdiSEIViewIdVal.resize(m_sdiSEIMaxLayersMinus1 + 1);
       m_sdiSEIAuxId.resize(m_sdiSEIMaxLayersMinus1 + 1);
       m_sdiSEINumAssociatedPrimaryLayersMinus1.resize(m_sdiSEIMaxLayersMinus1 + 1);
-#if JVET_AI0153_OMI_SEI
       uint32_t associatedPrimaryLayerIdxListCnt = 0;
-#endif
       for (int i = 0; i <= m_sdiSEIMaxLayersMinus1; i++)
       {
         m_sdiSEILayerId[i] = cfg_sdiSEILayerId.values[i];
@@ -3566,14 +3542,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
           if (m_sdiSEIAuxId[i] > 0)
           {
             m_sdiSEINumAssociatedPrimaryLayersMinus1[i] = cfg_sdiSEINumAssociatedPrimaryLayersMinus1.values[i];
-#if JVET_AI0153_OMI_SEI
             m_sdiSEIAssociatedPrimaryLayerIdx.resize(associatedPrimaryLayerIdxListCnt + m_sdiSEINumAssociatedPrimaryLayersMinus1[i] + 1);
             for (uint32_t k = 0; k <= m_sdiSEINumAssociatedPrimaryLayersMinus1[i]; k++)
             {
               m_sdiSEIAssociatedPrimaryLayerIdx[associatedPrimaryLayerIdxListCnt + k] = cfg_sdiSEIAssociatedPrimaryLayerIdx.values[associatedPrimaryLayerIdxListCnt + k];
             }
             associatedPrimaryLayerIdxListCnt += (m_sdiSEINumAssociatedPrimaryLayersMinus1[i] + 1);
-#endif
           }
         }
       }
@@ -3881,10 +3855,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   m_maxCuWidth = m_maxCuHeight = m_ctuSize;
 
-#if JVET_AH0078_DPF
   CHECK(m_bimEnabled && m_dpfEnabled, "DPF is not compatible with BIM");
   CHECK(m_dpfEnabled && m_resChangeInClvsEnabled, "DPF is not compatible with resolution change in CLVS");
-#endif
 
   // check validity of input parameters
   if( xCheckParameter() )
@@ -5413,10 +5385,8 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsLumaPadding[i] > ((1 << m_inputBitDepth[ChannelType::LUMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthLuma - 1");
       xConfirmPara(m_nnPostFilterSEICharacteristicsCbPadding[i] > ((1 << m_inputBitDepth[ChannelType::CHROMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthChroma - 1");
       xConfirmPara(m_nnPostFilterSEICharacteristicsCrPadding[i] > ((1 << m_inputBitDepth[ChannelType::CHROMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthChroma - 1");
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
       xConfirmPara(m_nnPostFilterSEICharacteristicsForHumanViewingIdc[i] > 3, "SEINNPFCForHumanViewingIdc must be in the range of 0 to 3");
       xConfirmPara(m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[i] > 3, "SEINNPFCForMachineAnalysisIdc must be in the range of 0 to 3");
-#endif
     }
   }
 
@@ -5485,10 +5455,8 @@ bool EncAppCfg::xCheckParameter()
       m_gopBasedTemporalFilterPastRefs <= 0 && m_gopBasedTemporalFilterFutureRefs <= 0,
       "Either TemporalFilterPastRefs or TemporalFilterFutureRefs must be larger than 0 when Block Importance Mapping is enabled" );
   }
-#if JVET_AH0078_DPF
   xConfirmPara(m_dpfKeyLen < 0, "DPF Key Length must be greater than or equal to 0");
   xConfirmPara(m_dpfNonkeyLen < 0, "DPF Non-key Length must be greater than or equal to 0");
-#endif
 #if EXTENSION_360_VIDEO
   check_failed |= m_ext360.verifyParameters();
 #endif
@@ -5883,14 +5851,12 @@ void EncAppCfg::xPrintParameter()
 
   msg(VERBOSE, "SEI processing Order:%d ", m_poSEIEnabled);
 
-#if JVET_AH0078_DPF
   msg(VERBOSE, "DPF:%d ", m_dpfEnabled);
   if (m_dpfEnabled)
   {
     msg(VERBOSE, "DPFKeyLength:%d ", m_dpfKeyLen);
     msg(VERBOSE, "DPFNonkeyLength:%d ", m_dpfNonkeyLen);
   }
-#endif
 
 #if EXTENSION_360_VIDEO
   m_ext360.outputConfigurationSummary();

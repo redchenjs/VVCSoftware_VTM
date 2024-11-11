@@ -572,7 +572,6 @@ void SEIEncoder::initSEIShutterIntervalInfo(SEIShutterIntervalInfo *seiShutterIn
     }
   }
 }
-#if JVET_AG2034_SPTI_SEI
 void SEIEncoder::initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEISourcePictureTimingInfo)
 {
 
@@ -598,7 +597,6 @@ void SEIEncoder::initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEIS
       1 << (SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 - i));
   }
 }
-#endif
 void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting)
 {
   assert(m_isInitialized);
@@ -607,14 +605,10 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
 
   seiProcessingOrderInfo->m_posEnabled          = m_pcCfg->getPoSEIEnabled();
   seiProcessingOrderInfo->m_posId               = m_pcCfg->getPoSEIId();
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   seiProcessingOrderInfo->m_posForHumanViewingIdc    = m_pcCfg->getPoSEIForHumanViewingIdc();
   seiProcessingOrderInfo->m_posForMachineAnalysisIdc = m_pcCfg->getPoSEIForMachineAnalysisIdc();
-#endif
   seiProcessingOrderInfo->m_posNumMinus2        = m_pcCfg->getPoSEINumMinus2();
-#if JVET_AI0073_BREADTH_FIRST_FLAG
   seiProcessingOrderInfo->m_posBreadthFirstFlag = m_pcCfg->getPoSEIBreadthFirstFlag();
-#endif
   seiProcessingOrderInfo->m_posWrappingFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posImportanceFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPrefixFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
@@ -935,7 +929,6 @@ void SEIEncoder::readAnnotatedRegionSEI(std::istream &fic, SEIAnnotatedRegions *
   }
 }
 
-#if JVET_AI0153_OMI_SEI
 void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* seiObjMask, bool& failed)
 {
   readTokenValue(seiObjMask->m_hdr.m_cancelFlag, failed, fic, "SEIOmiCancelFlag");
@@ -1068,7 +1061,6 @@ void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* se
     }
   }
 }
-#endif
 
 bool SEIEncoder::initSEIAnnotatedRegions(SEIAnnotatedRegions* SEIAnnoReg, int currPOC)
 {
@@ -1103,7 +1095,6 @@ bool SEIEncoder::initSEIAnnotatedRegions(SEIAnnotatedRegions* SEIAnnoReg, int cu
   return true;
 }
 
-#if JVET_AI0153_OMI_SEI
 bool SEIEncoder::initSEIObjectMaskInfos(SEIObjectMaskInfos* SEIObjMask, int currPOC)
 {
   CHECK(m_isInitialized == 0, "SEI is uninitialized");
@@ -1134,7 +1125,6 @@ bool SEIEncoder::initSEIObjectMaskInfos(SEIObjectMaskInfos* SEIObjMask, int curr
   }
   return true;
 }
-#endif
 
 void SEIEncoder::initSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics *seiAltTransCharacteristics)
 {
@@ -1263,9 +1253,7 @@ void SEIEncoder::initSEIScalabilityDimensionInfo(SEIScalabilityDimensionInfo *se
       sei->m_sdiViewIdLenMinus1 = m_pcCfg->getSdiSEIViewIdLenMinus1();
     }
     sei->m_sdiLayerId.resize(sei->m_sdiMaxLayersMinus1 + 1);
-#if JVET_AI0153_OMI_SEI
     uint32_t associatedPrimaryLayerIdxCnt = 0;
-#endif
     for (int i = 0; i <= sei->m_sdiMaxLayersMinus1; i++)
     {
       sei->m_sdiLayerId[i] = m_pcCfg->getSdiSEILayerId(i);
@@ -1286,11 +1274,7 @@ void SEIEncoder::initSEIScalabilityDimensionInfo(SEIScalabilityDimensionInfo *se
           sei->m_sdiAssociatedPrimaryLayerIdx[i].resize(sei->m_sdiNumAssociatedPrimaryLayersMinus1[i] + 1);
           for (int j = 0; j <= sei->m_sdiNumAssociatedPrimaryLayersMinus1[i]; j++)
           {
-#if JVET_AI0153_OMI_SEI
             sei->m_sdiAssociatedPrimaryLayerIdx[i][j] = m_pcCfg->getSdiSEIAssociatedPrimaryLayerIdx(associatedPrimaryLayerIdxCnt++);
-#else
-            sei->m_sdiAssociatedPrimaryLayerIdx[i][j] = 0;
-#endif
           }
         }
       }
@@ -1662,13 +1646,11 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_spatialExtrapolationRightOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationRightOffset(filterIdx);
       sei->m_spatialExtrapolationTopOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset(filterIdx);
       sei->m_spatialExtrapolationBottomOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(filterIdx);
-#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
       sei->m_spatialExtrapolationPromptPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag(filterIdx);
       if (sei->m_spatialExtrapolationPromptPresentFlag)
       {
         sei->m_prompt = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExrapolationPrompt(filterIdx);
       }
-#endif
     }
 #endif
 
@@ -1754,7 +1736,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_numKmacOperationsIdc = m_pcCfg->getNNPostFilterSEICharacteristicsNumKmacOperationsIdc(filterIdx);
         sei->m_totalKilobyteSize = m_pcCfg->getNNPostFilterSEICharacteristicsTotalKilobyteSize(filterIdx);
     }
-#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
     if (sei->m_purpose == 0)
     {
       sei->m_applicationPurposeTagUriPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag(filterIdx);
@@ -1763,11 +1744,8 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_applicationPurposeTagUri = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUri(filterIdx);
       }
     }
-  #endif
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
     sei->m_forHumanViewingIdc = m_pcCfg->getNNPostFilterSEICharacteristicsForHumanViewingIdc(filterIdx);
     sei->m_forMachineAnalysisIdc = m_pcCfg->getNNPostFilterSEICharacteristicsForMachineAnalysisIdc(filterIdx);
-#endif
   }
   if (sei->m_modeIdc == POST_FILTER_MODE::ISO_IEC_15938_17)
   {
@@ -1828,7 +1806,6 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
     }
     if ((sei->m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)
     {
-#if JVET_AI0180
       sei->m_origPicDimensionsFlag = m_pcCfg->getEOISEIOrigPicDimensionsFlag();
       if (sei->m_origPicDimensionsFlag)
       {
@@ -1839,9 +1816,6 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
       {
         sei->m_spatialResamplingTypeFlag = m_pcCfg->getEOISEISpatialResamplingTypeFlag();
       }
-#else
-      sei->m_spatialResamplingTypeFlag = m_pcCfg->getEOISEISpatialResamplingTypeFlag();
-#endif
     }
     if ((sei->m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
     {

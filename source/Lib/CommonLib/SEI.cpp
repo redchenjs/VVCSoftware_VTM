@@ -483,9 +483,7 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION, "Neural network post-filter activation" },
   { SEI::PayloadType::PHASE_INDICATION, "Phase Indication" },
   { SEI::PayloadType::SEI_PROCESSING_ORDER, "SEI messages Processing order" },
-#if JVET_AG2034_SPTI_SEI
   { SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO, "Source picture timing info" },
-#endif
 #if JVET_AG0322_MODALITY_INFORMATION
   { SEI::PayloadType::MODALITY_INFORMATION, "Modality information" }
 #endif
@@ -513,7 +511,6 @@ SEIShutterIntervalInfo::SEIShutterIntervalInfo(const SEIShutterIntervalInfo& sei
   m_siiFixedSIwithinCLVS = sei.m_siiFixedSIwithinCLVS;
   m_siiSubLayerNumUnitsInSI = sei.m_siiSubLayerNumUnitsInSI;
 }
-#if JVET_AG2034_SPTI_SEI
 SEISourcePictureTimingInfo::SEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei)
 {
   m_sptiSEIEnabled                         = sei.m_sptiSEIEnabled;
@@ -522,20 +519,15 @@ SEISourcePictureTimingInfo::SEISourcePictureTimingInfo(const SEISourcePictureTim
   m_sptiTimeScale                          = sei.m_sptiTimeScale;
   m_sptiNumUnitsInElementalInterval        = sei.m_sptiNumUnitsInElementalInterval;
 }
-#endif
 
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
 {
   m_posEnabled = sei.m_posEnabled;
   m_posId = sei.m_posId;
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   m_posForHumanViewingIdc = sei.m_posForHumanViewingIdc;
   m_posForMachineAnalysisIdc = sei.m_posForMachineAnalysisIdc;
-#endif
   m_posNumMinus2 = sei.m_posNumMinus2;
-#if JVET_AI0073_BREADTH_FIRST_FLAG
   m_posBreadthFirstFlag = sei.m_posBreadthFirstFlag;
-#endif
   m_posWrappingFlag = sei.m_posWrappingFlag;
   m_posImportanceFlag = sei.m_posImportanceFlag;
   m_posPrefixFlag = sei.m_posPrefixFlag;
@@ -997,14 +989,10 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_payloadLength = sei.m_payloadLength;
   m_payloadByte = sei.m_payloadByte ? new char(*sei.m_payloadByte) : nullptr;
   m_complexityInfoPresentFlag = sei.m_complexityInfoPresentFlag;
-#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
   m_applicationPurposeTagUriPresentFlag = sei.m_applicationPurposeTagUriPresentFlag;
   m_applicationPurposeTagUri = sei.m_applicationPurposeTagUri;
-#endif
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   m_forHumanViewingIdc = sei.m_forHumanViewingIdc;
   m_forMachineAnalysisIdc = sei.m_forMachineAnalysisIdc;
-#endif
   m_uriTag = sei.m_uriTag;
   m_uri = sei.m_uri;
   m_parameterTypeIdc = sei.m_parameterTypeIdc;
@@ -1020,10 +1008,8 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_spatialExtrapolationRightOffset = sei.m_spatialExtrapolationRightOffset;
   m_spatialExtrapolationTopOffset = sei.m_spatialExtrapolationTopOffset;
   m_spatialExtrapolationBottomOffset = sei.m_spatialExtrapolationBottomOffset;
-#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
   m_spatialExtrapolationPromptPresentFlag = sei.m_spatialExtrapolationPromptPresentFlag;
   m_prompt =  sei.m_prompt;
-#endif
 #endif
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
 }
@@ -1073,10 +1059,8 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_cbPadding == sei.m_cbPadding &&
   m_crPadding == sei.m_crPadding &&
   m_complexityInfoPresentFlag == sei.m_complexityInfoPresentFlag &&
-#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
   m_applicationPurposeTagUriPresentFlag == sei.m_applicationPurposeTagUriPresentFlag &&
   m_applicationPurposeTagUri == sei.m_applicationPurposeTagUri &&
-#endif
   m_uriTag == sei.m_uriTag &&
   m_uri == sei.m_uri &&
   m_parameterTypeIdc == sei.m_parameterTypeIdc &&
@@ -1092,10 +1076,8 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_spatialExtrapolationRightOffset == sei.m_spatialExtrapolationRightOffset &&
   m_spatialExtrapolationTopOffset == sei.m_spatialExtrapolationTopOffset &&
   m_spatialExtrapolationBottomOffset == sei.m_spatialExtrapolationBottomOffset &&
-#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
   m_spatialExtrapolationPromptPresentFlag == sei.m_spatialExtrapolationPromptPresentFlag  &&
   m_prompt ==  sei.m_prompt  &&
-#endif
 #endif
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
   m_payloadLength == sei.m_payloadLength;
@@ -1194,11 +1176,9 @@ SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
   m_objectBasedIdc = sei.m_objectBasedIdc;
   m_temporalResamplingTypeFlag = sei.m_temporalResamplingTypeFlag;
   m_numIntPics = sei.m_numIntPics;
-#if JVET_AI0180
   m_origPicDimensionsFlag = sei.m_origPicDimensionsFlag;
   m_origPicWidth = sei.m_origPicWidth;
   m_origPicHeight = sei.m_origPicHeight;
-#endif
   m_spatialResamplingTypeFlag = sei.m_spatialResamplingTypeFlag;
   m_privacyProtectionTypeIdc = sei.m_privacyProtectionTypeIdc;
   m_privacyProtectedInfoType = sei.m_privacyProtectedInfoType;

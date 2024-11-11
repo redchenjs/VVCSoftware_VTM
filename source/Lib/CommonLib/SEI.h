@@ -104,12 +104,8 @@ public:
 #if JVET_AH2006_EOI_SEI
     ENCODER_OPTIMIZATION_INFO = 215,
 #endif 
-#if JVET_AG2034_SPTI_SEI
     SOURCE_PICTURE_TIMING_INFO = 216,
-#endif
-#if JVET_AI0153_OMI_SEI
     OBJECT_MASK_INFO = 217,
-#endif
 #if JVET_AG0322_MODALITY_INFORMATION
     MODALITY_INFORMATION = 218,
 #endif
@@ -168,7 +164,6 @@ public:
   std::vector<unsigned> m_siiSubLayerNumUnitsInSI;
 };
 
-#if JVET_AG2034_SPTI_SEI
 class SEISourcePictureTimingInfo : public SEI
 {
 public:
@@ -190,7 +185,6 @@ public:
   std::vector<uint32_t> m_sptiSublayerIntervalScaleFactor;
   std::vector<bool>     m_sptiSublayerSynthesizedPictureFlag;
 };
-#endif
 class SEIProcessingOrderInfo : public SEI
 {
 public:
@@ -201,14 +195,10 @@ public:
 
   bool                   m_posEnabled;
   uint32_t               m_posId;
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   uint32_t               m_posForHumanViewingIdc;
   uint32_t               m_posForMachineAnalysisIdc;
-#endif
   uint32_t               m_posNumMinus2;
-#if JVET_AI0073_BREADTH_FIRST_FLAG
   bool                   m_posBreadthFirstFlag;
-#endif
   std::vector<bool>      m_posWrappingFlag;
   std::vector<bool>      m_posImportanceFlag;
   std::vector<bool>      m_posPrefixFlag;
@@ -1277,7 +1267,6 @@ public:
   std::vector<std::pair<AnnotatedRegionLabelIndex,  AnnotatedRegionLabel>  > m_annotatedLabels;
 };
 
-#if JVET_AI0153_OMI_SEI
 class SEIObjectMaskInfos : public SEI
 {
 public:
@@ -1329,7 +1318,6 @@ public:
   std::vector<uint32_t>       m_numMaskInPicUpdate;
   std::vector<ObjectMaskInfo> m_objectMaskInfos;
 };
-#endif
 
 class SEIExtendedDrapIndication : public SEI
 {
@@ -1418,10 +1406,8 @@ public:
     , m_crPadding(0)
     , m_payloadByte(nullptr)
     , m_complexityInfoPresentFlag(false)
-#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
     , m_applicationPurposeTagUriPresentFlag(false)
     , m_applicationPurposeTagUri("")
-#endif
     , m_forHumanViewingIdc(0)
     , m_forMachineAnalysisIdc(0)
     , m_uriTag("")
@@ -1438,10 +1424,8 @@ public:
     , m_spatialExtrapolationRightOffset(0)
     , m_spatialExtrapolationTopOffset(0)
     , m_spatialExtrapolationBottomOffset(0)
-#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
     , m_spatialExtrapolationPromptPresentFlag(false)
     , m_prompt("")
-#endif
 #endif
     , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
@@ -1506,14 +1490,10 @@ public:
   uint64_t       m_payloadLength;
   char*          m_payloadByte;
   bool           m_complexityInfoPresentFlag;
-#if JVET_AF2032_NNPFC_APPLICATION_INFORMATION_SIGNALING
   bool           m_applicationPurposeTagUriPresentFlag;
   std::string    m_applicationPurposeTagUri;
-#endif
-#if JVET_AI0071_NNPFC_SPO_USAGE_IDCS
   uint32_t       m_forHumanViewingIdc;
   uint32_t       m_forMachineAnalysisIdc;
-#endif
   std::string    m_uriTag;
   std::string    m_uri;
   uint32_t       m_parameterTypeIdc;
@@ -1529,10 +1509,8 @@ public:
   int32_t        m_spatialExtrapolationRightOffset;
   int32_t        m_spatialExtrapolationTopOffset;
   int32_t        m_spatialExtrapolationBottomOffset;
-#if JVET_AI0061_SPATIAL_EXTRAPOLATION_PROPOSAL1
   bool          m_spatialExtrapolationPromptPresentFlag;
   std::string   m_prompt;
-#endif
 #endif
   std::vector<bool> m_inputPicOutputFlag;
   bool           m_absentInputPicZeroFlag;
@@ -1622,11 +1600,9 @@ public:
     , m_objectBasedIdc(0)
     , m_temporalResamplingTypeFlag(false)
     , m_numIntPics(0)
- #if JVET_AI0180
     , m_origPicDimensionsFlag(false)
     , m_origPicWidth(0)
     , m_origPicHeight(0)
- #endif
     , m_spatialResamplingTypeFlag(false)
     , m_privacyProtectionTypeIdc(0)
     , m_privacyProtectedInfoType(0)
@@ -1643,11 +1619,9 @@ public:
   uint32_t m_objectBasedIdc;
   bool     m_temporalResamplingTypeFlag;
   uint32_t m_numIntPics;
-#if JVET_AI0180
   bool     m_origPicDimensionsFlag;
   uint32_t m_origPicWidth;
   uint32_t m_origPicHeight;
-#endif
   bool     m_spatialResamplingTypeFlag;
   uint32_t m_privacyProtectionTypeIdc;
   uint32_t m_privacyProtectedInfoType;

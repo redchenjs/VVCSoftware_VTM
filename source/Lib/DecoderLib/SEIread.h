@@ -90,9 +90,7 @@ protected:
   void xParseSEIParameterSetsInclusionIndication(SEIParameterSetsInclusionIndication& sei, uint32_t payloadSize,                std::ostream* pDecodedMessageOutputStream);
   void xParseSEIMasteringDisplayColourVolume  (SEIMasteringDisplayColourVolume& sei,  uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIAnnotatedRegions              (SEIAnnotatedRegions& sei,              uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
-#if JVET_AI0153_OMI_SEI
   void xParseSEIObjectMaskInfos               (SEIObjectMaskInfos& sei,               uint32_t payloadSize,                     std::ostream* pDecodedMessageOutputStream);
-#endif
   void xParseSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics& sei,              uint32_t payLoadSize,                     std::ostream *pDecodedMessageOutputStream);
 #if JVET_AH2006_EOI_SEI
   void xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
@@ -131,10 +129,8 @@ protected:
   void xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD& hrd, std::ostream* decodedMessageOutputStream);
   void xParseSEIProcessingOrderNesting(SEIProcessingOrderNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD& hrd, std::ostream* decodedMessageOutputStream);
   void xParseSEIPostFilterHint(SEIPostFilterHint &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
-#if JVET_AG2034_SPTI_SEI
   void xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei, uint32_t payloadSize,
                                         std::ostream* pDecodedMessageOutputStream);
-#endif
 #if JVET_AH2006_TXTDESCRINFO_SEI
   void xParseSEITextDescription(SEITextDescription &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
 #endif

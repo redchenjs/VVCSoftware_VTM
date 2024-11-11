@@ -147,7 +147,6 @@ public:
 private:
   double  xGetQPValueAccordingToLambda ( double lambda );
 
-#if JVET_AH0078_DPF
 private:
   std::vector<double>     m_lambdaWeight;
   double                  m_lambda;
@@ -164,7 +163,6 @@ private:
 
 public:
   int     getQpCtu() const { return m_qpCtu; }
-#endif
 };
 
 //! \}

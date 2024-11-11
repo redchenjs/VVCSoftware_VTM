@@ -537,13 +537,11 @@ void EncCu::xCompressCU( CodingStructure*& tempCS, CodingStructure*& bestCS, Par
   const UnitArea currCsArea = clipArea( CS::getArea( *bestCS, bestCS->area, partitioner.chType ), *tempCS->picture );
 
   tempCS->splitRdCostBest = nullptr;
-#if JVET_AH0078_DPF
   if (m_pcEncCfg->getDPF())
   {
     m_modeCtrl->setCurrCsArea(currCsArea);
     m_modeCtrl->setQpCtu(m_pcSliceEncoder->getQpCtu());
   }
-#endif
   m_modeCtrl->initCULevel( partitioner, *tempCS );
 #if GDR_ENABLED
   if (m_pcEncCfg->getGdrEnabled())
@@ -1255,7 +1253,6 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
       }
 
       bool keepResi = KEEP_PRED_AND_RESI_SIGNALS;
-#if JVET_AH0078_DPF
       if (m_pcEncCfg->getDPF())
       {
         tempCS->useSubStructure(*bestSubCS, partitioner.chType, CS::getArea(*tempCS, subCUArea, partitioner.chType), true, true, keepResi, keepResi, true);
@@ -1264,9 +1261,6 @@ void EncCu::xCheckModeSplit(CodingStructure *&tempCS, CodingStructure *&bestCS, 
       {
         tempCS->useSubStructure(*bestSubCS, partitioner.chType, CS::getArea(*tempCS, subCUArea, partitioner.chType), KEEP_PRED_AND_RESI_SIGNALS, true, keepResi, keepResi, true);
       }
-#else
-      tempCS->useSubStructure( *bestSubCS, partitioner.chType, CS::getArea( *tempCS, subCUArea, partitioner.chType ), KEEP_PRED_AND_RESI_SIGNALS, true, keepResi, keepResi, true );
-#endif
 
       if( partitioner.currQgEnable() )
       {
@@ -3394,7 +3388,6 @@ void EncCu::xCheckRDCostIBCMode(CodingStructure *&tempCS, CodingStructure *&best
 
 void EncCu::xCheckRDCostInter( CodingStructure *&tempCS, CodingStructure *&bestCS, Partitioner &partitioner, const EncTestMode& encTestMode )
 {
-#if JVET_AH0078_DPF
   const EncType encType = dynamic_cast<EncLib*>(m_pcEncCfg)->getEncType();
   if (m_pcEncCfg->getDPF() && encType == ENC_PRE)
   {
@@ -3406,7 +3399,6 @@ void EncCu::xCheckRDCostInter( CodingStructure *&tempCS, CodingStructure *&bestC
       return;
     }
   }
-#endif
 
   m_pcInterSearch->setAffineModeSelected(false);
 

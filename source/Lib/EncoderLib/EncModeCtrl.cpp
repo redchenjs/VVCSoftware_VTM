@@ -37,9 +37,7 @@
 
 #include "EncModeCtrl.h"
 
-#if JVET_AH0078_DPF
 #include "EncLib.h"
-#endif
 #include "AQp.h"
 #include "RateCtrl.h"
 
@@ -134,7 +132,6 @@ void EncModeCtrl::setBest( CodingStructure& cs )
 
 void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& cs, const Partitioner &partitioner, const int baseQP, const SPS& sps, const PPS& pps, const PartSplit splitMode )
 {
-#if JVET_AH0078_DPF
   const EncType encType = dynamic_cast<const EncLib*>(m_pcEncCfg)->getEncType();
   if (m_pcEncCfg->getDPF() && encType == ENC_FULL && cs.slice->getSliceType() != I_SLICE)
   {
@@ -142,7 +139,6 @@ void EncModeCtrl::xGetMinMaxQP( int& minQP, int& maxQP, const CodingStructure& c
     maxQP = m_qpCtu;
     return;
   }
-#endif
 
   if( m_pcEncCfg->getUseRateCtrl() )
   {
@@ -1254,7 +1250,6 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
 
   //////////////////////////////////////////////////////////////////////////
   // Add unit split modes
-#if JVET_AH0078_DPF
   const EncType encType = dynamic_cast<const EncLib*>(m_pcEncCfg)->getEncType();
   if (m_pcEncCfg->getDPF() && encType == ENC_PRE)
   {
@@ -1291,7 +1286,6 @@ void EncModeCtrlMTnoRQT::initCULevel( Partitioner &partitioner, const CodingStru
     m_ComprCUCtxList.back().lastTestMode = EncTestMode();
     return;
   }
-#endif
 
   if( !cuECtx.get<bool>( QT_BEFORE_BT ) )
   {

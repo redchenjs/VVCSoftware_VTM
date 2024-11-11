@@ -102,9 +102,7 @@ protected:
 
   void xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei);
   void xWriteSEIAnnotatedRegions                  (const SEIAnnotatedRegions& sei);
-#if JVET_AI0153_OMI_SEI
   void xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei);
-#endif
   void xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &hrd, const uint32_t temporalId,
                             int SEIPrefixIndicationIdx = 0);
   void xWriteSEIShutterInterval(const SEIShutterIntervalInfo& sei);
@@ -124,9 +122,7 @@ protected:
 #if JVET_AH2006_EOI_SEI
   void xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInfo &sei);
 #endif
-#if JVET_AG2034_SPTI_SEI
   void xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
-#endif
 #if JVET_AG0322_MODALITY_INFORMATION
   void xWriteSEIModalityInfo(const SEIModalityInfo &sei);
 #endif
