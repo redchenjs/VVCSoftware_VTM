@@ -795,15 +795,10 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
   sei.m_posForMachineAnalysisIdc = val;
   sei_read_code(decodedMessageOutputStream, 4, val, "po_reserved_zero_4bits");  // Decoders shall allow any value of po_reserved_zero_4bits in the range of 0 to 15, inclusive
 #endif
-#if JVET_AI0073_BREADTH_FIRST_FLAG
   sei_read_code(decodedMessageOutputStream, 7, val, "po_sei_num_minus2");
   sei.m_posNumMinus2 = val;
   sei_read_flag(decodedMessageOutputStream, val, "po_breadth_first_flag");
   sei.m_posBreadthFirstFlag = val;
-#else
-  sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_num_minus2");
-  sei.m_posNumMinus2 = val;
-#endif
   numMaxSeiMessages = sei.m_posNumMinus2 + 2;
   sei.m_posPrefixFlag.resize(numMaxSeiMessages);
   sei.m_posPayloadType.resize(numMaxSeiMessages);

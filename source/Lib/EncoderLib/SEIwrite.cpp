@@ -1698,12 +1698,8 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
   xWriteCode(sei.m_posForMachineAnalysisIdc, 2, "po_for_machine_analysis_idc");
   xWriteCode(0, 4, "po_reserved_zero_4bits");
 #endif
-#if JVET_AI0073_BREADTH_FIRST_FLAG
   xWriteCode(sei.m_posNumMinus2, 7, "po_num_sei_message_minus2");
   xWriteFlag(sei.m_posBreadthFirstFlag, "po_breadth_first_flag");
-#else
-  xWriteCode(sei.m_posNumMinus2, 8, "po_num_sei_message_minus2");
-#endif
   for (uint32_t i = 0; i < ( sei.m_posNumMinus2 + 2 ); i++)
   {
     xWriteFlag(sei.m_posWrappingFlag[i], "po_sei_wrapping_flag[i]");

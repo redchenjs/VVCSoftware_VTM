@@ -1452,9 +1452,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   }
 
   m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
-#if JVET_AI0073_BREADTH_FIRST_FLAG
   m_cEncLib.setPoSEIBreadthFirstFlag                             (m_poSEIBreadthFirstFlag);
-#endif
   m_cEncLib.setPoSEIWrappingFlag                                 (m_poSEIWrappingFlag);
   m_cEncLib.setPoSEIImportanceFlag                               (m_poSEIImportanceFlag);
   m_cEncLib.setPoSEIPrefixFlag                                   (m_poSEIPrefixFlag);
