@@ -64,7 +64,6 @@
 
 
 
-#define JVET_AI0061_PROPOSAL2_SPATIAL_EXTRAPOLATION 1 // JVET AI0061-Proposal2: Ensure spatial extrapolation works correctly (Option 1)
 
 //########### place macros to be be kept below this line ###############
 

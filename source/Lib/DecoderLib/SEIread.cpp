@@ -3338,10 +3338,8 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       CHECK(sei.m_chromaSampleLocTypeFrame > Chroma420LocType::UNSPECIFIED, "The value of nnpfc_chroma_sample_loc_type_frame shall be in the range of 0 to 6, inclusive");
     }
 
-#if JVET_AI0061_PROPOSAL2_SPATIAL_EXTRAPOLATION
     if((sei.m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) == 0)
     {
-#endif
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_overlap");
       sei.m_overlap = val;
 
@@ -3364,9 +3362,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_extended_patch_height_cd_delta_minus1");
         sei.m_extendedPatchHeightCdDeltaMinus1 = val;
       }
-#if JVET_AI0061_PROPOSAL2_SPATIAL_EXTRAPOLATION
     }
-#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_padding_type");
     sei.m_paddingType = val;

@@ -1995,10 +1995,8 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(to_underlying(sei.m_chromaSampleLocTypeFrame), "nnpfc_chroma_sample_loc_type_frame");
     }
     
-#if JVET_AI0061_PROPOSAL2_SPATIAL_EXTRAPOLATION
     if((sei.m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) == 0)
     {
-#endif
       xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
       xWriteFlag(sei.m_constantPatchSizeFlag, "nnpfc_constant_patch_size_flag");
       if (sei.m_constantPatchSizeFlag)
@@ -2011,9 +2009,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteUvlc(sei.m_extendedPatchWidthCdDeltaMinus1, "extended_nnpfc_patch_width_cd_delta_minus1");
         xWriteUvlc(sei.m_extendedPatchHeightCdDeltaMinus1, "extended_nnpfc_patch_height_cd_delta_minus1");
       }
-#if JVET_AI0061_PROPOSAL2_SPATIAL_EXTRAPOLATION
     }
-#endif
     xWriteUvlc(sei.m_paddingType, "nnpfc_padding_type");
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {
