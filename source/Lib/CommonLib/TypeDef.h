@@ -87,6 +87,9 @@
 #if JVET_AH2006_TXTDESCRINFO_SEI
 #define JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE          1 // Define persistence scop for text description information SEI to be purpose specific
 #endif
+#if JVET_AH2006_TXTDESCRINFO_SEI
+#define JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR        1 // Text description SEI purpose for encoder description
+#endif
 
 
 #define REUSE_CU_RESULTS                                  1
