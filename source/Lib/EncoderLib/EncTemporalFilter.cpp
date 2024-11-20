@@ -388,21 +388,15 @@ void EncTemporalFilter::subsampleLuma(const PelStorage &input, PelStorage &outpu
   output.extendBorderPel(m_padding, m_padding);
 }
 
-int EncTemporalFilter::motionErrorLuma(const PelStorage &orig,
-  const PelStorage &buffer,
-  const int x,
-  const int y,
-  int dx,
-  int dy,
-  const int bs,
-  const int besterror = 8 * 8 * 1024 * 1024) const
+int64_t EncTemporalFilter::motionErrorLuma(const PelStorage& orig, const PelStorage& buffer, const int x, const int y,
+                                           int dx, int dy, const int bs, const int64_t besterror) const
 {
   const Pel* origOrigin = orig.Y().buf;
   const ptrdiff_t origStride = orig.Y().stride;
   const Pel* buffOrigin = buffer.Y().buf;
   const ptrdiff_t buffStride = buffer.Y().stride;
 
-  int error = 0;
+  int64_t error = 0;   // int64_t to avoid overflow at higher bit depths
   if (((dx | dy) & 0xF) == 0)
   {
     dx /= m_motionVectorFactor;
@@ -489,6 +483,10 @@ void EncTemporalFilter::motionEstimationLuma(Array2D<MotionVector> &mvs, const P
   const int origWidth  = orig.Y().width;
   const int origHeight = orig.Y().height;
 
+  const int    bitShift = m_internalBitDepth[ChannelType::LUMA];
+  const double offset   = 5.0 / (1 << (2 * BASELINE_BIT_DEPTH - 16)) * (1 << (2 * bitShift - 16));
+  const double scale    = 50.0 / (1 << (2 * BASELINE_BIT_DEPTH - 16)) * (1 << (2 * bitShift - 16));
+
   for (int blockY = 0; blockY + blockSize <= origHeight; blockY += stepSize)
   {
     for (int blockX = 0; blockX + blockSize <= origWidth; blockX += stepSize)
@@ -510,7 +508,8 @@ void EncTemporalFilter::motionEstimationLuma(Array2D<MotionVector> &mvs, const P
             if ((testx >= 0) && (testx < origWidth / (2 * blockSize)) && (testy >= 0) && (testy < origHeight / (2 * blockSize)))
             {
               MotionVector old = previous->get(testx, testy);
-              int error = motionErrorLuma(orig, buffer, blockX, blockY, old.x * factor, old.y * factor, blockSize, best.error);
+              const int64_t error =
+                motionErrorLuma(orig, buffer, blockX, blockY, old.x * factor, old.y * factor, blockSize, best.error);
               if (error < best.error)
               {
                 best.set(old.x * factor, old.y * factor, error);
@@ -518,7 +517,7 @@ void EncTemporalFilter::motionEstimationLuma(Array2D<MotionVector> &mvs, const P
             }
           }
         }
-        int error = motionErrorLuma(orig, buffer, blockX, blockY, 0, 0, blockSize, best.error);
+        const int64_t error = motionErrorLuma(orig, buffer, blockX, blockY, 0, 0, blockSize, best.error);
         if (error < best.error)
         {
           best.set(0, 0, error);
@@ -529,7 +528,8 @@ void EncTemporalFilter::motionEstimationLuma(Array2D<MotionVector> &mvs, const P
       {
         for (int x2 = prevBest.x / m_motionVectorFactor - range; x2 <= prevBest.x / m_motionVectorFactor + range; x2++)
         {
-          int error = motionErrorLuma(orig, buffer, blockX, blockY, x2 * m_motionVectorFactor, y2 * m_motionVectorFactor, blockSize, best.error);
+          const int64_t error = motionErrorLuma(orig, buffer, blockX, blockY, x2 * m_motionVectorFactor,
+                                                y2 * m_motionVectorFactor, blockSize, best.error);
           if (error < best.error)
           {
             best.set(x2 * m_motionVectorFactor, y2 * m_motionVectorFactor, error);
@@ -544,7 +544,7 @@ void EncTemporalFilter::motionEstimationLuma(Array2D<MotionVector> &mvs, const P
         {
           for (int x2 = prevBest.x - doubleRange; x2 <= prevBest.x + doubleRange; x2 += 4)
           {
-            int error = motionErrorLuma(orig, buffer, blockX, blockY, x2, y2, blockSize, best.error);
+            const int64_t error = motionErrorLuma(orig, buffer, blockX, blockY, x2, y2, blockSize, best.error);
             if (error < best.error)
             {
               best.set(x2, y2, error);
@@ -558,7 +558,7 @@ void EncTemporalFilter::motionEstimationLuma(Array2D<MotionVector> &mvs, const P
         {
           for (int x2 = prevBest.x - doubleRange; x2 <= prevBest.x + doubleRange; x2++)
           {
-            int error = motionErrorLuma(orig, buffer, blockX, blockY, x2, y2, blockSize, best.error);
+            const int64_t error = motionErrorLuma(orig, buffer, blockX, blockY, x2, y2, blockSize, best.error);
             if (error < best.error)
             {
               best.set(x2, y2, error);
@@ -570,7 +570,8 @@ void EncTemporalFilter::motionEstimationLuma(Array2D<MotionVector> &mvs, const P
       if (blockY > 0)
       {
         MotionVector aboveMV = mvs.get(blockX / stepSize, (blockY - stepSize) / stepSize);
-        int error = motionErrorLuma(orig, buffer, blockX, blockY, aboveMV.x, aboveMV.y, blockSize, best.error);
+        const int64_t error =
+          motionErrorLuma(orig, buffer, blockX, blockY, aboveMV.x, aboveMV.y, blockSize, best.error);
         if (error < best.error)
         {
           best.set(aboveMV.x, aboveMV.y, error);
@@ -579,7 +580,7 @@ void EncTemporalFilter::motionEstimationLuma(Array2D<MotionVector> &mvs, const P
       if (blockX > 0)
       {
         MotionVector leftMV = mvs.get((blockX - stepSize) / stepSize, blockY / stepSize);
-        int error = motionErrorLuma(orig, buffer, blockX, blockY, leftMV.x, leftMV.y, blockSize, best.error);
+        const int64_t error  = motionErrorLuma(orig, buffer, blockX, blockY, leftMV.x, leftMV.y, blockSize, best.error);
         if (error < best.error)
         {
           best.set(leftMV.x, leftMV.y, error);
@@ -607,7 +608,8 @@ void EncTemporalFilter::motionEstimationLuma(Array2D<MotionVector> &mvs, const P
           variance = variance + (pix - avg) * (pix - avg);
         }
       }
-      best.error = (int)(20 * ((best.error + 5.0) / (variance + 5.0)) + (best.error / (blockSize * blockSize)) / 50);
+      best.error = (int64_t) (20 * ((best.error + offset) / (variance + offset)))
+                   + (int64_t) (best.error / (blockSize * blockSize) / scale);
       mvs.get(blockX / stepSize, blockY / stepSize) = best;
     }
   }
@@ -749,7 +751,10 @@ void EncTemporalFilter::bilateralFilter(const PelStorage &orgPic,
     const double sigmaSq = isChroma(compID) ? chromaSigmaSq : lumaSigmaSq;
     const double weightScaling = overallStrength * (isChroma(compID) ? m_chromaFactor : 0.4);
     const Pel         maxSampleValue        = (1 << m_internalBitDepth[toChannelType(compID)]) - 1;
-    const double bitDepthDiffWeighting = 1024.0 / (maxSampleValue + 1);
+    const double      bitDepthDiffWeighting = 1.0 * (1 << BASELINE_BIT_DEPTH) / (maxSampleValue + 1);
+
+    const int    bitShift = m_internalBitDepth[ChannelType::LUMA];
+    const double offset   = 5.0 / (1 << (2 * BASELINE_BIT_DEPTH - 16)) * (1 << (2 * bitShift - 16));
 
     const int lumaBlockSize = 8;
     const int csx           = getComponentScaleX(compID, m_chromaFormatIdc);
@@ -800,7 +805,7 @@ void EncTemporalFilter::bilateralFilter(const PelStorage &orgPic,
             const int cntV = blockSizeX * blockSizeY;
             const int cntD = 2 * cntV - blockSizeX - blockSizeY;
             srcFrameInfo[i].mvs.get(x / blockSizeX, y / blockSizeY).noise =
-              (int) round((15.0 * cntD / cntV * variance + 5.0) / (diffsum + 5.0));
+              (int) round((15.0 * cntD / cntV * variance + offset) / (diffsum + offset));
           }
         }
         double minError = 9999999;
@@ -810,8 +815,9 @@ void EncTemporalFilter::bilateralFilter(const PelStorage &orgPic,
         }
         for (int i = 0; i < numRefs; i++)
         {
-          const int error = srcFrameInfo[i].mvs.get(x / blockSizeX, y / blockSizeY).error;
-          const int noise = srcFrameInfo[i].mvs.get(x / blockSizeX, y / blockSizeY).noise;
+          const int64_t error = srcFrameInfo[i].mvs.get(x / blockSizeX, y / blockSizeY).error;
+          const int     noise = srcFrameInfo[i].mvs.get(x / blockSizeX, y / blockSizeY).noise;
+
           const Pel *pCorrectedPelPtr = correctedPics[i].bufs[c].buf + (y * correctedPics[i].bufs[c].stride + x);
           const int refVal = (int) *pCorrectedPelPtr;
           double diff = (double)(refVal - orgVal);

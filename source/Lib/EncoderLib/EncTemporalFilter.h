@@ -49,11 +49,18 @@
 
 struct MotionVector
 {
-  int x, y;
-  int error;
-  int noise;
-  MotionVector() : x(0), y(0), error(INT_LEAST32_MAX), noise(0) {}
-  void set(int vectorX, int vectorY, int errorValue) { x = vectorX; y = vectorY; error = errorValue; }
+  int     x     = 0;
+  int     y     = 0;
+  int64_t error = std::numeric_limits<int64_t>::max();
+  int     noise = 0;
+
+  MotionVector() = default;
+  void set(int vectorX, int vectorY, int64_t errorValue)
+  {
+    x     = vectorX;
+    y     = vectorY;
+    error = errorValue;
+  }
 };
 
 template <class T>
@@ -120,6 +127,8 @@ public:
   bool filter(PelStorage *orgPic, int frame);
 
 private:
+  static constexpr int BASELINE_BIT_DEPTH = 10;
+
   // Private static member variables
   static const double m_chromaFactor;
   static const double m_sigmaMultiplier;
@@ -165,7 +174,8 @@ private:
 
   // Private functions
   void subsampleLuma(const PelStorage &input, PelStorage &output, const int factor = 2) const;
-  int motionErrorLuma(const PelStorage &orig, const PelStorage &buffer, const int x, const int y, int dx, int dy, const int bs, const int besterror) const;
+  int64_t motionErrorLuma(const PelStorage& orig, const PelStorage& buffer, const int x, const int y, int dx, int dy,
+                          const int bs, const int64_t besterror) const;
   void motionEstimationLuma(Array2D<MotionVector> &mvs, const PelStorage &orig, const PelStorage &buffer, const int bs,
     const Array2D<MotionVector> *previous=0, const int factor = 1, const bool doubleRes = false) const;
   void motionEstimation(Array2D<MotionVector> &mvs, const PelStorage &orgPic, const PelStorage &buffer, const PelStorage &origSubsampled2, const PelStorage &origSubsampled4) const;
