@@ -161,6 +161,7 @@ public:
   uint8_t       bcwIdx;
   uint8_t       interDir;
   bool          useAltHpelIf;
+  bool          useInterLayerRef;
   AffineModel   affineType;
 
   bool          noResidual;
@@ -205,6 +206,9 @@ private:
   Pool<MergeItem> m_mergeItemPool;
   std::vector<MergeItem *> m_list;
   size_t m_maxTrackingNum = 0;
+  std::vector<MergeItem *> m_backupList;
+  size_t m_maxTrackingBackupNum = 0;
+  int m_numInterLayers = 0;
   ChromaFormat  m_chromaFormat;
   Area m_ctuArea;
 
@@ -214,10 +218,16 @@ public:
 
   void          init(size_t maxSize, ChromaFormat chromaFormat, int ctuWidth, int ctuHeight);
   MergeItem*    allocateNewMergeItem();
-  void          insertMergeItemToList(MergeItem* p);
+  void          insertMergeItemToList(MergeItem* p, bool trackInterLayerCand=false);
   void          resetList(size_t maxTrackingNum);
   MergeItem*    getMergeItemInList(size_t index);
   size_t        size() { return m_list.size(); }
+
+  void          insertMergeItemToBackupList(MergeItem* p);
+  void          resetBackupList(size_t maxTrackingBackupNum);
+  void          insertBackupItemsToList();
+  void          swapItems(int index_first, int index_second) { std::swap(m_list[index_first], m_list[index_second]); }
+  int           getNumInterLayerItems() { return m_numInterLayers; }
 
 };
 

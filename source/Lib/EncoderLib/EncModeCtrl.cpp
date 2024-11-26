@@ -2268,8 +2268,36 @@ bool EncModeCtrlMTnoRQT::useModeResult( const EncTestMode& encTestmode, CodingSt
       }
     }
   }
-  // for now just a simple decision based on RD-cost or choose tempCS if bestCS is not yet coded
-  if( tempCS->features[ENC_FT_RD_COST] != MAX_DOUBLE && ( !cuECtx.bestCS || ( ( tempCS->features[ENC_FT_RD_COST] + ( tempCS->useDbCost ? tempCS->costDbOffset : 0 ) ) < ( cuECtx.bestCS->features[ENC_FT_RD_COST] + ( tempCS->useDbCost ? cuECtx.bestCS->costDbOffset : 0 ) ) ) ) )
+
+  bool chooseTemp = false;
+  if( tempCS->features[ENC_FT_RD_COST] != MAX_DOUBLE )
+  {
+    if(!cuECtx.bestCS)
+    {
+      chooseTemp = true;
+    }
+    else
+    {
+      // for now just a simple decision based on RD-cost or choose tempCS if bestCS is not yet coded
+      chooseTemp = ( tempCS->features[ENC_FT_RD_COST] + ( tempCS->useDbCost ? tempCS->costDbOffset : 0 ) ) < ( cuECtx.bestCS->features[ENC_FT_RD_COST] + ( tempCS->useDbCost ? cuECtx.bestCS->costDbOffset : 0 ) );
+
+      // Adjust criterion to choose mode with inter-layer prediction if it has lower modified RD cost with lambda modifier (regardless of original RD cost).
+      if (m_pcEncCfg->getEncILOpt() && tempCS->useInterlayerRef != cuECtx.bestCS->useInterlayerRef)
+      {
+        const double costTemp = m_pcRdCost->calcRdCost(uint64_t(tempCS->features[ENC_FT_FRAC_BITS] * m_pcEncCfg->getEncILOptLambdaModifier()), tempCS->dist);
+        const double costBest = m_pcRdCost->calcRdCost(uint64_t(cuECtx.bestCS->features[ENC_FT_FRAC_BITS] * m_pcEncCfg->getEncILOptLambdaModifier()), cuECtx.bestCS->dist);
+        if (tempCS->useInterlayerRef && costTemp < costBest)
+        {
+          chooseTemp = true;
+        }
+        else if (!tempCS->useInterlayerRef && costBest < costTemp)
+        {
+          chooseTemp = false;
+        }
+      }
+    }
+  }
+  if (chooseTemp)
   {
     cuECtx.bestCS = tempCS;
     cuECtx.bestCU = tempCS->cus[0];

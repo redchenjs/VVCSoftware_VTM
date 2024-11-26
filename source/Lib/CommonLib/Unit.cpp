@@ -705,6 +705,18 @@ CMotionBuf PredictionUnit::getMotionBuf() const
   return cs->getMotionBuf( *this );
 }
 
+bool PredictionUnit::checkUseInterLayerRef() const
+{
+  bool useInterLayerRef=false;
+  for( uint32_t i = 0; i < NUM_REF_PIC_LIST_01; i++ )
+  {
+    if (refIdx[i] >= 0)
+    {
+      useInterLayerRef |= cu->slice->getRpl(RefPicList(i))->isInterLayerRefPic(refIdx[i]);
+    }
+  }
+  return useInterLayerRef;
+}
 
 // ---------------------------------------------------------------------------
 // transform unit method definitions

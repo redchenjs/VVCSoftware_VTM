@@ -1583,6 +1583,7 @@ void CodingStructure::initSubStructure( CodingStructure& subStruct, const Channe
 
   subStruct.useDbCost = false;
   subStruct.costDbOffset = 0;
+  subStruct.useInterlayerRef = false;
 
   for( uint32_t i = 0; i < subStruct.area.blocks.size(); i++ )
   {
@@ -1716,6 +1717,7 @@ void CodingStructure::useSubStructure( const CodingStructure& subStruct, const C
     dist     += subStruct.dist;
     cost     += subStruct.cost;
     costDbOffset += subStruct.costDbOffset;
+    useInterlayerRef |= subStruct.useInterlayerRef;
   }
   if( parent )
   {
@@ -1776,6 +1778,8 @@ void CodingStructure::copyStructure( const CodingStructure& other, const Channel
   dist     = other.dist;
   cost     = other.cost;
   costDbOffset = other.costDbOffset;
+  useInterlayerRef = other.useInterlayerRef;
+
   CHECKD( area != other.area, "Incompatible sizes" );
 
   const UnitArea dualITreeArea = CS::getArea( *this, this->area, chType );
@@ -1894,6 +1898,7 @@ void CodingStructure::initStructData( const int &QP, const bool &skipMotBuf )
   costDbOffset = 0;
   useDbCost = false;
   interHad = std::numeric_limits<Distortion>::max();
+  useInterlayerRef = false;
 }
 
 

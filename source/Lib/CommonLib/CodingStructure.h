@@ -192,6 +192,7 @@ public:
   bool        useDbCost;
   double      costDbOffset;
   double      lumaCost;
+  bool        useInterlayerRef;
   uint64_t    fracBits;
   Distortion  dist;
   Distortion  interHad;
