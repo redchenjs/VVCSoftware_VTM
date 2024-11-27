@@ -750,7 +750,7 @@ void SEIEncoder::initSEITextDescription(SEITextDescription *seiTestDescrition)
 #if JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR
     if (m_pcCfg->getTextSEIPurpose() == 6 && m_pcCfg->getTextSEIDescriptionString(i).empty()) // Use default encoder description in case input is empty string
     {
-      seiTestDescrition->m_textDescriptionString[i] = std::string(VTM_VERSION);
+      seiTestDescrition->m_textDescriptionString[i] = std::string("VTM ") + std::string(VTM_VERSION);
     }
     else
     {
