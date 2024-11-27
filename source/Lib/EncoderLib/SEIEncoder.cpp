@@ -680,6 +680,7 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiNNPFC);
         break;
       }
+#if !JVET_AJ0129_SPO_SEI_LIST
       case SEI::PayloadType::POST_FILTER_HINT:
       {
         SEIPostFilterHint* seiPFH = new SEIPostFilterHint;
@@ -687,12 +688,99 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiPFH);
         break;
       }
+#endif
 #if JVET_AH2006_TXTDESCRINFO_SEI
       case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
       {
         SEITextDescription *seiTextDescription = new SEITextDescription();
         initSEITextDescription(seiTextDescription);
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiTextDescription);
+        break;
+      }
+#endif
+#if JVET_AJ0129_SPO_SEI_LIST
+      case SEI::PayloadType::FRAME_PACKING:
+      {
+        SEIFramePacking* sei = new SEIFramePacking;
+        initSEIFramePacking(sei, 0);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+      case SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME:
+      {
+        SEIMasteringDisplayColourVolume* sei = new SEIMasteringDisplayColourVolume;
+        initSEIMasteringDisplayColourVolume(sei);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+      case SEI::PayloadType::ALTERNATIVE_TRANSFER_CHARACTERISTICS:
+      {
+        SEIAlternativeTransferCharacteristics* sei = new SEIAlternativeTransferCharacteristics;
+        initSEIAlternativeTransferCharacteristics(sei);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+      case SEI::PayloadType::AMBIENT_VIEWING_ENVIRONMENT:
+      {
+        SEIAmbientViewingEnvironment* sei = new SEIAmbientViewingEnvironment;
+        initSEIAmbientViewingEnvironment(sei);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+      case SEI::PayloadType::EQUIRECTANGULAR_PROJECTION:
+      {
+        SEIEquirectangularProjection* sei = new SEIEquirectangularProjection;
+        initSEIErp(sei);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+      case SEI::PayloadType::GENERALIZED_CUBEMAP_PROJECTION:
+      {
+        SEIGeneralizedCubemapProjection* sei = new SEIGeneralizedCubemapProjection;
+        initSEIGcmp(sei);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+      case SEI::PayloadType::REGION_WISE_PACKING:
+      {
+        SEIRegionWisePacking* sei = new SEIRegionWisePacking;
+        initSEIRegionWisePacking(sei);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+      case SEI::PayloadType::ALPHA_CHANNEL_INFO:
+      {
+        SEIAlphaChannelInfo* sei = new SEIAlphaChannelInfo;
+        initSEIAlphaChannelInfo(sei);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+      case SEI::PayloadType::DEPTH_REPRESENTATION_INFO:
+      {
+        SEIDepthRepresentationInfo* sei = new SEIDepthRepresentationInfo;
+        initSEIDepthRepresentationInfo(sei);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+      case SEI::PayloadType::ANNOTATED_REGIONS:
+      {
+        SEIAnnotatedRegions* sei = new SEIAnnotatedRegions;
+        initSEIAnnotatedRegions(sei, 0);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+      case SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO:
+      {
+        SEISampleAspectRatioInfo* sei = new SEISampleAspectRatioInfo;
+        initSEISampleAspectRatioInfo(sei);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+      case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
+      {
+        SEINeuralNetworkPostFilterActivation* sei = new SEINeuralNetworkPostFilterActivation;
+        initSEINeuralNetworkPostFilterActivation(sei);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
         break;
       }
 #endif
