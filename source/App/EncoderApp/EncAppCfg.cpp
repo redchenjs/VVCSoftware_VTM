@@ -2107,7 +2107,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   opts.addOptions()("SEITextDescriptionCancelFlag", m_SEITextCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_id");
 #endif
   opts.addOptions()("SEITextDescriptionPersistenceFlag", m_SEITextPersistenceFlag, true, "Specifies the persistence of the text information description message for the current layer");
+#if JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR
+  opts.addOptions()("SEITextDescriptionPurpose", m_SEITextDescriptionPurpose, 0u, "Indicates the purpose of the text description, must be in the range 0-6");
+#else
   opts.addOptions()("SEITextDescriptionPurpose", m_SEITextDescriptionPurpose, 0u, "Indicates the purpose of the text description, must be in the range 0-5");
+#endif
   opts.addOptions()("SEITextDescriptionsNumStringsMinus1", m_SEITextNumStringsMinus1, 0u, "Indicates the number of entries plus 1 for txt_descr_string_lang[ i ] and txt_descr_string[ i ]");
   m_SEITextDescriptionStringLang.resize(256);
   m_SEITextDescriptionString.resize(256);
@@ -5434,7 +5438,11 @@ bool EncAppCfg::xCheckParameter()
 
 #if JVET_AH2006_TXTDESCRINFO_SEI
   xConfirmPara(m_SEITextDescriptionID < 1 && m_SEITextDescriptionID > 16383, "m_SEITextDescriptionID must be in the range of 1 to 16383, inclusive");
+#if  JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR
+  xConfirmPara(m_SEITextDescriptionPurpose > 6, "m_SEITextDescriptionPurpose must be in the range of 0 to 6, inclusive");
+#else
   xConfirmPara(m_SEITextDescriptionPurpose > 5, "m_SEITextDescriptionPurpose must be in the range of 0 to 5, inclusive");
+#endif
   xConfirmPara(m_SEITextNumStringsMinus1 > 255, "m_SEITextNumStringsMinus1 must be in the range 0f 0 to 255, inclusive");
 #endif
 

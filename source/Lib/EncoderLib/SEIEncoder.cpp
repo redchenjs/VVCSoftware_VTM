@@ -835,7 +835,18 @@ void SEIEncoder::initSEITextDescription(SEITextDescription *seiTestDescrition)
   for (int i=0; i<=seiTestDescrition->m_textNumStringsMinus1; i++)
   {
     seiTestDescrition->m_textDescriptionStringLang[i] = m_pcCfg->getTextSEIDescriptionStringLang(i);
+#if JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR
+    if (m_pcCfg->getTextSEIPurpose() == 6 && m_pcCfg->getTextSEIDescriptionString(i).empty()) // Use default encoder description in case input is empty string
+    {
+      seiTestDescrition->m_textDescriptionString[i] = std::string("VTM ") + std::string(VTM_VERSION);
+    }
+    else
+    {
+      seiTestDescrition->m_textDescriptionString[i] = m_pcCfg->getTextSEIDescriptionString(i);
+    }
+#else
     seiTestDescrition->m_textDescriptionString[i] = m_pcCfg->getTextSEIDescriptionString(i);
+#endif
   }
 }
 #endif
