@@ -56,6 +56,7 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
+#define JVET_AJ0129_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList with all supported SEI message types
 
 //########### place macros to be be kept below this line ###############
 

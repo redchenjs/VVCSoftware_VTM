@@ -211,13 +211,33 @@ public:
     switch (payloadType)
     {
     case SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS:
+#if !JVET_AJ0129_SPO_SEI_LIST
     case SEI::PayloadType::POST_FILTER_HINT:
+#endif
     case SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO:
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
     case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
     case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
 #if JVET_AH2006_TXTDESCRINFO_SEI
     case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
+#endif
+#if JVET_AJ0129_SPO_SEI_LIST
+    case SEI::PayloadType::FILLER_PAYLOAD:
+    case SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35:
+    case SEI::PayloadType::USER_DATA_UNREGISTERED:
+    case SEI::PayloadType::FRAME_PACKING:
+    case SEI::PayloadType::DISPLAY_ORIENTATION:
+    case SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME:
+    case SEI::PayloadType::ALTERNATIVE_TRANSFER_CHARACTERISTICS:
+    case SEI::PayloadType::AMBIENT_VIEWING_ENVIRONMENT:
+    case SEI::PayloadType::EQUIRECTANGULAR_PROJECTION:
+    case SEI::PayloadType::GENERALIZED_CUBEMAP_PROJECTION:
+    case SEI::PayloadType::REGION_WISE_PACKING:
+    case SEI::PayloadType::ALPHA_CHANNEL_INFO:
+    case SEI::PayloadType::DEPTH_REPRESENTATION_INFO:
+    case SEI::PayloadType::ANNOTATED_REGIONS:
+    case SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO:
+    case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
 #endif
      return true;
     default:
