@@ -352,6 +352,9 @@ protected:
   void xCreatePhaseIndicationSEIMessages (SEIMessages& seiMessages, Slice* slice, int ppsId);
   void xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SEIMessages &nestedSeiMessages,
                                SEIMessages &duInfoSeiMessages, Slice *slice, bool isField, std::deque<DUData> &duData);
+ #if JVET_AJ0207_GFV
+  void xCreateGenerativeFaceVideoSEIMessages(SEIMessages& seiMessage);
+#endif 
   void xUpdateDuData(AccessUnit &testAU, std::deque<DUData> &duData);
   void xUpdateTimingSEI(SEIPictureTiming* pt, std::deque<DUData>& duData, const SPS* sps);
   void xUpdateDuInfoSEI(SEIMessages& duInfoSeiMessages, SEIPictureTiming* pt);

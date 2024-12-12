@@ -485,7 +485,10 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::SEI_PROCESSING_ORDER, "SEI messages Processing order" },
   { SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO, "Source picture timing info" },
 #if JVET_AG0322_MODALITY_INFORMATION
-  { SEI::PayloadType::MODALITY_INFORMATION, "Modality information" }
+  { SEI::PayloadType::MODALITY_INFORMATION, "Modality information" },
+#endif
+#if JVET_AJ0207_GFV
+  { SEI::PayloadType::GENERATIVE_FACE_VIDEO, "Generative face video" }
 #endif
 };
 
@@ -1200,4 +1203,51 @@ SEIModalityInfo::SEIModalityInfo(const SEIModalityInfo& sei)
 }
 #endif
 
-
+#if JVET_AJ0207_GFV
+SEIGenerativeFaceVideo::SEIGenerativeFaceVideo(const SEIGenerativeFaceVideo & sei)
+{
+  m_number = sei.m_number;
+  m_currentid = sei.m_currentid;
+  m_id = sei.m_id;
+  m_cnt = sei.m_cnt;
+  m_basePicFlag = sei.m_basePicFlag;
+  m_nnPresentFlag = sei.m_nnPresentFlag;
+  m_nnModeIdc = sei.m_nnModeIdc;
+  m_nnTagURI = sei.m_nnTagURI;
+  m_nnURI = sei.m_nnURI;
+  m_chromaKeyInfoPresentFlag = sei.m_chromaKeyInfoPresentFlag;
+  m_chromaKeyValuePresentFlag = sei.m_chromaKeyValuePresentFlag;
+  m_chromaKeyValue = sei.m_chromaKeyValue;
+  m_chromaKeyThrPresentFlag = sei.m_chromaKeyThrPresentFlag;
+  m_chromaKeyThrValue = sei.m_chromaKeyThrValue;
+  m_drivePicFusionFlag = sei.m_drivePicFusionFlag;
+  m_lowConfidenceFaceParameterFlag = sei.m_lowConfidenceFaceParameterFlag;
+  m_coordinatePresentFlag = sei.m_coordinatePresentFlag;
+  m_coordinateQuantizationFactor = sei.m_coordinateQuantizationFactor;
+  m_coordinatePredFlag = sei.m_coordinatePredFlag;
+  m_3DCoordinateFlag = sei.m_3DCoordinateFlag;
+  m_coordinatePointNum = sei.m_coordinatePointNum;
+  m_coordinateX = sei.m_coordinateX;
+  m_coordinateY = sei.m_coordinateY;
+  m_coordinateZMaxValue = sei.m_coordinateZMaxValue;
+  m_coordinateZ = sei.m_coordinateZ;
+  m_matrixPresentFlag = sei.m_matrixPresentFlag;
+  m_matrixElementPrecisionFactor = sei.m_matrixElementPrecisionFactor;
+  m_matrixPredFlag = sei.m_matrixPredFlag;
+  m_numMatricestonumKpsFlag = sei.m_numMatricestonumKpsFlag;
+  m_numMatricesInfo = sei.m_numMatricesInfo;
+  m_numMatrixType = sei.m_numMatrixType;
+  m_matrixTypeIdx = sei.m_matrixTypeIdx;
+  m_matrix3DSpaceFlag = sei.m_matrix3DSpaceFlag;
+  m_numMatrices = sei.m_numMatrices;
+  m_matrixWidth = sei.m_matrixWidth;
+  m_matrixHeight = sei.m_matrixHeight;
+  m_matrixElement = sei.m_matrixElement;
+  m_payloadFilename = sei.m_payloadFilename;
+  m_payloadLength = sei.m_payloadLength;
+  m_payloadByte = sei.m_payloadByte ? new char(*sei.m_payloadByte) : nullptr;
+  m_numMatricesstore = sei.m_numMatricesstore;
+  m_matrixWidthstore = sei.m_matrixWidthstore;
+  m_matrixHeightstore = sei.m_matrixHeightstore;
+}
+#endif

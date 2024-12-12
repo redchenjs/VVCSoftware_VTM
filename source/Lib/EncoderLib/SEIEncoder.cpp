@@ -1948,4 +1948,184 @@ void SEIEncoder::initSEIModalityInfo(SEIModalityInfo *seiMI)
 }
 #endif
 
+#if JVET_AJ0207_GFV
+void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int currframeindex)
+{
+  CHECK(!m_isInitialized, "Unspecified error");
+  CHECK(sei == nullptr, "Unspecified error");
+  sei->m_number = m_pcCfg->getGenerativeFaceVideoSEINumber();
+  sei->m_basePicFlag = m_pcCfg->getGenerativeFaceVideoSEIBasePicFlag();
+  sei->m_nnPresentFlag = m_pcCfg->getGenerativeFaceVideoSEINNPresentFlag();
+  sei->m_nnModeIdc = m_pcCfg->getGenerativeFaceVideoSEINNModeIdc();
+  sei->m_nnTagURI = m_pcCfg->getGenerativeFaceVideoSEINNTagURI();
+  sei->m_nnURI = m_pcCfg->getGenerativeFaceVideoSEINNURI();  
+  sei->m_chromaKeyInfoPresentFlag = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyInfoPresentFlag();
+  sei->m_chromaKeyValuePresentFlag.resize(3);
+  sei->m_chromaKeyValue.resize(3);
+  sei->m_chromaKeyThrPresentFlag.resize(2);
+  sei->m_chromaKeyThrValue.resize(2);
+  if(sei->m_chromaKeyInfoPresentFlag)
+  {
+    for (uint32_t chromac = 0; chromac < 3; chromac++)
+    {
+      sei->m_chromaKeyValuePresentFlag[chromac] = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyValuePresentFlag(chromac);
+      if (sei->m_chromaKeyValuePresentFlag[chromac])
+      {
+        sei->m_chromaKeyValue[chromac] = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyValue(chromac);
+      }
+    }
+    for (uint32_t chromai = 0; chromai < 2; chromai++)
+    {
+      sei->m_chromaKeyThrPresentFlag[chromai] = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyThrPresentFlag(chromai);
+      if (sei->m_chromaKeyThrPresentFlag[chromai])
+      {
+        sei->m_chromaKeyThrValue[chromai] = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyThrValue(chromai);
+      }
+    }
+  }
+  sei->m_payloadFilename = m_pcCfg->getGenerativeFaceVideoSEIPayloadFilename();
+  sei->m_currentid = currframeindex;
+  sei->m_id = m_pcCfg->getGenerativeFaceVideoSEIId(sei->m_currentid);
+  sei->m_cnt = m_pcCfg->getGenerativeFaceVideoSEICnt(sei->m_currentid);
+  sei->m_drivePicFusionFlag = m_pcCfg->getGenerativeFaceVideoSEIDrivePicFusionFlag(sei->m_currentid);
+  sei->m_lowConfidenceFaceParameterFlag = m_pcCfg->getGenerativeFaceVideoSEILowConfidenceFaceParameterFlag(sei->m_currentid);
+  sei->m_coordinatePresentFlag = m_pcCfg->getGenerativeFaceVideoSEICoordinatePresentFlag(sei->m_currentid);
+  sei->m_coordinateQuantizationFactor = m_pcCfg->getGenerativeFaceVideoSEICoordinateQuantizationFactor(sei->m_currentid);
+  sei->m_coordinatePredFlag = m_pcCfg->getGenerativeFaceVideoSEICoordinatePredFlag(sei->m_currentid);
+  sei->m_3DCoordinateFlag = m_pcCfg->getGenerativeFaceVideoSEI3DCoordinateFlag(sei->m_currentid);
+  sei->m_coordinatePointNum = m_pcCfg->getGenerativeFaceVideoSEICoordinatePointNum(sei->m_currentid);
+  // Coordinate Parameters
+  if (sei->m_coordinatePresentFlag == 1)
+  {
+    for (uint32_t coordinateId = 0; coordinateId < sei->m_coordinatePointNum; coordinateId++)
+    {
+      sei->m_coordinateX.push_back(m_pcCfg->getGenerativeFaceVideoSEICoordinateXTesonr(sei->m_currentid, coordinateId));
+      sei->m_coordinateY.push_back(m_pcCfg->getGenerativeFaceVideoSEICoordinateYTesonr(sei->m_currentid, coordinateId));
+    }
+    if (sei->m_3DCoordinateFlag == 1)
+    {
+      sei->m_coordinateZMaxValue.push_back(m_pcCfg->getGenerativeFaceVideoSEIZCoordinateMaxValue(sei->m_currentid, 0));
+      for (uint32_t coordinateId = 0; coordinateId < sei->m_coordinatePointNum; coordinateId++)
+      {
+        sei->m_coordinateZ.push_back(m_pcCfg->getGenerativeFaceVideoSEICoordinateZTesonr(sei->m_currentid, coordinateId));
+      }
+    }
+  }
+  // Matrix Parameters
+  sei->m_matrixPresentFlag = m_pcCfg->getGenerativeFaceVideoSEIMatrixPresentFlag(sei->m_currentid);
+  sei->m_matrixElementPrecisionFactor = m_pcCfg->getGenerativeFaceVideoSEIMatrixElementPrecisionFactor(sei->m_currentid);
+  sei->m_numMatrixType = m_pcCfg->getGenerativeFaceVideoSEINumMatrixType(sei->m_currentid);
+  sei->m_matrixPredFlag = m_pcCfg->getGenerativeFaceVideoSEIMatrixPredFlag(sei->m_currentid);
+  if (sei->m_matrixPresentFlag == 1)
+  {
+    uint32_t matrixWidth = 0;
+    uint32_t matrixHeight = 0;
+    uint32_t numMatrices = 0;
+    for (uint32_t matrixId = 0; matrixId < sei->m_numMatrixType; matrixId++)
+    {
+      sei->m_matrixElement.push_back(std::vector<std::vector<std::vector<double>>>());      
+      sei->m_matrixTypeIdx.push_back(m_pcCfg->getGenerativeFaceVideoSEIMatrixTypeIdx(sei->m_currentid, matrixId));
+      sei->m_matrix3DSpaceFlag.push_back(m_pcCfg->getGenerativeFaceVideoSEIMatrix3DSpaceFlag(sei->m_currentid, matrixId));
+      sei->m_numMatrices.push_back(m_pcCfg->getGenerativeFaceVideoSEINumMatrices(sei->m_currentid, matrixId));
+      sei->m_matrixWidth.push_back(m_pcCfg->getGenerativeFaceVideoSEIMatrixWidth(sei->m_currentid, matrixId));
+      sei->m_matrixHeight.push_back(m_pcCfg->getGenerativeFaceVideoSEIMatrixHeight(sei->m_currentid, matrixId));
+      sei->m_numMatricestonumKpsFlag.push_back(m_pcCfg->getGenerativeFaceVideoSEINumMatricestoNumKpsFlag(sei->m_currentid, matrixId));
+      sei->m_numMatricesInfo.push_back(m_pcCfg->getGenerativeFaceVideoSEINumMatricesInfo(sei->m_currentid, matrixId));
+      if (sei->m_matrixTypeIdx[matrixId] == 0 || sei->m_matrixTypeIdx[matrixId] == 1)
+      {
+        if (sei->m_3DCoordinateFlag == 1 || sei->m_matrix3DSpaceFlag[matrixId] == 1)
+        {
+          matrixWidth = 3;
+          matrixHeight = 3;
+        }
+        else
+        {
+          matrixWidth = 2;
+          matrixHeight = 2;
+        }
+        if (sei->m_coordinatePresentFlag)
+        {
+          numMatrices = sei->m_numMatricestonumKpsFlag[matrixId] ? sei->m_coordinatePointNum : (sei->m_numMatricesInfo[matrixId] < (sei->m_coordinatePointNum - 1) ? (sei->m_numMatricesInfo[matrixId] + 1) : (sei->m_numMatricesInfo[matrixId] + 2));
+        }
+        else
+        {
+          numMatrices = sei->m_numMatricesInfo[matrixId] + 1;
+        }
+      }
+      else if (sei->m_matrixTypeIdx[matrixId] == 2 || sei->m_matrixTypeIdx[matrixId] == 3 || sei->m_matrixTypeIdx[matrixId] >= 7)
+      {
+        if (sei->m_matrixTypeIdx[matrixId] >= 7)
+        {
+          numMatrices = sei->m_numMatrices[matrixId];
+        }
+        else
+        {
+          numMatrices = 1;
+        }
+        matrixHeight = sei->m_matrixHeight[matrixId];
+        matrixWidth = sei->m_matrixWidth[matrixId];
+      }
+      else if (sei->m_matrixTypeIdx[matrixId] >= 4 && sei->m_matrixTypeIdx[matrixId] <= 6)
+      {
+        if (sei->m_matrixTypeIdx[matrixId] == 4)
+        {
+          if (sei->m_3DCoordinateFlag == 1 || sei->m_matrix3DSpaceFlag[matrixId] == 1)
+          {
+            matrixWidth = 3;
+          }
+          else
+          {
+            matrixWidth = 2;
+          }
+        }
+        if (sei->m_matrixTypeIdx[matrixId] == 5 || sei->m_matrixTypeIdx[matrixId] == 6)
+        {
+          matrixWidth = 1;
+        }
+        if (sei->m_3DCoordinateFlag == 1 || sei->m_matrix3DSpaceFlag[matrixId] == 1)
+        {
+          matrixHeight = 3;
+        }
+        else
+        {
+          matrixHeight = 2;
+        }
+        numMatrices = 1;
+      }
+      sei->m_numMatricesstore.push_back(numMatrices);
+      sei->m_matrixWidthstore.push_back(matrixWidth);
+      sei->m_matrixHeightstore.push_back(matrixHeight);
+      for (uint32_t j = 0; j < numMatrices; j++)
+      {
+        sei->m_matrixElement[matrixId].push_back(std::vector< std::vector<double> >());
+        for (uint32_t k = 0; k < matrixHeight; k++)
+        {
+          sei->m_matrixElement[matrixId][j].push_back(std::vector<double>());
+          for (uint32_t l = 0; l < matrixWidth; l++)
+          {
+            sei->m_matrixElement[matrixId][j][k].push_back(m_pcCfg->getGenerativeFaceVideoSEIMatrixElement(sei->m_currentid, matrixId, j, k, l));
+          }
+        }
+      }
+    }
+  }
+  if (sei->m_nnPresentFlag)
+  {
+    if (sei->m_nnModeIdc == 0)
+    {
+      std::ifstream     bitstreamFile(sei->m_payloadFilename.c_str(), std::ifstream::in | std::ifstream::binary);
+      if (!bitstreamFile)
+      {
+        EXIT("Failed to open bitstream file " << sei->m_payloadFilename.c_str() << " for reading");
+      }
+      bitstreamFile.seekg(0, std::ifstream::end);
+      sei->m_payloadLength = bitstreamFile.tellg();
+      bitstreamFile.seekg(0, std::ifstream::beg);
+      sei->m_payloadByte = new char[sei->m_payloadLength];
+      bitstreamFile.read(sei->m_payloadByte, sei->m_payloadLength);
+      bitstreamFile.close();
+    }
+  }
+}
+#endif
 //! \}

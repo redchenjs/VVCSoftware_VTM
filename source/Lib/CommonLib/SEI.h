@@ -112,7 +112,9 @@ public:
 #if JVET_AH2006_TXTDESCRINFO_SEI
     SEI_TEXT_DESCRIPTION                       = 219,
 #endif
-
+#if JVET_AJ0207_GFV
+    GENERATIVE_FACE_VIDEO                      = 223,
+#endif
   };
 
   SEI() {}
@@ -1602,7 +1604,59 @@ public:
   std::vector<std::string> m_textDescriptionString;
 };
 #endif
-
+#if JVET_AJ0207_GFV
+class SEIGenerativeFaceVideo : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::GENERATIVE_FACE_VIDEO; }
+  SEIGenerativeFaceVideo() {}
+  SEIGenerativeFaceVideo(const SEIGenerativeFaceVideo & sei);
+  virtual ~SEIGenerativeFaceVideo() {}
+  uint32_t       m_number;
+  uint32_t       m_currentid;
+  bool           m_basePicFlag;
+  bool           m_nnPresentFlag;
+  uint32_t       m_nnModeIdc;
+  std::string    m_nnTagURI;
+  std::string    m_nnURI;
+  bool                    m_chromaKeyInfoPresentFlag; 
+  std::vector<bool>       m_chromaKeyValuePresentFlag;
+  std::vector<uint32_t>   m_chromaKeyValue; 
+  std::vector<bool>       m_chromaKeyThrPresentFlag; 
+  std::vector<uint32_t>   m_chromaKeyThrValue;
+  bool       m_drivePicFusionFlag;
+  uint32_t   m_id;
+  uint32_t   m_cnt;
+  bool   m_lowConfidenceFaceParameterFlag;
+  bool   m_coordinatePresentFlag;
+  uint32_t   m_coordinateQuantizationFactor;
+  bool   m_coordinatePredFlag;
+  bool   m_3DCoordinateFlag;
+  uint32_t   m_coordinatePointNum;
+  std::vector<double>   m_coordinateX;
+  std::vector<double>   m_coordinateY;
+  std::vector<uint32_t>   m_coordinateZMaxValue;
+  std::vector<double>   m_coordinateZ;
+  bool           m_matrixPresentFlag;
+  uint32_t       m_matrixElementPrecisionFactor;
+  bool           m_matrixPredFlag;
+  uint32_t       m_numMatrixType;
+  std::vector<uint32_t>   m_matrixTypeIdx;
+  std::vector<uint32_t>   m_numMatricestonumKpsFlag;
+  std::vector<uint32_t>    m_numMatricesInfo;
+  std::vector<uint32_t>    m_matrix3DSpaceFlag;
+  std::vector<uint32_t>    m_numMatrices;
+  std::vector<uint32_t>    m_matrixWidth;
+  std::vector<uint32_t>    m_matrixHeight;
+  std::vector<std::vector<std::vector<std::vector<double>>>>   m_matrixElement;
+  std::string             m_payloadFilename;
+  uint64_t                m_payloadLength;
+  char*                   m_payloadByte;
+  std::vector<uint32_t>    m_numMatricesstore;
+  std::vector<uint32_t>    m_matrixWidthstore;
+  std::vector<uint32_t>    m_matrixHeightstore;
+};
+#endif
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t nnpfaTargetId);
 SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMessages &seiList);
 

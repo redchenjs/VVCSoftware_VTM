@@ -212,6 +212,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEITextDescription(*static_cast<const SEITextDescription*>(&sei));
     break;
 #endif
+#if JVET_AJ0207_GFV
+  case SEI::PayloadType::GENERATIVE_FACE_VIDEO:
+    xWriteSEIGenerativeFaceVideo(*static_cast<const SEIGenerativeFaceVideo*>(&sei));
+    break;
+#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -2259,5 +2264,379 @@ void SEIWriter::xWriteSEIModalityInfo(const SEIModalityInfo& sei)
   }
 }
 #endif 
+
+
+#if JVET_AJ0207_GFV
+void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
+{
+  uint32_t basePicFlag = 0;
+  std::vector<double> baseCoordinateX;
+  std::vector<double> baseCoordinateY;
+  std::vector<double> baseCoordinateZ;
+  std::vector<std::vector<std::vector<std::vector<double>>>> baseMatrix;
+  std::vector<double>  coordinateXRec;
+  std::vector<double>  coordinateYRec;
+  std::vector<double>  coordinateZRec;
+  std::vector<std::vector<std::vector<std::vector<double>>>>   matrixElementRec;
+  if (sei.m_cnt == 0)
+  {
+    if (sei.m_coordinatePresentFlag)
+    {
+      for (uint32_t i = 0; i < sei.m_coordinatePointNum; i++)
+      {
+        baseCoordinateX.push_back(sei.m_coordinateX[i]);
+        baseCoordinateY.push_back(sei.m_coordinateY[i]);
+        if (sei.m_3DCoordinateFlag == 1)
+        {
+          baseCoordinateZ.push_back(sei.m_coordinateZ[i]);
+        }
+      }
+    }
+    if (sei.m_matrixPresentFlag)
+    {
+      for (uint32_t matrixId = 0; matrixId < sei.m_numMatrixType; matrixId++)
+      {
+        baseMatrix.push_back(std::vector<std::vector<std::vector<double>>>());
+        for (uint32_t j = 0; j < sei.m_numMatricesstore[matrixId]; j++)
+        {
+          baseMatrix[matrixId].push_back(std::vector<std::vector<double>>());
+          for (uint32_t k = 0; k < sei.m_matrixHeightstore[matrixId]; k++)
+          {
+            baseMatrix[matrixId][j].push_back(std::vector<double>());
+            for (uint32_t l = 0; l < sei.m_matrixWidthstore[matrixId]; l++)
+            {
+              baseMatrix[matrixId][j][k].push_back(sei.m_matrixElement[matrixId][j][k][l]);
+            }
+          }
+        }
+      }
+    }
+  }
+  xWriteUvlc(sei.m_id, "gfv_id");
+  xWriteUvlc(sei.m_cnt, "gfv_cnt");
+  if (sei.m_cnt == 0)
+  {
+    xWriteFlag(sei.m_basePicFlag, "gfv_base_picture_flag");
+    basePicFlag = sei.m_basePicFlag;
+  }
+  else
+  {
+    basePicFlag = 0;
+  }
+  if (basePicFlag == 1)
+  {
+    xWriteFlag(sei.m_nnPresentFlag, "gfv_nnPresentFlag");
+    if (sei.m_nnPresentFlag)
+    {
+      xWriteUvlc(sei.m_nnModeIdc, "gfv_mode_idc");
+      if (sei.m_nnModeIdc == 1)
+      {
+        while (!isByteAligned())
+        {
+          xWriteFlag(0, "gfv_reserved_zero_bit_a");
+        }
+        xWriteString(sei.m_nnTagURI, "gfv_uri_tag");
+        xWriteString(sei.m_nnURI, "gfv_uri");
+      }
+    }
+    xWriteFlag(sei.m_chromaKeyInfoPresentFlag, "gfv_chroma_key_info_presentFlag");
+    if (sei.m_chromaKeyInfoPresentFlag)
+    {
+      for (uint32_t chromac = 0; chromac < 3; chromac++)
+      {
+        xWriteFlag(sei.m_chromaKeyValuePresentFlag[chromac], "gfv_chroma_key_value_present_flag[c]");
+        if (sei.m_chromaKeyValuePresentFlag[chromac])
+        {
+          xWriteCode(sei.m_chromaKeyValue[chromac], 8, "gfv_chroma_key_value[chromac]");
+        }
+      }
+      for (uint32_t chromai = 0; chromai < 2; chromai++)
+      {
+        xWriteFlag(sei.m_chromaKeyThrPresentFlag[chromai], "gfv_chroma_key_thr_present_flag[i]");
+        if (sei.m_chromaKeyThrPresentFlag[chromai])
+        {
+          xWriteUvlc(sei.m_chromaKeyThrValue[chromai], "gfv_chroma_key_thr_value[i]");
+        }
+      }
+    }
+  }
+  else
+  {
+    xWriteFlag(sei.m_drivePicFusionFlag, "gfv_drive_picture_fusion_flag");
+  }
+  xWriteFlag(sei.m_lowConfidenceFaceParameterFlag, "gfv_low_confidence_face_parameter_flag");
+  xWriteFlag(sei.m_coordinatePresentFlag, "gfv_coordinate_present_flag");
+  if (sei.m_coordinatePresentFlag)
+  {
+    xWriteFlag(sei.m_coordinatePredFlag, "gfv_kps_pred_flag");
+    if (basePicFlag || !sei.m_coordinatePredFlag)
+    {
+      uint32_t gfvCoordinatePrecisionFactorMinus1 = sei.m_coordinateQuantizationFactor - 1;
+      CHECK(gfvCoordinatePrecisionFactorMinus1 < 0 || gfvCoordinatePrecisionFactorMinus1 > 31,"The value of gfv_coordinate_precision_factor_minus1 shall be in the range of 0 to 31, inclusive");
+      xWriteUvlc(gfvCoordinatePrecisionFactorMinus1, "gfv_coordinate_precision_factor_minus1");
+      uint32_t gfvNumKpsMinus1 = sei.m_coordinatePointNum - 1;
+      xWriteUvlc(gfvNumKpsMinus1, "gfv_num_kps_minus1");
+      xWriteFlag(sei.m_3DCoordinateFlag, "gfv_coordinate_z_present_flag");
+      if (sei.m_3DCoordinateFlag == 1)
+      {
+        uint32_t gfvCoordinateZMaxValueMinus1 = sei.m_coordinateZMaxValue[0] - 1;
+        CHECK(gfvCoordinateZMaxValueMinus1 < 0 || gfvCoordinateZMaxValueMinus1 > (1<<16) - 1,"The value of gfv_coordinate_z_max_value_minus1 shall be in the range of 0 to 2^(16) - 1, inclusive");
+        xWriteUvlc(gfvCoordinateZMaxValueMinus1, "gfv_coordinate_z_max_value_minus1");
+      }
+    }
+    //X_coordinate_tensor && Y_coordinate_tensor  && Z_coordinate_tensor
+    for (uint32_t i = 0; i < sei.m_coordinatePointNum; i++)
+    {
+      if (!sei.m_coordinatePredFlag)
+      {
+        // X_coordinate_tensor
+        int curCoordinateXInt = (int)(sei.m_coordinateX[i] * (1 << sei.m_coordinateQuantizationFactor) + 0.5);
+        int curCoordinateXIntAbs = abs(curCoordinateXInt);
+        xWriteUvlc(curCoordinateXIntAbs, "gfv_coordinate_x_abs[ i ]");
+        if (curCoordinateXIntAbs)
+        {
+          const int signflag = curCoordinateXInt <= 0;
+          xWriteFlag(signflag, "gfv_coordinate_x_sign_flag[ i ]");
+        }
+        double coordinateXTensorAbs = ((double)curCoordinateXInt) / (1 << sei.m_coordinateQuantizationFactor);
+        coordinateXRec.push_back(coordinateXTensorAbs);
+        // Y_coordinate_tensor
+        int curCoordinateYInt = (int)(sei.m_coordinateY[i] * (1 << sei.m_coordinateQuantizationFactor) + 0.5);
+        int curCoordinateYIntAbs = abs(curCoordinateYInt);
+        xWriteUvlc(curCoordinateYIntAbs, "gfv_coordinate_y_abs[ i ]");
+        if (curCoordinateYIntAbs)
+        {
+          const int signflag = curCoordinateYInt <= 0;
+          xWriteFlag(signflag, "gfv_coordinate_y_sign_flag[ i ]");
+        }
+        double coordinateYTensorAbs = ((double)curCoordinateYInt) / (1 << sei.m_coordinateQuantizationFactor);
+        coordinateYRec.push_back(coordinateYTensorAbs);
+        // Z_coordinate_tensor
+        if (sei.m_3DCoordinateFlag == 1)
+        {
+          int curCoordinateZInt = (int)((sei.m_coordinateZ[i] * 1.0) * (1 << sei.m_coordinateQuantizationFactor) + 0.5);
+          int curCoordinateZIntAbs = abs(curCoordinateZInt);
+          xWriteUvlc(curCoordinateZIntAbs, "gfv_coordinate_z_abs[ i ]");
+          if (curCoordinateZIntAbs)
+          {
+            const int signflag = curCoordinateZInt <= 0;
+            xWriteFlag(signflag, "gfv_coordinate_z_sign_flag[ i ]");
+          }
+          double coordinateZTensorAbsRec = (((double)curCoordinateZInt / (1 << sei.m_coordinateQuantizationFactor)));
+          coordinateZRec.push_back(coordinateZTensorAbsRec);
+        }
+      }
+      else
+      {
+        //Inter-frame difference
+        int curCoordinateXInt = (int)((sei.m_coordinateX[i] - (basePicFlag ? (i == 0 ? 0 : coordinateXRec[i - 1]) : prevcoordinateXRec[i])) * (1 << sei.m_coordinateQuantizationFactor) + 0.5);
+        double coordinateXTensorAbsRec = ((double)curCoordinateXInt) / (1 << sei.m_coordinateQuantizationFactor);
+        coordinateXRec.push_back(coordinateXTensorAbsRec + (basePicFlag ? (i == 0 ? 0 : coordinateXRec[i - 1]) : prevcoordinateXRec[i]));
+        int curCoordinateXIntAbs = abs(curCoordinateXInt);
+        xWriteUvlc(curCoordinateXIntAbs, "gfv_coordinate_dx_abs[ i ]");
+        if (curCoordinateXIntAbs)
+        {
+          const int signflag = curCoordinateXInt <= 0;
+          xWriteFlag(signflag, "gfv_coordinate_dx_sign_flag[ i ]");
+        }
+        int curCoordinateYInt = (int)((sei.m_coordinateY[i] - (basePicFlag ? (i == 0 ? 0 : coordinateYRec[i - 1]) : prevcoordinateYRec[i])) * (1 << sei.m_coordinateQuantizationFactor) + 0.5);
+        double coordinateYTensorAbsRec = ((double)curCoordinateYInt) / (1 << sei.m_coordinateQuantizationFactor);
+        coordinateYRec.push_back(coordinateYTensorAbsRec + (basePicFlag ? (i == 0 ? 0 : coordinateYRec[i - 1]) : prevcoordinateYRec[i]));
+        int curCoordinateYIntAbs = abs(curCoordinateYInt);
+        xWriteUvlc(curCoordinateYIntAbs, "gfv_coordinate_dy_abs[ i ]");
+        if (curCoordinateYIntAbs)
+        {
+          const int signflag = curCoordinateYInt <= 0;
+          xWriteFlag(signflag, "gfv_coordinate_dy_sign_flag[ i ]");
+        }
+        if (sei.m_3DCoordinateFlag == 1)
+        {
+          int curCoordinateZInt = (int)((sei.m_coordinateZ[i] - (basePicFlag ? (i == 0 ? 0 : coordinateZRec[i - 1]) : prevcoordinateZRec[i])) * (1 << sei.m_coordinateQuantizationFactor) + 0.5);
+          double coordinateZTensorAbsRec = ((double)curCoordinateZInt / (1 << sei.m_coordinateQuantizationFactor));
+          coordinateZRec.push_back(coordinateZTensorAbsRec + (basePicFlag ? (i == 0 ? 0 : coordinateZRec[i - 1]) : prevcoordinateZRec[i]));
+          int curCoordinateZIntAbs = abs(curCoordinateZInt);
+          xWriteUvlc(curCoordinateZIntAbs, "gfv_coordinate_dz_abs[ i ]");
+          if (curCoordinateZIntAbs)
+          {
+            const int signflag = curCoordinateZInt <= 0;
+            xWriteFlag(signflag, "gfv_coordinate_dz_sign_flag[ i ]");
+          }
+        }
+      }
+    }
+    if (doUpdateGFVcoordinate)
+    {
+      prevcoordinateXRec = coordinateXRec;
+      prevcoordinateYRec = coordinateYRec;
+      if (sei.m_3DCoordinateFlag == 1)
+      {
+        prevcoordinateZRec = coordinateZRec;
+      }
+      doUpdateGFVcoordinate = false;
+    }
+    else
+    {
+      doUpdateGFVcoordinate = true;
+    }
+  }
+  // Matrix Parameters
+  CHECK((!sei.m_coordinatePresentFlag) && (!sei.m_matrixPresentFlag), "When gfv_coordinate_present_flag is equal to 0, gfv_matrix_present_flag shall be equal to 1");
+  xWriteFlag(sei.m_matrixPresentFlag, "gfv_matrix_present_flag");
+  
+  if (sei.m_matrixPresentFlag)
+  {
+    std::vector<uint32_t> matrixWidthVec;
+    std::vector<uint32_t> matrixHeightVec;
+    std::vector<uint32_t> numMatricesVec;
+    if (!basePicFlag )
+    {
+      xWriteFlag(sei.m_matrixPredFlag, "gfv_matrix_pred_flag");
+    }
+    if(basePicFlag || !sei.m_matrixPredFlag)
+    {
+      uint32_t gfvMatrixElementPrecisionFactorMinus1 = sei.m_matrixElementPrecisionFactor - 1;
+      CHECK(gfvMatrixElementPrecisionFactorMinus1 < 0 || gfvMatrixElementPrecisionFactorMinus1 > 31,"The value of gfv_matrix_element_precision_factor_minus1 shall be in the range of 0 to 31, inclusive");
+      xWriteUvlc(gfvMatrixElementPrecisionFactorMinus1, "gfv_matrix_element_precision_factor_minus1");
+      uint32_t gfvNumMatrixTypesMinus1=sei.m_numMatrixType - 1;
+      xWriteUvlc(gfvNumMatrixTypesMinus1, "gfv_num_matrix_types_minus1");
+
+      for (uint32_t matrixId = 0; matrixId < sei.m_numMatrixType; matrixId++)
+      {
+        CHECK(sei.m_matrixTypeIdx[matrixId] < 0 || sei.m_matrixTypeIdx[matrixId] > 63, "The value of gfv_matrix_type_idx shall be in the range of 0 to 63, inclusive");
+        xWriteUvlc(sei.m_matrixTypeIdx[matrixId], "gfv_matrix_type_idx");
+        if (sei.m_matrixTypeIdx[matrixId] == 0 || sei.m_matrixTypeIdx[matrixId] == 1)
+        {
+          if (sei.m_coordinatePresentFlag)
+          {
+            xWriteFlag(sei.m_numMatricestonumKpsFlag[matrixId], "gfv_num_matrices_equal_to_num_kps_flag");
+          }
+          if (!sei.m_numMatricestonumKpsFlag[matrixId])
+          {
+            CHECK(sei.m_numMatricesInfo[matrixId] < 0 || sei.m_numMatricesInfo[matrixId] > (1 << 10) - 1, "The value of gfv_num_matrices_info shall be in the range of 0 to 63, inclusive");
+            xWriteUvlc(sei.m_numMatricesInfo[matrixId], "gfv_num_matrices_info");
+          }
+        }
+        else if (sei.m_matrixTypeIdx[matrixId] == 2 || sei.m_matrixTypeIdx[matrixId] == 3 || sei.m_matrixTypeIdx[matrixId] >= 7)
+        {
+          if (sei.m_matrixTypeIdx[matrixId] >= 7)
+          {
+            uint32_t gfvNumMatricesMinus1 = sei.m_numMatrices[matrixId] - 1;
+            CHECK(gfvNumMatricesMinus1 < 0 || gfvNumMatricesMinus1 >(1 << 10) - 1, "The value of gfv_num_matrices_minus1 shall be in the range of 0 to 2^(10) - 1, inclusive");
+            xWriteUvlc(gfvNumMatricesMinus1, "gfv_num_matrices_minus1");
+          }
+          uint32_t gfvMatrixWidthMinus1 = sei.m_matrixWidth[matrixId] - 1;
+          xWriteUvlc(gfvMatrixWidthMinus1, "gfv_matrix_width_minus1");
+          CHECK(gfvMatrixWidthMinus1 < 0 || gfvMatrixWidthMinus1 >(1 << 10) - 1, "The value of gfv_matrix_width_minus1 shall be in the range of 0 to 2^(10) - 1, inclusive");
+          uint32_t gfvMatrixHeightMinus1 = sei.m_matrixHeight[matrixId] - 1;
+          xWriteUvlc(gfvMatrixHeightMinus1, "gfv_matrix_height_minus1");
+          CHECK(gfvMatrixHeightMinus1 < 0 || gfvMatrixHeightMinus1 >(1 << 10) - 1, "The value of gfv_matrix_height_minus1 shall be in the range of 0 to 2^(10) - 1, inclusive");
+        }
+        else if (sei.m_matrixTypeIdx[matrixId] >= 4 && sei.m_matrixTypeIdx[matrixId] <= 6)
+        {
+          if (!sei.m_coordinatePresentFlag)
+          {
+            xWriteFlag(sei.m_matrix3DSpaceFlag[matrixId], "gfv_Matrix3DSpaceFlag");
+          }
+        }
+      }
+    }
+    for (uint32_t matrixId = 0; matrixId < sei.m_numMatrixType; matrixId++)
+    {
+      if (!sei.m_matrixPredFlag)
+      {
+        numMatricesVec.push_back(sei.m_numMatricesstore[matrixId]);
+        matrixHeightVec.push_back(sei.m_matrixHeightstore[matrixId]);
+        matrixWidthVec.push_back(sei.m_matrixWidthstore[matrixId]);
+        matrixElementRec.push_back(std::vector<std::vector<std::vector<double>>>());
+        for (uint32_t j = 0; j < sei.m_numMatricesstore[matrixId]; j++)
+        {
+          matrixElementRec[matrixId].push_back(std::vector<std::vector<double>>());
+          for (uint32_t k = 0; k < sei.m_matrixHeightstore[matrixId]; k++)
+          {
+            matrixElementRec[matrixId][j].push_back(std::vector<double>());
+            for (uint32_t l = 0; l < sei.m_matrixWidthstore[matrixId]; l++)
+            {
+              double curMatrixElementAbs = fabs(sei.m_matrixElement[matrixId][j][k][l]);
+              int curMatrixElementAbsInt = (int)(curMatrixElementAbs);
+              CHECK(curMatrixElementAbsInt < 0 || curMatrixElementAbsInt > 4294967296 - 2, "The value of gfv_matrix_element_int shall be in the range of 0 to 2^(32) - 2, inclusive");
+              xWriteUvlc(curMatrixElementAbsInt, "gfv_matrix_element_int");
+              double curMatrixElementAbsDecimal = curMatrixElementAbs - curMatrixElementAbsInt;
+              CHECK(curMatrixElementAbsDecimal < 0, "");
+              int curMatrixElementAbsDecIntValue = Clip3(0, (1 << sei.m_matrixElementPrecisionFactor) - 1, (int)(curMatrixElementAbsDecimal * (1 << sei.m_matrixElementPrecisionFactor) + 0.5));
+              xWriteCode(curMatrixElementAbsDecIntValue, sei.m_matrixElementPrecisionFactor, "gfv_matrix_element_dec");
+              const int signflag = sei.m_matrixElement[matrixId][j][k][l] < 0;
+              if (curMatrixElementAbsInt || curMatrixElementAbsDecIntValue)
+              {
+                xWriteFlag(signflag, "gfv_matrix_element_sign_flag");
+              }
+              double matrixElementAbsRec = (double)(curMatrixElementAbsInt + (((double)curMatrixElementAbsDecIntValue) / (1 << sei.m_matrixElementPrecisionFactor)));
+              matrixElementRec[matrixId][j][k].push_back(signflag ? -matrixElementAbsRec : matrixElementAbsRec);
+            }
+          }
+        }
+      }
+      else
+      {
+        numMatricesVec.push_back(prevnumMatricesVec[matrixId]);
+        matrixHeightVec.push_back(prevmatrixHeightVec[matrixId]);
+        matrixWidthVec.push_back(prevmatrixWidthVec[matrixId]);
+        matrixElementRec.push_back(std::vector<std::vector<std::vector<double>>>());
+        for (uint32_t j = 0; j < prevnumMatricesVec[matrixId]; j++)
+        {
+          matrixElementRec[matrixId].push_back(std::vector<std::vector<double>>());
+          for (uint32_t k = 0; k < prevmatrixHeightVec[matrixId]; k++)
+          {
+            matrixElementRec[matrixId][j].push_back(std::vector<double>());
+            for (uint32_t l = 0; l < prevmatrixWidthVec[matrixId]; l++)
+            {
+              double curMatrixElementAbs = fabs(sei.m_matrixElement[matrixId][j][k][l] - prevMatrixRec[matrixId][j][k][l]);
+              int curMatrixElementAbsInt = (int)curMatrixElementAbs;
+              CHECK(curMatrixElementAbsInt < 0 || curMatrixElementAbsInt > 4294967296 - 2, "The value of gfv_matrix_element_int shall be in the range of 0 to 2^(32) - 2, inclusive");
+              xWriteUvlc(curMatrixElementAbsInt, "gfv_matrix_delta_element_int");
+              double curMatrixElementAbsDecimal = curMatrixElementAbs - curMatrixElementAbsInt;
+              CHECK(curMatrixElementAbsDecimal < 0, "");
+              int curMatrixElementAbsDecIntValue = (int)(curMatrixElementAbsDecimal* (1 << sei.m_matrixElementPrecisionFactor) + 0.5);
+              xWriteUvlc(curMatrixElementAbsDecIntValue, "gfv_matrix_element_dec");
+              const int signflag = (sei.m_matrixElement[matrixId][j][k][l] - prevMatrixRec[matrixId][j][k][l]) < 0;
+              if (curMatrixElementAbsInt || curMatrixElementAbsDecIntValue)
+              {
+                xWriteFlag(signflag, "gfv_matrix_delta_element_sign_flag");
+              }
+              double matrixElementAbsRec = (double)(curMatrixElementAbsInt + (((double)curMatrixElementAbsDecIntValue) / (1 << sei.m_matrixElementPrecisionFactor)));
+              matrixElementRec[matrixId][j][k].push_back((signflag ? -matrixElementAbsRec : matrixElementAbsRec) + prevMatrixRec[matrixId][j][k][l]);
+            }
+          }
+        }
+      }
+    }
+    if (doUpdateGFVmatrix)
+    {
+      prevMatrixRec = matrixElementRec;
+      prevnumMatricesVec = numMatricesVec;
+      prevmatrixHeightVec = matrixHeightVec;
+      prevmatrixWidthVec = matrixWidthVec;
+      doUpdateGFVmatrix = false;
+    }
+    else
+    {
+      doUpdateGFVmatrix = true;
+    }
+  }
+  if (sei.m_nnPresentFlag)
+  {
+    if (sei.m_nnModeIdc == 0)
+    {
+      while (!isByteAligned())
+      {
+        xWriteFlag(0, "gfv_reserved_zero_bit_b");
+      }
+      for (long i = 0; i < sei.m_payloadLength; i++)
+      {
+        xWriteSCode(sei.m_payloadByte[i], 8, "gfv_nn_payload_byte[i]");
+      }
+    }
+  }
+}
+#endif
 
 //! \}

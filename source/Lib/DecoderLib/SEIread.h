@@ -144,6 +144,26 @@ protected:
 
 protected:
   HRD m_nestedHrd;
+#if JVET_AJ0207_GFV
+  void xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo& sei, uint32_t payloadSize,std::ostream* pDecodedMessageOutputStream);
+  uint32_t                         baseCoordinateQuantizationFactor;
+  uint32_t                                                   basdCoordinatePointNum;
+  bool                                                       base3DCoordinateFlag;
+  std::vector<uint32_t>                                      baseCoordinateZMaxValue;
+  std::vector<double>                                        prevCoordinateX;
+  std::vector<double>                                        prevCoordinateY;
+  std::vector<double>                                        prevCoordinateZ;
+  uint32_t                                                   baseMatrixElementPrecisionFactor;
+  uint32_t                                                   baseNumMatrixType;
+  std::vector<uint32_t>                                      baseMatrixTypeIdx;
+  std::vector<uint32_t>                                      baseNumMatricestoNumKpsFlag;                                    
+  std::vector<uint32_t>                                      baseNumMatricesInfo;
+  std::vector<uint32_t>                                      baseMatrix3DSpaceFlag;
+  std::vector<uint32_t>                                      baseNumMatrices;
+  std::vector<uint32_t>                                      baseMatrixWidth;
+  std::vector<uint32_t>                                      baseMatrixHeight;
+  std::vector<std::vector<std::vector<std::vector<double>>>> prevMatrix;
+#endif
 };
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE
