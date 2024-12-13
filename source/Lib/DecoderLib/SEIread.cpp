@@ -2033,12 +2033,21 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
     sei.m_forHumanViewingIdc = val;
     sei_read_code(pDecodedMessageOutputStream, 2, val, "eoi_for_machine_analysis_idc");
     sei.m_forMachineAnalysisIdc = val;
+#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
+    sei_read_code(pDecodedMessageOutputStream, 2, val, "eoi_reserved_zero_2bits");
+    CHECK(val != 0, "non-zero value parsed for eoi_reserved_zero_2bits");
+#endif
     sei_read_code(pDecodedMessageOutputStream, 16, val, "eoi_type");
     sei.m_type = val;
     if ((sei.m_type & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) != 0)
     {
+#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
+      sei_read_code(pDecodedMessageOutputStream, 16, val, "eoi_object_based_idc");
+      sei.m_objectBasedIdc = val;
+#else
       sei_read_uvlc(pDecodedMessageOutputStream, val, "eoi_object_based_idc");
       sei.m_objectBasedIdc = val;
+#endif
     }
     if ((sei.m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
     {
@@ -2068,8 +2077,13 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
     
     if ((sei.m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
     {
+#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
+      sei_read_code(pDecodedMessageOutputStream, 16, val, "eoi_privacy_protection_type_idc");
+      sei.m_privacyProtectionTypeIdc = val;
+#else
       sei_read_code(pDecodedMessageOutputStream, 4, val, "eoi_privacy_protection_type_idc");
       sei.m_privacyProtectionTypeIdc = val;
+#endif
       sei_read_code(pDecodedMessageOutputStream, 8, val, "eoi_privacy_protected_info_type");
       sei.m_privacyProtectedInfoType = val;
     }
