@@ -4391,7 +4391,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
       //-- For time output for each slice
       auto elapsed = std::chrono::steady_clock::now() - beforeTime;
-      auto encTime = std::chrono::duration_cast<std::chrono::seconds>( elapsed ).count();
+      auto encTime = std::chrono::duration_cast<std::chrono::milliseconds>( elapsed ).count()/1000.0;
 
       std::string digestStr;
 #if GDR_ENABLED
@@ -5096,7 +5096,7 @@ double EncGOP::xFindDistortionPlaneWPSNR(const CPelBuf& pic0, const CPelBuf& pic
 #endif
 
 void EncGOP::xCalculateAddPSNRs(const bool isField, const bool isFieldTopFieldFirst, const int gopId, Picture *pcPic,
-                                const AccessUnit &accessUnit, PicList &rcListPic, const int64_t dEncTime,
+                                const AccessUnit &accessUnit, PicList &rcListPic, const double dEncTime,
                                 const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
                                 const bool printMSSSIM, double *PSNR_Y, bool isEncodeLtRef)
 {

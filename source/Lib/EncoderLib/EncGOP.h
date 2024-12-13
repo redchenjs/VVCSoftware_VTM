@@ -314,7 +314,7 @@ protected:
 #endif
 
   void     xCalculateAddPSNRs(const bool isField, const bool isFieldTopFieldFirst, const int gopId, Picture *pcPic,
-                              const AccessUnit &accessUnit, PicList &rcListPic, int64_t dEncTime,
+                              const AccessUnit &accessUnit, PicList &rcListPic, double dEncTime,
                               const InputColourSpaceConversion snr_conversion, const bool printFrameMSE,
                               const bool printMSSSIM, double *PSNR_Y, bool isEncodeLtRef);
   void     xCalculateAddPSNR(Picture *pcPic, PelUnitBuf cPicD, const AccessUnit &, double dEncTime,
