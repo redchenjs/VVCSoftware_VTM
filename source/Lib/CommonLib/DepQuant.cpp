@@ -540,6 +540,7 @@ namespace DQIntern
       int sumBits = isY ? cbfDeltaBits : 0;
 
       std::array<int32_t, LAST_SIGNIFICANT_GROUPS> ctxBits;
+      ctxBits.fill(0);
 
       for (int ctxId = 0; ctxId <= maxCtxId; ctxId++)
       {
