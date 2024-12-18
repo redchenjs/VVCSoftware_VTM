@@ -3888,8 +3888,8 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
   bool       valueSignFlag;
   uint32_t   id;
   uint32_t   cnt;
-  bool       drivePicFusionFlag;
-  bool       lowConfidenceFaceParameterFlag;
+  uint32_t   drivePicFusionFlag;
+  uint32_t   lowConfidenceFaceParameterFlag;
   bool       coordinatePresentFlag;
   uint32_t   coordinateQuantizationFactor;
   bool       coordinatePredFlag;
@@ -4020,11 +4020,9 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
   }
   else
   {
-    sei_read_flag(pDecodedMessageOutputStream, val, "gfv_drive_picture_fusion_flag");
-    drivePicFusionFlag = val;
+    sei_read_flag(pDecodedMessageOutputStream, drivePicFusionFlag, "gfv_drive_picture_fusion_flag");
   }
-  sei_read_flag(pDecodedMessageOutputStream, val, "gfv_low_confidence_face_parameter_flag");
-  lowConfidenceFaceParameterFlag = val;
+  sei_read_flag(pDecodedMessageOutputStream, lowConfidenceFaceParameterFlag, "gfv_low_confidence_face_parameter_flag");
   sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_present_flag");
   coordinatePresentFlag = val;
   if (coordinatePresentFlag)
@@ -4122,7 +4120,7 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
             sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_z_sign_flag");
             valueSignFlag = val;
           }
-          double coordinateZTensor = coordinateZTensor = valueSignFlag ? -coordinateZTensorAbs : coordinateZTensorAbs;
+          double coordinateZTensor = valueSignFlag ? -coordinateZTensorAbs : coordinateZTensorAbs;
           coordinateZ.push_back(coordinateZTensor);
           if (sei.m_basePicFlag)
           {
@@ -4232,6 +4230,7 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
   else
   {
     m3DCoordinateFlag = 0; 
+    coordinatePointNum = 0;
   }
   matrixElement.push_back(std::vector<std::vector<std::vector<double>>>());
   prevMatrix.push_back(std::vector<std::vector<std::vector<double>>>());
