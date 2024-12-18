@@ -2558,7 +2558,7 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
             {
               double curMatrixElementAbs = fabs(sei.m_matrixElement[matrixId][j][k][l]);
               int curMatrixElementAbsInt = (int)(curMatrixElementAbs);
-              CHECK(curMatrixElementAbsInt < 0 || curMatrixElementAbsInt > 4294967296 - 2, "The value of gfv_matrix_element_int shall be in the range of 0 to 2^(32) - 2, inclusive");
+              CHECK(curMatrixElementAbsInt < 0, "The value of gfv_matrix_element_int shall be in the range of 0 to 2^(32) - 2, inclusive");
               xWriteUvlc(curMatrixElementAbsInt, "gfv_matrix_element_int");
               double curMatrixElementAbsDecimal = curMatrixElementAbs - curMatrixElementAbsInt;
               CHECK(curMatrixElementAbsDecimal < 0, "");
@@ -2591,7 +2591,7 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
             {
               double curMatrixElementAbs = fabs(sei.m_matrixElement[matrixId][j][k][l] - prevMatrixRec[matrixId][j][k][l]);
               int curMatrixElementAbsInt = (int)curMatrixElementAbs;
-              CHECK(curMatrixElementAbsInt < 0 || curMatrixElementAbsInt > 4294967296 - 2, "The value of gfv_matrix_element_int shall be in the range of 0 to 2^(32) - 2, inclusive");
+              CHECK(curMatrixElementAbsInt < 0, "The value of gfv_matrix_element_int shall be in the range of 0 to 2^(32) - 2, inclusive");
               xWriteUvlc(curMatrixElementAbsInt, "gfv_matrix_delta_element_int");
               double curMatrixElementAbsDecimal = curMatrixElementAbs - curMatrixElementAbsInt;
               CHECK(curMatrixElementAbsDecimal < 0, "");
