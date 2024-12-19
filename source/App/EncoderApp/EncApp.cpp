@@ -1292,11 +1292,13 @@ void EncApp::xInitLibCfg( int layerIdx )
         m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationRightOffset (m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset   (m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i], i);
+#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
       m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag( m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[i], i);
       if (m_cEncLib.getNNPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag(i))
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExrapolationPrompt( m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[i], i);
       }
+#endif
       }
 #endif
       m_cEncLib.setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag  (m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[i], i);
@@ -1364,6 +1366,13 @@ void EncApp::xInitLibCfg( int layerIdx )
       m_cEncLib.setNNPostFilterSEICharacteristicsPayloadFilename(m_nnPostFilterSEICharacteristicsPayloadFilename[i], i);
     }
     m_cEncLib.setNNPostFilterSEICharacteristicsAuxInpIdc               (m_nnPostFilterSEICharacteristicsAuxInpIdc[i], i);
+#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
+    m_cEncLib.setNNPostFilterSEICharacteristicsInbandPromptFlag( m_nnPostFilterSEICharacteristicsInbandPromptFlag[i], i);
+    if (m_cEncLib.getNNPostFilterSEICharacteristicsInbandPromptFlag(i))
+    {
+      m_cEncLib.setNNPostFilterSEICharacteristicsPrompt( m_nnPostFilterSEICharacteristicsPrompt[i], i);
+    }
+#endif
     m_cEncLib.setNNPostFilterSEICharacteristicsSepColDescriptionFlag   (m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[i], i);
     if (m_cEncLib.getNNPostFilterSEICharacteristicsSepColDescriptionFlag(i))
     {

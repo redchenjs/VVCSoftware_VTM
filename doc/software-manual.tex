@@ -5719,6 +5719,14 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{0} &
   Specifies that auxiliary input data may be present in the neural network input tensor for any allowed luma-only, chroma-only, and luma-chroma configuration.
   \\
+  \Option{SEINNPFCInbandPromptFlag\emph{i}} &
+  \Default{0} &
+  Specifies that nnpfc_prompt syntax element is present (when (SEINNPFCAuxInpIdc & 2) > 0) and nnpfc_alignment_zero_bit_c syntax element may be present.
+  \\
+  \Option{SEINNPFCPrompt\emph{i}} &
+  \Default{""} &
+  Specifies the nnpfc_prompt text string prompt.
+  \\
   \Option{SEINNPFCSepColDescriptionFlag\emph{i}} &
   \Default{false} &
   Specifies that the colour primaries, transfer characteristics, and matrix coefficients of the picture that results from the neural-network post filtering may be different than for the input to the filter.

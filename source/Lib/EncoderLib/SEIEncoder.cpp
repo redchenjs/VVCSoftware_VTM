@@ -1748,11 +1748,13 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_spatialExtrapolationRightOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationRightOffset(filterIdx);
       sei->m_spatialExtrapolationTopOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset(filterIdx);
       sei->m_spatialExtrapolationBottomOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(filterIdx);
+#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
       sei->m_spatialExtrapolationPromptPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag(filterIdx);
       if (sei->m_spatialExtrapolationPromptPresentFlag)
       {
         sei->m_prompt = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExrapolationPrompt(filterIdx);
       }
+#endif
     }
 #endif
 
@@ -1769,6 +1771,16 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     CHECK((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0 && sei->m_inpOrderIdc == 0, "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_inp_order_idc shall not be equal to 0");
     sei->m_auxInpIdc             = m_pcCfg->getNNPostFilterSEICharacteristicsAuxInpIdc(filterIdx);
 
+#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
+    if ((sei->m_auxInpIdc & 2) > 0)
+    {
+      sei->m_inbandPromptFlag = m_pcCfg->getNNPostFilterSEICharacteristicsInbandPromptFlag(filterIdx);
+      if (sei->m_inbandPromptFlag)
+      {
+        sei->m_prompt = m_pcCfg->getNNPostFilterSEICharacteristicsPrompt(filterIdx);
+      }
+    }
+#endif
 
     sei->m_outFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutFormatIdc(filterIdx);
     CHECK(sei->m_outFormatIdc > 255, "The value of nnpfc_out_format_idc shall be in the range of 0 to 255");

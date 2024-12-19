@@ -2162,12 +2162,22 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream spatialExtrapolationBottomOffset;
     spatialExtrapolationBottomOffset << "SEINNPFCSpatialExtrapolationLeftOffset" << i; 
     opts.addOptions()(spatialExtrapolationBottomOffset.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i], 0, "Bottom offset of spatial extrapolation");
+#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
     std::ostringstream spatialextrapolationPromptPresentFlag;
     spatialextrapolationPromptPresentFlag << "SEINNPFCSpatialExtrapolationPromptPresentFlag" << i;
     opts.addOptions()(spatialextrapolationPromptPresentFlag.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[i], false, "equal to 1 specifies that nnpfc_prompt syntax element is present and nnpfc_alignment_zero_bit_c syntax element may be present. nnpfc_spatial_extrapolation_prompt_present_flag equal to 0 specifies that nnpfc_prompt syntax element and nnpfc_alignment_zero_bit_c syntax element are not present.");
     std::ostringstream spatialextrapolationPrompt;
     spatialextrapolationPrompt << "SEINNPFCSpatialExtrapolationPrompt" << i;
     opts.addOptions()(spatialextrapolationPrompt.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[i], std::string(""), "specifies the text string prompt used for generating the contents of the spatial extrapolation image area.");
+#endif
+#endif
+#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
+    std::ostringstream inbandPromptFlag;
+    inbandPromptFlag << "SEINNPFCInbandPromptFlag" << i;
+    opts.addOptions()(inbandPromptFlag.str(), m_nnPostFilterSEICharacteristicsInbandPromptFlag[i], false, "equal to 1 specifies that nnpfc_prompt syntax element is present and nnpfc_alignment_zero_bit_c syntax element may be present. nnpfc_spatial_extrapolation_prompt_present_flag equal to 0 specifies that nnpfc_prompt syntax element and nnpfc_alignment_zero_bit_c syntax element are not present.");
+    std::ostringstream prompt;
+    prompt << "SEINNPFCPrompt" << i;
+    opts.addOptions()(prompt.str(), m_nnPostFilterSEICharacteristicsPrompt[i], std::string(""), "specifies the text string prompt");
 #endif
     std::ostringstream InputPicOutputFlag;
     InputPicOutputFlag << "SEINNPFCInputPicOutputFlag" << i;
