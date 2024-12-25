@@ -571,12 +571,6 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIModalityInfo((SEIModalityInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
-#if JVET_AJ0207_GFV
-    case SEI::PayloadType::GENERATIVE_FACE_VIDEO:
-      sei = new SEIGenerativeFaceVideo;
-      xParseSEIGenerativeFaceVideo((SEIGenerativeFaceVideo &)*sei, payloadSize, pDecodedMessageOutputStream);
-      break;
-#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
