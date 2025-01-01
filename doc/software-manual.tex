@@ -4039,6 +4039,7 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
   213 & Processing order SEI messages            & Table \ref{tab:sei-processing order}\\
   216 & Source Picture Timing Information        & Table \ref{tab:sei-source-picture-timing-info}\\
   218 & Modality Information SEI messages        & Table \ref{tab:sei-modality-info}\\
+  220/221/222 & Digitally Signed Content SEI messages        & Table \ref{tab:sei-dsc}\\
 \end{SEIListTable}
 %%
 %% SEI messages
@@ -6328,6 +6329,43 @@ Specifies the exponent part of the maximum wavelength indicating the spectral ba
 %When true, generate time code SEI messages.
 %\\
 
+\begin{OptionTableNoShorthand}{Digitally Signed Content SEI messages encoder parameters}{tab:sei-dsc}
+\Option{SEIDSCEnabled} &
+\Default{false} &
+Enables (true) or disables (false) the insertion of Digitally Signed Content Initialisation, Selection and Verification SEI message.
+\\
+\Option{SEIDSCHashMethod} &
+\Default{0} &
+Hash method to be used .
+\par
+  \begin{tabular}{cp{0.46\textwidth}}
+    0 & SHA-1 \\
+    1 & SHA-224 \\
+    2 & SHA-256 \\
+    3 & SHA-384 \\
+    4 & SHA-512 \\
+    5 & SHA-512/224 \\
+    6 & SHA-512/256 \\
+  \end{tabular}
+\\
+\Option{SEIDSCSigningKeyFile} &
+\Default{(empty)} &
+Location of the private key file to be used for signing.
+\\
+\Option{SEIDSCVerificationKeyURI} &
+\Default{(empty)} &
+Certificate URI to be signalled to the decoder. Note, the decoder currently only supports "file://" URIs.
+\\
+\Option{SEIDSCKeyIDEnabled} &
+\Default{0} &
+Indicated whether a key ID is signalled.
+\\
+\Option{SEIDSCKeyID} &
+\Default{0} &
+If SEIDSCKeyIDEnabled is enabled, the value of the key ID.
+\\
+\end{OptionTableNoShorthand}
+
 \begin{OptionTableNoShorthand}{Object Mask Information SEI message encoder parameters}{tab:sei-object-mask-information}
 \Option{SEIObjectMaskFileRoot (-omi)} &
 \Default{\NotSet} &
@@ -6767,6 +6805,17 @@ When true, do not output frames for which there is an SEI NoDisplay message.
 \Default{0} &
 If 1 then clip output video to the Rec. 709 Range on saving when OutputBitDepth is less than InternalBitDepth.
 \\
+
+\Option{KeyStoreDir} &
+%\ShortOption{\None} &
+\Default{"keystore/pub"} &
+If Digitally Signed Content SEIs are present in the bitstream and support for verifying digital signatures is enabled in the software, KeyStoreDir specifies the directory for pre-stored content provider certificates. When a "file://" URI is provided, the decoder searches for the specifies file name in this directory.
+\\
+
+\Option{TrustStoreDir} &
+%\ShortOption{\None} &
+\Default{"keystore/ca"} &
+If Digitally Signed Content SEIs are present in the bitstream and support for verifying digital signatures is enabled in the software, KeyStoreDir specifies the directory for pre-stored content provider certificates. The content provider certificate is verified against all CA certificated in this folder. Note, when adding new CA certificates, run "openssl rehash <directory>" to create the necessary hash links.\\
 
 \end{OptionTableNoShorthand}
 

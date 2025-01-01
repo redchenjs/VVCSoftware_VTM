@@ -487,6 +487,11 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
 #if JVET_AG0322_MODALITY_INFORMATION
   { SEI::PayloadType::MODALITY_INFORMATION, "Modality information" },
 #endif
+#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
+  { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION, "Digitally Signed Content Initialization" },
+  { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION, "Digitally Signed Content Selection" },
+  { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION, "Digitally Signed Content Verification" },
+#endif
 #if JVET_AJ0207_GFV
   { SEI::PayloadType::GENERATIVE_FACE_VIDEO, "Generative face video" }
 #endif

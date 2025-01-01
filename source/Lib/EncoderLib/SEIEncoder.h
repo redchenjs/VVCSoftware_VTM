@@ -112,6 +112,11 @@ public:
 #if JVET_AH2006_TXTDESCRINFO_SEI
   void initSEITextDescription(SEITextDescription *sei);
 #endif
+#if JVET_AJ0151_DSC_SEI
+  void initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei);
+  void initSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection *sei, int substream);
+  void initSEIDigitallySignedContentVerification(SEIDigitallySignedContentVerification *sei, int32_t substream, const std::vector<uint8_t> &signature);
+#endif
 #if GREEN_METADATA_SEI_ENABLED
   void initSEIGreenMetadataInfo(SEIGreenMetadataInfo *sei, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics, SEIComplexityMetrics greenMetadata);
 #endif

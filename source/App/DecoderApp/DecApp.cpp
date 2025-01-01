@@ -928,6 +928,9 @@ void DecApp::xCreateDecLib()
   );
   m_cDecLib.setDecodedPictureHashSEIEnabled(m_decodedPictureHashSEIEnabled);
 
+#if JVET_AJ0151_DSC_SEI
+  m_cDecLib.setKeyStoreParameters(m_keyStoreDir, m_trustStoreDir);
+#endif
 
   if (!m_outputDecodedSEIMessagesFilename.empty())
   {

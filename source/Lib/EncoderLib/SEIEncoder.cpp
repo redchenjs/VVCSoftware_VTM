@@ -33,6 +33,9 @@
 
 #include "CommonLib/CommonDef.h"
 #include "CommonLib/SEI.h"
+#if JVET_AJ0151_DSC_SEI
+#include "CommonLib/SEIDigitallySignedContent.h"
+#endif
 #include "EncGOP.h"
 #include "EncLib.h"
 #include <fstream>
@@ -2128,4 +2131,26 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
   }
 }
 #endif
+
+#if JVET_AJ0151_DSC_SEI
+void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei)
+{
+  sei->dsciNumVerificationSubstreams = 1; //m_pcCfg->getMaxTempLayer();
+  sei->dsciHashMethodType = m_pcCfg->getDigitallySignedContentSEICfg().hashMethod;
+  sei->dsciKeySourceUri = m_pcCfg->getDigitallySignedContentSEICfg().publicKeyUri;
+  sei->dsciUseKeyRegisterIdxFlag = m_pcCfg->getDigitallySignedContentSEICfg().keyIdEnabled;
+  sei->dsciKeyRegisterIdx = m_pcCfg->getDigitallySignedContentSEICfg().keyId;
+}
+void SEIEncoder::initSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection *sei, int substream)
+{
+  sei->dscsVerificationSubstreamId = substream;
+}
+void SEIEncoder::initSEIDigitallySignedContentVerification(SEIDigitallySignedContentVerification *sei, int32_t substream, const std::vector<uint8_t> &signature)
+{
+  sei->dscvVerificationSubstreamId = substream;
+  sei->dscvSignatureLengthInOctets = (int32_t) signature.size();
+  sei->dscvSignature = signature;
+}
+#endif
+
 //! \}

@@ -46,8 +46,12 @@
 //! \{
 
 #include "CommonLib/SEI.h"
-class InputBitstream;
 
+#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
+#include "CommonLib/SEIDigitallySignedContent.h"
+#endif
+
+class InputBitstream;
 
 class SEIReader: public VLCReader
 {
@@ -133,6 +137,11 @@ protected:
                                         std::ostream* pDecodedMessageOutputStream);
 #if JVET_AH2006_TXTDESCRINFO_SEI
   void xParseSEITextDescription(SEITextDescription &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
+#endif
+#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
+  void xParseSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
+  void xParseSEIDigitallySignedContentSelection     (SEIDigitallySignedContentSelection &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
+  void xParseSEIDigitallySignedContentVerification  (SEIDigitallySignedContentVerification &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
 #endif
 
   void sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName);

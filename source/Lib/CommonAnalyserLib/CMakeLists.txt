@@ -75,8 +75,17 @@ if( DEFINED ENABLE_HIGH_BITDEPTH )
   endif()
 endif()
 
-target_include_directories( ${LIB_NAME} PUBLIC ../CommonLib/. ../CommonLib/.. ../CommonLib/x86 ../libmd5 )
-target_link_libraries( ${LIB_NAME} )
+find_package(OpenSSL)
+
+if (NOT OPENSSL_FOUND)
+  message ("OpenSSL not available. Compiling with parsing only support for Digitally Signed Content SEIs")
+  target_compile_definitions( ${LIB_NAME} PUBLIC JVET_AJ0151_DSC_SEI=0 )
+  target_include_directories( ${LIB_NAME} PUBLIC ../CommonLib/. ../CommonLib/.. ../CommonLib/x86 ../libmd5 )
+  target_link_libraries( ${LIB_NAME} )
+else()
+  target_include_directories( ${LIB_NAME} PUBLIC ../CommonLib/. ../CommonLib/.. ../CommonLib/x86 ../libmd5 ${OPENSSL_INCLUDE_DIR} )
+  target_link_libraries( ${LIB_NAME} OpenSSL::SSL OpenSSL::Crypto )
+endif()
 
 if (NOT (CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64") )
   # set needed compile definitions

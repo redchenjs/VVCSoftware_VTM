@@ -152,6 +152,9 @@ class InputBitstream
 protected:
   std::vector<uint8_t> m_fifo; /// FIFO for storage of complete bytes
   std::vector<uint32_t>    m_emulationPreventionByteLocation;
+#if JVET_AJ0151_DSC_SEI
+  std::vector<uint8_t> m_origFifo; /// for calculation of hash
+#endif
 
   uint32_t m_fifoIdx;   /// Read index into m_fifo
 
@@ -218,6 +221,12 @@ public:
 
   const std::vector<uint8_t> &getFifo() const { return m_fifo; }
         std::vector<uint8_t> &getFifo()       { return m_fifo; }
+
+#if JVET_AJ0151_DSC_SEI
+  const std::vector<uint8_t> &getOrigFifo() const { return m_origFifo; }
+  void clearOrigFifo() { m_origFifo.clear(); }
+  void copyToOrigFifo() { m_origFifo = m_fifo; }
+#endif
 };
 
 //! \}

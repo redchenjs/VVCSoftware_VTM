@@ -72,7 +72,21 @@ public:
   bool                      hasSublayerInfo;
 };
 
-}
+#if JVET_AJ0151_DSC_SEI
+class CfgSEIDigitallySignedContent
+{
+public:
+  CfgSEIDigitallySignedContent(){};
+  virtual ~CfgSEIDigitallySignedContent(){};
 
+  bool                      enabled = false;
+  std::string               privateKeyFile;
+  std::string               publicKeyUri;
+  bool                      keyIdEnabled = false;
+  int                       keyId = 0;
+  int                       hashMethod = 0;
+};
+#endif
+}
 
 #endif // __ENCCFGPARAMS__
