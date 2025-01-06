@@ -94,6 +94,7 @@
 #define JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR        1 // Text description SEI purpose for encoder description
 #endif
 
+#define JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION      1 // SEI encoder optimization information
 
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
@@ -804,6 +805,25 @@ enum EOI_OptimizationType
   PRIVACY_PROTECTION_OPTIMIZATION = 32,
 };
 #endif 
+
+#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
+enum EOI_PRIVACY_PROTECTION
+{
+  BLURRING = 1,
+  REPLACING = 2,
+  MASKING = 4,
+  PIXELATION = 8
+};
+
+enum EOI_OBJECT_BASED
+{
+  BLURRED = 1,
+  COARSER_QUANTIZATION = 2,
+  OVERWRITTEN_CONSTANT = 4,
+  OVERWRITTEN_NONCONSTANT = 8,
+  SIZE_BASED = 16
+};
+#endif
 
 enum NNPC_PaddingType
 {
