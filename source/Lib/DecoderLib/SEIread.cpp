@@ -644,6 +644,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIProcessingOrderNesting((SEIProcessingOrderNesting&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
         pDecodedMessageOutputStream);
       break;
+#if JVET_AJ0207_GFV 
+    case SEI::PayloadType::GENERATIVE_FACE_VIDEO:
+      sei = new SEIGenerativeFaceVideo;
+      xParseSEIGenerativeFaceVideo((SEIGenerativeFaceVideo &)*sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -3867,5 +3873,715 @@ void SEIReader::xParseSEISEIPrefixIndication(SEIPrefixIndication &sei, uint32_t 
     }
   }
 }
+
+#if JVET_AJ0207_GFV
+void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
+{
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  uint32_t   val;
+  bool       valueSignFlag;
+  uint32_t   id;
+  uint32_t   cnt;
+  uint32_t   drivePicFusionFlag;
+  uint32_t   lowConfidenceFaceParameterFlag;
+  bool       coordinatePresentFlag;
+  uint32_t   coordinateQuantizationFactor;
+  bool       coordinatePredFlag;
+  bool       m3DCoordinateFlag;
+  uint32_t   coordinatePointNum;
+  bool       matrixPresentFlag;
+  uint32_t   matrixElementPrecisionFactor;
+  bool       matrixPredFlag;
+  uint32_t   numMatrixType;
+  sei.m_chromaKeyValuePresentFlag.resize(3);
+  sei.m_chromaKeyValue.resize(3);
+  sei.m_chromaKeyThrPresentFlag.resize(2);
+  sei.m_chromaKeyThrValue.resize(2);    
+  std::vector<double>      coordinateX;
+  std::vector<double>      coordinateY;
+  std::vector<double>      coordinateZ;
+  std::vector<uint32_t>    coordinateZMaxValue;
+  std::vector<uint32_t>    matrixTypeIdx;
+  std::vector<uint32_t>    matrix3DSpaceFlag;
+  std::vector<uint32_t>    numMatrices;
+  std::vector<uint32_t>    matrixWidth;
+  std::vector<uint32_t>    matrixHeight;
+  std::vector<std::vector<std::vector<std::vector<double>>>>   matrixElement;
+  std::vector<uint32_t>    numMatricestoNumKpsFlag;
+  std::vector<uint32_t>    numMatricesInfo;
+
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_id");
+  id = val;
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_cnt");
+  cnt = val;
+  if(cnt==0)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "gfv_base_picture_flag");
+    sei.m_basePicFlag = val;  
+  }
+  else 
+  {
+    sei.m_basePicFlag = 0;
+  }
+  if (sei.m_basePicFlag)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "gfv_nnPresentFlag");
+    sei.m_nnPresentFlag = val;   
+    if(sei.m_nnPresentFlag)
+    {       
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_mode_idc");
+      sei.m_nnModeIdc = val;      
+      if (sei.m_nnModeIdc == 1) 
+      {
+        std::string val2;
+        while (!isByteAligned())
+        {
+          sei_read_flag(pDecodedMessageOutputStream, val, "gfv_nn_alignment_zero_bit_a");
+          CHECK(val != 0, "gfv_nn_alignment_zero_bit_a not equal to zero");
+        }
+        sei_read_string(pDecodedMessageOutputStream, val2, "gfv_uri_tag");
+        sei.m_nnTagURI = val2;
+        val2 = "";
+        sei_read_string(pDecodedMessageOutputStream, val2, "gfv_uri");
+        sei.m_nnURI = val2;
+      }
+    }
+    sei_read_flag(pDecodedMessageOutputStream, val, "gfv_chroma_key_info_present_flag");
+    sei.m_chromaKeyInfoPresentFlag = val;   
+    if (sei.m_chromaKeyInfoPresentFlag)
+    {
+      for (uint32_t chromac = 0; chromac < 3; chromac++)
+      {
+        sei_read_flag(pDecodedMessageOutputStream, val, "gfv_chroma_key_value_present_flag[c]");
+        sei.m_chromaKeyValuePresentFlag[chromac] = val;   
+        if (sei.m_chromaKeyValuePresentFlag[chromac])
+        {
+          sei_read_code(pDecodedMessageOutputStream, 8, val, "gfv_chroma_key_value[chromac]");
+          sei.m_chromaKeyValue[chromac] = val;
+        }
+      }
+      bool chromaaKeyDefaultValueFlag = (!(sei.m_chromaKeyValuePresentFlag[0] || sei.m_chromaKeyValuePresentFlag[1] || sei.m_chromaKeyValuePresentFlag[2]));  
+      std::vector<uint32_t> gfvChromaKeyValue;
+      if (chromaaKeyDefaultValueFlag == 1)
+      {
+        gfvChromaKeyValue.push_back(50);
+        gfvChromaKeyValue.push_back(220);
+        gfvChromaKeyValue.push_back(100);
+      }
+      else
+      {
+        for (uint32_t chromac = 0; chromac < 3; chromac++)
+        {
+          if (sei.m_chromaKeyValuePresentFlag[chromac])
+          {
+            gfvChromaKeyValue.push_back(sei.m_chromaKeyValue[chromac]);
+          }
+        }
+      }
+      if (pDecodedMessageOutputStream)
+      {
+        (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfv_chroma_key_value" << ": ";
+        for (uint32_t chromac = 0; chromac < gfvChromaKeyValue.size(); chromac++)
+        {
+          (*pDecodedMessageOutputStream) << (gfvChromaKeyValue[chromac]) << " ";
+        }
+        (*pDecodedMessageOutputStream) << "\n";
+      }
+      for (uint32_t chromai = 0; chromai < 2; chromai++)
+      {
+        sei_read_flag(pDecodedMessageOutputStream, val, "gfv_chroma_key_thr_present_flag[i]");
+        sei.m_chromaKeyThrPresentFlag[chromai] = val;
+        if (sei.m_chromaKeyThrPresentFlag[chromai])
+        {
+          sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_chroma_key_thr_value[i]");
+          sei.m_chromaKeyThrValue[chromai] = val;
+        }
+        else
+        {
+          sei.m_chromaKeyThrValue[chromai] = (chromai==0) ? 48 : 75;
+        }
+      }
+      if (pDecodedMessageOutputStream)
+      {
+        (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfv_chroma_key_thr_value" << ": ";
+        for (uint32_t chromai = 0; chromai < sei.m_chromaKeyThrValue.size(); chromai++)
+        {
+          (*pDecodedMessageOutputStream) << (sei.m_chromaKeyThrValue[chromai]) << " ";
+        }
+        (*pDecodedMessageOutputStream) << "\n";
+      }
+    }
+  }
+  else
+  {
+    sei_read_flag(pDecodedMessageOutputStream, drivePicFusionFlag, "gfv_drive_picture_fusion_flag");
+  }
+  sei_read_flag(pDecodedMessageOutputStream, lowConfidenceFaceParameterFlag, "gfv_low_confidence_face_parameter_flag");
+  sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_present_flag");
+  coordinatePresentFlag = val;
+  if (coordinatePresentFlag)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "gfv_kps_pred_flag");
+    coordinatePredFlag = val;
+    if (sei.m_basePicFlag || !coordinatePredFlag)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_coordinate_precision_factor_minus1");
+      CHECK(val > 31 || val < 0, "The value of gfv_coordinate_precision_factor_minus1 shall be in the range of 0 to 31, inclusive")
+      coordinateQuantizationFactor = val + 1;
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_num_kps_minus1");
+      coordinatePointNum = val + 1;
+      sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_z_present_flag");
+      m3DCoordinateFlag = val;
+      if (sei.m_basePicFlag)
+      {
+        baseCoordinateQuantizationFactor = coordinateQuantizationFactor;
+        basdCoordinatePointNum           = coordinatePointNum;
+        base3DCoordinateFlag             = m3DCoordinateFlag;
+      }
+      if (m3DCoordinateFlag== 1)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_coordinate_z_max_value_minus1");
+        coordinateZMaxValue.push_back(val + 1);
+        if (sei.m_basePicFlag)
+        {
+          baseCoordinateZMaxValue.push_back(val + 1);
+        }
+      }
+    }
+    else
+    {
+      //CHECK(id != 0, "Cannot find a reference SEI for key point prediction"); 
+      coordinateQuantizationFactor = baseCoordinateQuantizationFactor;
+      coordinatePointNum           = basdCoordinatePointNum;
+      m3DCoordinateFlag            = base3DCoordinateFlag;
+      if (m3DCoordinateFlag == 1)
+      {
+        coordinateZMaxValue.push_back(baseCoordinateZMaxValue[0]);
+      }
+    }
+    //X_coordinate_tensor && Y_coordinate_tensor  && Z_coordinate_tensor
+
+    for (uint32_t i = 0; i < coordinatePointNum; i++)
+    {
+      if (!coordinatePredFlag)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_coordinate_x_abs[ i ]");
+        int curCoordinateXInt = val;
+        double coordinateXTensorAbs = ((double)curCoordinateXInt) / (1 << coordinateQuantizationFactor);
+        valueSignFlag = 0;
+        if (curCoordinateXInt)
+        {
+          sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_x_sign_flag");
+          valueSignFlag = val;
+        }
+        double coordinateXTensor = valueSignFlag ? -coordinateXTensorAbs : coordinateXTensorAbs;
+        coordinateX.push_back(coordinateXTensor);
+        if (sei.m_basePicFlag)
+        {
+          prevCoordinateX.push_back(coordinateXTensor);
+        }
+        else
+        {
+          prevCoordinateX[i] = coordinateXTensor;
+        }
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_coordinate_y_abs[ i ]");
+        int curCoordinateYInt = val;
+        double coordinateYTensorAbs = ((double)curCoordinateYInt) / (1 << coordinateQuantizationFactor);
+        valueSignFlag = 0;
+        if (curCoordinateYInt)
+        {
+          sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_y_sign_flag");
+          valueSignFlag = val;
+        }
+        double coordinateYTensor = valueSignFlag ? -coordinateYTensorAbs : coordinateYTensorAbs;
+        coordinateY.push_back(coordinateYTensor);
+        if (sei.m_basePicFlag)
+        {
+          prevCoordinateY.push_back(coordinateYTensor);
+        }
+        else
+        {
+          prevCoordinateY[i] = coordinateYTensor;
+        }
+        if (m3DCoordinateFlag == 1)
+        {
+          sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_coordinate_z_abs[ i ]");
+          int curCoordinateZInt = val;
+          double coordinateZTensorAbs = ((double)curCoordinateZInt / (1 << coordinateQuantizationFactor));
+          valueSignFlag = 0;
+          if (curCoordinateZInt)
+          {
+            sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_z_sign_flag");
+            valueSignFlag = val;
+          }
+          double coordinateZTensor = valueSignFlag ? -coordinateZTensorAbs : coordinateZTensorAbs;
+          coordinateZ.push_back(coordinateZTensor);
+          if (sei.m_basePicFlag)
+          {
+            prevCoordinateZ.push_back(coordinateZTensor);
+          }
+          else
+          {
+            prevCoordinateZ[i] = coordinateZTensor;
+          }
+        }
+      }
+      else
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_coordinate_dx_abs[ i ]");
+        int curCoordinateXInt = val;
+        double coordinateXTensorAbs = ((double)curCoordinateXInt) / (1 << coordinateQuantizationFactor);
+        valueSignFlag = 0;
+        if (curCoordinateXInt)
+        {
+          sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_dx_sign_flag");
+          valueSignFlag = val;
+        }
+        double  coordinateXTensor = (valueSignFlag ? -coordinateXTensorAbs : coordinateXTensorAbs) + (sei.m_basePicFlag ? (i == 0 ? 0 : prevCoordinateX[i - 1]) : prevCoordinateX[i]);
+        coordinateX.push_back(coordinateXTensor);
+        if (sei.m_basePicFlag)
+        {
+          prevCoordinateX.push_back(coordinateXTensor);
+        }
+        else
+        {
+          prevCoordinateX[i] = coordinateXTensor;
+        }
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_coordinate_dy_abs[ i ]");
+        int curCoordinateYInt = val;
+        double coordinateYTensorAbs = ((double)curCoordinateYInt) / (1 << coordinateQuantizationFactor);
+        valueSignFlag = 0;
+        if (curCoordinateYInt)
+        {
+          sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_dy_sign_flag");
+          valueSignFlag = val;
+        }
+        double  coordinateYTensor = (valueSignFlag ? -coordinateYTensorAbs : coordinateYTensorAbs) + (sei.m_basePicFlag ? (i == 0 ? 0 : prevCoordinateY[i - 1]) : prevCoordinateY[i]);
+        coordinateY.push_back(coordinateYTensor);
+        if (sei.m_basePicFlag)
+        {
+          prevCoordinateY.push_back(coordinateYTensor);
+        }
+        else
+        {
+          prevCoordinateY[i] = coordinateYTensor;
+        }
+        if (m3DCoordinateFlag == 1)
+        {
+          sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_coordinate_dz_abs[ i ]");
+          int curCoordinateZInt = val;
+          double coordinateZTensorAbs = ((double)curCoordinateZInt / (1 << coordinateQuantizationFactor));
+          valueSignFlag = 0;
+          if (curCoordinateZInt)
+          {
+            sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_dz_sign_flag");
+            valueSignFlag = val;
+          }
+          double  coordinateZTensor = (valueSignFlag ? -coordinateZTensorAbs : coordinateZTensorAbs) + (sei.m_basePicFlag ? (i == 0 ? 0 : prevCoordinateZ[i - 1]) : prevCoordinateZ[i]);
+          coordinateZ.push_back(coordinateZTensor);
+          if (sei.m_basePicFlag)
+          {
+            prevCoordinateZ.push_back(coordinateZTensor);
+          }
+          else
+          {
+            prevCoordinateZ[i] = coordinateZTensor;
+          }
+        }
+      }
+    }
+    if (pDecodedMessageOutputStream)
+    {
+      (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfv_coordinate_Xtensor" << ": ";
+      for (int xi = 0; xi < coordinatePointNum; xi++)
+      {
+        (*pDecodedMessageOutputStream) << (coordinateX[xi]) << " ";
+      }
+      (*pDecodedMessageOutputStream) << "\n";
+    }
+    if (pDecodedMessageOutputStream)
+    {
+      (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfv_coordinate_Ytensor" << ": ";
+      for (int yi = 0; yi < coordinatePointNum; yi++)
+      {
+        (*pDecodedMessageOutputStream) << (coordinateY[yi]) << " ";
+      }
+      (*pDecodedMessageOutputStream) << "\n";
+    }
+    if (m3DCoordinateFlag == 1)
+    {
+      if (pDecodedMessageOutputStream)
+      {
+        (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfv_coordinate_Ztensor" << ": ";
+        for (int zi = 0; zi < coordinatePointNum; zi++)
+        {
+          (*pDecodedMessageOutputStream) << (coordinateZ[zi]) << " ";
+        }
+        (*pDecodedMessageOutputStream) << "\n";
+      }
+    }
+  }
+  else
+  {
+    m3DCoordinateFlag = 0; 
+    coordinatePointNum = 0;
+  }
+  matrixElement.push_back(std::vector<std::vector<std::vector<double>>>());
+  prevMatrix.push_back(std::vector<std::vector<std::vector<double>>>());
+  sei_read_flag(pDecodedMessageOutputStream, val, "gfv_matrix_present_flag");
+  matrixPresentFlag = val;
+  CHECK((!coordinatePresentFlag) && (!matrixPresentFlag), "When gfv_coordinate_present_flag is equal to 0, gfv_matrix_present_flag shall be equal to 1");
+  if (matrixPresentFlag)
+  {
+    uint32_t matrixWidth = 0;
+    uint32_t matrixHeight = 0;
+    uint32_t numMatrices = 0;
+    std::vector<uint32_t> matrixWidthVec;
+    std::vector<uint32_t> matrixHeightVec;
+    std::vector<uint32_t> numMatricesVec;
+    if (!sei.m_basePicFlag)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "gfv_matrix_pred_flag");
+      matrixPredFlag = val;
+    }
+    else
+    {
+      matrixPredFlag = 0;
+    }
+    if (sei.m_basePicFlag || !matrixPredFlag)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_matrix_element_precision_factor_minus1");
+      CHECK(val < 0 || val > 31, "The value of gfv_matrix_element_precision_factor_minus1 shall be in the range of 0 to 31, inclusive");
+      matrixElementPrecisionFactor = val + 1;
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_num_matrix_types_minus1");
+      numMatrixType = val + 1;
+      if (sei.m_basePicFlag)
+      {
+        baseMatrixElementPrecisionFactor = matrixElementPrecisionFactor;
+        baseNumMatrixType                = numMatrixType;
+      }
+    }
+    else
+    {
+      matrixElementPrecisionFactor = baseMatrixElementPrecisionFactor;
+      numMatrixType                = baseNumMatrixType;
+    }
+    for (uint32_t matrixId = 0; matrixId < numMatrixType; matrixId++)
+    {
+      if (sei.m_basePicFlag || !matrixPredFlag)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_matrix_type_idx");
+        CHECK(val < 0 || val > 64, "The value of gfv_matrix_type_idx[ i ] shall be in the range of 0 to 63, inclusive");
+        matrixTypeIdx.push_back(val);
+        if (sei.m_basePicFlag)
+        {
+          baseMatrixTypeIdx.push_back(val);
+        }
+        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1)
+        {
+          if (coordinatePresentFlag)
+          {
+            sei_read_flag(pDecodedMessageOutputStream, val, "gfv_num_matrices_equal_to_num_kps_flag");
+            numMatricestoNumKpsFlag.push_back(val);
+            if (sei.m_basePicFlag)
+            {
+              baseNumMatricestoNumKpsFlag.push_back(val);
+            }
+          }
+          else
+          {
+            numMatricestoNumKpsFlag.push_back(0);
+            if (sei.m_basePicFlag)
+            {
+              baseNumMatricestoNumKpsFlag.push_back(0);
+            }
+          }
+          if (!numMatricestoNumKpsFlag[matrixId])
+          {
+            sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_num_matrices_info");
+            CHECK(val < 0 || val >(1 << 10) - 1, "The value of gfv_num_matrices_info[ i ] shall be in the range of 0 to 2^(10) - 1, inclusive")
+              numMatricesInfo.push_back(val);
+            if (sei.m_basePicFlag)
+            {
+              baseNumMatricesInfo.push_back(val);
+            }
+          }
+          matrix3DSpaceFlag.push_back(0);
+          if (sei.m_basePicFlag)
+          {
+            baseMatrix3DSpaceFlag.push_back(0);
+          }
+        }
+        else if (matrixTypeIdx[matrixId] == 2 || matrixTypeIdx[matrixId] == 3 || matrixTypeIdx[matrixId] >= 7)
+        {
+          if (matrixTypeIdx[matrixId] >= 7)
+          {
+            sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_num_matrices_minus1");
+            CHECK(val < 0 || val >(1 << 10) - 1, "The value of gfv_num_matrices_minus1[ i ] shall be in the range of 0 to 2^(10) - 1, inclusive")
+              numMatrices = val + 1;
+          }
+          sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_matrix_width_minus1");
+          CHECK(val < 0 || val >(1 << 10) - 1, "The value of gfv_matrix_width_minus1[ i ] shall be in the range of 0 to 2^(10) - 1, inclusive")
+            matrixWidth = val + 1;
+          sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_matrix_height_minus1");
+          CHECK(val < 0 || val >(1 << 10) - 1, "The value of gfv_matrix_height_minus1[ i ] shall be in the range of 0 to 2^(10) - 1, inclusive")
+            matrixHeight = val + 1;
+        }
+        else if (matrixTypeIdx[matrixId] >= 4 && matrixTypeIdx[matrixId] <= 6)
+        {
+          if (!coordinatePresentFlag)
+          {
+            sei_read_flag(pDecodedMessageOutputStream, val, "gfv_Matrix3DSpaceFlag");
+            matrix3DSpaceFlag.push_back(val);
+            if (sei.m_basePicFlag)
+            {
+              baseMatrix3DSpaceFlag.push_back(val);
+            }
+          }
+          else
+          {
+            matrix3DSpaceFlag.push_back(0);
+            if (sei.m_basePicFlag)
+            {
+              baseMatrix3DSpaceFlag.push_back(0);
+            }
+          }
+        }
+        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1 || matrixTypeIdx[matrixId] == 4)
+        {
+          if (m3DCoordinateFlag == 1 || matrix3DSpaceFlag[matrixId] == 1)
+          {
+            matrixWidth = 3;
+          }
+          else
+          {
+            matrixWidth = 2;
+          }
+        }
+        else if (matrixTypeIdx[matrixId] == 5 || matrixTypeIdx[matrixId] == 6)
+        {
+          matrixWidth = 1;
+        }
+        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1 || matrixTypeIdx[matrixId] == 4 || matrixTypeIdx[matrixId] == 5 || matrixTypeIdx[matrixId] == 6)
+        {
+          if (m3DCoordinateFlag == 1 || matrix3DSpaceFlag[matrixId] == 1)
+          {
+            matrixHeight = 3;
+          }
+          else
+          {
+            matrixHeight = 2;
+          }
+        }
+        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1)
+        {
+          if (coordinatePresentFlag)
+          {
+            numMatrices = numMatricestoNumKpsFlag[matrixId] ? coordinatePointNum : (numMatricesInfo[matrixId] < (coordinatePointNum - 1) ? (numMatricesInfo[matrixId] + 1) : (numMatricesInfo[matrixId] + 2));
+          }
+          else
+          {
+            numMatrices = numMatricesInfo[matrixId] + 1;
+          }
+        }
+        else if (matrixTypeIdx[matrixId] >= 2 && matrixTypeIdx[matrixId] < 7)
+        {
+          numMatrices = 1;
+        }
+      }
+      else
+      {
+        matrixTypeIdx.push_back(baseMatrixTypeIdx[matrixId]);
+        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1)
+        {
+          if (coordinatePresentFlag)
+          {
+            numMatricestoNumKpsFlag.push_back(baseNumMatricestoNumKpsFlag[matrixId]);
+          }
+          else
+          {
+            numMatricestoNumKpsFlag.push_back(0);
+          }
+          if (!numMatricestoNumKpsFlag[matrixId])
+          {
+            numMatricesInfo.push_back(baseNumMatricesInfo[matrixId]);
+          }
+          else
+          {
+            numMatricesInfo.push_back(0);
+          }
+          matrix3DSpaceFlag.push_back(0);
+        }
+        else if (matrixTypeIdx[matrixId] == 2 || matrixTypeIdx[matrixId] == 3 || matrixTypeIdx[matrixId] >= 7)
+        {
+          if (matrixTypeIdx[matrixId] >= 7)
+          {
+            numMatrices = baseNumMatrices[matrixId];
+          }
+          else
+          {
+            numMatrices = 1;
+          }
+          matrixWidth = baseMatrixWidth[matrixId];
+          matrixHeight = baseMatrixHeight[matrixId];
+          matrix3DSpaceFlag.push_back(0);
+        }
+        else if (matrixTypeIdx[matrixId] >= 4 && matrixTypeIdx[matrixId] <= 6)
+        {
+          if (!coordinatePresentFlag)
+          {
+            matrix3DSpaceFlag.push_back(baseMatrix3DSpaceFlag[matrixId]);
+          }
+          else
+          {
+            matrix3DSpaceFlag.push_back(0);
+          }
+        }
+        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1 || matrixTypeIdx[matrixId] == 4)
+        {
+          if (m3DCoordinateFlag == 1 || matrix3DSpaceFlag[matrixId] == 1)
+          {
+            matrixWidth = 3;
+          }
+          else
+          {
+            matrixWidth = 2;
+          }
+        }
+        else if (matrixTypeIdx[matrixId] == 5 || matrixTypeIdx[matrixId] == 6)
+        {
+          matrixWidth = 1;
+        }
+        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1 || matrixTypeIdx[matrixId] == 4 || matrixTypeIdx[matrixId] == 5 || matrixTypeIdx[matrixId] == 6)
+        {
+          if (m3DCoordinateFlag == 1 || matrix3DSpaceFlag[matrixId] == 1)
+          {
+            matrixHeight = 3;
+          }
+          else
+          {
+            matrixHeight = 2;
+          }
+        }
+        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1)
+        {
+          if (coordinatePresentFlag)
+          {
+            numMatrices = numMatricestoNumKpsFlag[matrixId] ? coordinatePointNum : (numMatricesInfo[matrixId] < (coordinatePointNum - 1) ? (numMatricesInfo[matrixId] + 1) : (numMatricesInfo[matrixId] + 2));
+          }
+          else
+          {
+            numMatrices = numMatricesInfo[matrixId] + 1;
+          }
+        }
+        else if (matrixTypeIdx[matrixId] >= 2 && matrixTypeIdx[matrixId] < 7)
+        {
+          numMatrices = 1;
+        }
+      }
+      if (sei.m_basePicFlag)
+      {
+        baseNumMatrices.push_back(numMatrices);
+        baseMatrixWidth.push_back(matrixWidth);
+        baseMatrixHeight.push_back(matrixHeight);
+      }
+      numMatricesVec.push_back(numMatrices);
+      matrixWidthVec.push_back(matrixWidth);
+      matrixHeightVec.push_back(matrixHeight);
+    }
+    for (uint32_t matrixId = 0; matrixId < numMatrixType; matrixId++)
+    {
+      matrixElement.push_back(std::vector<std::vector<std::vector<double>>>());
+      for (uint32_t j = 0; j < numMatricesVec[matrixId]; j++)
+      {
+        matrixElement[matrixId].push_back(std::vector<std::vector<double>>());
+        for (uint32_t k = 0; k < matrixHeightVec[matrixId]; k++)
+        {
+          matrixElement[matrixId][j].push_back(std::vector<double>());
+          for (uint32_t l = 0; l < matrixWidthVec[matrixId]; l++)
+          {
+            if (sei.m_basePicFlag || !matrixPredFlag)
+            {
+              sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_matrix_element_int");
+              CHECK(val < 0 || val > 4294967296 - 2, "The value of gfv_matrix_element_int[ i ][ j ][ k ][ m ] shall be in the range of 0 to 2^(32) - 2, inclusive");
+              int matrixElementAbsInteger = val;
+              sei_read_code(pDecodedMessageOutputStream, matrixElementPrecisionFactor, val, "gfv_matrix_element_dec");
+              int curMatrixDecIntValue = val;
+              double matrixElementAbsDecimal = ((double)curMatrixDecIntValue) / (1 << matrixElementPrecisionFactor);
+              valueSignFlag = 0;
+              if (matrixElementAbsInteger || curMatrixDecIntValue)
+              {
+                sei_read_flag(pDecodedMessageOutputStream, val, "gfv_matrix_element_sign_flag");
+                valueSignFlag = val;
+              }
+              double matrixElementDecimal = valueSignFlag ? -(matrixElementAbsDecimal + matrixElementAbsInteger) : (matrixElementAbsDecimal + matrixElementAbsInteger);
+              matrixElement[matrixId][j][k].push_back(matrixElementDecimal);
+            }
+            else 
+            {
+              sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_matrix_delta_element_int");
+              int matrixElementAbsInteger = val;
+              sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_matrix_delta_element_dec");
+              int curMatrixDecIntValue = val;
+              double matrixElementAbsDecimal = ((double)curMatrixDecIntValue) / (1 << matrixElementPrecisionFactor);
+              valueSignFlag = 0;
+              if (matrixElementAbsInteger || curMatrixDecIntValue)
+              {
+                sei_read_flag(pDecodedMessageOutputStream, val, "gfv_matrix_delta_element_sign_flag");
+                valueSignFlag = val;
+              }
+              double matrixElementDecimal = (valueSignFlag ? -(matrixElementAbsDecimal + matrixElementAbsInteger) : (matrixElementAbsDecimal + matrixElementAbsInteger)) + prevMatrix[matrixId][j][k][l];
+              matrixElement[matrixId][j][k].push_back(matrixElementDecimal);
+            }
+          }
+        }
+      }
+    }
+    prevMatrix = matrixElement;
+    if (pDecodedMessageOutputStream)
+    {
+      (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfv_MatrixElement" << ": ";
+      for (uint32_t mi = 0; mi < numMatrixType; mi++)
+      {
+        for (uint32_t mj = 0; mj < numMatricesVec[mi]; mj++) // 
+        {
+          for (uint32_t mk = 0; mk < matrixHeightVec[mi] ; mk++)
+          {
+            for (uint32_t ml = 0; ml < matrixWidthVec[mi]; ml++)
+            {
+              (*pDecodedMessageOutputStream) << (matrixElement[mi][mj][mk][ml]) << " ";
+            }
+          }
+        }
+      }
+      (*pDecodedMessageOutputStream) << "\n";
+    }
+  }
+  if(sei.m_nnPresentFlag)
+  {
+    if (sei.m_nnModeIdc == 0)
+    {
+      while (!isByteAligned())
+      {
+        sei_read_flag(pDecodedMessageOutputStream, val, "gfv_nn_alignment_zero_bit_b");
+        CHECK(val != 0, "gfv_nn_alignment_zero_bit_b not equal to zero");
+      }
+      int payloadBytesRemaining = getBitstream()->getNumBitsLeft() / 8;
+      sei.m_payloadLength = payloadBytesRemaining;
+      sei.m_payloadByte = new char[sei.m_payloadLength];
+      int code;
+      std::string filename = "payloadByte" + std::to_string(id) + ".nnr";
+      std::ofstream outFile(filename.c_str(), std::ofstream::binary);
+      for (int i = 0; i < payloadBytesRemaining; i++)
+      {
+        sei_read_scode ( pDecodedMessageOutputStream, 8, code, "gfv_nn_payload_byte[i]");
+        sei.m_payloadByte[i] = (char)code;
+        outFile.write((char*)&code, 1);
+      }
+      outFile.close();
+    }
+  }
+}
+#endif
 
 //! \}

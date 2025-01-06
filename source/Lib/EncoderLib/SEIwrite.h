@@ -126,6 +126,18 @@ protected:
 #if JVET_AG0322_MODALITY_INFORMATION
   void xWriteSEIModalityInfo(const SEIModalityInfo &sei);
 #endif
+#if JVET_AJ0207_GFV
+  void xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo& sei);
+  std::vector<double>  prevcoordinateXRec;
+  std::vector<double>  prevcoordinateYRec;
+  std::vector<double>  prevcoordinateZRec;
+  std::vector<std::vector<std::vector<std::vector<double>>>> prevMatrixRec;
+  std::vector<uint32_t> prevmatrixWidthVec;
+  std::vector<uint32_t> prevmatrixHeightVec;
+  std::vector<uint32_t> prevnumMatricesVec;
+  bool doUpdateGFVcoordinate= false;
+  bool doUpdateGFVmatrix= false;
+#endif
 protected:
   HRD m_nestingHrd;
 };

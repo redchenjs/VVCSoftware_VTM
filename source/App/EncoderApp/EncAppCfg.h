@@ -1112,6 +1112,47 @@ protected:
   Level::Name m_levelPtl[MAX_NUM_OLSS];
   int         m_olsPtlIdx[MAX_NUM_OLSS];
 
+#if JVET_AJ0207_GFV
+  bool                                 m_generativeFaceVideoEnabled;
+  uint32_t                             m_generativeFaceVideoSEINumber;
+  bool                                 m_generativeFaceVideoSEIBasePicFlag;
+  bool                                 m_generativeFaceVideoSEINNPresentFlag;
+  uint32_t                             m_generativeFaceVideoSEINNModeIdc;
+  std::string                          m_generativeFaceVideoSEINNTagURI;
+  std::string                          m_generativeFaceVideoSEINNURI;
+  bool                                 m_generativeFaceVideoSEIChromaKeyInfoPresentFlag;
+  std::vector<bool>                    m_generativeFaceVideoSEIChromaKeyValuePresentFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEIChromaKeyValue;
+  std::vector<bool>                    m_generativeFaceVideoSEIChromaKeyThrPresentFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEIChromaKeyThrValue;
+  std::vector<bool>                    m_generativeFaceVideoSEIDrivePicFusionFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEIId;
+  std::vector<uint32_t>                m_generativeFaceVideoSEICnt;
+  std::vector<bool>                    m_generativeFaceVideoSEILowConfidenceFaceParameterFlag;
+  std::vector<bool>                    m_generativeFaceVideoSEICoordinatePresentFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEICoordinateQuantizationFactor;
+  std::vector<bool>                    m_generativeFaceVideoSEICoordinatePredFlag;
+  std::vector<bool>                    m_generativeFaceVideoSEI3DCoordinateFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEICoordinatePointNum;
+  std::vector<std::vector<double>>     m_generativeFaceVideoSEICoordinateXTesonr;
+  std::vector<std::vector<double>>     m_generativeFaceVideoSEICoordinateYTesonr;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIZCoordinateMaxValue;
+  std::vector<std::vector<double>>     m_generativeFaceVideoSEICoordinateZTesonr;
+  std::vector<bool>                    m_generativeFaceVideoSEIMatrixPresentFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEIMatrixElementPrecisionFactor;
+  std::vector<bool>                    m_generativeFaceVideoSEIMatrixPredFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEINumMatrixType;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixTypeIdx;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEINumMatricestoNumKpsFlag;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEINumMatricesInfo;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrix3DSpaceFlag;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEINumMatrices;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixWidth;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixHeight;
+  std::vector < std::vector<std::vector<std::vector<std::vector<double>>>>>   m_generativeFaceVideoSEIMatrixElement;
+  std::string                          m_generativeFaceVideoSEIPayloadFilename;
+#endif
+
 #if EXTENSION_360_VIDEO
   TExt360AppEncCfg m_ext360;
   friend class TExt360AppEncCfg;

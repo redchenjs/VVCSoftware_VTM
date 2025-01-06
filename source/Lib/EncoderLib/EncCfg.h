@@ -1140,7 +1140,47 @@ protected:
   bool        m_explicitILRP;
   bool        m_encILOpt;
   double      m_encILOptLambdaModifier;
-  
+#if JVET_AJ0207_GFV
+  bool                                 m_generativeFaceVideoEnabled;
+  uint32_t                             m_generativeFaceVideoSEINumber;
+  bool                                 m_generativeFaceVideoSEIBasePicFlag;
+  bool                                 m_generativeFaceVideoSEINNPresentFlag;
+  uint32_t                             m_generativeFaceVideoSEINNModeIdc;
+  std::string                          m_generativeFaceVideoSEINNTagURI;
+  std::string                          m_generativeFaceVideoSEINNURI;
+  bool                                 m_generativeFaceVideoSEIChromaKeyInfoPresentFlag;
+  std::vector<bool>                    m_generativeFaceVideoSEIChromaKeyValuePresentFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEIChromaKeyValue;
+  std::vector<bool>                    m_generativeFaceVideoSEIChromaKeyThrPresentFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEIChromaKeyThrValue;
+  std::vector<bool>                    m_generativeFaceVideoSEIDrivePicFusionFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEIId;
+  std::vector<uint32_t>                m_generativeFaceVideoSEICnt;
+  std::vector<bool>                    m_generativeFaceVideoSEILowConfidenceFaceParameterFlag;
+  std::vector<bool>                    m_generativeFaceVideoSEICoordinatePresentFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEICoordinateQuantizationFactor;
+  std::vector<bool>                    m_generativeFaceVideoSEICoordinatePredFlag;
+  std::vector<bool>                    m_generativeFaceVideoSEI3DCoordinateFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEICoordinatePointNum;
+  std::vector<std::vector<double>>     m_generativeFaceVideoSEICoordinateXTesonr;
+  std::vector<std::vector<double>>     m_generativeFaceVideoSEICoordinateYTesonr;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIZCoordinateMaxValue;
+  std::vector<std::vector<double>>     m_generativeFaceVideoSEICoordinateZTesonr;
+  std::vector<bool>                    m_generativeFaceVideoSEIMatrixPresentFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEIMatrixElementPrecisionFactor;
+  std::vector<bool>                    m_generativeFaceVideoSEIMatrixPredFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoSEINumMatrixType;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixTypeIdx;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrix3DSpaceFlag;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEINumMatricestoNumKpsFlag;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEINumMatricesInfo;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEINumMatrices;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixWidth;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixHeight;
+  std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>   m_generativeFaceVideoSEIMatrixElement;
+  std::string                          m_generativeFaceVideoSEIPayloadFilename;
+#endif
+    
 public:
   EncCfg()
   {
@@ -3137,7 +3177,84 @@ public:
   bool        getEncILOpt()                            const { return m_encILOpt; }
   void        setEncILOptLambdaModifier(double dValue)       { m_encILOptLambdaModifier = dValue; }
   double      getEncILOptLambdaModifier()              const { return m_encILOptLambdaModifier; }
-
+#if JVET_AJ0207_GFV
+  void              setGenerativeFaceVideoSEIEnabled(bool enabledFlag)                    { m_generativeFaceVideoEnabled = enabledFlag; }
+  bool              getGenerativeFaceVideoSEIEnabled()                              const { return m_generativeFaceVideoEnabled; }
+  void              setGenerativeFaceVideoSEINumber(uint32_t number)                      { m_generativeFaceVideoSEINumber = number; }
+  uint32_t          getGenerativeFaceVideoSEINumber()                               const { return m_generativeFaceVideoSEINumber; }
+  void              setGenerativeFaceVideoSEIBasePicFlag(bool BasePicFlag)                { m_generativeFaceVideoSEIBasePicFlag = BasePicFlag; }
+  bool              getGenerativeFaceVideoSEIBasePicFlag()                          const { return m_generativeFaceVideoSEIBasePicFlag; }
+  void              setGenerativeFaceVideoSEINNPresentFlag(bool NNPresentFlag)            { m_generativeFaceVideoSEINNPresentFlag = NNPresentFlag; }
+  bool              getGenerativeFaceVideoSEINNPresentFlag()                        const { return m_generativeFaceVideoSEINNPresentFlag; }
+  void              setGenerativeFaceVideoSEINNModeIdc(uint32_t NNModeIdc)                { m_generativeFaceVideoSEINNModeIdc = NNModeIdc; }
+  uint32_t          getGenerativeFaceVideoSEINNModeIdc()                            const { return m_generativeFaceVideoSEINNModeIdc; }
+  void              setGenerativeFaceVideoSEINNTagURI(const std::string &NNTagURI)        { m_generativeFaceVideoSEINNTagURI = NNTagURI; }
+  const std::string getGenerativeFaceVideoSEINNTagURI()                             const { return m_generativeFaceVideoSEINNTagURI; }
+  void              setGenerativeFaceVideoSEINNURI(const std::string &NNURI)              { m_generativeFaceVideoSEINNURI = NNURI; }
+  const std::string getGenerativeFaceVideoSEINNURI()                                const { return m_generativeFaceVideoSEINNURI; }
+  void              setGenerativeFaceVideoSEIChromaKeyInfoPresentFlag(bool ChromaKeyInfoPresentFlag)                        { m_generativeFaceVideoSEIChromaKeyInfoPresentFlag = ChromaKeyInfoPresentFlag; }
+  bool              getGenerativeFaceVideoSEIChromaKeyInfoPresentFlag()                                               const { return m_generativeFaceVideoSEIChromaKeyInfoPresentFlag; }
+  void              setGenerativeFaceVideoSEIChromaKeyValuePresentFlag(const std::vector<bool>& ChromaKeyValuePresentFlag)  { m_generativeFaceVideoSEIChromaKeyValuePresentFlag = ChromaKeyValuePresentFlag; }
+  bool              getGenerativeFaceVideoSEIChromaKeyValuePresentFlag(int c)                                         const { return m_generativeFaceVideoSEIChromaKeyValuePresentFlag[c]; }
+  void              setGenerativeFaceVideoSEIChromaKeyValue(const std::vector<uint32_t>& ChromaKeyValue)                    { m_generativeFaceVideoSEIChromaKeyValue = ChromaKeyValue; }
+  uint32_t          getGenerativeFaceVideoSEIChromaKeyValue(uint32_t c)                                               const { return m_generativeFaceVideoSEIChromaKeyValue[c]; }  
+  void              setGenerativeFaceVideoSEIChromaKeyThrPresentFlag(const std::vector<bool>& ChromaKeyThrPresentFlag)      { m_generativeFaceVideoSEIChromaKeyThrPresentFlag = ChromaKeyThrPresentFlag; }
+  bool              getGenerativeFaceVideoSEIChromaKeyThrPresentFlag(int i)                                           const { return m_generativeFaceVideoSEIChromaKeyThrPresentFlag[i]; }
+  void              setGenerativeFaceVideoSEIChromaKeyThrValue(const std::vector<uint32_t>& ChromaKeyThrValue)              { m_generativeFaceVideoSEIChromaKeyThrValue = ChromaKeyThrValue; }
+  uint32_t          getGenerativeFaceVideoSEIChromaKeyThrValue(uint32_t i)                                            const { return m_generativeFaceVideoSEIChromaKeyThrValue[i]; }
+  void              setGenerativeFaceVideoSEIDrivePicFusionFlag(const std::vector<bool>& DrivePicFusionFlag)  { m_generativeFaceVideoSEIDrivePicFusionFlag = DrivePicFusionFlag; }
+  bool              getGenerativeFaceVideoSEIDrivePicFusionFlag(int idx)            const { return m_generativeFaceVideoSEIDrivePicFusionFlag[idx]; }
+  void              setGenerativeFaceVideoSEIId(const std::vector<uint32_t>& id)          { m_generativeFaceVideoSEIId = id; }
+  uint32_t          getGenerativeFaceVideoSEIId(int idx)                            const { return m_generativeFaceVideoSEIId[idx]; }
+  void              setGenerativeFaceVideoSEICnt(const std::vector<uint32_t>& cnt)        { m_generativeFaceVideoSEICnt = cnt; }
+  uint32_t          getGenerativeFaceVideoSEICnt(int idx)                           const { return m_generativeFaceVideoSEICnt[idx]; }
+  void              setGenerativeFaceVideoSEILowConfidenceFaceParameterFlag(const std::vector<bool>& lowconfidence)             { m_generativeFaceVideoSEILowConfidenceFaceParameterFlag = lowconfidence; }
+  bool              getGenerativeFaceVideoSEILowConfidenceFaceParameterFlag(int idx)                                      const { return m_generativeFaceVideoSEILowConfidenceFaceParameterFlag[idx]; }
+  void              setGenerativeFaceVideoSEICoordinatePresentFlag(const std::vector<bool>& coordinatepresentFlag)              { m_generativeFaceVideoSEICoordinatePresentFlag = coordinatepresentFlag; }
+  bool              getGenerativeFaceVideoSEICoordinatePresentFlag(int idx)                                               const { return m_generativeFaceVideoSEICoordinatePresentFlag[idx]; }
+  void              setGenerativeFaceVideoSEICoordinateQuantizationFactor(const std::vector<uint32_t>& cqf)                     { m_generativeFaceVideoSEICoordinateQuantizationFactor = cqf; }
+  uint32_t          getGenerativeFaceVideoSEICoordinateQuantizationFactor(int idx)                                        const { return m_generativeFaceVideoSEICoordinateQuantizationFactor[idx]; }
+  void              setGenerativeFaceVideoSEICoordinatePredFlag(const std::vector<bool>& CoordinatePredFlag)                    { m_generativeFaceVideoSEICoordinatePredFlag = CoordinatePredFlag; }
+  bool              getGenerativeFaceVideoSEICoordinatePredFlag(int idx)                                                  const { return m_generativeFaceVideoSEICoordinatePredFlag[idx]; }
+  void              setGenerativeFaceVideoSEI3DCoordinateFlag(const std::vector<bool>& Coordinate3dFlag)                        { m_generativeFaceVideoSEI3DCoordinateFlag = Coordinate3dFlag; }
+  bool              getGenerativeFaceVideoSEI3DCoordinateFlag(int idx)                                                    const { return m_generativeFaceVideoSEI3DCoordinateFlag[idx]; }
+  void              setGenerativeFaceVideoSEICoordinatePointNum(const std::vector<uint32_t>& CoordinatePointNum)                { m_generativeFaceVideoSEICoordinatePointNum = CoordinatePointNum; }
+  uint32_t          getGenerativeFaceVideoSEICoordinatePointNum(int idx)                                                  const { return m_generativeFaceVideoSEICoordinatePointNum[idx]; }
+  void              setGenerativeFaceVideoSEICoordinateXTesonr(const std::vector<std::vector<double>>& Xcoordinate)             { m_generativeFaceVideoSEICoordinateXTesonr = Xcoordinate; }
+  double            getGenerativeFaceVideoSEICoordinateXTesonr(int i, int j)                                              const { return m_generativeFaceVideoSEICoordinateXTesonr[i][j]; }
+  void              setGenerativeFaceVideoSEICoordinateYTesonr(const std::vector<std::vector<double>>& Ycoordinate)             { m_generativeFaceVideoSEICoordinateYTesonr = Ycoordinate; }
+  double            getGenerativeFaceVideoSEICoordinateYTesonr(int i, int j)                                              const { return m_generativeFaceVideoSEICoordinateYTesonr[i][j]; }
+  void              setGenerativeFaceVideoSEIZCoordinateMaxValue(const std::vector<std::vector<uint32_t>>& coordinateZMaxValue) { m_generativeFaceVideoSEIZCoordinateMaxValue = coordinateZMaxValue; }
+  uint32_t          getGenerativeFaceVideoSEIZCoordinateMaxValue(int i, int j)                                            const { return m_generativeFaceVideoSEIZCoordinateMaxValue[i][j]; }
+  void              setGenerativeFaceVideoSEICoordinateZTesonr(const std::vector<std::vector<double>>& Zcoordinate)             { m_generativeFaceVideoSEICoordinateZTesonr = Zcoordinate; }
+  double            getGenerativeFaceVideoSEICoordinateZTesonr(int i, int j)                                              const { return m_generativeFaceVideoSEICoordinateZTesonr[i][j]; }
+  void              setGenerativeFaceVideoSEIMatrixPresentFlag(const std::vector<bool>& matrixpresentFlag)                                               { m_generativeFaceVideoSEIMatrixPresentFlag = matrixpresentFlag; }
+  bool              getGenerativeFaceVideoSEIMatrixPresentFlag(int idx)                                                                            const { return m_generativeFaceVideoSEIMatrixPresentFlag[idx]; }
+  void              setGenerativeFaceVideoSEIMatrixElementPrecisionFactor(const std::vector<uint32_t>& mpf)                                              { m_generativeFaceVideoSEIMatrixElementPrecisionFactor = mpf; }
+  uint32_t          getGenerativeFaceVideoSEIMatrixElementPrecisionFactor(int idx)                                                                 const { return m_generativeFaceVideoSEIMatrixElementPrecisionFactor[idx]; }
+  void              setGenerativeFaceVideoSEINumMatrixType(const std::vector<uint32_t>& nummatrixtype)                                                   { m_generativeFaceVideoSEINumMatrixType = nummatrixtype; }
+  uint32_t          getGenerativeFaceVideoSEINumMatrixType(int idx)                                                                                const { return m_generativeFaceVideoSEINumMatrixType[idx]; }
+  void              setGenerativeFaceVideoSEIMatrixTypeIdx(const std::vector<std::vector<uint32_t>>& matrixTypeIdx)                                      { m_generativeFaceVideoSEIMatrixTypeIdx = matrixTypeIdx; }
+  uint32_t          getGenerativeFaceVideoSEIMatrixTypeIdx(int idx,int idy)                                                                        const { return m_generativeFaceVideoSEIMatrixTypeIdx[idx][idy]; }
+  void              setGenerativeFaceVideoSEIMatrix3DSpaceFlag(const std::vector<std::vector<uint32_t>>& matrix3DSpaceFlag)                              { m_generativeFaceVideoSEIMatrix3DSpaceFlag = matrix3DSpaceFlag; }
+  uint32_t          getGenerativeFaceVideoSEIMatrix3DSpaceFlag(int idx, int idy)                                                                   const { return m_generativeFaceVideoSEIMatrix3DSpaceFlag[idx][idy]; }
+  void              setGenerativeFaceVideoSEINumMatrices(const std::vector<std::vector<uint32_t>>& numMatrices)                                          { m_generativeFaceVideoSEINumMatrices = numMatrices; }
+  uint32_t          getGenerativeFaceVideoSEINumMatrices(int idx, int idy)                                                                         const { return m_generativeFaceVideoSEINumMatrices[idx][idy]; }
+  void              setGenerativeFaceVideoSEIMatrixWidth(const std::vector<std::vector<uint32_t>>& matrixWidth)                                          { m_generativeFaceVideoSEIMatrixWidth = matrixWidth; }
+  uint32_t          getGenerativeFaceVideoSEIMatrixWidth(int idx, int idy)                                                                         const { return m_generativeFaceVideoSEIMatrixWidth[idx][idy]; }
+  void              setGenerativeFaceVideoSEIMatrixHeight(const std::vector<std::vector<uint32_t>>& matrixHeight)                                        { m_generativeFaceVideoSEIMatrixHeight = matrixHeight; }
+  uint32_t          getGenerativeFaceVideoSEIMatrixHeight(int idx, int idy)                                                                        const { return m_generativeFaceVideoSEIMatrixHeight[idx][idy]; }
+  void              setGenerativeFaceVideoSEIMatrixElement(const std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>& matrixElement) { m_generativeFaceVideoSEIMatrixElement = matrixElement; }
+  double            getGenerativeFaceVideoSEIMatrixElement(int i, int j, int k, int l, int m)                                                      const { return m_generativeFaceVideoSEIMatrixElement[i][j][k][l][m]; }
+  void              setGenerativeFaceVideoSEIMatrixPredFlag(const std::vector<bool>& matrixpredFlag)                                                      { m_generativeFaceVideoSEIMatrixPredFlag = matrixpredFlag; }
+  bool              getGenerativeFaceVideoSEIMatrixPredFlag(int idx)                                                                                const { return m_generativeFaceVideoSEIMatrixPredFlag[idx]; }
+  void              setGenerativeFaceVideoSEINumMatricestoNumKpsFlag(const std::vector<std::vector<uint32_t>>& numflag)                                   { m_generativeFaceVideoSEINumMatricestoNumKpsFlag = numflag; }
+  uint32_t          getGenerativeFaceVideoSEINumMatricestoNumKpsFlag(int idx,int idy)                                                               const { return m_generativeFaceVideoSEINumMatricestoNumKpsFlag[idx][idy]; }
+  void              setGenerativeFaceVideoSEINumMatricesInfo(const std::vector<std::vector<uint32_t>>& nummatricesinfo)                                   { m_generativeFaceVideoSEINumMatricesInfo = nummatricesinfo; }
+  uint32_t          getGenerativeFaceVideoSEINumMatricesInfo(int idx,int idy)                                                                       const { return m_generativeFaceVideoSEINumMatricesInfo[idx][idy]; }
+  void              setGenerativeFaceVideoSEIPayloadFilename(const std::string &payloadFilename)                                                          { m_generativeFaceVideoSEIPayloadFilename = payloadFilename; }
+  const std::string getGenerativeFaceVideoSEIPayloadFilename()                                                                                      const { return m_generativeFaceVideoSEIPayloadFilename; }
+#endif
   const EncCfgParam::CfgVPSParameters &getVPSParameters() const
   {
     return m_cfgVPSParameters;

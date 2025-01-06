@@ -1720,6 +1720,9 @@ void DecLib::checkSeiContentInAccessUnit()
         CHECK((payloadType1 == payloadType2) && (payLoadLayerId1 == payLoadLayerId2) && (duiIdx1 == duiIdx2) && (subPicId1 == subPicId2) && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
       }
       else
+#if JVET_AJ0207_GFV
+      if(payloadType1 != SEI::PayloadType::GENERATIVE_FACE_VIDEO)
+#endif
       {
         bool sameLayer = false;
         if (!payLoadNested1 && !payLoadNested2)
