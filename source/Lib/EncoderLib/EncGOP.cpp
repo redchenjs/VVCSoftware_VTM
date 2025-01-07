@@ -3435,15 +3435,14 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     {
       picHeader->setExplicitScalingListEnabledFlag( true );
       pcSlice->setExplicitScalingListUsed( true );
-
-      const int apsId = std::min<int>(
-        7, m_pcEncLib->getVPS() == nullptr ? 0 : m_pcEncLib->getVPS()->getGeneralLayerIdx(m_pcEncLib->getLayerId()));
-      picHeader->setScalingListAPSId( apsId );
-
-      ParameterSetMap<APS> *apsMap         = m_pcEncLib->getApsMap(ApsType::SCALING_LIST);
-      APS                  *scalingListAPS = apsMap->getPS(apsId);
-      assert(scalingListAPS != nullptr);
-      picHeader->setScalingListAPS( scalingListAPS );
+      if (picHeader->getScalingListAPS() == nullptr)
+      {
+        const int apsId = std::min<int>(MAX_NUM_APS(ApsType::SCALING_LIST) - 1, m_pcEncLib->getVPS() == nullptr ?
+          0 : m_pcEncLib->getVPS()->getGeneralLayerIdx(m_pcEncLib->getLayerId()));
+        APS* scalingListAPS = m_pcEncLib->getApsMap(ApsType::SCALING_LIST)->getPS(apsId);
+        CHECK(scalingListAPS == nullptr, "scalingListAPS id not found");
+        picHeader->setScalingListAPS(scalingListAPS);
+      }
     }
 
     pcPic->cs->picHeader->setPic(pcPic);
@@ -3752,14 +3751,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         m_pcSAO->destroyEncData();
         m_pcSAO->createEncData( m_pcCfg->getSaoCtuBoundary(), numCtuInFrame );
         m_pcSAO->setReshaper( m_pcReshaper );
-      }
-
-      if( pcSlice->getSPS()->getScalingListFlag() && m_pcCfg->getUseScalingListId() == SCALING_LIST_FILE_READ )
-      {
-        picHeader->setExplicitScalingListEnabledFlag(true);
-        pcSlice->setExplicitScalingListUsed(true);
-        const int apsId = 0;
-        picHeader->setScalingListAPSId( apsId );
       }
 
       // SAO parameter estimation using non-deblocked pixels for CTU bottom and right boundary areas

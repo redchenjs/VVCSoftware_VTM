@@ -161,7 +161,7 @@ protected:
   void  xInitPPS          (PPS &pps, const SPS &sps); ///< initialize PPS from encoder options
   void  xInitPicHeader    (PicHeader &picHeader, const SPS &sps, const PPS &pps); ///< initialize Picture Header from encoder options
   void  xInitAPS          (APS &aps);                 ///< initialize APS from encoder options
-  void  xInitScalingLists ( SPS &sps, APS &aps );     ///< initialize scaling lists
+  void  xInitScalingLists ( SPS &sps, APS *aps );     ///< initialize scaling lists
   void  xInitPPSforLT(PPS& pps);
   void  xInitHrdParameters(SPS &sps);                 ///< initialize HRDParameters parameters
 

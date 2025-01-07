@@ -155,9 +155,6 @@ void EncLib::init(AUWriterIf *auWriterIf)
 
   SPS &sps0 = *(m_spsMap.allocatePS( m_vps->getGeneralLayerIdx( m_layerId ) )); // NOTE: implementations that use more than 1 SPS need to be aware of activation issues.
   PPS &pps0 = *( m_ppsMap.allocatePS( m_vps->getGeneralLayerIdx( m_layerId ) ) );
-  APS &aps0 = *(m_apsMaps[ApsType::SCALING_LIST].allocatePS(0));
-  aps0.setAPSId( 0 );
-  aps0.setAPSType(ApsType::SCALING_LIST);
 
   if (getAvoidIntraInDepLayer() && getNumRefLayers(m_vps->getGeneralLayerIdx( getLayerId())) > 0)
   {
@@ -495,20 +492,19 @@ void EncLib::init(AUWriterIf *auWriterIf)
 
   m_maxRefPicNum = 0;
 
-#if ER_CHROMA_QP_WCG_PPS
-  if( m_wcgChromaQpControl.isEnabled() )
+  if (getUseScalingListId() != SCALING_LIST_OFF)
   {
-    xInitScalingLists(sps0, *m_apsMaps[ApsType::SCALING_LIST].getPS(1));
-    xInitScalingLists( sps0, aps0 );
+    CHECK(!sps0.getScalingListFlag(), "sps_explicit_scaling_list_enabled_flag should be ON if ScalingList is not OFF");
+    const int scalingListApsId = std::min<int>(MAX_NUM_APS(ApsType::SCALING_LIST) - 1, getVPS() == nullptr ?
+      0 : getVPS()->getGeneralLayerIdx(m_layerId));
+    APS* scalingListAps = m_apsMaps[ApsType::SCALING_LIST].allocatePS(scalingListApsId);
+    scalingListAps->setAPSType(ApsType::SCALING_LIST);
+    scalingListAps->setLayerId(m_layerId);
+    xInitScalingLists(sps0, scalingListAps);
   }
   else
-#endif
   {
-    xInitScalingLists( sps0, aps0 );
-  }
-  if (m_resChangeInClvsEnabled)
-  {
-    xInitScalingLists(sps0, *m_apsMaps[ApsType::SCALING_LIST].getPS(ENC_PPS_ID_RPR + m_layerId));
+    xInitScalingLists(sps0, nullptr);
   }
   if (getUseCompositeRef())
   {
@@ -530,7 +526,7 @@ void EncLib::init(AUWriterIf *auWriterIf)
   }
 }
 
-void EncLib::xInitScalingLists( SPS &sps, APS &aps )
+void EncLib::xInitScalingLists( SPS &sps, APS *aps )
 {
   // Initialise scaling lists
   // The encoder will only use the SPS scaling lists. The PPS will never be marked present.
@@ -546,21 +542,23 @@ void EncLib::xInitScalingLists( SPS &sps, APS &aps )
   }
   else if(getUseScalingListId() == SCALING_LIST_DEFAULT)
   {
-    aps.getScalingList().setDefaultScalingList ();
-    quant->setScalingList( &( aps.getScalingList() ), maxLog2TrDynamicRange, sps.getBitDepths() );
+    CHECK(aps == nullptr, "aps should not be nullptr if getUseScalingListId() != SCALING_LIST_OFF");
+    aps->getScalingList().setDefaultScalingList ();
+    quant->setScalingList( &( aps->getScalingList() ), maxLog2TrDynamicRange, sps.getBitDepths() );
     quant->setUseScalingList(true);
   }
   else if(getUseScalingListId() == SCALING_LIST_FILE_READ)
   {
-    aps.getScalingList().setDefaultScalingList();
-    CHECK( aps.getScalingList().xParseScalingList( getScalingListFileName() ), "Error Parsing Scaling List Input File" );
-    aps.getScalingList().checkDcOfMatrix();
-    if (!aps.getScalingList().isNotDefaultScalingList())
+    CHECK(aps == nullptr, "aps should not be nullptr if getUseScalingListId() != SCALING_LIST_OFF");
+    aps->getScalingList().setDefaultScalingList();
+    CHECK( aps->getScalingList().xParseScalingList( getScalingListFileName() ), "Error Parsing Scaling List Input File" );
+    aps->getScalingList().checkDcOfMatrix();
+    if (!aps->getScalingList().isNotDefaultScalingList())
     {
       setUseScalingListId( SCALING_LIST_DEFAULT );
     }
-    aps.getScalingList().setChromaScalingListPresentFlag(isChromaEnabled(sps.getChromaFormatIdc()));
-    quant->setScalingList( &( aps.getScalingList() ), maxLog2TrDynamicRange, sps.getBitDepths() );
+    aps->getScalingList().setChromaScalingListPresentFlag(isChromaEnabled(sps.getChromaFormatIdc()));
+    quant->setScalingList( &( aps->getScalingList() ), maxLog2TrDynamicRange, sps.getBitDepths() );
     quant->setUseScalingList(true);
 
     sps.setDisableScalingMatrixForLfnstBlks(getDisableScalingMatrixForLfnstBlks());
@@ -575,9 +573,9 @@ void EncLib::xInitScalingLists( SPS &sps, APS &aps )
     // Prepare delta's:
     for (uint32_t scalingListId = 0; scalingListId < 28; scalingListId++)
     {
-      if (aps.getScalingList().getChromaScalingListPresentFlag()||aps.getScalingList().isLumaScalingList(scalingListId))
+      if (aps->getScalingList().getChromaScalingListPresentFlag()||aps->getScalingList().isLumaScalingList(scalingListId))
       {
-        aps.getScalingList().checkPredMode(scalingListId);
+        aps->getScalingList().checkPredMode(scalingListId);
       }
     }
   }
