@@ -1042,6 +1042,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setGcmpSEIGuardBandBoundaryExteriorFlag              ( m_gcmpSEIGuardBandBoundaryExteriorFlag );
   m_cEncLib.setGcmpSEIGuardBandSamplesMinus1                     ( (uint8_t)m_gcmpSEIGuardBandSamplesMinus1 );
   m_cEncLib.setSubpicureLevelInfoSEICfg                          (m_cfgSubpictureLevelInfoSEI);
+#if JVET_AJ0151_DSC_SEI
+  m_cEncLib.setDigitallySignedContentSEICfg                      (m_cfgDigitallySignedContentSEI);
+#endif
   m_cEncLib.setSampleAspectRatioInfoSEIEnabled                   (m_sampleAspectRatioInfoSEIEnabled);
   m_cEncLib.setSariCancelFlag                                    (m_sariCancelFlag);
   m_cEncLib.setSariPersistenceFlag                               (m_sariPersistenceFlag);

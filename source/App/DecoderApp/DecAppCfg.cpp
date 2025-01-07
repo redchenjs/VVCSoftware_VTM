@@ -132,6 +132,10 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
   ("UpscaledOutputWidth",      m_upscaledOutputWidth,                  0,          "Forced upscaled output width (override SPS)" )
   ("UpscaledOutputHeight",     m_upscaledOutputHeight,                 0,          "Forced upscaled output height (override SPS)" )
   ("UpscaleFilterForDisplay",  m_upscaleFilterForDisplay,              1,          "Filters used for upscaling reconstruction to full resolution (2: ECM 12 - tap luma and 6 - tap chroma MC filters, 1 : Alternative 12 - tap luma and 6 - tap chroma filters, 0 : VVC 8 - tap luma and 4 - tap chroma MC filters)")
+#if JVET_AJ0151_DSC_SEI
+  ("KeyStoreDir",              m_keyStoreDir,            std::string("keystore/pub"),    "Directory for locally stored public keys for verifying digitally signed content")
+  ("TrustStoreDir",            m_trustStoreDir,          std::string("keystore/ca"),     "Directory for locally stored trusted CA certificates")
+#endif
 #if GDR_LEAK_TEST
   ("RandomAccessPos",           m_gdrPocRandomAccess,                  0,          "POC of GDR Random access picture\n")
 #endif // GDR_LEAK_TEST

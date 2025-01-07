@@ -571,6 +571,16 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIModalityInfo((SEIModalityInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
+#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
+    case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION:
+      sei = new SEIDigitallySignedContentInitialization;
+      xParseSEIDigitallySignedContentInitialization((SEIDigitallySignedContentInitialization &) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+    case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION:
+      sei = new SEIDigitallySignedContentSelection;
+      xParseSEIDigitallySignedContentSelection((SEIDigitallySignedContentSelection &) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -644,10 +654,16 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIProcessingOrderNesting((SEIProcessingOrderNesting&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
         pDecodedMessageOutputStream);
       break;
-#if JVET_AJ0207_GFV 
+#if JVET_AJ0207_GFV
     case SEI::PayloadType::GENERATIVE_FACE_VIDEO:
       sei = new SEIGenerativeFaceVideo;
       xParseSEIGenerativeFaceVideo((SEIGenerativeFaceVideo &)*sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
+#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
+    case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION:
+      sei = new SEIDigitallySignedContentVerification;
+      xParseSEIDigitallySignedContentVerification((SEIDigitallySignedContentVerification &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
     default:
@@ -4598,4 +4614,60 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
 }
 #endif
 
+#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
+void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+{
+  unsigned int val;
+  sei_read_code(pDecodedMessageOutputStream, 8, val, "dsci_hash_method_type");
+  sei.dsciHashMethodType = val;
+  sei_read_string(pDecodedMessageOutputStream, sei.dsciKeySourceUri, "twci_key_source_uri");
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "dsci_num_verification_substreams_minus1");
+  sei.dsciNumVerificationSubstreams = val + 1;
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "dsci_key_retrieval_mode_idc");
+  sei.dsciKeyRetrievalModeIdc = val;
+  if (sei.dsciKeyRetrievalModeIdc == 1)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "dsci_use_key_register_idx_flag");
+    sei.dsciUseKeyRegisterIdxFlag = (val!=0);
+    if( sei.dsciUseKeyRegisterIdxFlag )
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "dsci_key_register_idx");
+      sei.dsciKeyRegisterIdx = val;
+    }
+  }
+  sei_read_flag(pDecodedMessageOutputStream, val, "dsci_content_uuid_present_flag");
+  sei.dsciContentUuidPresentFlag = (val!=0);
+  if (sei.dsciContentUuidPresentFlag)
+  {
+    for (int i=0; i<16; i++)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 8, val, "dsci_content_uuid");
+      sei.dsciContentUuid[i] = val;
+    }
+
+  }
+}
+
+void SEIReader::xParseSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+{
+  unsigned int val;
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "dscs_verification_substream_id");
+  sei.dscsVerificationSubstreamId = val;
+}
+
+void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedContentVerification &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
+{
+  unsigned int val;
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "dscv_verification_substream_id");
+  sei.dscvVerificationSubstreamId = val;
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "dscv_signature_length_in_octets_minus1");
+  sei.dscvSignatureLengthInOctets = val + 1;
+  sei.dscvSignature.resize(sei.dscvSignatureLengthInOctets);
+  for (int i=0; i< sei.dscvSignature.size(); i++)
+  {
+    sei_read_code(pDecodedMessageOutputStream, 8, val, "dscv_signature");
+    sei.dscvSignature[i] = val;
+  }
+}
+#endif
 //! \}

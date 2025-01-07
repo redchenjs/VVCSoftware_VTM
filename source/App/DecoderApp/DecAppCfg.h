@@ -102,6 +102,10 @@ protected:
   int           m_upscaledOutputHeight;
   int           m_upscaleFilterForDisplay;
   int           m_targetSubPicIdx;                    ///< Specify which subpicture shall be write to output, using subpicture index
+#if JVET_AJ0151_DSC_SEI
+  std::string   m_keyStoreDir;
+  std::string   m_trustStoreDir;
+#endif
 #if GDR_LEAK_TEST
   int           m_gdrPocRandomAccess;                   ///<
 #endif // GDR_LEAK_TEST

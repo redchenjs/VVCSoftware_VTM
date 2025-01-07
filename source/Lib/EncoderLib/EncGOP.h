@@ -63,6 +63,10 @@
 #include <vector>
 #include "EncHRD.h"
 
+#if JVET_AJ0151_DSC_SEI
+#include "SEIDigitallySignedContent.h"
+#endif
+
 #if JVET_O0756_CALCULATE_HDRMETRICS
 #include "HDRLib/inc/ConvertColorFormat.H"
 #include "HDRLib/inc/Convert.H"
@@ -230,6 +234,14 @@ private:
   FeatureCounterStruct m_featureCounterReference;
   SEIQualityMetrics m_SEIGreenQualityMetrics;
   SEIComplexityMetrics m_SEIGreenComplexityMetrics;
+#endif
+
+#if JVET_AJ0151_DSC_SEI
+  void xAddToSubstream(int substreamId, OutputNALUnit &nalu);
+
+  DscSubstreamManager m_dscSubstreamManager;
+  int                 m_totalPicsCoded = 0;
+  int                 m_prevPicTemporalId = 0;
 #endif
 
 public:

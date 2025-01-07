@@ -163,6 +163,12 @@ void read(InputNALUnit& nalu)
   std::vector<uint8_t> &nalUnitBuf = bitstream.getFifo();
   // perform anti-emulation prevention
   const NalUnitType nut = (NalUnitType)(nalUnitBuf[1] >> 3);
+#if JVET_AJ0151_DSC_SEI
+  if (nut == NAL_UNIT_SPS || nut == NAL_UNIT_PPS || nut == NAL_UNIT_PREFIX_APS || nut == NAL_UNIT_SUFFIX_APS || nut == NAL_UNIT_PH || NALUnit::isVclNalUnitType(nut) )
+  {
+    bitstream.copyToOrigFifo();
+  }
+#endif
   convertPayloadToRBSP(nalUnitBuf, &bitstream, nut <= NAL_UNIT_RESERVED_IRAP_VCL_11);
   bitstream.resetToStart();
   readNalUnitHeader(nalu);

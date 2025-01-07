@@ -56,6 +56,19 @@
 #include "CommonLib/Reshape.h"
 #include "CommonLib/SEINeuralNetworkPostFiltering.h"
 
+#if JVET_AJ0151_DSC_SEI
+#include "SEIDigitallySignedContent.h"
+#endif
+
+#if JVET_AJ0151_DSC_SEI
+struct binNalUnit
+{
+  NalUnitType nalUnitType = NAL_UNIT_INVALID;
+  size_t  length = 0;
+  uint8_t *data  = nullptr;
+};
+#endif
+
 class InputNALUnit;
 
 //! \ingroup DecoderLib
@@ -223,6 +236,11 @@ private:
   int                     m_maxDecSliceAddrInSubPic;
   int                     m_clsVPSid;
 
+#if JVET_AJ0151_DSC_SEI
+  std::string   m_keyStoreDir;
+  std::string   m_trustStoreDir;
+#endif
+
 #if GDR_ENABLED
   int m_lastGdrPoc;
   int m_lastGdrRecoveryPocCnt;
@@ -238,6 +256,14 @@ public:
 public:
   int                     m_gdrPocRandomAccess;
 #endif // GDR_LEAK_TEST
+
+#if JVET_AJ0151_DSC_SEI
+  void xStoreNALUnitForSignature(InputNALUnit &nalu);
+  void xProcessStoredNALUnitsForSignature(int substream_id);
+
+  std::list<binNalUnit> m_signedContentNalUnitBuffer;
+  DscSubstreamManager   m_dscSubstreamManager;
+#endif
 
 public:
   DecLib();
@@ -361,6 +387,14 @@ public:
 
   void applyNnPostFilter();
   void setPrevPicPOC(const int prevPicPoc) { m_prevPicPOC  = prevPicPoc;}
+
+#if JVET_AJ0151_DSC_SEI
+  void setKeyStoreParameters(const std::string &keyStoreDir, const std::string &trustStoreDir)
+  {
+    m_keyStoreDir = keyStoreDir;
+    m_trustStoreDir = trustStoreDir;
+  }
+#endif
 
 protected:
   void  xUpdateRasInit(Slice* slice);

@@ -41,6 +41,10 @@
 #include "VLCWriter.h"
 #include "CommonLib/SEI.h"
 
+#if JVET_AJ0151_DSC_SEI
+#include "CommonLib/SEIDigitallySignedContent.h"
+#endif
+
 class OutputBitstream;
 
 //! \ingroup EncoderLib
@@ -126,6 +130,7 @@ protected:
 #if JVET_AG0322_MODALITY_INFORMATION
   void xWriteSEIModalityInfo(const SEIModalityInfo &sei);
 #endif
+
 #if JVET_AJ0207_GFV
   void xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo& sei);
   std::vector<double>  prevcoordinateXRec;
@@ -137,6 +142,12 @@ protected:
   std::vector<uint32_t> prevnumMatricesVec;
   bool doUpdateGFVcoordinate= false;
   bool doUpdateGFVmatrix= false;
+#endif
+
+#if JVET_AJ0151_DSC_SEI
+  void xWriteSEIDigitallySignedContentInitialization(const SEIDigitallySignedContentInitialization &sei);
+  void xWriteSEIDigitallySignedContentSelection(const SEIDigitallySignedContentSelection &sei);
+  void xWriteSEIDigitallySignedContentVerification(const SEIDigitallySignedContentVerification &sei);
 #endif
 protected:
   HRD m_nestingHrd;

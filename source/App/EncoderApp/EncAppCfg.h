@@ -762,6 +762,9 @@ protected:
   uint32_t             m_gcmpSEIGuardBandSamplesMinus1;
 
   EncCfgParam::CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
+#if JVET_AJ0151_DSC_SEI
+  EncCfgParam::CfgSEIDigitallySignedContent m_cfgDigitallySignedContentSEI;
+#endif
 
   bool                  m_nnPostFilterSEICharacteristicsEnabled;
   bool                  m_nnPostFilterSEICharacteristicsUseSuffixSEI;

@@ -323,6 +323,24 @@ void EncGOP::init ( EncLib* pcEncLib )
 #endif
 }
 
+#if JVET_AJ0151_DSC_SEI
+void EncGOP::xAddToSubstream(int substreamId, OutputNALUnit &nalu)
+{
+  // exit, if digitally signed content is not active
+  if (!m_pcCfg->getDigitallySignedContentSEICfg().enabled)
+  {
+    return;
+  }
+  std::ostringstream rbspPayload;
+
+  // add emultaion prevention
+  writeNaluWithHeader(rbspPayload, nalu);
+
+  // store NAL unit
+  m_dscSubstreamManager.addToSubstream(substreamId, rbspPayload.str().c_str(), rbspPayload.str().size());
+}
+#endif
+
 int EncGOP::xWriteOPI (AccessUnit &accessUnit, const OPI *opi)
 {
   OutputNALUnit nalu(NAL_UNIT_OPI);
@@ -360,6 +378,9 @@ int EncGOP::xWriteSPS( AccessUnit &accessUnit, const SPS *sps, const int layerId
   nalu.m_nuhLayerId = layerId;
   CHECK( nalu.m_temporalId, "The value of TemporalId of SPS NAL units shall be equal to 0" );
   m_HLSWriter->codeSPS( sps );
+#if JVET_AJ0151_DSC_SEI
+  xAddToSubstream(0, nalu);
+#endif
   accessUnit.push_back(new NALUnitEBSP(nalu));
   return (int) (accessUnit.back()->m_nalUnitData.str().size()) * 8;
 }
@@ -372,6 +393,9 @@ int EncGOP::xWritePPS( AccessUnit &accessUnit, const PPS *pps, const int layerId
   nalu.m_temporalId = accessUnit.temporalId;
   CHECK( nalu.m_temporalId < accessUnit.temporalId, "TemporalId shall be greater than or equal to the TemporalId of the layer access unit containing the NAL unit" );
   m_HLSWriter->codePPS( pps );
+#if JVET_AJ0151_DSC_SEI
+  xAddToSubstream(0, nalu);
+#endif
   accessUnit.push_back(new NALUnitEBSP(nalu));
   return (int)(accessUnit.back()->m_nalUnitData.str().size()) * 8;
 }
@@ -393,6 +417,9 @@ int EncGOP::xWriteAPS( AccessUnit &accessUnit, APS *aps, const int layerId, cons
 #endif
 
   m_HLSWriter->codeAPS(aps);
+#if JVET_AJ0151_DSC_SEI
+  xAddToSubstream(0, nalu);
+#endif
   accessUnit.push_back(new NALUnitEBSP(nalu));
   return (int)(accessUnit.back()->m_nalUnitData.str().size()) * 8;
 }
@@ -474,6 +501,9 @@ int EncGOP::xWritePicHeader( AccessUnit &accessUnit, PicHeader *picHeader )
   nalu.m_temporalId = accessUnit.temporalId;
   nalu.m_nuhLayerId = m_pcEncLib->getLayerId();
   m_HLSWriter->codePictureHeader( picHeader, true );
+#if JVET_AJ0151_DSC_SEI
+  xAddToSubstream(0, nalu);
+#endif
   accessUnit.push_back(new NALUnitEBSP(nalu));
   return (int)(accessUnit.back()->m_nalUnitData.str().size()) * 8;
 }
@@ -567,6 +597,36 @@ void EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duI
 {
   AccessUnit::iterator itNalu = accessUnit.begin();
 
+#if JVET_AJ0151_DSC_SEI
+  SEIMessages currentMessages;
+  SEIMessages localMessages = seiMessages;
+
+#if ENABLE_TRACING
+  g_HLSTraceEnable = !testWrite;
+#endif
+
+  // skip over AUD or any Trailing SEIs, which belong to previous AU
+  while ((itNalu != accessUnit.end()) &&
+    ((*itNalu)->m_nalUnitType == NAL_UNIT_ACCESS_UNIT_DELIMITER
+     || (*itNalu)->m_nalUnitType == NAL_UNIT_SUFFIX_SEI
+     ))
+  {
+    itNalu++;
+  }
+  if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
+  {
+    currentMessages = extractSeisByType(localMessages, SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION);
+    CHECK( (currentMessages.size() > 1), "too many Digitally Signed Content Initialization SEI messages found");
+    xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
+    xClearSEIs(currentMessages, !testWrite);
+
+    currentMessages = extractSeisByType(localMessages, SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION);
+    CHECK( (currentMessages.size() > 1), "too many Digitally Signed Content Selection SEI messages found");
+    xWriteSEI(NAL_UNIT_PREFIX_SEI, currentMessages, accessUnit, itNalu, temporalId);
+    xClearSEIs(currentMessages, !testWrite);
+  }
+#endif
+
   while ((itNalu != accessUnit.end()) &&
     ((*itNalu)->m_nalUnitType == NAL_UNIT_ACCESS_UNIT_DELIMITER
       || (*itNalu)->m_nalUnitType == NAL_UNIT_OPI
@@ -579,11 +639,13 @@ void EncGOP::xWriteLeadingSEIOrdered (SEIMessages& seiMessages, SEIMessages& duI
     itNalu++;
   }
 
+#if !JVET_AJ0151_DSC_SEI
   SEIMessages localMessages = seiMessages;
   SEIMessages currentMessages;
 
 #if ENABLE_TRACING
   g_HLSTraceEnable = !testWrite;
+#endif
 #endif
   // The case that a specific SEI is not present is handled in xWriteSEI (empty list)
 
@@ -937,6 +999,14 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     seiMessages.push_back(seiProcessingOrder);
     seiMessages.push_back(seiProcessingOrderNesting);
   }
+#if JVET_AJ0151_DSC_SEI
+  if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
+  {
+    SEIDigitallySignedContentInitialization *sei = new SEIDigitallySignedContentInitialization;
+    m_seiEncoder.initSEIDigitallySignedContentInitialization(sei);
+    seiMessages.push_back(sei);
+  }
+#endif
 }
 
 void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, Slice *slice)
@@ -1066,6 +1136,15 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     m_seiEncoder.initSEIPostFilterHint(postFilterHintSEI);
     seiMessages.push_back(postFilterHintSEI);
   }
+#if JVET_AJ0151_DSC_SEI
+
+  if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
+  {
+    SEIDigitallySignedContentSelection *sei = new SEIDigitallySignedContentSelection;
+    m_seiEncoder.initSEIDigitallySignedContentSelection(sei, 0);
+    seiMessages.push_back(sei);
+  }
+#endif
 }
 
 #if JVET_AJ0207_GFV
@@ -3971,6 +4050,34 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         m_pcEncLib->setParamSetChanged(pcSlice->getSPS()->getSPSId(), pcSlice->getPPS()->getPPSId());
       }
+#if JVET_AJ0151_DSC_SEI
+
+      // Before writing the NAL units of an RAP, write trailing TWC verification SEIs of previous picture
+      const bool writeDSCverification = !m_seqFirst && pcSlice->isIRAP();
+      if (writeDSCverification)
+      {
+        if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
+        {
+          SEIMessages twcSeiMessages;
+          std::vector<uint8_t> signature;
+          m_dscSubstreamManager.signSubstream(0, signature);
+          SEIDigitallySignedContentVerification *sei = new SEIDigitallySignedContentVerification;
+          m_seiEncoder.initSEIDigitallySignedContentVerification(sei, 0, signature);
+          twcSeiMessages.push_back(sei);
+          xWriteTrailingSEIMessages(twcSeiMessages, accessUnit, m_prevPicTemporalId);
+        }
+      }
+      m_prevPicTemporalId = pcSlice->getTLayer();
+      if (writePS && m_pcCfg->getDigitallySignedContentSEICfg().enabled)
+      {
+        std::array<uint8_t,16> contentUuid = {
+          0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        };
+        const EncCfgParam::CfgSEIDigitallySignedContent &dscCfg = m_pcCfg->getDigitallySignedContentSEICfg();
+        m_dscSubstreamManager.initDscSubstreamManager(1, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid);
+        m_dscSubstreamManager.initSignature(dscCfg.privateKeyFile);
+      }
+#endif
 
       int layerIdx = m_pcEncLib->getVPS() == nullptr ? 0 : m_pcEncLib->getVPS()->getGeneralLayerIdx( m_pcEncLib->getLayerId() );
 
@@ -4350,6 +4457,9 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         bool naluAlignedWrittenToList =
           false;   // used to ensure current NALU is not written more than once to the NALU list.
         xAttachSliceDataToNalUnit(nalu, pcBitstreamRedirect);
+#if JVET_AJ0151_DSC_SEI
+        xAddToSubstream(0, nalu);
+#endif
         accessUnit.push_back(new NALUnitEBSP(nalu));
         actualTotalBits += uint32_t(accessUnit.back()->m_nalUnitData.str().size()) * 8;
         numBytesInVclNalUnits += (std::size_t)(accessUnit.back()->m_nalUnitData.str().size());
@@ -4529,6 +4639,27 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 #endif
       
       xWriteTrailingSEIMessages(trailingSeiMessages, accessUnit, pcSlice->getTLayer());
+#if JVET_AJ0151_DSC_SEI
+
+      m_totalPicsCoded++;
+      const int skip = m_pcCfg->getFrameSkip() ? m_pcCfg->getFrameSkip() : 1;
+      const int lastPic =(m_pcCfg->getFramesToBeEncoded() / skip) - 1;
+      const bool isLastPicture = ( m_totalPicsCoded > lastPic);
+      if (isLastPicture)
+      {
+        if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
+        {
+          SEIMessages twcSeiMessages;
+          std::vector<uint8_t> signature;
+          m_dscSubstreamManager.signSubstream(0, signature);
+          SEIDigitallySignedContentVerification *sei = new SEIDigitallySignedContentVerification;
+          m_seiEncoder.initSEIDigitallySignedContentVerification(sei, 0, signature);
+          twcSeiMessages.push_back(sei);
+          xWriteTrailingSEIMessages(twcSeiMessages, accessUnit, pcSlice->getTLayer());
+          m_dscSubstreamManager.uninitDscSubstreamManager();
+        }
+      }
+#endif
 
 #if GDR_ENABLED
       if (!(m_pcCfg->getGdrNoHash() && pcSlice->getPic()->gdrParam.inGdrInterval))

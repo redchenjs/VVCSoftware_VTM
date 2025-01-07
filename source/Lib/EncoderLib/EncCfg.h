@@ -675,6 +675,9 @@ protected:
   bool                 m_gcmpSEIGuardBandBoundaryExteriorFlag;
   uint8_t              m_gcmpSEIGuardBandSamplesMinus1;
   EncCfgParam::CfgSEISubpictureLevel m_cfgSubpictureLevelInfoSEI;
+#if JVET_AJ0151_DSC_SEI
+  EncCfgParam::CfgSEIDigitallySignedContent m_cfgDigitallySignedContentSEI;
+#endif
   bool                  m_sampleAspectRatioInfoSEIEnabled;
   bool                  m_sariCancelFlag;
   bool                  m_sariPersistenceFlag;
@@ -2447,6 +2450,16 @@ public:
   {
     m_cfgSubpictureLevelInfoSEI = cfg;
   }
+#if JVET_AJ0151_DSC_SEI
+  const EncCfgParam::CfgSEIDigitallySignedContent &getDigitallySignedContentSEICfg() const
+  {
+    return m_cfgDigitallySignedContentSEI;
+  }
+  void setDigitallySignedContentSEICfg(const EncCfgParam::CfgSEIDigitallySignedContent &cfg)
+  {
+    m_cfgDigitallySignedContentSEI = cfg;
+  }
+#endif
   bool     getSampleAspectRatioInfoSEIEnabled() const                                                       { return m_sampleAspectRatioInfoSEIEnabled; }
   void     setSampleAspectRatioInfoSEIEnabled(const bool val)                                               { m_sampleAspectRatioInfoSEIEnabled = val; }
   bool     getSariCancelFlag() const                                                                        { return m_sariCancelFlag; }

@@ -54,13 +54,22 @@
 
 // clang-format off
 
+
 //########### place macros to be removed in next cycle below this line ###############
 
 #define JVET_AJ0129_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList with all supported SEI message types
 
-#define JVET_AJ0207_GFV                                   1 //generative face video (GFV) SEI
+#define JVET_AJ0207_GFV                                   1 // generative face video (GFV) SEI
+
+#define JVET_AJ0151_DSC_SEI_DECODER_SYNTAX                1 // read the Digitally Signed Content SEIs at the decoder
 
 //########### place macros to be be kept below this line ###############
+
+#ifndef JVET_AJ0151_DSC_SEI
+
+#define JVET_AJ0151_DSC_SEI   1                      // Digitally signed content signing and verification (requires OpenSSL v3)
+
+#endif
 
 #define GDR_ENABLED   1
 

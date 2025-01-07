@@ -1529,6 +1529,21 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEISPTISourceType", m_sptiSourceType, 0u, "Indicates the timing relationship between source pictures and corresponding decoded output pictures.")
 ("SEISPTITimeScale", m_sptiTimeScale, 27000000u, "Specifies the number of time units that pass in one second.")
 ("SEISPTINumUnitsInElementalInterval", m_sptiNumUnitsInElementalInterval, 1080000u, "Specifies the number of time units of a clock operating at the frequency spti_time_scale Hz that corresponds to the indicated elemental source picture interval of consecutive pictures in output order in the CLVS.")
+#if JVET_AJ0151_DSC_SEI
+("SEIDSCEnabled", m_cfgDigitallySignedContentSEI.enabled, false, "Control generation of Digitally Signed Content SEI messages")
+("SEIDSCHashMethod", m_cfgDigitallySignedContentSEI.hashMethod, 0 , "Hash type to be used:\n"
+                                                                     "\t0: SHA-1 (default)\n"
+                                                                     "\t1: SHA-224\n"
+                                                                     "\t2: SHA-256\n"
+                                                                     "\t3: SHA-384\n"
+                                                                     "\t4: SHA-512\n"
+                                                                     "\t5: SHA-512/224\n"
+                                                                     "\t6: SHA-512/256")
+("SEIDSCSigningKeyFile", m_cfgDigitallySignedContentSEI.privateKeyFile, std::string("") , "(Private) signing key location for Digitally Signed Content SEI messages")
+("SEIDSCVerificationKeyURI", m_cfgDigitallySignedContentSEI.publicKeyUri, std::string("") , "(Public) verification key URI for Digitally Signed Content SEI messages")
+("SEIDSCKeyIDEnabled", m_cfgDigitallySignedContentSEI.keyIdEnabled, false, "Enable using a key ID addition to URI of public key of Digitally Signed Content SEI messages")
+("SEIDSCKeyID", m_cfgDigitallySignedContentSEI.keyId, 0 , "Public Key ID for Digitally Signed Content SEI messages (if enabled)")
+#endif
 #if ENABLE_TRACING
 ("TraceChannelsList", bTracingChannelsList, false, "List all available tracing channels")
 ("TraceRule", sTracingRule, std::string(""), "Tracing rule (ex: \"D_CABAC:poc==8\" or \"D_REC_CB_LUMA:poc==8\")")

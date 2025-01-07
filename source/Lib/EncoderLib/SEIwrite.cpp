@@ -217,6 +217,17 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIGenerativeFaceVideo(*static_cast<const SEIGenerativeFaceVideo*>(&sei));
     break;
 #endif
+#if JVET_AJ0151_DSC_SEI
+  case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION:
+    xWriteSEIDigitallySignedContentInitialization(*static_cast<const SEIDigitallySignedContentInitialization *>(&sei));
+    break;
+  case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION:
+    xWriteSEIDigitallySignedContentSelection(*static_cast<const SEIDigitallySignedContentSelection *>(&sei));
+    break;
+  case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION:
+    xWriteSEIDigitallySignedContentVerification(*static_cast<const SEIDigitallySignedContentVerification *>(&sei));
+    break;
+#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -2276,7 +2287,6 @@ void SEIWriter::xWriteSEIModalityInfo(const SEIModalityInfo& sei)
 }
 #endif 
 
-
 #if JVET_AJ0207_GFV
 void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
 {
@@ -2493,7 +2503,7 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
   // Matrix Parameters
   CHECK((!sei.m_coordinatePresentFlag) && (!sei.m_matrixPresentFlag), "When gfv_coordinate_present_flag is equal to 0, gfv_matrix_present_flag shall be equal to 1");
   xWriteFlag(sei.m_matrixPresentFlag, "gfv_matrix_present_flag");
-  
+
   if (sei.m_matrixPresentFlag)
   {
     std::vector<uint32_t> matrixWidthVec;
@@ -2646,6 +2656,50 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
         xWriteSCode(sei.m_payloadByte[i], 8, "gfv_nn_payload_byte[i]");
       }
     }
+  }
+}
+#endif
+
+#if JVET_AJ0151_DSC_SEI
+void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitallySignedContentInitialization &sei)
+{
+  xWriteCode(sei.dsciHashMethodType, 8, "dsci_hash_method_type");
+  xWriteString(sei.dsciKeySourceUri, "dsci_key_source_uri");
+  CHECK (sei.dsciNumVerificationSubstreams < 1, "Number of DSC verification substreams has to be greater than zero");
+  xWriteUvlc(sei.dsciNumVerificationSubstreams - 1, "dsci_num_verification_substreams_minus1");
+  xWriteUvlc(sei.dsciKeyRetrievalModeIdc, "dsci_key_retrieval_mode_idc");
+  if (sei.dsciKeyRetrievalModeIdc == 1)
+  {
+    xWriteFlag(sei.dsciUseKeyRegisterIdxFlag, "dsci_use_key_register_idx_flag");
+    if( sei.dsciUseKeyRegisterIdxFlag )
+    {
+      xWriteUvlc(sei.dsciKeyRegisterIdx, "dsci_key_register_idx");
+    }
+  }
+  xWriteFlag(sei.dsciContentUuidPresentFlag, "dsci_content_uuid_present_flag");
+  if (sei.dsciContentUuidPresentFlag)
+  {
+    for (int i=0; i<16; i++)
+    {
+      xWriteCode(sei.dsciContentUuid[i], 8, "dsci_content_uuid");
+    }
+  }
+}
+
+void SEIWriter::xWriteSEIDigitallySignedContentSelection(const SEIDigitallySignedContentSelection &sei)
+{
+  xWriteUvlc(sei.dscsVerificationSubstreamId, "dscs_verification_substream_id");
+}
+
+void SEIWriter::xWriteSEIDigitallySignedContentVerification(const SEIDigitallySignedContentVerification &sei)
+{
+  xWriteUvlc(sei.dscvVerificationSubstreamId, "dscv_verification_substream_id");
+  CHECK (sei.dscvSignatureLengthInOctets < 1, "Length of signature has to be greater than zero");
+  xWriteUvlc(sei.dscvSignatureLengthInOctets - 1, "dscv_signature_length_in_octets_minus1");
+  CHECK (sei.dscvSignatureLengthInOctets != sei.dscvSignature.size(), "Signature length incosistent");
+  for (int i=0; i< sei.dscvSignature.size(); i++)
+  {
+    xWriteCode(sei.dscvSignature[i], 8, "dscv_signature");
   }
 }
 #endif
