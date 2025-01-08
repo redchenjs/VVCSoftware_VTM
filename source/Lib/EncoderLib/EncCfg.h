@@ -773,8 +773,14 @@ protected:
   int32_t                 m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t                 m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t                 m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[MAX_NUM_NN_POST_FILTERS];
+#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
   bool                    m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[MAX_NUM_NN_POST_FILTERS];
   std::string             m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[MAX_NUM_NN_POST_FILTERS];
+#endif
+#endif
+#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
+  bool                    m_nnPostFilterSEICharacteristicsInbandPromptFlag[MAX_NUM_NN_POST_FILTERS];
+  std::string             m_nnPostFilterSEICharacteristicsPrompt[MAX_NUM_NN_POST_FILTERS];
 #endif
   std::vector<bool>       m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
@@ -2218,10 +2224,18 @@ public:
   int32_t     getNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset(int filterIdx)                             { return m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(int32_t value, int filterIdx)           { m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[filterIdx] = value; }
   int32_t     getNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(int filterIdx)                          { return m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[filterIdx]; }
+#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
   void        setNNPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag(bool promptPresentFlag, int filterIdx) { m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[filterIdx] = promptPresentFlag; }
   bool        getNNPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag(int filterIdx) const                   { return m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsSpatialExrapolationPrompt(std::string prompt, int filterIdx)                 { m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[filterIdx] = prompt; }
   std::string getNNPostFilterSEICharacteristicsSpatialExrapolationPrompt(int filterIdx) const                               { return m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[filterIdx]; }
+#endif
+#endif
+#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
+  void        setNNPostFilterSEICharacteristicsInbandPromptFlag(bool promptPresentFlag, int filterIdx)                  { m_nnPostFilterSEICharacteristicsInbandPromptFlag[filterIdx] = promptPresentFlag; }
+  bool        getNNPostFilterSEICharacteristicsInbandPromptFlag(int filterIdx) const                                    { return m_nnPostFilterSEICharacteristicsInbandPromptFlag[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsPrompt(std::string prompt, int filterIdx)                                { m_nnPostFilterSEICharacteristicsPrompt[filterIdx] = prompt; }
+  std::string getNNPostFilterSEICharacteristicsPrompt(int filterIdx) const                                              { return m_nnPostFilterSEICharacteristicsPrompt[filterIdx]; }
 #endif
   void        setNNPostFilterSEICharacteristicsInputPicOutputFlag(std::vector<bool> value, int filterIdx)   { m_nnPostFilterSEICharacteristicsInputPicOutputFlag[filterIdx] = value; }
   const       std::vector<bool>& getNNPostFilterSEICharacteristicsInputPicOutputFlag(int filterIdx)         { return m_nnPostFilterSEICharacteristicsInputPicOutputFlag[filterIdx]; }

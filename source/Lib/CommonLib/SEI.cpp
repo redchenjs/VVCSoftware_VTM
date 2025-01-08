@@ -1016,7 +1016,13 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_spatialExtrapolationRightOffset = sei.m_spatialExtrapolationRightOffset;
   m_spatialExtrapolationTopOffset = sei.m_spatialExtrapolationTopOffset;
   m_spatialExtrapolationBottomOffset = sei.m_spatialExtrapolationBottomOffset;
+#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
   m_spatialExtrapolationPromptPresentFlag = sei.m_spatialExtrapolationPromptPresentFlag;
+  m_prompt =  sei.m_prompt;
+#endif
+#endif
+#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
+  m_inbandPromptFlag = sei.m_inbandPromptFlag;
   m_prompt =  sei.m_prompt;
 #endif
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
@@ -1084,7 +1090,13 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_spatialExtrapolationRightOffset == sei.m_spatialExtrapolationRightOffset &&
   m_spatialExtrapolationTopOffset == sei.m_spatialExtrapolationTopOffset &&
   m_spatialExtrapolationBottomOffset == sei.m_spatialExtrapolationBottomOffset &&
+#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
   m_spatialExtrapolationPromptPresentFlag == sei.m_spatialExtrapolationPromptPresentFlag  &&
+  m_prompt ==  sei.m_prompt  &&
+#endif
+#endif
+#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
+  m_inbandPromptFlag == sei.m_inbandPromptFlag  &&
   m_prompt ==  sei.m_prompt  &&
 #endif
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
