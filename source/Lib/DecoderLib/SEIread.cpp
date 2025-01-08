@@ -900,16 +900,16 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
   for (uint32_t j = 0; j < numProcStgs; j++)
   {
     uint32_t idx = seiTypeIdx[j];
-    if (sei.m_posImportanceFlag[j] && sei.m_posProcessingDegreeFlag[j])
+    if (sei.m_posImportanceFlag[idx] && sei.m_posProcessingDegreeFlag[idx])
     {
       sei.m_posSubChainIdx[j] = 0;
     }
-    else if (!sei.m_posImportanceFlag[j] && sei.m_posProcessingDegreeFlag[j])
+    else if (!sei.m_posImportanceFlag[idx] && sei.m_posProcessingDegreeFlag[idx])
     {
       sei.m_posSubChainIdx[j] = subChainPrevIdx;
       subChainFlag = 0;
     }
-    else if (sei.m_posImportanceFlag[j] && !sei.m_posProcessingDegreeFlag[j])
+    else if (sei.m_posImportanceFlag[idx] && !sei.m_posProcessingDegreeFlag[idx])
     {
       if (subChainFlag == 0)
       {
