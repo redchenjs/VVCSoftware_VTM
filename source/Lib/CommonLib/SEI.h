@@ -208,6 +208,10 @@ public:
   bool                   m_posBreadthFirstFlag;
   std::vector<bool>      m_posWrappingFlag;
   std::vector<bool>      m_posImportanceFlag;
+#if JVET_AJ0128_SPO_PROCESSING_DEGREE
+  std::vector<bool>      m_posProcessingDegreeFlag;
+  std::vector<uint32_t>  m_posSubChainIdx;
+#endif
   std::vector<bool>      m_posPrefixFlag;
   std::vector<uint16_t>  m_posPayloadType;
   std::vector<uint16_t>   m_posProcessingOrder;
