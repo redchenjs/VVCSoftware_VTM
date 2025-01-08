@@ -148,7 +148,7 @@ private:
   EVP_PKEY *m_pubKey    = nullptr;
   DSCStatus m_certVerificationStatus = DSCStatus::DSC_Uninitalized;
 public:
-~DscVerificator()
+  ~DscVerificator()
   {
     uninitDscVerificator();
   };
@@ -156,6 +156,9 @@ public:
   DSCStatus verifyCert (const std::string &certFile, const std::string &trustStoreDir);
   DSCStatus verifyPacket (std::vector<uint8_t> &packet, std::vector<uint8_t> &signature);
   void      uninitDscVerificator ();
+
+  bool isInitialized() { return m_isInitialized; };
+
 protected:
   bool xLocateCertificate (const std::string &certificateURI, const std::string &keyStoreDir, std::string &targetPath);
 
@@ -210,6 +213,8 @@ public:
   void signSubstream (int substreamId, std::vector<uint8_t> &signature);
   bool verifySubstream (int substreamId, std::vector<uint8_t> &signature);
   void uninitDscSubstreamManager();
+
+  bool isVerificationActive();
 protected:
   void createDatapacket (int substreamId, std::vector<uint8_t> &dataPacket);
 

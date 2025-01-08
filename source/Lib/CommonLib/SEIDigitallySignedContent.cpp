@@ -239,6 +239,12 @@ bool DscSubstreamManager::initVerificator (const std::string &keyStoreDir, const
   return true;
 }
 
+bool DscSubstreamManager::isVerificationActive()
+{
+  return m_isInitialized && m_dscVerify.isInitialized();
+}
+
+
 void DscSubstreamManager::addToSubstream (int substreamId, const char *data, size_t length)
 {
   CHECK(substreamId >= m_substream.size(), "Invalid substream");
