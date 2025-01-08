@@ -109,6 +109,8 @@
 
 #define JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION      1 // SEI encoder optimization information
 
+#define JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION      1 // JVET-AJ0234 Proposal 1: Allow patch-wise operation when using spatial extrapolation
+
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS
 #define REUSE_CU_RESULTS_WITH_MULTIPLE_TUS                1

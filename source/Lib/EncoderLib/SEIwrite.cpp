@@ -2034,17 +2034,22 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     {
       xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
       xWriteFlag(sei.m_constantPatchSizeFlag, "nnpfc_constant_patch_size_flag");
-      if (sei.m_constantPatchSizeFlag)
-      {
-        xWriteUvlc(sei.m_patchWidthMinus1, "nnpfc_patch_width_minus1");
-        xWriteUvlc(sei.m_patchHeightMinus1, "nnpfc_patch_height_minus1");
-      }
-      else
-      {
-        xWriteUvlc(sei.m_extendedPatchWidthCdDeltaMinus1, "extended_nnpfc_patch_width_cd_delta_minus1");
-        xWriteUvlc(sei.m_extendedPatchHeightCdDeltaMinus1, "extended_nnpfc_patch_height_cd_delta_minus1");
-      }
+#ifdef JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION
     }
+#endif
+    if (sei.m_constantPatchSizeFlag)
+    {
+      xWriteUvlc(sei.m_patchWidthMinus1, "nnpfc_patch_width_minus1");
+      xWriteUvlc(sei.m_patchHeightMinus1, "nnpfc_patch_height_minus1");
+    }
+    else
+    {
+      xWriteUvlc(sei.m_extendedPatchWidthCdDeltaMinus1, "extended_nnpfc_patch_width_cd_delta_minus1");
+      xWriteUvlc(sei.m_extendedPatchHeightCdDeltaMinus1, "extended_nnpfc_patch_height_cd_delta_minus1");
+    }
+#ifndef JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION
+    }
+#endif
     xWriteUvlc(sei.m_paddingType, "nnpfc_padding_type");
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {
