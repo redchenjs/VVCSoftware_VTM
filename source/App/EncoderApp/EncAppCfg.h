@@ -854,6 +854,9 @@ protected:
   bool                  m_poSEIBreadthFirstFlag;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
+#if JVET_AJ0128_SPO_PROCESSING_DEGREE
+  std::vector<bool>     m_poSEIProcessingDegreeFlag;
+#endif
   std::vector<bool>     m_poSEIPrefixFlag;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;

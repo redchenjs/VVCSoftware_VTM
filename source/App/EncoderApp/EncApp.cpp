@@ -1450,6 +1450,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPoSEIBreadthFirstFlag                             (m_poSEIBreadthFirstFlag);
   m_cEncLib.setPoSEIWrappingFlag                                 (m_poSEIWrappingFlag);
   m_cEncLib.setPoSEIImportanceFlag                               (m_poSEIImportanceFlag);
+#if JVET_AJ0128_SPO_PROCESSING_DEGREE
+  m_cEncLib.setPoSEIProcessingDegreeFlag                         (m_poSEIProcessingDegreeFlag);
+#endif
   m_cEncLib.setPoSEIPrefixFlag                                   (m_poSEIPrefixFlag);
   m_cEncLib.setPoSEIPayloadType                                  (m_poSEIPayloadType);
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);

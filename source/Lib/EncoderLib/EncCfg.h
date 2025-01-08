@@ -956,6 +956,9 @@ protected:
   bool                  m_poSEIBreadthFirstFlag;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
+#if JVET_AJ0128_SPO_PROCESSING_DEGREE
+  std::vector<bool>     m_poSEIProcessingDegreeFlag;
+#endif
   std::vector<bool>     m_poSEIPrefixFlag;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
@@ -2820,6 +2823,10 @@ public:
   bool     getPoSEIWrappingFlag(uint16_t idx)                  const { return m_poSEIWrappingFlag[idx]; }
   void     setPoSEIImportanceFlag(const std::vector<bool>& b)        { m_poSEIImportanceFlag = b; }
   bool     getPoSEIImportanceFlag(uint16_t idx)                const { return m_poSEIImportanceFlag[idx]; }
+#if JVET_AJ0128_SPO_PROCESSING_DEGREE
+  void     setPoSEIProcessingDegreeFlag(const std::vector<bool>& b)  { m_poSEIProcessingDegreeFlag = b; }
+  bool     getPoSEIProcessingDegreeFlag(uint16_t idx)          const { return m_poSEIProcessingDegreeFlag[idx]; }
+#endif
   void     setPoSEIPrefixFlag(const std::vector<bool>& b)           { m_poSEIPrefixFlag = b; }
   bool     getPoSEIPrefixFlag(uint16_t idx)                   const { return m_poSEIPrefixFlag[idx]; }
   void     setPoSEIPayloadType(const std::vector<uint16_t>& b)       { m_poSEIPayloadType = b; }
