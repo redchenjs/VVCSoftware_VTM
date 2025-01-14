@@ -699,7 +699,7 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
       }
 #endif
 #if JVET_AH2006_TXTDESCRINFO_SEI
-      case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
+      case SEI::PayloadType::TEXT_DESCRIPTION:
       {
         SEITextDescription *seiTextDescription = new SEITextDescription();
         initSEITextDescription(seiTextDescription);
