@@ -708,6 +708,9 @@ protected:
   uint32_t m_sptiSourceType;
   uint32_t m_sptiTimeScale;
   uint32_t m_sptiNumUnitsInElementalInterval;
+#if JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG
+  bool     m_sptiDirectionFlag;
+#endif
 
   bool                    m_nnPostFilterSEICharacteristicsEnabled;
   bool                    m_nnPostFilterSEICharacteristicsUseSuffixSEI;
@@ -2078,6 +2081,10 @@ public:
   uint32_t getmSptiSEITimeScale() { return m_sptiTimeScale; }
   void     setmSptiSEINumUnitsInElementalInterval(uint32_t b) { m_sptiNumUnitsInElementalInterval = b; }
   uint32_t getmSptiSEINumUnitsInElementalInterval() { return m_sptiNumUnitsInElementalInterval; }
+#if JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG
+  void     setmSptiSEIDirectionFlag(bool b) { m_sptiDirectionFlag = b; }
+  uint32_t getmSptiSEIDirectionFlag() { return m_sptiDirectionFlag; }
+#endif
 
   void        setNNPostFilterSEICharacteristicsEnabled(bool enabledFlag)                                                { m_nnPostFilterSEICharacteristicsEnabled = enabledFlag; }
   bool        getNNPostFilterSEICharacteristicsEnabled() const                                                          { return m_nnPostFilterSEICharacteristicsEnabled; }

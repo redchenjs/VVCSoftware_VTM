@@ -67,6 +67,8 @@
 
 #define JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG              1 // Add nnpfc_inband_prompt_flag to gate NNPF text prompt
 
+#define JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG               1 // Add direction flag to SPTI SEI MESSAGE
+
 //########### place macros to be be kept below this line ###############
 
 #ifndef JVET_AJ0151_DSC_SEI
