@@ -67,6 +67,8 @@
 
 #define JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG              1 // Add nnpfc_inband_prompt_flag to gate NNPF text prompt
 
+#define JVET_AJ0048_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList
+
 //########### place macros to be be kept below this line ###############
 
 #ifndef JVET_AJ0151_DSC_SEI

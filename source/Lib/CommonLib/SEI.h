@@ -250,6 +250,10 @@ public:
     case SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO:
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
 #endif
+#if JVET_AJ0048_SPO_SEI_LIST
+    case SEI::PayloadType::OBJECT_MASK_INFO:
+    case SEI::PayloadType::MODALITY_INFORMATION:
+#endif
      return true;
     default:
       return false;
