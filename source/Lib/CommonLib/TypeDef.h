@@ -67,12 +67,30 @@
 
 #define JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG              1 // Add nnpfc_inband_prompt_flag to gate NNPF text prompt
 
+#define JVET_AD0067_INCLUDE_SYNTAX                        1 // include nnpfc_full_range_flag syntax element in the nnpfc sei message when nnpfc_separate_colour_description_present_flag is equal to 1 and when nnpfc_out_format_idc is equal to 1.
+
+#define JVET_AH2006_EOI_SEI                               1 // Implementation of Encoder Optimizaion Information SEI message
+
+#define JVET_AG0322_MODALITY_INFORMATION                  1 // Implementation of Modality Information SEI message
+
+#define NNPFC_SPATIAL_EXTRAPOLATION                       1 // Implementation of the spatial extrapolation purpose
+
+#define JVET_AH2006_TXTDESCRINFO_SEI                      1 // Text description information message
+#if JVET_AH2006_TXTDESCRINFO_SEI
+#define JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE          1 // Define persistence scop for text description information SEI to be purpose specific
+#endif
+#if JVET_AH2006_TXTDESCRINFO_SEI
+#define JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR        1 // Text description SEI purpose for encoder description
+#endif
+
+#define JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION      1 // SEI encoder optimization information
+
+#define JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION      1 // JVET-AJ0234 Proposal 1: Allow patch-wise operation when using spatial extrapolation
+
 //########### place macros to be be kept below this line ###############
 
 #ifndef JVET_AJ0151_DSC_SEI
-
 #define JVET_AJ0151_DSC_SEI   1                      // Digitally signed content signing and verification (requires OpenSSL v3)
-
 #endif
 
 #define GDR_ENABLED   1
@@ -90,26 +108,6 @@
 #define JVET_M0497_MATRIX_MULT                            0 // 0: Fast method; 1: Matrix multiplication
 
 #define APPLY_SBT_SL_ON_MTS                               1 // apply save & load fast algorithm on inter MTS when SBT is on
-
-#define JVET_AD0067_INCLUDE_SYNTAX                        1 // include nnpfc_full_range_flag syntax element in the nnpfc sei message when nnpfc_separate_colour_description_present_flag is equal to 1 and when nnpfc_out_format_idc is equal to 1.
-
-#define JVET_AH2006_EOI_SEI                               1 // Implementation of Encoder Optimizaion Information SEI message 
-
-#define JVET_AG0322_MODALITY_INFORMATION                  1 // Implementation of Modality Information SEI message
-
-#define NNPFC_SPATIAL_EXTRAPOLATION                       1 // Implementation of the spatial extrapolation purpose
-
-#define JVET_AH2006_TXTDESCRINFO_SEI                      1 // Text description information message 
-#if JVET_AH2006_TXTDESCRINFO_SEI
-#define JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE          1 // Define persistence scop for text description information SEI to be purpose specific
-#endif
-#if JVET_AH2006_TXTDESCRINFO_SEI
-#define JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR        1 // Text description SEI purpose for encoder description
-#endif
-
-#define JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION      1 // SEI encoder optimization information
-
-#define JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION      1 // JVET-AJ0234 Proposal 1: Allow patch-wise operation when using spatial extrapolation
 
 #define REUSE_CU_RESULTS                                  1
 #if REUSE_CU_RESULTS

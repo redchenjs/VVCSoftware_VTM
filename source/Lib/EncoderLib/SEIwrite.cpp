@@ -208,7 +208,7 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     break;
 #endif 
 #if JVET_AH2006_TXTDESCRINFO_SEI
-  case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
+  case SEI::PayloadType::TEXT_DESCRIPTION:
     xWriteSEITextDescription(*static_cast<const SEITextDescription*>(&sei));
     break;
 #endif
