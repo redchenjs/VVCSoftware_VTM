@@ -110,7 +110,7 @@ public:
     MODALITY_INFORMATION = 218,
 #endif
 #if JVET_AH2006_TXTDESCRINFO_SEI
-    SEI_TEXT_DESCRIPTION                       = 219,
+    TEXT_DESCRIPTION                        = 219,
 #endif
 #if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
     DIGITALLY_SIGNED_CONTENT_INITIALIZATION = 220,
@@ -233,7 +233,7 @@ public:
     case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
     case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
 #if JVET_AH2006_TXTDESCRINFO_SEI
-    case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
+    case SEI::PayloadType::TEXT_DESCRIPTION:
 #endif
 #if JVET_AJ0129_SPO_SEI_LIST
     case SEI::PayloadType::FILLER_PAYLOAD:
@@ -1610,7 +1610,7 @@ public:
 class SEITextDescription : public SEI
 {
 public:
-  PayloadType payloadType() const { return PayloadType::SEI_TEXT_DESCRIPTION; }
+  PayloadType payloadType() const { return PayloadType::TEXT_DESCRIPTION; }
 
   SEITextDescription() {}
   SEITextDescription(const SEITextDescription& sei);
@@ -1628,6 +1628,7 @@ public:
   std::vector<std::string> m_textDescriptionString;
 };
 #endif
+
 #if JVET_AJ0207_GFV
 class SEIGenerativeFaceVideo : public SEI
 {

@@ -546,7 +546,7 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
         pDecodedMessageOutputStream);
       break;
 #if JVET_AH2006_TXTDESCRINFO_SEI
-    case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
+    case SEI::PayloadType::TEXT_DESCRIPTION:
       sei = new SEITextDescription;
       xParseSEITextDescription((SEITextDescription&)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
