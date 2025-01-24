@@ -267,7 +267,7 @@ void DscSubstreamManager::createDatapacket (int substreamId, std::vector<uint8_t
     if (m_isFirstSubstream)
     {
       refDigest.resize(curDigest.size());
-      std::memset(refDigest.data(), 0, refDigest.size());
+      std::memset(refDigest.data(), 0xFF, refDigest.size());
     }
     else
     {
