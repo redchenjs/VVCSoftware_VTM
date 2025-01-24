@@ -306,11 +306,16 @@ void DscSubstreamManager::signSubstream (int substreamId, std::vector<uint8_t> &
 
 bool DscSubstreamManager::verifySubstream (int substreamId, std::vector<uint8_t> &signature)
 {
+  if (!m_isInitialized || !m_dscVerify.isInitialized() )
+  {
+    std::cerr << "Cannot verify signature for substream " << substreamId << ". Not initialized." << std::endl;
+    return false;
+  }
   printf ("DSC: verifying substream %d\n", substreamId);
   CHECK(substreamId >= m_substream.size(), "Invalid substream");
   if (! m_substream[substreamId].calculateHash())
   {
-    std::cout << "Cannot verify signature for substream " << substreamId << " because no NAL units are present in that substream." << std::endl;
+    std::cerr << "Cannot verify signature for substream " << substreamId << " because no NAL units are present in that substream." << std::endl;
     return false;
   }
   std::vector<uint8_t> dataPacket;
@@ -586,7 +591,7 @@ DSCStatus DscVerificator::verifyPacket (std::vector<uint8_t> &packet, std::vecto
     unsigned long err = ERR_get_error();
     char err_msg[120];
     ERR_error_string_n(err, err_msg, sizeof(err_msg));
-    std::cout << "Verification error: " << err_msg << "\n";
+    std::cerr << "Verification error: " << err_msg << "\n";
   }
   return DSCStatus::DSC_Error;
 }

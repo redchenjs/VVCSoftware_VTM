@@ -715,28 +715,29 @@ Picture* DecLib::xGetNewPicBuffer( const SPS &sps, const PPS &pps, const uint32_
 #if JVET_AJ0151_DSC_SEI
 void DecLib::xStoreNALUnitForSignature(InputNALUnit &nalu)
 {
-  if (m_dscSubstreamManager.isVerificationActive())
-  {
-    std::ostringstream rbspPayload;
-    binNalUnit binNalu;
-    binNalu.nalUnitType = nalu.m_nalUnitType;
-    binNalu.length  = nalu.getBitstream().getOrigFifo().size();
-    binNalu.data = new uint8_t [binNalu.length];
+  std::ostringstream rbspPayload;
+  binNalUnit binNalu;
+  binNalu.nalUnitType = nalu.m_nalUnitType;
+  binNalu.length  = nalu.getBitstream().getOrigFifo().size();
+  binNalu.data = new uint8_t [binNalu.length];
 
-    std::memcpy(binNalu.data, nalu.getBitstream().getOrigFifo().data(), binNalu.length);
+  std::memcpy(binNalu.data, nalu.getBitstream().getOrigFifo().data(), binNalu.length);
 
-    m_signedContentNalUnitBuffer.push_back(binNalu);
-    nalu.getBitstream().clearOrigFifo();
-  }
+  m_signedContentNalUnitBuffer.push_back(binNalu);
+  nalu.getBitstream().clearOrigFifo();
 }
 
 void DecLib::xProcessStoredNALUnitsForSignature(int substreamId)
 {
+  const bool verificationActive = m_dscSubstreamManager.isVerificationActive();
   if (m_dscSubstreamManager.isVerificationActive())
   {
     for (auto nalu: m_signedContentNalUnitBuffer)
     {
-      m_dscSubstreamManager.addToSubstream(substreamId, (char*)nalu.data, nalu.length);
+      if (verificationActive)
+      {
+        m_dscSubstreamManager.addToSubstream(substreamId, (char*)nalu.data, nalu.length);
+      }
       free (nalu.data);
     }
     m_signedContentNalUnitBuffer.clear();
