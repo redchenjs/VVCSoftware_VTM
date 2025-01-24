@@ -3858,6 +3858,9 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
   switch (nalu.m_nalUnitType)
   {
   case NAL_UNIT_VPS:
+#if JVET_AJ0151_DSC_SEI
+    xStoreNALUnitForSignature(nalu);
+#endif
     xDecodeVPS(nalu);
     if (getTOlsIdxExternalFlag())
     {
