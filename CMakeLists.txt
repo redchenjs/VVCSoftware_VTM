@@ -37,6 +37,8 @@ if (DEFINED ENABLE_HIGH_BITDEPTH)
   set( ENABLE_HIGH_BITDEPTH OFF CACHE BOOL "ENABLE_HIGH_BITDEPTH will be set to this value" )
 endif()
 
+set( ENABLE_SEARCH_OPENSSL ON CACHE BOOL "ENABLE_SEARCH_OPENSSL will be set to this value" )
+
 if( CMAKE_COMPILER_IS_GNUCC )
   set( BUILD_STATIC OFF CACHE BOOL "Build static executables" )
 endif()

@@ -73,7 +73,7 @@ if( DEFINED ENABLE_HIGH_BITDEPTH )
   endif()
 endif()
 
-if (NOT (DEFINED BUILD_SHARED_LIBS ))
+if ( ENABLE_SEARCH_OPENSSL )
   find_package(OpenSSL)
 endif()
 
