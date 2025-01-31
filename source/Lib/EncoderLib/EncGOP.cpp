@@ -7133,7 +7133,7 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
           for (const auto &pic: rcListPic)
           {
             int refLayerIdx = vps->getGeneralLayerIdx(pic->layerId);
-            if (refLayerIdx == rpl->getInterLayerRefPicIdx(ii) && pic->referenced && pic->getPOC() == curPic->getPOC()
+            if (refLayerIdx == vps->getDirectRefLayerIdx(layerIdx, rpl->getInterLayerRefPicIdx(ii)) && pic->referenced && pic->getPOC() == curPic->getPOC()
                 && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx) && xCheckMaxTidILRefPics(layerIdx, pic, slice->isIRAP()))
             {
               localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
