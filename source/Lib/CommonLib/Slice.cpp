@@ -1710,7 +1710,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
   //Check short term ref pics
   for (int ii = 0; ii < numberOfPictures; ii++)
   {
-    if (pRPL->isRefPicLongterm(ii))
+    if (pRPL->isRefPicLongterm(ii) && !pRPL->isInterLayerRefPic( ii ) )
     {
       continue;
     }
@@ -1721,14 +1721,25 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
     while (iterPic != rcListPic.end())
     {
       rpcPic = *(iterPic++);
-      if (rpcPic->getPOC() == this->getPOC() + pRPL->getRefPicIdentifier(ii) && rpcPic->referenced && rpcPic->layerId == m_nuhLayerId)
+      if (!pRPL->isInterLayerRefPic(ii))
       {
-        isAvailable = 1;
-        break;
+        if (rpcPic->getPOC() == this->getPOC() + pRPL->getRefPicIdentifier(ii) && rpcPic->referenced && rpcPic->layerId == m_nuhLayerId)
+        {
+          isAvailable = 1;
+          break;
+        }
+      }
+      else
+      {
+        if (rpcPic->getPOC() == this->getPOC() && rpcPic->referenced && rpcPic->layerId == pRPL->getInterLayerRefPicIdx(ii))
+        {
+          isAvailable = 1;
+          break;
+        }
       }
     }
     //report that a picture is lost if it is in the Reference Picture List but not in the DPB
-    if (isAvailable == 0 && pRPL->getNumberOfShorttermPictures() > 0)
+    if (isAvailable == 0 && (pRPL->getNumberOfShorttermPictures() > 0 || pRPL->getNumberOfInterLayerPictures() > 0))
     {
       if (printErrors)
       {
