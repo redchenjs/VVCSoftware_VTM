@@ -66,7 +66,6 @@
 
 
 
-#define JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR        1 // Text description SEI purpose for encoder description
 
 #define JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION      1 // SEI encoder optimization information
 

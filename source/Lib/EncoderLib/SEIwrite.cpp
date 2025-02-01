@@ -2115,11 +2115,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
 
 void SEIWriter::xWriteSEITextDescription(const SEITextDescription &sei)
 {
-#if JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR
   CHECK(sei.m_textDescriptionPurpose > 6, "txt_descr_purpose shall be in the range 0-6");
-#else
-  CHECK(sei.m_textDescriptionPurpose > 5, "txt_descr_purpose shall be in the range 0-5");
-#endif
   xWriteCode(sei.m_textDescriptionPurpose, 8, "txt_descr_purpose");
   xWriteFlag(sei.m_textCancelFlag, "txt_cancel_flag");
   if (!sei.m_textCancelFlag) 
