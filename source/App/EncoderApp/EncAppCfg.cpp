@@ -2176,12 +2176,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
   opts.addOptions()("SEITextDescriptionID", m_SEITextDescriptionID, 1u, "Identifier value of this text description information SEI message, must be in the range 1-16383");
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
   opts.addOptions()("SEITextDescriptionCancelFlag", m_SEITextCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_purpose");
   opts.addOptions()("SEITextDescriptionIDCancelFlag", m_SEITextIDCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_id and the same txt_descr_purpose");
-#else
-  opts.addOptions()("SEITextDescriptionCancelFlag", m_SEITextCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_id");
-#endif
   opts.addOptions()("SEITextDescriptionPersistenceFlag", m_SEITextPersistenceFlag, true, "Specifies the persistence of the text information description message for the current layer");
 #if JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR
   opts.addOptions()("SEITextDescriptionPurpose", m_SEITextDescriptionPurpose, 0u, "Indicates the purpose of the text description, must be in the range 0-6");

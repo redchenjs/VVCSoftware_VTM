@@ -2115,32 +2115,21 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
 
 void SEIWriter::xWriteSEITextDescription(const SEITextDescription &sei)
 {
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
 #if JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR
   CHECK(sei.m_textDescriptionPurpose > 6, "txt_descr_purpose shall be in the range 0-6");
 #else
   CHECK(sei.m_textDescriptionPurpose > 5, "txt_descr_purpose shall be in the range 0-5");
 #endif
   xWriteCode(sei.m_textDescriptionPurpose, 8, "txt_descr_purpose");
-#else
-  CHECK((sei.m_textDescriptionID < 1 || sei.m_textDescriptionID > 16383), "text description id must be in the range 1-16383");
-  xWriteCode(sei.m_textDescriptionID, 14, "txt_descr_id");
-#endif
   xWriteFlag(sei.m_textCancelFlag, "txt_cancel_flag");
   if (!sei.m_textCancelFlag) 
   {
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
     CHECK((sei.m_textDescriptionID < 1 || sei.m_textDescriptionID > 16383), "text description id must be in the range 1-16383");
     xWriteCode(sei.m_textDescriptionID, 13, "txt_descr_id");
     xWriteFlag(sei.m_textIDCancelFlag, "txt_id_cancel_flag");
     if (!sei.m_textIDCancelFlag) 
     {
-#endif
       xWriteFlag(sei.m_textPersistenceFlag, "txt_persistence_flag");
-#if !JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
-      CHECK(sei.m_textDescriptionPurpose>5, "txt_descr_purpose shall be in the range 0-5");
-      xWriteCode(sei.m_textDescriptionPurpose, 8, "txt_descr_purpose");
-#endif
       xWriteCode(sei.m_textNumStringsMinus1, 8, "txt_num_strings_minus1");
       for (int i=0; i<=sei.m_textNumStringsMinus1; i++)
       {
@@ -2148,9 +2137,7 @@ void SEIWriter::xWriteSEITextDescription(const SEITextDescription &sei)
         xWriteString(sei.m_textDescriptionStringLang[i], "txt_descr_string_lang[i]");
         xWriteString(sei.m_textDescriptionString[i], "txt_descr_string[i]");
       }
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
     }
-#endif
   }
 }
 

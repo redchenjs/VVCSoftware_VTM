@@ -964,9 +964,7 @@ protected:
   std::vector<int32_t> m_postFilterHintValues;
   uint16_t                 m_textDescriptionSEIId;
   bool                     m_textSEICancelFlag;
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
   bool                     m_textSEIIDCancelFlag;
-#endif
   bool                     m_textSEIPersistenceFlag;
   uint8_t                  m_textSEIDescriptionPurpose;
   uint8_t                  m_textSEINumStringsMinus1;
@@ -2834,10 +2832,8 @@ public:
   uint32_t     getTextDescriptionSEIId() {return m_textDescriptionSEIId;}
   void         setTextSEICancelFlag(bool b) {m_textSEICancelFlag = b;}
   bool         getTextSEICancelFlag() {return m_textSEICancelFlag;}
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
   void         setTextSEIIDCancelFlag(bool b) { m_textSEIIDCancelFlag = b; }
   bool         getTextSEIIDCancelFlag() { return m_textSEIIDCancelFlag; }
-#endif
   void         setTextSEIPersistenceFlag(bool b) {m_textSEIPersistenceFlag = b;}
   bool         getTextSEIPersistenceFlag() {return m_textSEIPersistenceFlag;}
   void         setTextSEIPurpose(uint8_t i) {m_textSEIDescriptionPurpose = i;}
