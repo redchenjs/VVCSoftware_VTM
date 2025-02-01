@@ -62,13 +62,6 @@
 
 
 
-
-
-
-
-
-
-
 //########### place macros to be be kept below this line ###############
 
 #ifndef JVET_AJ0151_DSC_SEI
