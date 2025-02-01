@@ -3388,13 +3388,11 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       }
     }
 
-#if JVET_AD0067_INCLUDE_SYNTAX
     if (sei.m_sepColDescriptionFlag & (sei.m_outFormatIdc == 1))
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_full_range_flag");
       sei.m_fullRangeFlag = val;
     }
-#endif
 
     if (sei.m_outOrderIdc != 0)
     {

@@ -1371,12 +1371,10 @@ void EncApp::xInitLibCfg( int layerIdx )
       m_cEncLib.setNNPostFilterSEICharacteristicsTransCharacteristics  (m_nnPostFilterSEICharacteristicsTransCharacteristics[i],i);
       m_cEncLib.setNNPostFilterSEICharacteristicsMatrixCoeffs          (m_nnPostFilterSEICharacteristicsMatrixCoeffs[i],i);
     }
-#if JVET_AD0067_INCLUDE_SYNTAX
     if (m_cEncLib.getNNPostFilterSEICharacteristicsSepColDescriptionFlag(i) && (m_cEncLib.getNNPostFilterSEICharacteristicsOutFormatIdc(i)==1))
     {
       m_cEncLib.setNNPostFilterSEICharacteristicsFullRangeFlag         (m_nnPostFilterSEICharacteristicsFullRangeFlag[i],i);
     }
-#endif
   }
   m_cEncLib.setNnPostFilterSEIActivationEnabled                  (m_nnPostFilterSEIActivationEnabled);
   m_cEncLib.setNnPostFilterSEIActivationUseSuffixSEI             (m_nnPostFilterSEIActivationUseSuffixSEI);

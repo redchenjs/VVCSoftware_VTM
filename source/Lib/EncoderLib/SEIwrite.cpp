@@ -1996,12 +1996,10 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteCode(sei.m_matrixCoeffs, 8, "nnpfc_matrix_coeffs");
       }
     }
-#if JVET_AD0067_INCLUDE_SYNTAX
     if (sei.m_sepColDescriptionFlag && (sei.m_outFormatIdc == 1))
     {
       xWriteFlag(sei.m_fullRangeFlag, "nnpfc_full_range_flag");
     }
-#endif
     
     if (sei.m_outOrderIdc != 0)
     {   

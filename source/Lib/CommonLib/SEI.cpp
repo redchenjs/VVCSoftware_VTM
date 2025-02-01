@@ -972,9 +972,7 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_inpFormatIdc = sei.m_inpFormatIdc;
   m_auxInpIdc = sei.m_auxInpIdc;
   m_sepColDescriptionFlag = sei.m_sepColDescriptionFlag;
-#if JVET_AD0067_INCLUDE_SYNTAX
   m_fullRangeFlag = sei.m_fullRangeFlag;
-#endif
   m_colPrimaries = sei.m_colPrimaries;
   m_transCharacteristics = sei.m_transCharacteristics;
   m_matrixCoeffs = sei.m_matrixCoeffs;
@@ -1044,9 +1042,7 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_inpFormatIdc == sei.m_inpFormatIdc &&
   m_auxInpIdc == sei.m_auxInpIdc &&
   m_sepColDescriptionFlag == sei.m_sepColDescriptionFlag &&
-#if JVET_AD0067_INCLUDE_SYNTAX
   m_fullRangeFlag == sei.m_fullRangeFlag &&
-#endif
   m_colPrimaries == sei.m_colPrimaries &&
   m_transCharacteristics == sei.m_transCharacteristics &&
   m_matrixCoeffs == sei.m_matrixCoeffs &&

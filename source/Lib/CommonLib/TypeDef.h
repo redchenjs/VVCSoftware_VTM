@@ -62,7 +62,6 @@
 
 
 
-#define JVET_AD0067_INCLUDE_SYNTAX                        1 // include nnpfc_full_range_flag syntax element in the nnpfc sei message when nnpfc_separate_colour_description_present_flag is equal to 1 and when nnpfc_out_format_idc is equal to 1.
 
 #define JVET_AH2006_EOI_SEI                               1 // Implementation of Encoder Optimizaion Information SEI message
 

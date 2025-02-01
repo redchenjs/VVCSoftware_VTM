@@ -1786,12 +1786,10 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
           "nnpfc_out_tensor_chroma_bitdepth_minus8 is equal to nnpfc_out_tensor_luma_bitdepth_minus8 + 1, nnpfc_out_order_idc is equal to 2, outSubHeightC is equal to 1, and outSubWidthC is equal to 1");
       }
     }
-#if JVET_AD0067_INCLUDE_SYNTAX
     if (sei->m_sepColDescriptionFlag && (sei->m_outFormatIdc == 1))
     {
       sei->m_fullRangeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsFullRangeFlag(filterIdx);
     }
-#endif
     sei->m_outOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutOrderIdc(filterIdx);
     CHECK((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0 && (sei->m_outOrderIdc == 0 || sei->m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 0 or 3");
     CHECK((sei->m_purpose & NNPC_PurposeType::COLOURIZATION) != 0 && sei->m_outOrderIdc == 0, "When nnpfc_purpose & 0x20 is not equal to 0, nnpfc_out_order_idc shall not be equal to 0");
