@@ -1150,7 +1150,6 @@ protected:
   bool        m_explicitILRP;
   bool        m_encILOpt;
   double      m_encILOptLambdaModifier;
-#if JVET_AJ0207_GFV
   bool                                 m_generativeFaceVideoEnabled;
   uint32_t                             m_generativeFaceVideoSEINumber;
   bool                                 m_generativeFaceVideoSEIBasePicFlag;
@@ -1189,7 +1188,6 @@ protected:
   std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixHeight;
   std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>   m_generativeFaceVideoSEIMatrixElement;
   std::string                          m_generativeFaceVideoSEIPayloadFilename;
-#endif
     
 public:
   EncCfg()
@@ -3207,7 +3205,6 @@ public:
   bool        getEncILOpt()                            const { return m_encILOpt; }
   void        setEncILOptLambdaModifier(double dValue)       { m_encILOptLambdaModifier = dValue; }
   double      getEncILOptLambdaModifier()              const { return m_encILOptLambdaModifier; }
-#if JVET_AJ0207_GFV
   void              setGenerativeFaceVideoSEIEnabled(bool enabledFlag)                    { m_generativeFaceVideoEnabled = enabledFlag; }
   bool              getGenerativeFaceVideoSEIEnabled()                              const { return m_generativeFaceVideoEnabled; }
   void              setGenerativeFaceVideoSEINumber(uint32_t number)                      { m_generativeFaceVideoSEINumber = number; }
@@ -3284,7 +3281,6 @@ public:
   uint32_t          getGenerativeFaceVideoSEINumMatricesInfo(int idx,int idy)                                                                       const { return m_generativeFaceVideoSEINumMatricesInfo[idx][idy]; }
   void              setGenerativeFaceVideoSEIPayloadFilename(const std::string &payloadFilename)                                                          { m_generativeFaceVideoSEIPayloadFilename = payloadFilename; }
   const std::string getGenerativeFaceVideoSEIPayloadFilename()                                                                                      const { return m_generativeFaceVideoSEIPayloadFilename; }
-#endif
   const EncCfgParam::CfgVPSParameters &getVPSParameters() const
   {
     return m_cfgVPSParameters;

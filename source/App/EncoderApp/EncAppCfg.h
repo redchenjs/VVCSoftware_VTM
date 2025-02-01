@@ -1122,7 +1122,6 @@ protected:
   Level::Name m_levelPtl[MAX_NUM_OLSS];
   int         m_olsPtlIdx[MAX_NUM_OLSS];
 
-#if JVET_AJ0207_GFV
   bool                                 m_generativeFaceVideoEnabled;
   uint32_t                             m_generativeFaceVideoSEINumber;
   bool                                 m_generativeFaceVideoSEIBasePicFlag;
@@ -1161,7 +1160,6 @@ protected:
   std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixHeight;
   std::vector < std::vector<std::vector<std::vector<std::vector<double>>>>>   m_generativeFaceVideoSEIMatrixElement;
   std::string                          m_generativeFaceVideoSEIPayloadFilename;
-#endif
 
 #if EXTENSION_360_VIDEO
   TExt360AppEncCfg m_ext360;

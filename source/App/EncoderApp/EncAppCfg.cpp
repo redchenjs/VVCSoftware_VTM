@@ -776,7 +776,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
   SMultiValueInput<bool>       cfg_nnPostFilterSEIActivationOutputFlagList(0, 1, 1, 0);
 
-#if JVET_AJ0207_GFV
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIId                                  (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEICnt                                 (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIDrivePicFusionFlag                  (0, 2550, 0, 102400);
@@ -806,7 +805,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyValue                      (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag             (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyThrValue                   (0, 2550, 0, 102400);  
-#endif
 
 #if ENABLE_TRACING
   std::string sTracingRule;
@@ -1848,7 +1846,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("TemporalFilterStrengthFrame*", m_gopBasedTemporalFilterStrengths, std::map<int, double>(), "Strength for every * frame in GOP based temporal filter, where * is an integer."
                                                                                                                   " E.g. --TemporalFilterStrengthFrame8 0.95 will enable GOP based temporal filter at every 8th frame with strength 0.95");
   
-#if JVET_AJ0207_GFV
   opts.addOptions()
     ("SEIGenerativeFaceVideoEnabled",                         m_generativeFaceVideoEnabled,                             false,                                                         "Control use of the Generative Face Video SEI on current picture")
     ("SEIGenerativeFaceVideoNumber",                          m_generativeFaceVideoSEINumber,                           0u,                                                            "Total number of Generative Face Video SEI to be carried")
@@ -1888,7 +1885,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("SEIGenerativeFaceVideoChromaKeyValue",                  cfg_generativeFaceVideoSEIChromaKeyValue,                 cfg_generativeFaceVideoSEIChromaKeyValue,                      "specifies the chroma key value corresponding to the c-th colour component")
     ("SEIGenerativeFaceVideoChromaKeyThrPresentFlag",         cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag,        cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag,             "indicates that the syntax element gfv_chroma_thr_value[ i ] is present")
     ("SEIGenerativeFaceVideoChromaKeyThrValue",               cfg_generativeFaceVideoSEIChromaKeyThrValue,              cfg_generativeFaceVideoSEIChromaKeyThrValue,                   "specifies the i-th chroma key threshold value");
-#endif    
   // clang-format on
 
 #if EXTENSION_360_VIDEO
@@ -3940,7 +3936,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_postFilterHintValues[i] = cfg_postFilterHintSEIValues.values[i];
     }
   }
-#if JVET_AJ0207_GFV
   if (m_generativeFaceVideoEnabled)
   {
     CHECK(cfg_generativeFaceVideoSEIId.values.size() != m_generativeFaceVideoSEINumber, "Number of GFV ID must be equal to SEINumber");
@@ -4179,7 +4174,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
   }
-#endif
 
   if( m_costMode == COST_LOSSLESS_CODING )
   {

@@ -120,9 +120,7 @@ public:
 #if GREEN_METADATA_SEI_ENABLED
   void initSEIGreenMetadataInfo(SEIGreenMetadataInfo *sei, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics, SEIComplexityMetrics greenMetadata);
 #endif
-#if JVET_AJ0207_GFV
   void initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int currframeindex);
-#endif
 private:
   EncCfg* m_pcCfg;
   EncLib* m_pcEncLib;

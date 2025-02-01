@@ -59,7 +59,6 @@
 
 
 
-#define JVET_AJ0207_GFV                                   1 // generative face video (GFV) SEI
 
 #define JVET_AJ0151_DSC_SEI_DECODER_SYNTAX                1 // read the Digitally Signed Content SEIs at the decoder
 

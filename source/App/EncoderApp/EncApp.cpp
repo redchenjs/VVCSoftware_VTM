@@ -1593,7 +1593,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setDPFKeyLen(m_dpfKeyLen);
   m_cEncLib.setDPFNonkeyLen(m_dpfNonkeyLen);
 
-#if JVET_AJ0207_GFV
   m_cEncLib.setGenerativeFaceVideoSEIEnabled                            ( m_generativeFaceVideoEnabled );
   m_cEncLib.setGenerativeFaceVideoSEINumber                             ( m_generativeFaceVideoSEINumber );
   m_cEncLib.setGenerativeFaceVideoSEIId                                 ( m_generativeFaceVideoSEIId );
@@ -1632,7 +1631,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setGenerativeFaceVideoSEIMatrixHeight                       ( m_generativeFaceVideoSEIMatrixHeight );
   m_cEncLib.setGenerativeFaceVideoSEIMatrixElement                      ( m_generativeFaceVideoSEIMatrixElement );
   m_cEncLib.setGenerativeFaceVideoSEIPayloadFilename                    ( m_generativeFaceVideoSEIPayloadFilename );
-#endif
 }
 
 void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )

@@ -153,7 +153,6 @@ protected:
 
 protected:
   HRD m_nestedHrd;
-#if JVET_AJ0207_GFV
   void xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo& sei, uint32_t payloadSize,std::ostream* pDecodedMessageOutputStream);
   uint32_t                         baseCoordinateQuantizationFactor;
   uint32_t                                                   basdCoordinatePointNum;
@@ -172,7 +171,6 @@ protected:
   std::vector<uint32_t>                                      baseMatrixWidth;
   std::vector<uint32_t>                                      baseMatrixHeight;
   std::vector<std::vector<std::vector<std::vector<double>>>> prevMatrix;
-#endif
 };
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE

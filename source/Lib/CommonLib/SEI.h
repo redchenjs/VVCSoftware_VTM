@@ -117,9 +117,7 @@ public:
     DIGITALLY_SIGNED_CONTENT_SELECTION      = 221,
     DIGITALLY_SIGNED_CONTENT_VERIFICATION   = 222,
 #endif
-#if JVET_AJ0207_GFV
     GENERATIVE_FACE_VIDEO                      = 223,
-#endif
   };
 
   SEI() {}
@@ -1619,7 +1617,6 @@ public:
 };
 #endif
 
-#if JVET_AJ0207_GFV
 class SEIGenerativeFaceVideo : public SEI
 {
 public:
@@ -1671,7 +1668,6 @@ public:
   std::vector<uint32_t>    m_matrixWidthstore;
   std::vector<uint32_t>    m_matrixHeightstore;
 };
-#endif
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t nnpfaTargetId);
 SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMessages &seiList);
 

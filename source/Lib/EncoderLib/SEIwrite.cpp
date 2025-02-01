@@ -212,11 +212,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEITextDescription(*static_cast<const SEITextDescription*>(&sei));
     break;
 #endif
-#if JVET_AJ0207_GFV
   case SEI::PayloadType::GENERATIVE_FACE_VIDEO:
     xWriteSEIGenerativeFaceVideo(*static_cast<const SEIGenerativeFaceVideo*>(&sei));
     break;
-#endif
 #if JVET_AJ0151_DSC_SEI
   case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION:
     xWriteSEIDigitallySignedContentInitialization(*static_cast<const SEIDigitallySignedContentInitialization *>(&sei));
@@ -2309,7 +2307,6 @@ void SEIWriter::xWriteSEIModalityInfo(const SEIModalityInfo& sei)
 }
 #endif 
 
-#if JVET_AJ0207_GFV
 void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
 {
   uint32_t basePicFlag = 0;
@@ -2680,7 +2677,6 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
     }
   }
 }
-#endif
 
 #if JVET_AJ0151_DSC_SEI
 void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitallySignedContentInitialization &sei)

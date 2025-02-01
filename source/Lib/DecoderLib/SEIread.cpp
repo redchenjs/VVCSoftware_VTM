@@ -654,12 +654,10 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIProcessingOrderNesting((SEIProcessingOrderNesting&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
         pDecodedMessageOutputStream);
       break;
-#if JVET_AJ0207_GFV
     case SEI::PayloadType::GENERATIVE_FACE_VIDEO:
       sei = new SEIGenerativeFaceVideo;
       xParseSEIGenerativeFaceVideo((SEIGenerativeFaceVideo &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
 #if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
     case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION:
       sei = new SEIDigitallySignedContentVerification;
@@ -3969,7 +3967,6 @@ void SEIReader::xParseSEISEIPrefixIndication(SEIPrefixIndication &sei, uint32_t 
   }
 }
 
-#if JVET_AJ0207_GFV
 void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
@@ -4677,7 +4674,6 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
     }
   }
 }
-#endif
 
 #if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
 void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
