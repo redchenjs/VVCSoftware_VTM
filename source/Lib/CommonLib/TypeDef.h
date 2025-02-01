@@ -61,7 +61,6 @@
 
 
 
-#define JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG              1 // Add nnpfc_inband_prompt_flag to gate NNPF text prompt
 
 #define JVET_AD0067_INCLUDE_SYNTAX                        1 // include nnpfc_full_range_flag syntax element in the nnpfc sei message when nnpfc_separate_colour_description_present_flag is equal to 1 and when nnpfc_out_format_idc is equal to 1.
 

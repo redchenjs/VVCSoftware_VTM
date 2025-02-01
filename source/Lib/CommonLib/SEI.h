@@ -1444,15 +1444,9 @@ public:
     , m_spatialExtrapolationRightOffset(0)
     , m_spatialExtrapolationTopOffset(0)
     , m_spatialExtrapolationBottomOffset(0)
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-    , m_spatialExtrapolationPromptPresentFlag(false)
-    , m_prompt("")
 #endif
-#endif
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
     , m_inbandPromptFlag(false)
     , m_prompt("")
-#endif
     , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
   {}
@@ -1535,15 +1529,9 @@ public:
   int32_t        m_spatialExtrapolationRightOffset;
   int32_t        m_spatialExtrapolationTopOffset;
   int32_t        m_spatialExtrapolationBottomOffset;
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-  bool          m_spatialExtrapolationPromptPresentFlag;
-  std::string   m_prompt;
 #endif
-#endif
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
   bool          m_inbandPromptFlag;
   std::string   m_prompt;
-#endif
   std::vector<bool> m_inputPicOutputFlag;
   bool           m_absentInputPicZeroFlag;
   uint32_t       m_numInpPicsInOutputTensor;

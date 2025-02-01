@@ -3282,21 +3282,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_spatialExtrapolationTopOffset = value;
       sei_read_svlc(pDecodedMessageOutputStream, value, "nnpfc_spatial_extrapolation_bottom_offset");
       sei.m_spatialExtrapolationBottomOffset = value;
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_spatial_extrapolation_prompt_present_flag");
-      sei.m_spatialExtrapolationPromptPresentFlag = val;
-      if (sei.m_spatialExtrapolationPromptPresentFlag)
-      {
-        std::string valp;
-        while (!isByteAligned())
-        {
-          sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_alignment_zero_bit_c");
-          CHECK(val != 0, "nnpfc_alignment_zero_bit_c not equal to zero");
-        }
-        sei_read_string(pDecodedMessageOutputStream, valp, "nnpfc_prompt");
-        sei.m_prompt = valp;
-      }
-#endif
     }
 #endif
 
@@ -3309,7 +3294,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_auxiliary_inp_idc");
     sei.m_auxInpIdc = val;
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
     CHECK(val > 3, "The value of nnpfc_auxiliary_inp_idc shall be in the range of 0 to 3");
     if ((sei.m_auxInpIdc & 2) > 0)
     {
@@ -3327,9 +3311,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei.m_prompt = valp;
       }
     }
-#else
-    CHECK(val > 1, "The value of nnpfc_auxiliary_inp_idc shall be in the range of 0 to 1");
-#endif
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
     CHECK(val > 3, "The value of nnpfc_inp_order_idc shall be in the range of 0 to 3");

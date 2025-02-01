@@ -1941,24 +1941,12 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteSvlc(sei.m_spatialExtrapolationRightOffset, "nnpfc_spatial_extrapolation_right_offset");
       xWriteSvlc(sei.m_spatialExtrapolationTopOffset, "nnpfc_spatial_extrapolation_top_offset");
       xWriteSvlc(sei.m_spatialExtrapolationBottomOffset, "nnpfc_spatial_extrapolation_right_offset");
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-      xWriteFlag(sei.m_spatialExtrapolationPromptPresentFlag, "nnpfc_spatial_extrapolation_prompt_present_flag");
-      if (sei.m_spatialExtrapolationPromptPresentFlag)
-      {
-        while (!isByteAligned())
-        {
-          xWriteFlag(0, "nnpfc_alignment_zero_bit_c");
-        }
-        xWriteString(sei.m_prompt, "nnpfc_prompt");
-      }
-#endif
     }
 #endif
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");
     xWriteUvlc(sei.m_auxInpIdc, "nnpfc_auxiliary_inp_idc");
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
     if ((sei.m_auxInpIdc & 2) > 0)
     {
       xWriteFlag(sei.m_inbandPromptFlag, "nnpfc_inband_prompt_flag");
@@ -1971,7 +1959,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteString(sei.m_prompt, "nnpfc_prompt");
       }
     }
-#endif
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     if (sei.m_inpFormatIdc == 1)
     {

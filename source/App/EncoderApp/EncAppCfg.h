@@ -834,15 +834,9 @@ protected:
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[MAX_NUM_NN_POST_FILTERS];
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-  bool                  m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[MAX_NUM_NN_POST_FILTERS];
-  std::string           m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[MAX_NUM_NN_POST_FILTERS];
 #endif
-#endif
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
   bool                  m_nnPostFilterSEICharacteristicsInbandPromptFlag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsPrompt[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEIActivationCancelFlag;
