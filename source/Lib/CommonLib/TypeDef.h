@@ -68,7 +68,6 @@
 
 
 
-#define JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION      1 // JVET-AJ0234 Proposal 1: Allow patch-wise operation when using spatial extrapolation
 
 //########### place macros to be be kept below this line ###############
 
