@@ -962,7 +962,6 @@ protected:
   uint32_t             m_postFilterHintSEIType;
   bool                 m_postFilterHintSEIChromaCoeffPresentFlag;
   std::vector<int32_t> m_postFilterHintValues;
-#if JVET_AH2006_TXTDESCRINFO_SEI
   uint16_t                 m_textDescriptionSEIId;
   bool                     m_textSEICancelFlag;
 #if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
@@ -973,7 +972,6 @@ protected:
   uint8_t                  m_textSEINumStringsMinus1;
   std::vector<std::string> m_textSEIDescriptionStringLang;
   std::vector<std::string> m_textSEIDescriptionString;
-#endif
 
   bool      m_constrainedRaslEncoding;
 
@@ -2832,7 +2830,6 @@ public:
   bool     getPostFilterHintSEIChromaCoeffPresentFlag() { return m_postFilterHintSEIChromaCoeffPresentFlag; }
   void     setPostFilterHintSEIValues(const std::vector<int32_t> &b) { m_postFilterHintValues = b; }
   int32_t  getPostFilterHintSEIValues(int32_t idx) const { return m_postFilterHintValues[idx]; }
-#if JVET_AH2006_TXTDESCRINFO_SEI
   void         setTextDescriptionSEIId(const uint16_t i) {m_textDescriptionSEIId = i;}
   uint32_t     getTextDescriptionSEIId() {return m_textDescriptionSEIId;}
   void         setTextSEICancelFlag(bool b) {m_textSEICancelFlag = b;}
@@ -2851,7 +2848,6 @@ public:
   std::string  getTextSEIDescriptionStringLang(int idx) const {return m_textSEIDescriptionStringLang[idx];}
   void         setTextSEIDescriptionString(const std::vector<std::string> b) {m_textSEIDescriptionString = b;}
   std::string  getTextSEIDescriptionString(int idx) const {return m_textSEIDescriptionString[idx];}
-#endif
 
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }
   void         setWPBiPred            ( bool b )                     { m_useWeightedBiPred = b;    }

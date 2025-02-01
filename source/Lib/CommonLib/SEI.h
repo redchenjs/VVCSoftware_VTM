@@ -105,9 +105,7 @@ public:
     SOURCE_PICTURE_TIMING_INFO = 216,
     OBJECT_MASK_INFO = 217,
     MODALITY_INFORMATION = 218,
-#if JVET_AH2006_TXTDESCRINFO_SEI
     TEXT_DESCRIPTION                        = 219,
-#endif
     DIGITALLY_SIGNED_CONTENT_INITIALIZATION = 220,
     DIGITALLY_SIGNED_CONTENT_SELECTION      = 221,
     DIGITALLY_SIGNED_CONTENT_VERIFICATION   = 222,
@@ -216,9 +214,7 @@ public:
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
     case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
     case SEI::PayloadType::CONTENT_COLOUR_VOLUME:
-#if JVET_AH2006_TXTDESCRINFO_SEI
     case SEI::PayloadType::TEXT_DESCRIPTION:
-#endif
     case SEI::PayloadType::FILLER_PAYLOAD:
     case SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35:
     case SEI::PayloadType::USER_DATA_UNREGISTERED:
@@ -1568,7 +1564,6 @@ public:
   std::vector<int> m_filterHintValues;   // values stored in linear array, [ ( ( component * sizeY + y ) * SizeX ) + x ]
 };
 
-#if JVET_AH2006_TXTDESCRINFO_SEI
 class SEITextDescription : public SEI
 {
 public:
@@ -1589,7 +1584,6 @@ public:
   std::vector<std::string> m_textDescriptionStringLang;
   std::vector<std::string> m_textDescriptionString;
 };
-#endif
 
 class SEIGenerativeFaceVideo : public SEI
 {

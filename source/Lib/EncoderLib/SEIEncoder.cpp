@@ -685,7 +685,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiNNPFC);
         break;
       }
-#if JVET_AH2006_TXTDESCRINFO_SEI
       case SEI::PayloadType::TEXT_DESCRIPTION:
       {
         SEITextDescription *seiTextDescription = new SEITextDescription();
@@ -693,7 +692,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiTextDescription);
         break;
       }
-#endif
       case SEI::PayloadType::FRAME_PACKING:
       {
         SEIFramePacking* sei = new SEIFramePacking;
@@ -811,7 +809,6 @@ void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)
   }
 }
 
-#if JVET_AH2006_TXTDESCRINFO_SEI
 void SEIEncoder::initSEITextDescription(SEITextDescription *seiTestDescrition)
 {
   CHECK(!(m_isInitialized), "Text description information SEI already initialized");
@@ -843,7 +840,6 @@ void SEIEncoder::initSEITextDescription(SEITextDescription *seiTestDescrition)
 #endif
   }
 }
-#endif
 
 template <typename T>
 static void readTokenValue(T            &returnedValue, /// value returned

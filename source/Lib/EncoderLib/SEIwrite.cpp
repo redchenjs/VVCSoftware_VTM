@@ -203,11 +203,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::MODALITY_INFORMATION:
     xWriteSEIModalityInfo(*static_cast<const SEIModalityInfo *>(&sei));
     break;
-#if JVET_AH2006_TXTDESCRINFO_SEI
   case SEI::PayloadType::TEXT_DESCRIPTION:
     xWriteSEITextDescription(*static_cast<const SEITextDescription*>(&sei));
     break;
-#endif
   case SEI::PayloadType::GENERATIVE_FACE_VIDEO:
     xWriteSEIGenerativeFaceVideo(*static_cast<const SEIGenerativeFaceVideo*>(&sei));
     break;
@@ -2115,7 +2113,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
   }
 }
 
-#if JVET_AH2006_TXTDESCRINFO_SEI
 void SEIWriter::xWriteSEITextDescription(const SEITextDescription &sei)
 {
 #if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
@@ -2156,7 +2153,6 @@ void SEIWriter::xWriteSEITextDescription(const SEITextDescription &sei)
 #endif
   }
 }
-#endif
 
 void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
 {

@@ -2175,7 +2175,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies a list indicating whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
   }
 
-#if JVET_AH2006_TXTDESCRINFO_SEI
   opts.addOptions()("SEITextDescriptionID", m_SEITextDescriptionID, 1u, "Identifier value of this text description information SEI message, must be in the range 1-16383");
 #if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
   opts.addOptions()("SEITextDescriptionCancelFlag", m_SEITextCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_purpose");
@@ -2201,7 +2200,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     stringDesc << "SEITextDescriptionString" << i;
     opts.addOptions()(stringDesc.str(), m_SEITextDescriptionString[0], std::string(""), "Specifies the i-th text description information string");
   }
-#endif
 
   po::setDefaults(opts);
   po::ErrorReporter err;
@@ -5745,7 +5743,6 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara(m_piVerPhaseNumReducedResolution > m_piVerPhaseDenMinus1ReducedResolution + 1, "m_piVerPhaseNumReducedResolution must be in the range of 0 to m_piVerPhaseDenMinus1ReducedResolution + 1, inclusive");
   }
 
-#if JVET_AH2006_TXTDESCRINFO_SEI
   xConfirmPara(m_SEITextDescriptionID < 1 && m_SEITextDescriptionID > 16383, "m_SEITextDescriptionID must be in the range of 1 to 16383, inclusive");
 #if  JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR
   xConfirmPara(m_SEITextDescriptionPurpose > 6, "m_SEITextDescriptionPurpose must be in the range of 0 to 6, inclusive");
@@ -5753,7 +5750,6 @@ bool EncAppCfg::xCheckParameter()
   xConfirmPara(m_SEITextDescriptionPurpose > 5, "m_SEITextDescriptionPurpose must be in the range of 0 to 5, inclusive");
 #endif
   xConfirmPara(m_SEITextNumStringsMinus1 > 255, "m_SEITextNumStringsMinus1 must be in the range 0f 0 to 255, inclusive");
-#endif
 
   xConfirmPara(m_log2ParallelMergeLevel < 2, "Log2ParallelMergeLevel should be larger than or equal to 2");
   xConfirmPara(m_log2ParallelMergeLevel > m_ctuSize, "Log2ParallelMergeLevel should be less than or equal to CTU size");

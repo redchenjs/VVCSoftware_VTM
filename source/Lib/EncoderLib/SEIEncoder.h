@@ -105,9 +105,7 @@ public:
   void initSEIPostFilterHint(SEIPostFilterHint *sei);
   void initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei);
   void initSEIModalityInfo(SEIModalityInfo *sei);
-#if JVET_AH2006_TXTDESCRINFO_SEI
   void initSEITextDescription(SEITextDescription *sei);
-#endif
 #if JVET_AJ0151_DSC_SEI
   void initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei);
   void initSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection *sei, int substream);

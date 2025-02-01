@@ -1112,7 +1112,6 @@ SEIPostFilterHint::SEIPostFilterHint(const SEIPostFilterHint& sei)
   m_filterHintValues = sei.m_filterHintValues;
 }
 
-#if JVET_AH2006_TXTDESCRINFO_SEI
   SEITextDescription::SEITextDescription(const SEITextDescription& sei)
   {
     m_textDescriptionID = sei.m_textDescriptionID;
@@ -1131,7 +1130,6 @@ SEIPostFilterHint::SEIPostFilterHint(const SEIPostFilterHint& sei)
       m_textDescriptionString[i] = sei.m_textDescriptionString[i];
     }
   }
-#endif
 
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t id)
 {
