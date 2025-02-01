@@ -571,7 +571,6 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIModalityInfo((SEIModalityInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
     case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION:
       sei = new SEIDigitallySignedContentInitialization;
       xParseSEIDigitallySignedContentInitialization((SEIDigitallySignedContentInitialization &) *sei, payloadSize, pDecodedMessageOutputStream);
@@ -580,7 +579,6 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIDigitallySignedContentSelection;
       xParseSEIDigitallySignedContentSelection((SEIDigitallySignedContentSelection &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -658,12 +656,10 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIGenerativeFaceVideo;
       xParseSEIGenerativeFaceVideo((SEIGenerativeFaceVideo &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
     case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION:
       sei = new SEIDigitallySignedContentVerification;
       xParseSEIDigitallySignedContentVerification((SEIDigitallySignedContentVerification &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -4675,7 +4671,6 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
   }
 }
 
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
 void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   unsigned int val;
@@ -4730,5 +4725,4 @@ void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedCo
     sei.dscvSignature[i] = val;
   }
 }
-#endif
 //! \}

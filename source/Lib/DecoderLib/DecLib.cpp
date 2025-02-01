@@ -58,9 +58,7 @@
 #include "CommonLib/CodingStatistics.h"
 #endif
 
-#if JVET_AJ0151_DSC_SEI || JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
 #include "SEIDigitallySignedContent.h"
-#endif
 
 bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::string &bitstreamFileName,
                       const int layerIdx, EnumArray<ParameterSetMap<APS>, ApsType> *apsMap, 

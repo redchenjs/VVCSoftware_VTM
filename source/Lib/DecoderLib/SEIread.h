@@ -47,9 +47,7 @@
 
 #include "CommonLib/SEI.h"
 
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
 #include "CommonLib/SEIDigitallySignedContent.h"
-#endif
 
 class InputBitstream;
 
@@ -138,11 +136,9 @@ protected:
 #if JVET_AH2006_TXTDESCRINFO_SEI
   void xParseSEITextDescription(SEITextDescription &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
 #endif
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
   void xParseSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIDigitallySignedContentSelection     (SEIDigitallySignedContentSelection &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIDigitallySignedContentVerification  (SEIDigitallySignedContentVerification &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
-#endif
 
   void sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName);
   void sei_read_code(std::ostream *pOS, uint32_t length, uint32_t &ruiCode, const char *pSymbolName);

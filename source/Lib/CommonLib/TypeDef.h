@@ -60,7 +60,6 @@
 
 
 
-#define JVET_AJ0151_DSC_SEI_DECODER_SYNTAX                1 // read the Digitally Signed Content SEIs at the decoder
 
 #define JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG              1 // Add nnpfc_inband_prompt_flag to gate NNPF text prompt
 
