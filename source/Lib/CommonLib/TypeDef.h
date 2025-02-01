@@ -67,7 +67,6 @@
 
 
 
-#define JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION      1 // SEI encoder optimization information
 
 #define JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION      1 // JVET-AJ0234 Proposal 1: Allow patch-wise operation when using spatial extrapolation
 
@@ -801,7 +800,6 @@ enum EOI_OptimizationType
   PRIVACY_PROTECTION_OPTIMIZATION = 32,
 };
 
-#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
 enum EOI_PRIVACY_PROTECTION
 {
   BLURRING = 1,
@@ -818,7 +816,6 @@ enum EOI_OBJECT_BASED
   OVERWRITTEN_NONCONSTANT = 8,
   SIZE_BASED = 16
 };
-#endif
 
 enum NNPC_PaddingType
 {

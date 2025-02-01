@@ -2163,19 +2163,12 @@ void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInf
     xWriteFlag(sei.m_persistenceFlag, "eoi_persistence_flag");
     xWriteCode(sei.m_forHumanViewingIdc,2, "eoi_for_human_viewing_idc");
     xWriteCode(sei.m_forMachineAnalysisIdc,2, "eoi_for_machine_analysis_idc");
-#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
     xWriteCode(0, 2, "eoi_reserved_zero_2bits");
-#endif
     xWriteCode(sei.m_type, 16, "eoi_type");
 
     if ((sei.m_type & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) != 0)
     {
-#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
       xWriteCode(sei.m_objectBasedIdc, 16, "eoi_object_based_idc");
-#else
-      xWriteUvlc(sei.m_objectBasedIdc, "eoi_object_based_idc");
-
-#endif
     }
     if ((sei.m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
     {
@@ -2198,11 +2191,7 @@ void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInf
     }
     if ((sei.m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
     {
-#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
       xWriteCode(sei.m_privacyProtectionTypeIdc, 16, "eoi_privacy_protection_type_idc");
-#else
-      xWriteCode(sei.m_privacyProtectionTypeIdc, 4, "eoi_privacy_protection_type_idc");
-#endif
       xWriteCode(sei.m_privacyProtectedInfoType, 8, "eoi_privacy_protected_info_type");
     }
   }
