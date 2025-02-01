@@ -1930,7 +1930,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_numberExtrapolatedPicturesMinus1, "nnpfc_extrapolated_pics_minus1");
     }
 
-#if NNPFC_SPATIAL_EXTRAPOLATION
     if((sei.m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
     {
       xWriteSvlc(sei.m_spatialExtrapolationLeftOffset, "nnpfc_spatial_extrapolation_left_offset");
@@ -1938,7 +1937,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteSvlc(sei.m_spatialExtrapolationTopOffset, "nnpfc_spatial_extrapolation_top_offset");
       xWriteSvlc(sei.m_spatialExtrapolationBottomOffset, "nnpfc_spatial_extrapolation_right_offset");
     }
-#endif
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");

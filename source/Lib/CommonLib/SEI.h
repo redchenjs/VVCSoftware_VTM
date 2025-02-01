@@ -1433,12 +1433,10 @@ public:
     , m_totalKilobyteSize(0)
     , m_numberInputDecodedPicturesMinus1(0)
     , m_numberExtrapolatedPicturesMinus1(0)
-#if NNPFC_SPATIAL_EXTRAPOLATION
     , m_spatialExtrapolationLeftOffset(0)
     , m_spatialExtrapolationRightOffset(0)
     , m_spatialExtrapolationTopOffset(0)
     , m_spatialExtrapolationBottomOffset(0)
-#endif
     , m_inbandPromptFlag(false)
     , m_prompt("")
     , m_absentInputPicZeroFlag(false)
@@ -1516,12 +1514,10 @@ public:
   uint32_t       m_numberInputDecodedPicturesMinus1;
   std::vector<uint32_t> m_numberInterpolatedPictures;
   uint32_t       m_numberExtrapolatedPicturesMinus1;
-#if NNPFC_SPATIAL_EXTRAPOLATION
   int32_t        m_spatialExtrapolationLeftOffset;
   int32_t        m_spatialExtrapolationRightOffset;
   int32_t        m_spatialExtrapolationTopOffset;
   int32_t        m_spatialExtrapolationBottomOffset;
-#endif
   bool          m_inbandPromptFlag;
   std::string   m_prompt;
   std::vector<bool> m_inputPicOutputFlag;

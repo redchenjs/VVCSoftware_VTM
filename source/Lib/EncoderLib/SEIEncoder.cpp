@@ -1732,7 +1732,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       sei->m_numberExtrapolatedPicturesMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1(filterIdx);
     }
-#if NNPFC_SPATIAL_EXTRAPOLATION
     if((sei->m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
     {
       sei->m_spatialExtrapolationLeftOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset(filterIdx);
@@ -1740,7 +1739,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       sei->m_spatialExtrapolationTopOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset(filterIdx);
       sei->m_spatialExtrapolationBottomOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(filterIdx);
     }
-#endif
 
     sei->m_componentLastFlag = m_pcCfg->getNNPostFilterSEICharacteristicsComponentLastFlag(filterIdx);
     sei->m_inpFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpFormatIdc(filterIdx);

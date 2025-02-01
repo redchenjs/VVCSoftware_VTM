@@ -3262,7 +3262,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_numberExtrapolatedPicturesMinus1 = val;
     }
 
-#if NNPFC_SPATIAL_EXTRAPOLATION
     if((sei.m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
     {
       int32_t value;
@@ -3275,7 +3274,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_svlc(pDecodedMessageOutputStream, value, "nnpfc_spatial_extrapolation_bottom_offset");
       sei.m_spatialExtrapolationBottomOffset = value;
     }
-#endif
 
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_component_last_flag");
     sei.m_componentLastFlag = val;

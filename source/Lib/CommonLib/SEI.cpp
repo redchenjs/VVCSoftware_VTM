@@ -1004,12 +1004,10 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_numberInputDecodedPicturesMinus1 = sei.m_numberInputDecodedPicturesMinus1;
   m_numberInterpolatedPictures = sei.m_numberInterpolatedPictures;
   m_numberExtrapolatedPicturesMinus1 = sei.m_numberExtrapolatedPicturesMinus1;
-#if NNPFC_SPATIAL_EXTRAPOLATION
   m_spatialExtrapolationLeftOffset = sei.m_spatialExtrapolationLeftOffset;
   m_spatialExtrapolationRightOffset = sei.m_spatialExtrapolationRightOffset;
   m_spatialExtrapolationTopOffset = sei.m_spatialExtrapolationTopOffset;
   m_spatialExtrapolationBottomOffset = sei.m_spatialExtrapolationBottomOffset;
-#endif
   m_inbandPromptFlag = sei.m_inbandPromptFlag;
   m_prompt =  sei.m_prompt;
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
@@ -1070,12 +1068,10 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_numberInputDecodedPicturesMinus1 == sei.m_numberInputDecodedPicturesMinus1 &&
   m_numberInterpolatedPictures == sei.m_numberInterpolatedPictures &&
   m_numberExtrapolatedPicturesMinus1 == sei.m_numberExtrapolatedPicturesMinus1 &&
-#if NNPFC_SPATIAL_EXTRAPOLATION
   m_spatialExtrapolationLeftOffset == sei.m_spatialExtrapolationLeftOffset &&
   m_spatialExtrapolationRightOffset == sei.m_spatialExtrapolationRightOffset &&
   m_spatialExtrapolationTopOffset == sei.m_spatialExtrapolationTopOffset &&
   m_spatialExtrapolationBottomOffset == sei.m_spatialExtrapolationBottomOffset &&
-#endif
   m_inbandPromptFlag == sei.m_inbandPromptFlag  &&
   m_prompt ==  sei.m_prompt  &&
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&

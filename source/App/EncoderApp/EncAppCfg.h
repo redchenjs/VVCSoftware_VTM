@@ -823,12 +823,10 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
-#if NNPFC_SPATIAL_EXTRAPOLATION
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[MAX_NUM_NN_POST_FILTERS];
-#endif
   bool                  m_nnPostFilterSEICharacteristicsInbandPromptFlag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsPrompt[MAX_NUM_NN_POST_FILTERS];
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];

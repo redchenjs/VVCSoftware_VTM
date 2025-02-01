@@ -65,7 +65,6 @@
 
 
 
-#define NNPFC_SPATIAL_EXTRAPOLATION                       1 // Implementation of the spatial extrapolation purpose
 
 #define JVET_AH2006_TXTDESCRINFO_SEI                      1 // Text description information message
 #if JVET_AH2006_TXTDESCRINFO_SEI
@@ -847,9 +846,7 @@ enum NNPC_PurposeType
   BIT_DEPTH_UPSAMPLING       = 16,
   COLOURIZATION              = 32,
   TEMPORAL_EXTRAPOLATION     = 64,
-#if NNPFC_SPATIAL_EXTRAPOLATION
   SPATIAL_EXTRAPOLATION      = 128
-#endif
 };
 
 enum POST_FILTER_MODE

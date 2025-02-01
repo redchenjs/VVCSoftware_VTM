@@ -2136,7 +2136,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream numberExtrapolatedPicturesMinus1;
     numberExtrapolatedPicturesMinus1 << "SEINNPFCNumberExtrapolatedPicsMinus1" << i; 
     opts.addOptions()(numberExtrapolatedPicturesMinus1.str(), m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i], 0u, "Number of pictures to extrapolate");
-#if NNPFC_SPATIAL_EXTRAPOLATION
     std::ostringstream spatialExtrapolationLeftOffset;
     spatialExtrapolationLeftOffset << "SEINNPFCSpatialExtrapolationLeftOffset" << i; 
     opts.addOptions()(spatialExtrapolationLeftOffset.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[i], 0, "Left offset of spatial extrapolation");
@@ -2152,7 +2151,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream spatialExtrapolationBottomOffset;
     spatialExtrapolationBottomOffset << "SEINNPFCSpatialExtrapolationLeftOffset" << i; 
     opts.addOptions()(spatialExtrapolationBottomOffset.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i], 0, "Bottom offset of spatial extrapolation");
-#endif
     std::ostringstream inbandPromptFlag;
     inbandPromptFlag << "SEINNPFCInbandPromptFlag" << i;
     opts.addOptions()(inbandPromptFlag.str(), m_nnPostFilterSEICharacteristicsInbandPromptFlag[i], false, "equal to 1 specifies that nnpfc_prompt syntax element is present and nnpfc_alignment_zero_bit_c syntax element may be present. nnpfc_spatial_extrapolation_prompt_present_flag equal to 0 specifies that nnpfc_prompt syntax element and nnpfc_alignment_zero_bit_c syntax element are not present.");
@@ -5671,7 +5669,6 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 127, "SEINNPFCPurpose must be in the range of 0 to 127");
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] > 63, "SEINNPFCNumberInputDecodedPicturesMinus1 must be in the range of 0 to 63");
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i] > 62, "SEINNPFCNumberExtrapolatedPicsMinus1 must be in the range of 0 to 62");
-#if NNPFC_SPATIAL_EXTRAPOLATION
       xConfirmPara(m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[i] < -65536 || m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[i] > 65536,
                     "SEINNPFCCharacteristicSpatialExtrapolationLeftOffset must be in the range of -65536 to 65536");
       xConfirmPara(m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[i] < -65536 || m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[i] > 65536,
@@ -5680,7 +5677,6 @@ bool EncAppCfg::xCheckParameter()
                     "SEINNPFCCharacteristicSpatialExtrapolationTopOffset must be in the range of -65536 to 65536");
       xConfirmPara(m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i] < -65536 || m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i] > 65536,
                     "SEINNPFCCharacteristicSpatialExtrapolationBottomOffset must be in the range of -65536 to 65536");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[i] > 24, "SEINNPFCInpTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[i] > 24, "SEINNPFCInpTensorBitDepthChromaMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[i] > 24, "SEINNPFCOutTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
