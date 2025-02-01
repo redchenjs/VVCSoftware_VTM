@@ -64,7 +64,6 @@
 
 
 
-#define JVET_AG0322_MODALITY_INFORMATION                  1 // Implementation of Modality Information SEI message
 
 #define NNPFC_SPATIAL_EXTRAPOLATION                       1 // Implementation of the spatial extrapolation purpose
 

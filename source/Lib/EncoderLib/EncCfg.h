@@ -804,7 +804,6 @@ protected:
   uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
 
-#if JVET_AG0322_MODALITY_INFORMATION
   // Modality Information SEI
   bool        m_miSEIEnabled;
   bool        m_miCancelFlag;
@@ -815,7 +814,6 @@ protected:
   int         m_miMinWavelengthExponentPlus15; 
   int         m_miMaxWavelengthMantissa; 
   int         m_miMaxWavelengthExponentPlus15; 
-#endif 
 
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
@@ -2524,7 +2522,6 @@ public:
   void setEOISEIPrivacyProtectedInfoType(uint32_t privacyProtectedInfoType) { m_eoiSEIPrivacyProtectedInfoType = privacyProtectedInfoType; }
   uint32_t getEOISEIPrivacyProtectedInfoType() const { return m_eoiSEIPrivacyProtectedInfoType; }
 
-#if JVET_AG0322_MODALITY_INFORMATION
   //Modality Information SEI 
   void     setMiSEIEnabled(bool b) { m_miSEIEnabled = b; }
   bool     getMiSEIEnabled()                                                                              { return m_miSEIEnabled; }
@@ -2544,7 +2541,6 @@ public:
   int      getMiMaxWavelengthMantissa() const                                                             { return m_miMaxWavelengthMantissa; }
   void     setMiMaxWavelengthExponentPlus15(const int val) { m_miMaxWavelengthExponentPlus15 = val; }
   int      getMiMaxWavelengthExponentPlus15() const                                                       { return m_miMaxWavelengthExponentPlus15; }
-#endif
 
   // film grain SEI
   void  setFilmGrainCharactersticsSEIEnabled (bool b)                { m_fgcSEIEnabled = b; }

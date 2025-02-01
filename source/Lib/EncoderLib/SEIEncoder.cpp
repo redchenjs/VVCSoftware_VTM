@@ -1918,7 +1918,6 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
   }
 }
 
-#if JVET_AG0322_MODALITY_INFORMATION
 void SEIEncoder::initSEIModalityInfo(SEIModalityInfo *seiMI)
 {
   CHECK(!(m_isInitialized), "Modality Information SEI is already initialised");
@@ -1939,7 +1938,6 @@ void SEIEncoder::initSEIModalityInfo(SEIModalityInfo *seiMI)
     }
   }
 }
-#endif
 
 void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int currframeindex)
 {

@@ -104,9 +104,7 @@ public:
   void initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting);
   void initSEIPostFilterHint(SEIPostFilterHint *sei);
   void initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei);
-#if JVET_AG0322_MODALITY_INFORMATION
   void initSEIModalityInfo(SEIModalityInfo *sei);
-#endif
 #if JVET_AH2006_TXTDESCRINFO_SEI
   void initSEITextDescription(SEITextDescription *sei);
 #endif

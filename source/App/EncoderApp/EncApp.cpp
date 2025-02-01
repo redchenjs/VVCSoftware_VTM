@@ -1134,7 +1134,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setEOISEISpatialResamplingTypeFlag(m_eoiSEISpatialResamplingTypeFlag);
   m_cEncLib.setEOISEIPrivacyProtectionTypeIdc(m_eoiSEIPrivacyProtectionTypeIdc);
   m_cEncLib.setEOISEIPrivacyProtectedInfoType(m_eoiSEIPrivacyProtectedInfoType);
-#if JVET_AG0322_MODALITY_INFORMATION
   // Modality Information SEI
   m_cEncLib.setMiSEIEnabled                                      (m_miSEIEnabled);
   m_cEncLib.setMiCancelFlag                                      (m_miCancelFlag);
@@ -1145,7 +1144,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setMiMinWavelengthExponentPlus15                     (m_miMinWavelengthExponentPlus15);
   m_cEncLib.setMiMaxWavelengthMantissa                           (m_miMaxWavelengthMantissa);
   m_cEncLib.setMiMaxWavelengthExponentPlus15                     (m_miMaxWavelengthExponentPlus15);
-#endif
   // content colour volume SEI
   m_cEncLib.setCcvSEIEnabled                                     (m_ccvSEIEnabled);
   m_cEncLib.setCcvSEICancelFlag                                  (m_ccvSEICancelFlag);

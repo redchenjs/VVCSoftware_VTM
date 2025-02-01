@@ -556,7 +556,6 @@ protected:
   uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
 
-#if JVET_AG0322_MODALITY_INFORMATION
   bool      m_miSEIEnabled;
   bool      m_miCancelFlag;
   bool      m_miPersistenceFlag;
@@ -566,7 +565,6 @@ protected:
   int       m_miMinWavelengthExponentPlus15; 
   int       m_miMaxWavelengthMantissa; 
   int       m_miMaxWavelengthExponentPlus15; 
-#endif
 
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;

@@ -200,11 +200,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO:
     xWriteSEISourcePictureTimingInfo(*static_cast<const SEISourcePictureTimingInfo*>(&sei));
     break;
-#if JVET_AG0322_MODALITY_INFORMATION
   case SEI::PayloadType::MODALITY_INFORMATION:
     xWriteSEIModalityInfo(*static_cast<const SEIModalityInfo *>(&sei));
     break;
-#endif 
 #if JVET_AH2006_TXTDESCRINFO_SEI
   case SEI::PayloadType::TEXT_DESCRIPTION:
     xWriteSEITextDescription(*static_cast<const SEITextDescription*>(&sei));
@@ -2267,7 +2265,6 @@ void SEIWriter::xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInf
   }
 }
 
-#if JVET_AG0322_MODALITY_INFORMATION
 void SEIWriter::xWriteSEIModalityInfo(const SEIModalityInfo& sei)
 {
   xWriteFlag( sei.m_miCancelFlag,                                            "mi_modality_info_cancel_flag" );
@@ -2286,7 +2283,6 @@ void SEIWriter::xWriteSEIModalityInfo(const SEIModalityInfo& sei)
     xWriteUvlc(0, "mi_modality_type_extension_bits");   // mi_modality_type_extension_bits shall be equal to 0 in the current edition 
   }
 }
-#endif 
 
 void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
 {

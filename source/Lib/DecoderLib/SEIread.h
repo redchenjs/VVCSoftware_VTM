@@ -95,9 +95,7 @@ protected:
   void xParseSEIObjectMaskInfos               (SEIObjectMaskInfos& sei,               uint32_t payloadSize,                     std::ostream* pDecodedMessageOutputStream);
   void xParseSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics& sei,              uint32_t payLoadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
-#if JVET_AG0322_MODALITY_INFORMATION
   void xParseSEIModalityInfo                  (SEIModalityInfo& sei,                  uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
-#endif 
   void xParseSEIEquirectangularProjection     (SEIEquirectangularProjection &sei,     uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEISphereRotation                (SEISphereRotation &sei,                uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIOmniViewport                  (SEIOmniViewport& sei,                  uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);

@@ -563,12 +563,10 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEISourcePictureTimingInfo;
       xParseSEISourcePictureTimingInfo((SEISourcePictureTimingInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_AG0322_MODALITY_INFORMATION    
     case SEI::PayloadType::MODALITY_INFORMATION:
       sei = new SEIModalityInfo; 
       xParseSEIModalityInfo((SEIModalityInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION:
       sei = new SEIDigitallySignedContentInitialization;
       xParseSEIDigitallySignedContentInitialization((SEIDigitallySignedContentInitialization &) *sei, payloadSize, pDecodedMessageOutputStream);
@@ -2136,7 +2134,6 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
   }
 }
 
-#if JVET_AG0322_MODALITY_INFORMATION
 void SEIReader::xParseSEIModalityInfo(SEIModalityInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   uint32_t code;
@@ -2163,7 +2160,6 @@ void SEIReader::xParseSEIModalityInfo(SEIModalityInfo& sei, uint32_t payloadSize
     }
   }
 }
-#endif
 
 void SEIReader::xParseSEIFrameFieldinfo(SEIFrameFieldInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {

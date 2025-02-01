@@ -104,9 +104,7 @@ public:
     ENCODER_OPTIMIZATION_INFO = 215,
     SOURCE_PICTURE_TIMING_INFO = 216,
     OBJECT_MASK_INFO = 217,
-#if JVET_AG0322_MODALITY_INFORMATION
     MODALITY_INFORMATION = 218,
-#endif
 #if JVET_AH2006_TXTDESCRINFO_SEI
     TEXT_DESCRIPTION                        = 219,
 #endif
@@ -1693,7 +1691,6 @@ public:
 };
 
 
-#if JVET_AG0322_MODALITY_INFORMATION
 class SEIModalityInfo : public SEI
 {
 public:
@@ -1721,7 +1718,6 @@ public:
   uint16_t         m_miMaxWavelengthMantissa;  
   uint8_t          m_miMaxWavelengthExponentPlus15;  
 };
-#endif
 
 //! \}
 

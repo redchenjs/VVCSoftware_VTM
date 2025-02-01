@@ -125,9 +125,7 @@ protected:
 
   void xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInfo &sei);
   void xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
-#if JVET_AG0322_MODALITY_INFORMATION
   void xWriteSEIModalityInfo(const SEIModalityInfo &sei);
-#endif
 
   void xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo& sei);
   std::vector<double>  prevcoordinateXRec;

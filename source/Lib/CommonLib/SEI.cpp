@@ -484,9 +484,7 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::PHASE_INDICATION, "Phase Indication" },
   { SEI::PayloadType::SEI_PROCESSING_ORDER, "SEI messages Processing order" },
   { SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO, "Source picture timing info" },
-#if JVET_AG0322_MODALITY_INFORMATION
   { SEI::PayloadType::MODALITY_INFORMATION, "Modality information" },
-#endif
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION, "Digitally Signed Content Initialization" },
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION, "Digitally Signed Content Selection" },
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION, "Digitally Signed Content Verification" },
@@ -1185,7 +1183,6 @@ SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
 
 }
 
-#if JVET_AG0322_MODALITY_INFORMATION
 SEIModalityInfo::SEIModalityInfo(const SEIModalityInfo& sei)
 {
   m_miCancelFlag = sei.m_miCancelFlag;
@@ -1197,7 +1194,6 @@ SEIModalityInfo::SEIModalityInfo(const SEIModalityInfo& sei)
   m_miMaxWavelengthMantissa = sei.m_miMaxWavelengthMantissa;
   m_miMaxWavelengthExponentPlus15 = sei.m_miMaxWavelengthExponentPlus15;
 }
-#endif
 
 SEIGenerativeFaceVideo::SEIGenerativeFaceVideo(const SEIGenerativeFaceVideo & sei)
 {
