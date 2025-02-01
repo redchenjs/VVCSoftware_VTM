@@ -103,9 +103,7 @@ public:
   void initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei);
   void initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting);
   void initSEIPostFilterHint(SEIPostFilterHint *sei);
-#if JVET_AH2006_EOI_SEI
   void initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei);
-#endif 
 #if JVET_AG0322_MODALITY_INFORMATION
   void initSEIModalityInfo(SEIModalityInfo *sei);
 #endif

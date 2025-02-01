@@ -555,12 +555,10 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIPostFilterHint;
       xParseSEIPostFilterHint((SEIPostFilterHint &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_AH2006_EOI_SEI
     case SEI::PayloadType::ENCODER_OPTIMIZATION_INFO:
       sei = new SEIEncoderOptimizationInfo;
       xParseSEIEncoderOptimizationInfo((SEIEncoderOptimizationInfo &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     case SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO:
       sei = new SEISourcePictureTimingInfo;
       xParseSEISourcePictureTimingInfo((SEISourcePictureTimingInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
@@ -2067,7 +2065,6 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
   }
 }
 
-#if JVET_AH2006_EOI_SEI
 void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
 {
   uint32_t val;
@@ -2138,7 +2135,6 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
     }
   }
 }
-#endif 
 
 #if JVET_AG0322_MODALITY_INFORMATION
 void SEIReader::xParseSEIModalityInfo(SEIModalityInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)

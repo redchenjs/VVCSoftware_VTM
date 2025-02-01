@@ -123,9 +123,7 @@ protected:
 #endif
   void xWriteSEIPostFilterHint(const SEIPostFilterHint &sei);
 
-#if JVET_AH2006_EOI_SEI
   void xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInfo &sei);
-#endif
   void xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
 #if JVET_AG0322_MODALITY_INFORMATION
   void xWriteSEIModalityInfo(const SEIModalityInfo &sei);

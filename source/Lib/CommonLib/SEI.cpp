@@ -1165,7 +1165,6 @@ SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMess
   return nullptr;
 }
 
-#if JVET_AH2006_EOI_SEI
 SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
   const SEIEncoderOptimizationInfo& sei)
 {
@@ -1185,7 +1184,6 @@ SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
   m_privacyProtectedInfoType = sei.m_privacyProtectedInfoType;
 
 }
-#endif
 
 #if JVET_AG0322_MODALITY_INFORMATION
 SEIModalityInfo::SEIModalityInfo(const SEIModalityInfo& sei)

@@ -787,7 +787,6 @@ protected:
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputflag;
 
-#if JVET_AH2006_EOI_SEI
   // Encoder Optimization Information SEI
   bool  m_eoiSEIEnabled;
   bool  m_eoiSEICancelFlag;
@@ -804,7 +803,6 @@ protected:
   bool m_eoiSEISpatialResamplingTypeFlag;
   uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
-#endif 
 
 #if JVET_AG0322_MODALITY_INFORMATION
   // Modality Information SEI
@@ -2495,7 +2493,6 @@ public:
   void  setSEIPreferredTransferCharacteristics(uint8_t v)              { m_preferredTransferCharacteristics = v;    }
   uint8_t getSEIPreferredTransferCharacteristics() const               { return m_preferredTransferCharacteristics; }
   const SEIMasteringDisplay &getMasteringDisplaySEI() const          { return m_masteringDisplay; }
-#if JVET_AH2006_EOI_SEI
   void setEOISEIEnabled(bool enabledFlag) { m_eoiSEIEnabled = enabledFlag; }
   bool getEOISEIEnabled() const { return m_eoiSEIEnabled; }
   void setEOISEICancelFlag(bool cancelFlag) { m_eoiSEICancelFlag = cancelFlag; }
@@ -2526,7 +2523,6 @@ public:
   uint32_t getEOISEIPrivacyProtectionTypeIdc() const { return m_eoiSEIPrivacyProtectionTypeIdc; }
   void setEOISEIPrivacyProtectedInfoType(uint32_t privacyProtectedInfoType) { m_eoiSEIPrivacyProtectedInfoType = privacyProtectedInfoType; }
   uint32_t getEOISEIPrivacyProtectedInfoType() const { return m_eoiSEIPrivacyProtectedInfoType; }
-#endif 
 
 #if JVET_AG0322_MODALITY_INFORMATION
   //Modality Information SEI 

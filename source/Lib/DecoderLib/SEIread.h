@@ -94,9 +94,7 @@ protected:
   void xParseSEIAnnotatedRegions              (SEIAnnotatedRegions& sei,              uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIObjectMaskInfos               (SEIObjectMaskInfos& sei,               uint32_t payloadSize,                     std::ostream* pDecodedMessageOutputStream);
   void xParseSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics& sei,              uint32_t payLoadSize,                     std::ostream *pDecodedMessageOutputStream);
-#if JVET_AH2006_EOI_SEI
   void xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
-#endif 
 #if JVET_AG0322_MODALITY_INFORMATION
   void xParseSEIModalityInfo                  (SEIModalityInfo& sei,                  uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
 #endif 

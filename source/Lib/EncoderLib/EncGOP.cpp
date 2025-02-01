@@ -1104,14 +1104,12 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     seiMessages.push_back(fgcSEI);
   }
 
-#if JVET_AH2006_EOI_SEI
   if (m_pcCfg->getEOISEIEnabled())
   {
     SEIEncoderOptimizationInfo *eoiSEI = new SEIEncoderOptimizationInfo;
     m_seiEncoder.initSEIEncoderOptimizationInfo(eoiSEI);
     seiMessages.push_back(eoiSEI);
   }
-#endif
 
 
 #if JVET_AG0322_MODALITY_INFORMATION

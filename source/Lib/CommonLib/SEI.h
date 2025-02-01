@@ -101,9 +101,7 @@ public:
 
     SEI_PROCESSING_ORDER = 213,
     SEI_PROCESSING_ORDER_NESTING = 214,
-#if JVET_AH2006_EOI_SEI
     ENCODER_OPTIMIZATION_INFO = 215,
-#endif 
     SOURCE_PICTURE_TIMING_INFO = 216,
     OBJECT_MASK_INFO = 217,
 #if JVET_AG0322_MODALITY_INFORMATION
@@ -1653,7 +1651,6 @@ public:
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t nnpfaTargetId);
 SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMessages &seiList);
 
-#if JVET_AH2006_EOI_SEI
 class SEIEncoderOptimizationInfo : public SEI
 {
 public:
@@ -1695,7 +1692,6 @@ public:
 
 };
 
-#endif
 
 #if JVET_AG0322_MODALITY_INFORMATION
 class SEIModalityInfo : public SEI

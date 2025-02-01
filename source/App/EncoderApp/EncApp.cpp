@@ -1119,7 +1119,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   {
     m_cEncLib.setCtiSEILut(m_ctiSEILut[i], i);
   }
-#if JVET_AH2006_EOI_SEI
   m_cEncLib.setEOISEIEnabled(m_eoiSEIEnabled);
   m_cEncLib.setEOISEICancelFlag(m_eoiSEICancelFlag);
   m_cEncLib.setEOISEIPersistenceFlag(m_eoiSEIPersistenceFlag);
@@ -1135,7 +1134,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setEOISEISpatialResamplingTypeFlag(m_eoiSEISpatialResamplingTypeFlag);
   m_cEncLib.setEOISEIPrivacyProtectionTypeIdc(m_eoiSEIPrivacyProtectionTypeIdc);
   m_cEncLib.setEOISEIPrivacyProtectedInfoType(m_eoiSEIPrivacyProtectedInfoType);
-#endif
 #if JVET_AG0322_MODALITY_INFORMATION
   // Modality Information SEI
   m_cEncLib.setMiSEIEnabled                                      (m_miSEIEnabled);

@@ -1548,7 +1548,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("TraceFile", sTracingFile, std::string(""), "Tracing file")
 #endif
 
-#if JVET_AH2006_EOI_SEI
 ("SEIEOIEnabled", m_eoiSEIEnabled, false, "Control use of the Encoder Optimization Information SEI")
 ("SEIEOICancelFlag", m_eoiSEICancelFlag, false, "Specifies that the persistence of the previous applied optimization")
 ("SEIEOIPersistenceFlag", m_eoiSEIPersistenceFlag, false, "Specifies the persistence of the optimization the current layer")
@@ -1564,7 +1563,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEIEOISpatialResamplingTypeFlag", m_eoiSEISpatialResamplingTypeFlag, false, "specifies the type of the spatial resampling optimization.")
 ("SEIEOIPrivacyProtectionTypeIdc", m_eoiSEIPrivacyProtectionTypeIdc, 0u, "indicates the type of privacy protection optimization")
 ("SEIEOIPrivacyProtectedInfoType", m_eoiSEIPrivacyProtectedInfoType, 0u, "indicates the types of protected information")
-#endif 
 
 #if JVET_AG0322_MODALITY_INFORMATION
 // Modality Information SEI 

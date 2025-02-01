@@ -540,7 +540,6 @@ protected:
   int       m_selfContainedClvsFlag;
   int       m_preferredTransferCharacteristics;
 
-#if JVET_AH2006_EOI_SEI
   bool  m_eoiSEIEnabled;
   bool  m_eoiSEICancelFlag;
   bool  m_eoiSEIPersistenceFlag;
@@ -556,7 +555,6 @@ protected:
   bool m_eoiSEISpatialResamplingTypeFlag;
   uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
-#endif 
 
 #if JVET_AG0322_MODALITY_INFORMATION
   bool      m_miSEIEnabled;

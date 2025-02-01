@@ -1876,7 +1876,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
   }
 }
 
-#if JVET_AH2006_EOI_SEI
 void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
@@ -1918,7 +1917,6 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
     }
   }
 }
-#endif
 
 #if JVET_AG0322_MODALITY_INFORMATION
 void SEIEncoder::initSEIModalityInfo(SEIModalityInfo *seiMI)

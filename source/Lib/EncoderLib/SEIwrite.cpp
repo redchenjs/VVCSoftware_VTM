@@ -194,11 +194,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::POST_FILTER_HINT:
     xWriteSEIPostFilterHint(*static_cast<const SEIPostFilterHint *>(&sei));
     break;
-#if JVET_AH2006_EOI_SEI
   case SEI::PayloadType::ENCODER_OPTIMIZATION_INFO:
     xWriteSEIEncoderOptimizationInfo(*static_cast<const SEIEncoderOptimizationInfo *>(&sei));
     break;
-#endif 
   case SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO:
     xWriteSEISourcePictureTimingInfo(*static_cast<const SEISourcePictureTimingInfo*>(&sei));
     break;
@@ -2182,7 +2180,6 @@ void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
     }
   }
 }
-#if JVET_AH2006_EOI_SEI
 void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInfo &sei)
 {
   xWriteFlag(sei.m_cancelFlag, "eoi_cancel_flag");
@@ -2235,7 +2232,6 @@ void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInf
     }
   }
 }
-#endif
 void SEIWriter::xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei)
 {
   xWriteFlag(sei.m_sptiCancelFlag, "spti_cancel_flag");

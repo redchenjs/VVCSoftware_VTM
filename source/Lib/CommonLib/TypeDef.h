@@ -63,7 +63,6 @@
 
 
 
-#define JVET_AH2006_EOI_SEI                               1 // Implementation of Encoder Optimizaion Information SEI message
 
 #define JVET_AG0322_MODALITY_INFORMATION                  1 // Implementation of Modality Information SEI message
 
@@ -800,7 +799,6 @@ enum SAOEOClasses
   NUM_SAO_EO_CLASSES,
 };
 
-#if JVET_AH2006_EOI_SEI
 enum EOI_OptimizationType
 {
   UNDEFINED = 0,
@@ -811,7 +809,6 @@ enum EOI_OptimizationType
   SPATIAL_QUALITY_OPTIMIZATION = 16,
   PRIVACY_PROTECTION_OPTIMIZATION = 32,
 };
-#endif 
 
 #if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
 enum EOI_PRIVACY_PROTECTION
