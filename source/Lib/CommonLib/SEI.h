@@ -220,9 +220,6 @@ public:
     switch (payloadType)
     {
     case SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS:
-#if !JVET_AJ0129_SPO_SEI_LIST
-    case SEI::PayloadType::POST_FILTER_HINT:
-#endif
     case SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO:
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS:
     case SEI::PayloadType::COLOUR_TRANSFORM_INFO:
@@ -230,7 +227,6 @@ public:
 #if JVET_AH2006_TXTDESCRINFO_SEI
     case SEI::PayloadType::TEXT_DESCRIPTION:
 #endif
-#if JVET_AJ0129_SPO_SEI_LIST
     case SEI::PayloadType::FILLER_PAYLOAD:
     case SEI::PayloadType::USER_DATA_REGISTERED_ITU_T_T35:
     case SEI::PayloadType::USER_DATA_UNREGISTERED:
@@ -247,7 +243,6 @@ public:
     case SEI::PayloadType::ANNOTATED_REGIONS:
     case SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO:
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
-#endif
      return true;
     default:
       return false;

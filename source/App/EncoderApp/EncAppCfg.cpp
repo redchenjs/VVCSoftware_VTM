@@ -3861,10 +3861,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_poSEINumOfPrefixBits.resize((uint32_t) cfg_poSEINumofPrefixBits.values.size());
     m_poSEIPrefixByte.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     uint16_t prefixByteIdx = 0;
-#if JVET_AJ0129_SPO_SEI_LIST
     bool NNPFCFound = false;
     bool NNPFAFound = false;
-#endif
     for (uint32_t i = 0; i < (m_poSEINumMinus2 + 2); i++)
     {
       m_poSEIPrefixFlag[i] =      cfg_poSEIPrefixFlag.values[i];
@@ -3886,11 +3884,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       {
         CHECK(m_poSEIPrefixFlag[i] == true, "The value of po_sei_prefix_flag shall be equal to 0 when po_sei_payload_type is equal to 137, 144, 147, 148, 179, 180, 200, 201, 208, and 213");
       }
-#if JVET_AJ0129_SPO_SEI_LIST
       NNPFCFound = NNPFCFound || (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
       NNPFAFound = NNPFAFound || (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
       CHECK(!NNPFCFound && NNPFAFound, "NNPFA payload type found before NNPFC payload type in SPO SEI");
-#endif
       m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
       if (m_poSEIPrefixFlag[i])
       {
@@ -3930,9 +3926,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         }
       }
     }
-#if JVET_AJ0129_SPO_SEI_LIST
     CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
-#endif
   }
 
   if (m_postFilterHintSEIEnabled)

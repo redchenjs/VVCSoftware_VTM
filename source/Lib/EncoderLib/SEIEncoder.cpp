@@ -685,15 +685,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiNNPFC);
         break;
       }
-#if !JVET_AJ0129_SPO_SEI_LIST
-      case SEI::PayloadType::POST_FILTER_HINT:
-      {
-        SEIPostFilterHint* seiPFH = new SEIPostFilterHint;
-        initSEIPostFilterHint(seiPFH);
-        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiPFH);
-        break;
-      }
-#endif
 #if JVET_AH2006_TXTDESCRINFO_SEI
       case SEI::PayloadType::TEXT_DESCRIPTION:
       {
@@ -703,7 +694,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         break;
       }
 #endif
-#if JVET_AJ0129_SPO_SEI_LIST
       case SEI::PayloadType::FRAME_PACKING:
       {
         SEIFramePacking* sei = new SEIFramePacking;
@@ -788,7 +778,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
         break;
       }
-#endif
       default:
       {
         msg(ERROR, "not support in sei processing order SEI\n");

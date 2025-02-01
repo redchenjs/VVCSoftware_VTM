@@ -826,10 +826,8 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
   sei.m_posWrappingFlag.resize(numMaxSeiMessages);
   sei.m_posImportanceFlag.resize(numMaxSeiMessages);
   sei.m_posProcessingDegreeFlag.resize(numMaxSeiMessages);
-#if JVET_AJ0129_SPO_SEI_LIST
   bool NNPFCFound = false;
   bool NNPFAFound = false;
-#endif
   for (i = 0; i < numMaxSeiMessages; i++)
   {
     sei_read_flag(decodedMessageOutputStream, val, "po_sei_wrapping_flag[i]");
@@ -845,16 +843,12 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
     sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_processing_order[i]");
     sei.m_posProcessingOrder[i] = val;
     CHECK((i > 0) && (sei.m_posProcessingOrder[i] < sei.m_posProcessingOrder[i-1]) , "For i greater than 0, po_sei_processing_order[i] shall be greater than or equal to po_sei_processing_order[i-1]");
-#if JVET_AJ0129_SPO_SEI_LIST
     NNPFCFound = NNPFCFound || (sei.m_posPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
     NNPFAFound = NNPFAFound || (sei.m_posPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
     CHECK(!NNPFCFound && NNPFAFound, "NNPFA payload type found before NNPFC payload type in SPO SEI");
-#endif
   }
   CHECK(i<2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
-#if JVET_AJ0129_SPO_SEI_LIST
   CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
-#endif
 
   for (i = 0; i < numMaxSeiMessages; i++)
   {

@@ -58,7 +58,6 @@
 //########### place macros to be removed in next cycle below this line ###############
 
 
-#define JVET_AJ0129_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList with all supported SEI message types
 
 #define JVET_AJ0207_GFV                                   1 // generative face video (GFV) SEI
 
