@@ -538,9 +538,7 @@ SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei
   m_posBreadthFirstFlag = sei.m_posBreadthFirstFlag;
   m_posWrappingFlag = sei.m_posWrappingFlag;
   m_posImportanceFlag = sei.m_posImportanceFlag;
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
   m_posProcessingDegreeFlag = sei.m_posProcessingDegreeFlag;
-#endif
   m_posPrefixFlag = sei.m_posPrefixFlag;
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;

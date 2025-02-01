@@ -1714,9 +1714,7 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
   {
     xWriteFlag(sei.m_posWrappingFlag[i], "po_sei_wrapping_flag[i]");
     xWriteFlag(sei.m_posImportanceFlag[i], "po_sei_importance_flag[i]");
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
     xWriteFlag(sei.m_posProcessingDegreeFlag[i], "po_sei_processing_degree_flag[i]");
-#endif
       xWriteCode(sei.m_posPayloadType[i], 13, "po_sei_payload_type[i]");
       xWriteFlag(sei.m_posPrefixFlag[i], "po_sei_prefix_flag[i]");
 

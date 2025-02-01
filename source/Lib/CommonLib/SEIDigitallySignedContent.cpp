@@ -359,13 +359,6 @@ bool DscSignature::signPacket (std::vector<uint8_t> &packet, std::vector<uint8_t
 {
   CHECK(m_isInitialized == false, "Signature is not initialized");
 
-#if 0
-  if (std::rand() >  (RAND_MAX / 2) )
-  {
-    std::cout << "\033[1;31mTest mode: invalid signature\033[0m\n";
-    packet[0] = 0;
-  }
-#endif
 
   // Create signature
   EVP_MD_CTX *mdctx = EVP_MD_CTX_new();

@@ -825,9 +825,7 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
   sei.m_posPrefixByte.resize(numMaxSeiMessages);
   sei.m_posWrappingFlag.resize(numMaxSeiMessages);
   sei.m_posImportanceFlag.resize(numMaxSeiMessages);
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
   sei.m_posProcessingDegreeFlag.resize(numMaxSeiMessages);
-#endif
 #if JVET_AJ0129_SPO_SEI_LIST
   bool NNPFCFound = false;
   bool NNPFAFound = false;
@@ -838,10 +836,8 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
     sei.m_posWrappingFlag[i] = val;
     sei_read_flag(decodedMessageOutputStream, val, "po_sei_importance_flag[i]");
     sei.m_posImportanceFlag[i] = val;
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
     sei_read_flag(decodedMessageOutputStream, val, "po_sei_processing_degree_flag[i]");
     sei.m_posProcessingDegreeFlag[i] = val;
-#endif
       sei_read_code(decodedMessageOutputStream, 13, val, "po_sei_payload_type[i]");
       sei.m_posPayloadType[i] = val;
       sei_read_flag(decodedMessageOutputStream, val, "po_sei_prefix_flag[i]");
@@ -887,7 +883,6 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
     }
   }
 
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
   uint32_t numProcStgs = sei.m_posNumMinus2 + 2;
   std::vector<uint32_t> seiTypeIdx;
   for (uint32_t j = 0; j < numProcStgs; j++)
@@ -923,7 +918,6 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
       sei.m_posSubChainIdx[j] = subChainFlag * subChainPrevIdx;
     }
   }
-#endif
 }
 
 void SEIReader::xParseSEIProcessingOrderNesting(SEIProcessingOrderNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD& hrd, std::ostream* decodedMessageOutputStream)

@@ -57,7 +57,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AJ0128_SPO_PROCESSING_DEGREE                 1 // Adding functionality to po_processing_degree_flag[i] of the SPO SEI message
 
 #define JVET_AJ0129_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList with all supported SEI message types
 

@@ -614,9 +614,7 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   seiProcessingOrderInfo->m_posBreadthFirstFlag = m_pcCfg->getPoSEIBreadthFirstFlag();
   seiProcessingOrderInfo->m_posWrappingFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posImportanceFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
   seiProcessingOrderInfo->m_posProcessingDegreeFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-#endif
   seiProcessingOrderInfo->m_posPrefixFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPayloadType.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
@@ -626,9 +624,7 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   {
     seiProcessingOrderInfo->m_posWrappingFlag[i] = m_pcCfg->getPoSEIWrappingFlag(i);
     seiProcessingOrderInfo->m_posImportanceFlag[i] = m_pcCfg->getPoSEIImportanceFlag(i);
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
     seiProcessingOrderInfo->m_posProcessingDegreeFlag[i] = m_pcCfg->getPoSEIProcessingDegreeFlag(i);
-#endif
     seiProcessingOrderInfo->m_posPrefixFlag[i] = m_pcCfg->getPoSEIPrefixFlag(i);
     seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
     seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
