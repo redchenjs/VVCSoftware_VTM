@@ -194,29 +194,21 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::POST_FILTER_HINT:
     xWriteSEIPostFilterHint(*static_cast<const SEIPostFilterHint *>(&sei));
     break;
-#if JVET_AH2006_EOI_SEI
   case SEI::PayloadType::ENCODER_OPTIMIZATION_INFO:
     xWriteSEIEncoderOptimizationInfo(*static_cast<const SEIEncoderOptimizationInfo *>(&sei));
     break;
-#endif 
   case SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO:
     xWriteSEISourcePictureTimingInfo(*static_cast<const SEISourcePictureTimingInfo*>(&sei));
     break;
-#if JVET_AG0322_MODALITY_INFORMATION
   case SEI::PayloadType::MODALITY_INFORMATION:
     xWriteSEIModalityInfo(*static_cast<const SEIModalityInfo *>(&sei));
     break;
-#endif 
-#if JVET_AH2006_TXTDESCRINFO_SEI
   case SEI::PayloadType::TEXT_DESCRIPTION:
     xWriteSEITextDescription(*static_cast<const SEITextDescription*>(&sei));
     break;
-#endif
-#if JVET_AJ0207_GFV
   case SEI::PayloadType::GENERATIVE_FACE_VIDEO:
     xWriteSEIGenerativeFaceVideo(*static_cast<const SEIGenerativeFaceVideo*>(&sei));
     break;
-#endif
 #if JVET_AJ0151_DSC_SEI
   case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION:
     xWriteSEIDigitallySignedContentInitialization(*static_cast<const SEIDigitallySignedContentInitialization *>(&sei));
@@ -1714,9 +1706,7 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
   {
     xWriteFlag(sei.m_posWrappingFlag[i], "po_sei_wrapping_flag[i]");
     xWriteFlag(sei.m_posImportanceFlag[i], "po_sei_importance_flag[i]");
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
     xWriteFlag(sei.m_posProcessingDegreeFlag[i], "po_sei_processing_degree_flag[i]");
-#endif
       xWriteCode(sei.m_posPayloadType[i], 13, "po_sei_payload_type[i]");
       xWriteFlag(sei.m_posPrefixFlag[i], "po_sei_prefix_flag[i]");
 
@@ -1938,31 +1928,17 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_numberExtrapolatedPicturesMinus1, "nnpfc_extrapolated_pics_minus1");
     }
 
-#if NNPFC_SPATIAL_EXTRAPOLATION
     if((sei.m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
     {
       xWriteSvlc(sei.m_spatialExtrapolationLeftOffset, "nnpfc_spatial_extrapolation_left_offset");
       xWriteSvlc(sei.m_spatialExtrapolationRightOffset, "nnpfc_spatial_extrapolation_right_offset");
       xWriteSvlc(sei.m_spatialExtrapolationTopOffset, "nnpfc_spatial_extrapolation_top_offset");
       xWriteSvlc(sei.m_spatialExtrapolationBottomOffset, "nnpfc_spatial_extrapolation_right_offset");
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-      xWriteFlag(sei.m_spatialExtrapolationPromptPresentFlag, "nnpfc_spatial_extrapolation_prompt_present_flag");
-      if (sei.m_spatialExtrapolationPromptPresentFlag)
-      {
-        while (!isByteAligned())
-        {
-          xWriteFlag(0, "nnpfc_alignment_zero_bit_c");
-        }
-        xWriteString(sei.m_prompt, "nnpfc_prompt");
-      }
-#endif
     }
-#endif
 
     xWriteFlag(sei.m_componentLastFlag, "nnpfc_component_last_flag");
     xWriteUvlc(sei.m_inpFormatIdc, "nnpfc_inp_format_idc");
     xWriteUvlc(sei.m_auxInpIdc, "nnpfc_auxiliary_inp_idc");
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
     if ((sei.m_auxInpIdc & 2) > 0)
     {
       xWriteFlag(sei.m_inbandPromptFlag, "nnpfc_inband_prompt_flag");
@@ -1975,7 +1951,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteString(sei.m_prompt, "nnpfc_prompt");
       }
     }
-#endif
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     if (sei.m_inpFormatIdc == 1)
     {
@@ -2013,12 +1988,10 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteCode(sei.m_matrixCoeffs, 8, "nnpfc_matrix_coeffs");
       }
     }
-#if JVET_AD0067_INCLUDE_SYNTAX
     if (sei.m_sepColDescriptionFlag && (sei.m_outFormatIdc == 1))
     {
       xWriteFlag(sei.m_fullRangeFlag, "nnpfc_full_range_flag");
     }
-#endif
     
     if (sei.m_outOrderIdc != 0)
     {   
@@ -2034,9 +2007,7 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
     {
       xWriteUvlc(sei.m_overlap, "nnpfc_overlap");
       xWriteFlag(sei.m_constantPatchSizeFlag, "nnpfc_constant_patch_size_flag");
-#ifdef JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION
     }
-#endif
     if (sei.m_constantPatchSizeFlag)
     {
       xWriteUvlc(sei.m_patchWidthMinus1, "nnpfc_patch_width_minus1");
@@ -2047,9 +2018,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
       xWriteUvlc(sei.m_extendedPatchWidthCdDeltaMinus1, "extended_nnpfc_patch_width_cd_delta_minus1");
       xWriteUvlc(sei.m_extendedPatchHeightCdDeltaMinus1, "extended_nnpfc_patch_height_cd_delta_minus1");
     }
-#ifndef JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION
-    }
-#endif
     xWriteUvlc(sei.m_paddingType, "nnpfc_padding_type");
     if (sei.m_paddingType == NNPC_PaddingType::FIXED_PADDING)
     {
@@ -2140,35 +2108,19 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
   }
 }
 
-#if JVET_AH2006_TXTDESCRINFO_SEI
 void SEIWriter::xWriteSEITextDescription(const SEITextDescription &sei)
 {
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
-#if JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR
   CHECK(sei.m_textDescriptionPurpose > 6, "txt_descr_purpose shall be in the range 0-6");
-#else
-  CHECK(sei.m_textDescriptionPurpose > 5, "txt_descr_purpose shall be in the range 0-5");
-#endif
   xWriteCode(sei.m_textDescriptionPurpose, 8, "txt_descr_purpose");
-#else
-  CHECK((sei.m_textDescriptionID < 1 || sei.m_textDescriptionID > 16383), "text description id must be in the range 1-16383");
-  xWriteCode(sei.m_textDescriptionID, 14, "txt_descr_id");
-#endif
   xWriteFlag(sei.m_textCancelFlag, "txt_cancel_flag");
   if (!sei.m_textCancelFlag) 
   {
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
     CHECK((sei.m_textDescriptionID < 1 || sei.m_textDescriptionID > 16383), "text description id must be in the range 1-16383");
     xWriteCode(sei.m_textDescriptionID, 13, "txt_descr_id");
     xWriteFlag(sei.m_textIDCancelFlag, "txt_id_cancel_flag");
     if (!sei.m_textIDCancelFlag) 
     {
-#endif
       xWriteFlag(sei.m_textPersistenceFlag, "txt_persistence_flag");
-#if !JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
-      CHECK(sei.m_textDescriptionPurpose>5, "txt_descr_purpose shall be in the range 0-5");
-      xWriteCode(sei.m_textDescriptionPurpose, 8, "txt_descr_purpose");
-#endif
       xWriteCode(sei.m_textNumStringsMinus1, 8, "txt_num_strings_minus1");
       for (int i=0; i<=sei.m_textNumStringsMinus1; i++)
       {
@@ -2176,12 +2128,9 @@ void SEIWriter::xWriteSEITextDescription(const SEITextDescription &sei)
         xWriteString(sei.m_textDescriptionStringLang[i], "txt_descr_string_lang[i]");
         xWriteString(sei.m_textDescriptionString[i], "txt_descr_string[i]");
       }
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
     }
-#endif
   }
 }
-#endif
 
 void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
 {
@@ -2201,7 +2150,6 @@ void SEIWriter::xWriteSEIPostFilterHint(const SEIPostFilterHint &sei)
     }
   }
 }
-#if JVET_AH2006_EOI_SEI
 void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInfo &sei)
 {
   xWriteFlag(sei.m_cancelFlag, "eoi_cancel_flag");
@@ -2210,19 +2158,12 @@ void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInf
     xWriteFlag(sei.m_persistenceFlag, "eoi_persistence_flag");
     xWriteCode(sei.m_forHumanViewingIdc,2, "eoi_for_human_viewing_idc");
     xWriteCode(sei.m_forMachineAnalysisIdc,2, "eoi_for_machine_analysis_idc");
-#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
     xWriteCode(0, 2, "eoi_reserved_zero_2bits");
-#endif
     xWriteCode(sei.m_type, 16, "eoi_type");
 
     if ((sei.m_type & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) != 0)
     {
-#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
       xWriteCode(sei.m_objectBasedIdc, 16, "eoi_object_based_idc");
-#else
-      xWriteUvlc(sei.m_objectBasedIdc, "eoi_object_based_idc");
-
-#endif
     }
     if ((sei.m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
     {
@@ -2245,16 +2186,11 @@ void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInf
     }
     if ((sei.m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
     {
-#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
       xWriteCode(sei.m_privacyProtectionTypeIdc, 16, "eoi_privacy_protection_type_idc");
-#else
-      xWriteCode(sei.m_privacyProtectionTypeIdc, 4, "eoi_privacy_protection_type_idc");
-#endif
       xWriteCode(sei.m_privacyProtectedInfoType, 8, "eoi_privacy_protected_info_type");
     }
   }
 }
-#endif
 void SEIWriter::xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei)
 {
   xWriteFlag(sei.m_sptiCancelFlag, "spti_cancel_flag");
@@ -2290,7 +2226,6 @@ void SEIWriter::xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInf
   }
 }
 
-#if JVET_AG0322_MODALITY_INFORMATION
 void SEIWriter::xWriteSEIModalityInfo(const SEIModalityInfo& sei)
 {
   xWriteFlag( sei.m_miCancelFlag,                                            "mi_modality_info_cancel_flag" );
@@ -2309,9 +2244,7 @@ void SEIWriter::xWriteSEIModalityInfo(const SEIModalityInfo& sei)
     xWriteUvlc(0, "mi_modality_type_extension_bits");   // mi_modality_type_extension_bits shall be equal to 0 in the current edition 
   }
 }
-#endif 
 
-#if JVET_AJ0207_GFV
 void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
 {
   uint32_t basePicFlag = 0;
@@ -2682,7 +2615,6 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
     }
   }
 }
-#endif
 
 #if JVET_AJ0151_DSC_SEI
 void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitallySignedContentInitialization &sei)

@@ -540,7 +540,6 @@ protected:
   int       m_selfContainedClvsFlag;
   int       m_preferredTransferCharacteristics;
 
-#if JVET_AH2006_EOI_SEI
   bool  m_eoiSEIEnabled;
   bool  m_eoiSEICancelFlag;
   bool  m_eoiSEIPersistenceFlag;
@@ -556,9 +555,7 @@ protected:
   bool m_eoiSEISpatialResamplingTypeFlag;
   uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
-#endif 
 
-#if JVET_AG0322_MODALITY_INFORMATION
   bool      m_miSEIEnabled;
   bool      m_miCancelFlag;
   bool      m_miPersistenceFlag;
@@ -568,7 +565,6 @@ protected:
   int       m_miMinWavelengthExponentPlus15; 
   int       m_miMaxWavelengthMantissa; 
   int       m_miMaxWavelengthExponentPlus15; 
-#endif
 
   // film grain characterstics sei
   bool      m_fgcSEIEnabled;
@@ -788,9 +784,7 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsInpFormatIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsAuxInpIdc[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AD0067_INCLUDE_SYNTAX
   bool                  m_nnPostFilterSEICharacteristicsFullRangeFlag[MAX_NUM_NN_POST_FILTERS];
-#endif
   uint32_t              m_nnPostFilterSEICharacteristicsColPrimaries[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsTransCharacteristics[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsMatrixCoeffs[MAX_NUM_NN_POST_FILTERS];
@@ -829,20 +823,12 @@ protected:
   uint32_t              m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
   std::vector<uint32_t> m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[MAX_NUM_NN_POST_FILTERS];
-#if NNPFC_SPATIAL_EXTRAPOLATION
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[MAX_NUM_NN_POST_FILTERS];
   int32_t               m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[MAX_NUM_NN_POST_FILTERS];
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-  bool                  m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[MAX_NUM_NN_POST_FILTERS];
-  std::string           m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[MAX_NUM_NN_POST_FILTERS];
-#endif
-#endif
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
   bool                  m_nnPostFilterSEICharacteristicsInbandPromptFlag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsPrompt[MAX_NUM_NN_POST_FILTERS];
-#endif
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEIActivationCancelFlag;
@@ -860,16 +846,13 @@ protected:
   bool                  m_poSEIBreadthFirstFlag;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
   std::vector<bool>     m_poSEIProcessingDegreeFlag;
-#endif
   std::vector<bool>     m_poSEIPrefixFlag;
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   std::vector<uint16_t>  m_poSEINumOfPrefixBits;
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
 
-  #if JVET_AH2006_TXTDESCRINFO_SEI
   uint32_t                   m_SEITextDescriptionID;
   bool                       m_SEITextCancelFlag;
   bool                       m_SEITextPersistenceFlag;
@@ -877,13 +860,10 @@ protected:
   uint32_t                   m_SEITextNumStringsMinus1;
   std::vector<std::string>   m_SEITextDescriptionStringLang;
   std::vector<std::string>   m_SEITextDescriptionString;
-  #endif
 
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
   bool                 m_SEITextIDCancelFlag;
-#endif
   bool                 m_postFilterHintSEIPersistenceFlag;
   uint32_t             m_postFilterHintSEISizeY;
   uint32_t             m_postFilterHintSEISizeX;
@@ -1124,7 +1104,6 @@ protected:
   Level::Name m_levelPtl[MAX_NUM_OLSS];
   int         m_olsPtlIdx[MAX_NUM_OLSS];
 
-#if JVET_AJ0207_GFV
   bool                                 m_generativeFaceVideoEnabled;
   uint32_t                             m_generativeFaceVideoSEINumber;
   bool                                 m_generativeFaceVideoSEIBasePicFlag;
@@ -1163,7 +1142,6 @@ protected:
   std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixHeight;
   std::vector < std::vector<std::vector<std::vector<std::vector<double>>>>>   m_generativeFaceVideoSEIMatrixElement;
   std::string                          m_generativeFaceVideoSEIPayloadFilename;
-#endif
 
 #if EXTENSION_360_VIDEO
   TExt360AppEncCfg m_ext360;

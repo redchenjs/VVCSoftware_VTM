@@ -33,12 +33,10 @@
 
 #pragma once
 
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
 
 #include "CommonDef.h"
 #include "SEI.h"
 
-#endif
 
 #if JVET_AJ0151_DSC_SEI
 
@@ -63,7 +61,6 @@ typedef enum : uint32_t
 
 #endif
 
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
 
 class SEIDigitallySignedContentInitialization: public SEI
 {
@@ -119,7 +116,6 @@ public:
   PayloadType payloadType() const { return PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION; }
 };
 
-#endif
 
 #if JVET_AJ0151_DSC_SEI
 

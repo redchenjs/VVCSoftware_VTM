@@ -103,15 +103,9 @@ public:
   void initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFilterActivation *sei);
   void initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting);
   void initSEIPostFilterHint(SEIPostFilterHint *sei);
-#if JVET_AH2006_EOI_SEI
   void initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei);
-#endif 
-#if JVET_AG0322_MODALITY_INFORMATION
   void initSEIModalityInfo(SEIModalityInfo *sei);
-#endif
-#if JVET_AH2006_TXTDESCRINFO_SEI
   void initSEITextDescription(SEITextDescription *sei);
-#endif
 #if JVET_AJ0151_DSC_SEI
   void initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei);
   void initSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection *sei, int substream);
@@ -120,9 +114,7 @@ public:
 #if GREEN_METADATA_SEI_ENABLED
   void initSEIGreenMetadataInfo(SEIGreenMetadataInfo *sei, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics, SEIComplexityMetrics greenMetadata);
 #endif
-#if JVET_AJ0207_GFV
   void initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int currframeindex);
-#endif
 private:
   EncCfg* m_pcCfg;
   EncLib* m_pcEncLib;

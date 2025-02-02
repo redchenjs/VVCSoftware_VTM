@@ -47,9 +47,7 @@
 
 #include "CommonLib/SEI.h"
 
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
 #include "CommonLib/SEIDigitallySignedContent.h"
-#endif
 
 class InputBitstream;
 
@@ -96,12 +94,8 @@ protected:
   void xParseSEIAnnotatedRegions              (SEIAnnotatedRegions& sei,              uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIObjectMaskInfos               (SEIObjectMaskInfos& sei,               uint32_t payloadSize,                     std::ostream* pDecodedMessageOutputStream);
   void xParseSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics& sei,              uint32_t payLoadSize,                     std::ostream *pDecodedMessageOutputStream);
-#if JVET_AH2006_EOI_SEI
   void xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
-#endif 
-#if JVET_AG0322_MODALITY_INFORMATION
   void xParseSEIModalityInfo                  (SEIModalityInfo& sei,                  uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
-#endif 
   void xParseSEIEquirectangularProjection     (SEIEquirectangularProjection &sei,     uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEISphereRotation                (SEISphereRotation &sei,                uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
   void xParseSEIOmniViewport                  (SEIOmniViewport& sei,                  uint32_t payloadSize,                     std::ostream *pDecodedMessageOutputStream);
@@ -135,14 +129,10 @@ protected:
   void xParseSEIPostFilterHint(SEIPostFilterHint &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei, uint32_t payloadSize,
                                         std::ostream* pDecodedMessageOutputStream);
-#if JVET_AH2006_TXTDESCRINFO_SEI
   void xParseSEITextDescription(SEITextDescription &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
-#endif
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
   void xParseSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIDigitallySignedContentSelection     (SEIDigitallySignedContentSelection &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIDigitallySignedContentVerification  (SEIDigitallySignedContentVerification &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
-#endif
 
   void sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName);
   void sei_read_code(std::ostream *pOS, uint32_t length, uint32_t &ruiCode, const char *pSymbolName);
@@ -153,7 +143,6 @@ protected:
 
 protected:
   HRD m_nestedHrd;
-#if JVET_AJ0207_GFV
   void xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo& sei, uint32_t payloadSize,std::ostream* pDecodedMessageOutputStream);
   uint32_t                         baseCoordinateQuantizationFactor;
   uint32_t                                                   basdCoordinatePointNum;
@@ -172,7 +161,6 @@ protected:
   std::vector<uint32_t>                                      baseMatrixWidth;
   std::vector<uint32_t>                                      baseMatrixHeight;
   std::vector<std::vector<std::vector<std::vector<double>>>> prevMatrix;
-#endif
 };
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE

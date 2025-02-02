@@ -170,7 +170,6 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
 
       CHECK(outputPicWidth == croppedWidth && outputPicHeight == croppedHeight, "When resolutionResamplingFlag is equal to 1, either nnpfcOutputPicWidth is not equal to CroppedWidth or nnpfcOutputPicHeight is not equal to CroppedHeight.");
 
-#if JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION
       if ((superResolutionNnpfc->m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
       {
         int outputPicWidth1 = outputPicWidth + superResolutionNnpfc->m_outSubWidthC * (superResolutionNnpfc->m_spatialExtrapolationLeftOffset + superResolutionNnpfc->m_spatialExtrapolationRightOffset);
@@ -179,7 +178,6 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
         CHECK(outputPicWidth1 == 0 || outputPicWidth1 % superResolutionNnpfc->m_outSubWidthC != 0, "When SpatialExtrapolation is equal to 1, the outputPicWidth1 must be greater than 0 and outputPicWidth1 % outSubWidthC shall equal 0.");
         CHECK(outputPicHeight1 == 0 || outputPicHeight1 % superResolutionNnpfc->m_outSubHeightC != 0, "When SpatialExtrapolation is equal to 1, the outputPicHeight1 must be greater than 0 and outputPicHeight1 % outSubHeightC shall equal 0.");
       }
-#endif
 
     }
     else
@@ -197,15 +195,6 @@ void SEINeuralNetworkPostFiltering::filterPictures(PicList& picList)
     for (auto sei : currCodedPic->m_nnpfcActivated)
     {
       auto currNnpfc = (SEINeuralNetworkPostFilterCharacteristics*) sei;
-#ifndef JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION
-      if ((currNnpfc->m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
-      {
-        currNnpfc->m_overlap = 0;
-        currNnpfc->m_constantPatchSizeFlag = 1;
-        currNnpfc->m_patchWidthMinus1 = croppedWidth - 1;
-        currNnpfc->m_patchHeightMinus1 = croppedHeight - 1;
-      }
-#endif
       checkInputPics(currCodedPic, currNnpfc, sourceWidth, sourceHeight, croppedWidth, croppedHeight);
     }
 
