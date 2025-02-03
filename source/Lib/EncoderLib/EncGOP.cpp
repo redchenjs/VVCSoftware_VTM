@@ -7161,7 +7161,7 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
             localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
             num[l]++;
             numIlrp[l]++;
-            msg(WARNING, "WARNING: inter slice at POC %d and LId %d has an ampty L0 list => Automatically adding inter-layer reference from LId %d\n", slice->getPOC(), curPic->layerId, pic->layerId);
+            msg(WARNING, "WARNING: inter slice at POC %d and LId %d has an empty L0 list => Automatically adding inter-layer reference from LId %d\n", slice->getPOC(), curPic->layerId, pic->layerId);
             break;//only add 1 Inter-layer ref pic automatically.
           }
         }
