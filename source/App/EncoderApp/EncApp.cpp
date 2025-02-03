@@ -1269,10 +1269,14 @@ void EncApp::xInitLibCfg( int layerIdx )
         m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightDenominatorMinus1   (m_nnPostFilterSEICharacteristicsPicHeightDenominator[i] - 1, i);
       }
       m_cEncLib.setNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i], i);
+#if JVET_AK0072_NNPF_TEMP_EXTR_UPDATES
+      m_cEncLib.setNNPostFilterSEICharacteristicsInputPicOutputFlag( m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i], i);
+#else
       if (m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] > 0)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsInputPicOutputFlag( m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i], i);
       }
+#endif
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInterpolatedPictures( m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i], i);
