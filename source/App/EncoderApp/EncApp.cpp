@@ -1436,6 +1436,9 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setmSptiSEISourceType(m_sptiSourceType);
     m_cEncLib.setmSptiSEITimeScale(m_sptiTimeScale);
     m_cEncLib.setmSptiSEINumUnitsInElementalInterval(m_sptiNumUnitsInElementalInterval);
+#if JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG
+    m_cEncLib.setmSptiSEIDirectionFlag(m_sptiDirectionFlag);
+#endif
   }
 
   m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);

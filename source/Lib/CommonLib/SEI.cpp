@@ -520,6 +520,9 @@ SEISourcePictureTimingInfo::SEISourcePictureTimingInfo(const SEISourcePictureTim
   m_sptiSourceType                         = sei.m_sptiSourceType;
   m_sptiTimeScale                          = sei.m_sptiTimeScale;
   m_sptiNumUnitsInElementalInterval        = sei.m_sptiNumUnitsInElementalInterval;
+#if JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG
+  m_sptiDirectionFlag                      = sei.m_sptiDirectionFlag;
+#endif
 }
 
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)

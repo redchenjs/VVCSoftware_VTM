@@ -2211,6 +2211,9 @@ void SEIWriter::xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInf
 
       xWriteCode(sei.m_sptiTimeScale, 32, "spti_time_scale");
       xWriteCode(sei.m_sptiNumUnitsInElementalInterval, 32, "spti_num_units_in_elemental_interval");
+#if JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG
+      xWriteFlag(sei.m_sptiDirectionFlag, "spti_direction_flag");
+#endif
 
       if (sei.m_sptiPersistenceFlag)
       {

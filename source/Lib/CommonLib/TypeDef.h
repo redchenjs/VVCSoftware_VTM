@@ -62,6 +62,8 @@
 
 
 
+#define JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG               1 // Add direction flag to SPTI SEI MESSAGE
+
 //########### place macros to be be kept below this line ###############
 
 #ifndef JVET_AJ0151_DSC_SEI
