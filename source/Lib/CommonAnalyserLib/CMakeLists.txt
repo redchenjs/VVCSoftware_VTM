@@ -75,7 +75,9 @@ if( DEFINED ENABLE_HIGH_BITDEPTH )
   endif()
 endif()
 
-find_package(OpenSSL)
+if ( ENABLE_SEARCH_OPENSSL )
+  find_package(OpenSSL)
+endif()
 
 if (NOT OPENSSL_FOUND)
   message ("OpenSSL not available. Compiling with parsing only support for Digitally Signed Content SEIs")
