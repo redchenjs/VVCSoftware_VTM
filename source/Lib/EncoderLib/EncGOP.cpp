@@ -357,6 +357,9 @@ int EncGOP::xWriteVPS (AccessUnit &accessUnit, const VPS *vps)
   m_HLSWriter->setBitstream(&nalu.m_bitstream);
   CHECK( nalu.m_temporalId, "The value of TemporalId of VPS NAL units shall be equal to 0" );
   m_HLSWriter->codeVPS( vps );
+#if JVET_AJ0151_DSC_SEI
+  xAddToSubstream(0, nalu);
+#endif
   accessUnit.push_back(new NALUnitEBSP(nalu));
   return (int)(accessUnit.back()->m_nalUnitData.str().size()) * 8;
 }
