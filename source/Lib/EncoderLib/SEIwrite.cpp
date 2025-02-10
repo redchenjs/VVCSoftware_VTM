@@ -2164,6 +2164,16 @@ void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInf
     if ((sei.m_type & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) != 0)
     {
       xWriteCode(sei.m_objectBasedIdc, 16, "eoi_object_based_idc");
+#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
+      if (sei.m_objectBasedIdc & EOI_OBJECT_BASED::COARSER_QUANTIZATION)
+      {
+        xWriteUvlc(sei.m_quantThresholdDelta, "eoi_quant_threshold_delta");
+        if (sei.m_quantThresholdDelta > 0)
+        {
+          xWriteFlag(sei.m_picQuantObjectFlag, "eoi_pic_quant_object_flag");
+        }
+      }
+#endif
     }
     if ((sei.m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
     {

@@ -1126,6 +1126,10 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setEOISEIForMachineAnalysisIdc(m_eoiSEIForMachineAnalysisIdc);
   m_cEncLib.setEOISEIType(m_eoiSEIType);
   m_cEncLib.setEOISEIObjectBasedIdc(m_eoiSEIObjectBasedIdc);
+#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
+  m_cEncLib.setEOISEIQuantThresholdDelta(m_eoiSEIQuantThresholdDelta);
+  m_cEncLib.setEOISEIPicQuantObjectFlag(m_eoiSEIPicQuantObjectFlag);
+#endif
   m_cEncLib.setEOISEITemporalResamplingTypeFlag(m_eoiSEITemporalResamplingTypeFlag);
   m_cEncLib.setEOISEINumIntPics(m_eoiSEINumIntPics);
   m_cEncLib.setEOISEIOrigPicDimensionsFlag(m_eoiSEIOrigPicDimensionsFlag);

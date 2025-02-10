@@ -64,6 +64,8 @@
 
 #define JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG               1 // Add direction flag to SPTI SEI MESSAGE
 
+#define JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD              1 // QP threshold for object-based optimization in EOI SEI
+
 //########### place macros to be be kept below this line ###############
 
 #ifndef JVET_AJ0151_DSC_SEI

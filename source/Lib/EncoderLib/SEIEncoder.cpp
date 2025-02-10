@@ -1882,6 +1882,16 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
     if ((sei->m_type & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) != 0)
     {
       sei->m_objectBasedIdc = m_pcCfg->getEOISEIObjectBasedIdc();
+#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
+      if (sei->m_objectBasedIdc & EOI_OBJECT_BASED::COARSER_QUANTIZATION)
+      {
+        sei->m_quantThresholdDelta = m_pcCfg->getEOISEIQuantThresholdDelta();
+        if (sei->m_quantThresholdDelta > 0)
+        {
+          sei->m_picQuantObjectFlag = m_pcCfg->getEOISEIPicQuantObjectFlag();
+        }
+      }
+#endif
     }
     if ((sei->m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
     {
