@@ -1535,7 +1535,14 @@ public:
     , m_noPrevCLVSFlag(false)
     , m_noFollCLVSFlag(false)
     , m_persistenceFlag(false)
-  {}
+  #if JVET_AJ0104_NNPFA_PROMPT_UPDATE
+    , m_promptUpdateFlag(false)
+    , m_prompt("")
+#endif
+#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+    , m_numInputPicShift(0)
+#endif 
+{}
   SEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation& sei);
 
   virtual ~SEINeuralNetworkPostFilterActivation() {}
@@ -1547,6 +1554,13 @@ public:
   bool           m_noFollCLVSFlag;
   bool           m_persistenceFlag;
   std::vector<bool> m_outputFlag;
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
+  bool           m_promptUpdateFlag;
+  std::string    m_prompt;
+#endif
+#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+  uint32_t       m_numInputPicShift;
+#endif 
 };
 
 class SEIPostFilterHint : public SEI

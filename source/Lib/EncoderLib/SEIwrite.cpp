@@ -2105,6 +2105,21 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
     {
       xWriteFlag(sei.m_outputFlag[i], "nnpfa_output_flag");
     }
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE  
+    xWriteFlag(sei.m_promptUpdateFlag, "nnpfa_prompt_update_flag");
+    if (sei.m_promptUpdateFlag)
+    {
+      while (!isByteAligned())
+      {
+        xWriteFlag(0, "nnpfa_alignment_zero_bit");
+      }
+      xWriteString(sei.m_prompt, "nnpfa_prompt");
+    }
+#endif
+#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+    xWriteUvlc((uint32_t)sei.m_numInputPicShift, "nnpfa_num_input_pic_shift");
+#endif 
+
   }
 }
 

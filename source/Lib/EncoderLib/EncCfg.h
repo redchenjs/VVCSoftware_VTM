@@ -787,6 +787,13 @@ protected:
   bool                    m_nnPostFilterSEIActivationNoFollCLVSFlag;
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputflag;
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
+  bool                    m_nnPostFilterSEIActivationPromptUpdateFlag;
+  std::string             m_nnPostFilterSEIActivationPrompt;
+#endif
+#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+  uint32_t                m_nnPostFilterSEIActivationNumInputPicShift;
+#endif
 
   // Encoder Optimization Information SEI
   bool  m_eoiSEIEnabled;
@@ -2236,6 +2243,16 @@ public:
   uint32_t    getNnPostFilterSEIActivationNumOutputEntries() const                                                      { return (uint32_t)m_nnPostFilterSEIActivationOutputflag.size(); }
   void        setNnPostFilterSEIActivationOutputFlag(std::vector<bool> value)                                           { m_nnPostFilterSEIActivationOutputflag = value; }
   const       std::vector<bool>& getNnPostFilterSEIActivationOutputFlag() const                                         { return m_nnPostFilterSEIActivationOutputflag; }
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
+  void        setNnPostFilterSEIActivationPromptUpdateFlag(bool  promptUpdateFlag)                                      { m_nnPostFilterSEIActivationPromptUpdateFlag = promptUpdateFlag; }
+  bool        getNnPostFilterSEIActivationPromptUpdateFlag() const                                                      { return m_nnPostFilterSEIActivationPromptUpdateFlag; }
+  void        setNnPostFilterSEIActivationPrompt(std::string prompt)                                                    { m_nnPostFilterSEIActivationPrompt = prompt; }
+  std::string getNnPostFilterSEIActivationPrompt() const                                                                { return m_nnPostFilterSEIActivationPrompt; }
+#endif
+#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+  void        setNnPostFilterSEIActivationNumInputPicShift(uint32_t numInputPicShift)                                   { m_nnPostFilterSEIActivationNumInputPicShift = numInputPicShift; }
+  uint32_t    getNnPostFilterSEIActivationNumInputPicShift() const                                                      { return m_nnPostFilterSEIActivationNumInputPicShift; }
+#endif 
 
   void  setBufferingPeriodSEIEnabled(bool b)                         { m_bufferingPeriodSEIEnabled = b; }
   bool  getBufferingPeriodSEIEnabled() const                         { return m_bufferingPeriodSEIEnabled; }

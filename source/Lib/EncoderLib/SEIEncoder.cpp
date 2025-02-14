@@ -1864,6 +1864,16 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
     sei->m_noPrevCLVSFlag = m_pcCfg->getNnPostFilterSEIActivationNoPrevCLVSFlag();
     sei->m_noFollCLVSFlag = m_pcCfg->getNnPostFilterSEIActivationNoFollCLVSFlag();
     sei->m_outputFlag = m_pcCfg->getNnPostFilterSEIActivationOutputFlag();
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
+    sei->m_promptUpdateFlag = m_pcCfg->getNnPostFilterSEIActivationPromptUpdateFlag();
+    if (sei->m_promptUpdateFlag)
+    {
+      sei->m_prompt = m_pcCfg->getNnPostFilterSEIActivationPrompt();
+    }
+#endif
+#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+    sei->m_numInputPicShift = m_pcCfg->getNnPostFilterSEIActivationNumInputPicShift();
+#endif
   }
 }
 
