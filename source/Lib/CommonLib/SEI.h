@@ -1535,7 +1535,7 @@ public:
     , m_noPrevCLVSFlag(false)
     , m_noFollCLVSFlag(false)
     , m_persistenceFlag(false)
-  #if JVET_AJ0104_NNPFA_PROMPT_UPDATE
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
     , m_promptUpdateFlag(false)
     , m_prompt("")
 #endif
