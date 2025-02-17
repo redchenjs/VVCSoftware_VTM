@@ -357,6 +357,9 @@ int EncGOP::xWriteVPS (AccessUnit &accessUnit, const VPS *vps)
   m_HLSWriter->setBitstream(&nalu.m_bitstream);
   CHECK( nalu.m_temporalId, "The value of TemporalId of VPS NAL units shall be equal to 0" );
   m_HLSWriter->codeVPS( vps );
+#if JVET_AJ0151_DSC_SEI
+  xAddToSubstream(0, nalu);
+#endif
   accessUnit.push_back(new NALUnitEBSP(nalu));
   return (int)(accessUnit.back()->m_nalUnitData.str().size()) * 8;
 }
@@ -1104,17 +1107,14 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     seiMessages.push_back(fgcSEI);
   }
 
-#if JVET_AH2006_EOI_SEI
   if (m_pcCfg->getEOISEIEnabled())
   {
     SEIEncoderOptimizationInfo *eoiSEI = new SEIEncoderOptimizationInfo;
     m_seiEncoder.initSEIEncoderOptimizationInfo(eoiSEI);
     seiMessages.push_back(eoiSEI);
   }
-#endif
 
 
-#if JVET_AG0322_MODALITY_INFORMATION
   // modality information SEI
   if (m_pcCfg->getMiSEIEnabled())
   {
@@ -1122,7 +1122,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     m_seiEncoder.initSEIModalityInfo(seiMI);
     seiMessages.push_back(seiMI);
   }
-#endif
 
   if (m_pcCfg->getNnPostFilterSEIActivationEnabled() && !m_pcCfg->getNnPostFilterSEIActivationUseSuffixSEI())
   {
@@ -1147,7 +1146,6 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
 #endif
 }
 
-#if JVET_AJ0207_GFV
 void EncGOP::xCreateGenerativeFaceVideoSEIMessages(SEIMessages& seiMessages)
 {
   for (int frameIndex = 0; frameIndex < m_pcCfg->getGenerativeFaceVideoSEINumber(); frameIndex++)
@@ -1157,7 +1155,6 @@ void EncGOP::xCreateGenerativeFaceVideoSEIMessages(SEIMessages& seiMessages)
     seiMessages.push_back(seiGenerativeFaceVideo);
   }
 }
-#endif
 
 void EncGOP::xCreateNNPostFilterCharacteristicsSEIMessages(SEIMessages& seiMessages)
 {
@@ -4129,12 +4126,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         // create NNPostFilterSEICharacteristics SEI as suffix SEI
         xCreateNNPostFilterCharacteristicsSEIMessages(trailingSeiMessages);
       }
-#if JVET_AJ0207_GFV
       if (writePS && m_pcCfg->getGenerativeFaceVideoSEIEnabled())
       {
         xCreateGenerativeFaceVideoSEIMessages(trailingSeiMessages);
       }
-#endif
       //send LMCS APS when LMCSModel is updated. It can be updated even current slice does not enable reshaper.
       //For example, in RA, update is on intra slice, but intra slice may not use reshaper
       if (pcSlice->getSPS()->getUseLmcs())

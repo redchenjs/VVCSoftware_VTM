@@ -578,9 +578,7 @@ static const uint32_t MAX_NNPFA_ID =                               0xfffffffe; /
 static const uint32_t MAX_NNPFC_ID =                               0xfffffffe; // Maximum supported nnpfc_id
 static constexpr double SII_PF_W2 =                                       0.6; // weight for current picture
 static constexpr double SII_PF_W1 =                                       0.4; // weight for previous picture , it must be equal to 1.0 - SII_PF_W2
-#if JVET_AJ0207_GFV
 static const uint32_t MAX_GFV_ID =                                 0xfffffffe; // Maximum supported GFV_id
-#endif
 // ====================================================================================================================
 // Macro functions
 // ====================================================================================================================

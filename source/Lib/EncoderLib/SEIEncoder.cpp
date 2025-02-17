@@ -587,6 +587,9 @@ void SEIEncoder::initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEIS
   SEISourcePictureTimingInfo->m_sptiSourceType                  = m_pcCfg->getmSptiSEISourceType();
   SEISourcePictureTimingInfo->m_sptiTimeScale                   = m_pcCfg->getmSptiSEITimeScale();
   SEISourcePictureTimingInfo->m_sptiNumUnitsInElementalInterval = m_pcCfg->getmSptiSEINumUnitsInElementalInterval();
+#if JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG
+  SEISourcePictureTimingInfo->m_sptiDirectionFlag               = m_pcCfg->getmSptiSEIDirectionFlag();
+#endif
   SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1          = m_pcCfg->getMaxTempLayer() - 1;
   SEISourcePictureTimingInfo->m_sptiCancelFlag                  = 0;
   SEISourcePictureTimingInfo->m_sptiPersistenceFlag             = 1;
@@ -614,9 +617,7 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   seiProcessingOrderInfo->m_posBreadthFirstFlag = m_pcCfg->getPoSEIBreadthFirstFlag();
   seiProcessingOrderInfo->m_posWrappingFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posImportanceFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
   seiProcessingOrderInfo->m_posProcessingDegreeFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
-#endif
   seiProcessingOrderInfo->m_posPrefixFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPayloadType.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
@@ -626,9 +627,7 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   {
     seiProcessingOrderInfo->m_posWrappingFlag[i] = m_pcCfg->getPoSEIWrappingFlag(i);
     seiProcessingOrderInfo->m_posImportanceFlag[i] = m_pcCfg->getPoSEIImportanceFlag(i);
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
     seiProcessingOrderInfo->m_posProcessingDegreeFlag[i] = m_pcCfg->getPoSEIProcessingDegreeFlag(i);
-#endif
     seiProcessingOrderInfo->m_posPrefixFlag[i] = m_pcCfg->getPoSEIPrefixFlag(i);
     seiProcessingOrderInfo->m_posPayloadType[i]     = m_pcCfg->getPoSEIPayloadType(i);
     seiProcessingOrderInfo->m_posProcessingOrder[i] = m_pcCfg->getPoSEIProcessingOrder(i);
@@ -689,25 +688,13 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiNNPFC);
         break;
       }
-#if !JVET_AJ0129_SPO_SEI_LIST
-      case SEI::PayloadType::POST_FILTER_HINT:
-      {
-        SEIPostFilterHint* seiPFH = new SEIPostFilterHint;
-        initSEIPostFilterHint(seiPFH);
-        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiPFH);
-        break;
-      }
-#endif
-#if JVET_AH2006_TXTDESCRINFO_SEI
-      case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
+      case SEI::PayloadType::TEXT_DESCRIPTION:
       {
         SEITextDescription *seiTextDescription = new SEITextDescription();
         initSEITextDescription(seiTextDescription);
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(seiTextDescription);
         break;
       }
-#endif
-#if JVET_AJ0129_SPO_SEI_LIST
       case SEI::PayloadType::FRAME_PACKING:
       {
         SEIFramePacking* sei = new SEIFramePacking;
@@ -792,7 +779,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
         break;
       }
-#endif
 #if JVET_AJ0048_SPO_SEI_LIST
       case SEI::PayloadType::OBJECT_MASK_INFO:
       {
@@ -842,16 +828,13 @@ void SEIEncoder::initSEIPostFilterHint(SEIPostFilterHint *seiPostFilterHint)
   }
 }
 
-#if JVET_AH2006_TXTDESCRINFO_SEI
 void SEIEncoder::initSEITextDescription(SEITextDescription *seiTestDescrition)
 {
   CHECK(!(m_isInitialized), "Text description information SEI already initialized");
   CHECK(!(seiTestDescrition != nullptr), "Need a seiTtestDescribtion for initialization (got nullptr)");
   seiTestDescrition->m_textDescriptionID = m_pcCfg->getTextDescriptionSEIId();
   seiTestDescrition->m_textCancelFlag = m_pcCfg->getTextSEICancelFlag();
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
   seiTestDescrition->m_textIDCancelFlag = m_pcCfg->getTextSEIIDCancelFlag();
-#endif
   seiTestDescrition->m_textPersistenceFlag = m_pcCfg->getTextSEIPersistenceFlag();
   seiTestDescrition->m_textDescriptionPurpose = m_pcCfg->getTextSEIPurpose();
   seiTestDescrition->m_textNumStringsMinus1 = m_pcCfg->getTextSEINumStringsMinus1();
@@ -860,7 +843,6 @@ void SEIEncoder::initSEITextDescription(SEITextDescription *seiTestDescrition)
   for (int i=0; i<=seiTestDescrition->m_textNumStringsMinus1; i++)
   {
     seiTestDescrition->m_textDescriptionStringLang[i] = m_pcCfg->getTextSEIDescriptionStringLang(i);
-#if JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR
     if (m_pcCfg->getTextSEIPurpose() == 6 && m_pcCfg->getTextSEIDescriptionString(i).empty()) // Use default encoder description in case input is empty string
     {
       seiTestDescrition->m_textDescriptionString[i] = std::string("VTM ") + std::string(VTM_VERSION);
@@ -869,12 +851,8 @@ void SEIEncoder::initSEITextDescription(SEITextDescription *seiTestDescrition)
     {
       seiTestDescrition->m_textDescriptionString[i] = m_pcCfg->getTextSEIDescriptionString(i);
     }
-#else
-    seiTestDescrition->m_textDescriptionString[i] = m_pcCfg->getTextSEIDescriptionString(i);
-#endif
   }
 }
-#endif
 
 template <typename T>
 static void readTokenValue(T            &returnedValue, /// value returned
@@ -1763,22 +1741,13 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     {
       sei->m_numberExtrapolatedPicturesMinus1 = m_pcCfg->getNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1(filterIdx);
     }
-#if NNPFC_SPATIAL_EXTRAPOLATION
     if((sei->m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
     {
       sei->m_spatialExtrapolationLeftOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset(filterIdx);
       sei->m_spatialExtrapolationRightOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationRightOffset(filterIdx);
       sei->m_spatialExtrapolationTopOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset(filterIdx);
       sei->m_spatialExtrapolationBottomOffset = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(filterIdx);
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-      sei->m_spatialExtrapolationPromptPresentFlag = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag(filterIdx);
-      if (sei->m_spatialExtrapolationPromptPresentFlag)
-      {
-        sei->m_prompt = m_pcCfg->getNNPostFilterSEICharacteristicsSpatialExrapolationPrompt(filterIdx);
-      }
-#endif
     }
-#endif
 
     sei->m_componentLastFlag = m_pcCfg->getNNPostFilterSEICharacteristicsComponentLastFlag(filterIdx);
     sei->m_inpFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsInpFormatIdc(filterIdx);
@@ -1793,7 +1762,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
     CHECK((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0 && sei->m_inpOrderIdc == 0, "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_inp_order_idc shall not be equal to 0");
     sei->m_auxInpIdc             = m_pcCfg->getNNPostFilterSEICharacteristicsAuxInpIdc(filterIdx);
 
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
     if ((sei->m_auxInpIdc & 2) > 0)
     {
       sei->m_inbandPromptFlag = m_pcCfg->getNNPostFilterSEICharacteristicsInbandPromptFlag(filterIdx);
@@ -1802,7 +1770,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_prompt = m_pcCfg->getNNPostFilterSEICharacteristicsPrompt(filterIdx);
       }
     }
-#endif
 
     sei->m_outFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutFormatIdc(filterIdx);
     CHECK(sei->m_outFormatIdc > 255, "The value of nnpfc_out_format_idc shall be in the range of 0 to 255");
@@ -1826,12 +1793,10 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
           "nnpfc_out_tensor_chroma_bitdepth_minus8 is equal to nnpfc_out_tensor_luma_bitdepth_minus8 + 1, nnpfc_out_order_idc is equal to 2, outSubHeightC is equal to 1, and outSubWidthC is equal to 1");
       }
     }
-#if JVET_AD0067_INCLUDE_SYNTAX
     if (sei->m_sepColDescriptionFlag && (sei->m_outFormatIdc == 1))
     {
       sei->m_fullRangeFlag = m_pcCfg->getNNPostFilterSEICharacteristicsFullRangeFlag(filterIdx);
     }
-#endif
     sei->m_outOrderIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutOrderIdc(filterIdx);
     CHECK((sei->m_purpose & NNPC_PurposeType::CHROMA_UPSAMPLING) != 0 && (sei->m_outOrderIdc == 0 || sei->m_outOrderIdc == 3), "When nnpfc_purpose & 0x02 is not equal to 0, nnpfc_out_order_idc shall not be equal to 0 or 3");
     CHECK((sei->m_purpose & NNPC_PurposeType::COLOURIZATION) != 0 && sei->m_outOrderIdc == 0, "When nnpfc_purpose & 0x20 is not equal to 0, nnpfc_out_order_idc shall not be equal to 0");
@@ -1918,7 +1883,6 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
   }
 }
 
-#if JVET_AH2006_EOI_SEI
 void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
@@ -1960,9 +1924,7 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
     }
   }
 }
-#endif
 
-#if JVET_AG0322_MODALITY_INFORMATION
 void SEIEncoder::initSEIModalityInfo(SEIModalityInfo *seiMI)
 {
   CHECK(!(m_isInitialized), "Modality Information SEI is already initialised");
@@ -1983,9 +1945,7 @@ void SEIEncoder::initSEIModalityInfo(SEIModalityInfo *seiMI)
     }
   }
 }
-#endif
 
-#if JVET_AJ0207_GFV
 void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int currframeindex)
 {
   CHECK(!m_isInitialized, "Unspecified error");
@@ -2164,7 +2124,6 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
     }
   }
 }
-#endif
 
 #if JVET_AJ0151_DSC_SEI
 void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei)

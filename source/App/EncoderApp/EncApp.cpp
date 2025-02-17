@@ -1119,7 +1119,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   {
     m_cEncLib.setCtiSEILut(m_ctiSEILut[i], i);
   }
-#if JVET_AH2006_EOI_SEI
   m_cEncLib.setEOISEIEnabled(m_eoiSEIEnabled);
   m_cEncLib.setEOISEICancelFlag(m_eoiSEICancelFlag);
   m_cEncLib.setEOISEIPersistenceFlag(m_eoiSEIPersistenceFlag);
@@ -1135,8 +1134,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setEOISEISpatialResamplingTypeFlag(m_eoiSEISpatialResamplingTypeFlag);
   m_cEncLib.setEOISEIPrivacyProtectionTypeIdc(m_eoiSEIPrivacyProtectionTypeIdc);
   m_cEncLib.setEOISEIPrivacyProtectedInfoType(m_eoiSEIPrivacyProtectedInfoType);
-#endif
-#if JVET_AG0322_MODALITY_INFORMATION
   // Modality Information SEI
   m_cEncLib.setMiSEIEnabled                                      (m_miSEIEnabled);
   m_cEncLib.setMiCancelFlag                                      (m_miCancelFlag);
@@ -1147,7 +1144,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setMiMinWavelengthExponentPlus15                     (m_miMinWavelengthExponentPlus15);
   m_cEncLib.setMiMaxWavelengthMantissa                           (m_miMaxWavelengthMantissa);
   m_cEncLib.setMiMaxWavelengthExponentPlus15                     (m_miMaxWavelengthExponentPlus15);
-#endif
   // content colour volume SEI
   m_cEncLib.setCcvSEIEnabled                                     (m_ccvSEIEnabled);
   m_cEncLib.setCcvSEICancelFlag                                  (m_ccvSEICancelFlag);
@@ -1285,22 +1281,13 @@ void EncApp::xInitLibCfg( int layerIdx )
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1( m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i], i);
       }
-#if NNPFC_SPATIAL_EXTRAPOLATION
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset  (m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationRightOffset (m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationTopOffset   (m_nnPostFilterSEICharacteristicsSpatialExtrapolationTopOffset[i], i);
         m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset(m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i], i);
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-      m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag( m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[i], i);
-      if (m_cEncLib.getNNPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag(i))
-      {
-        m_cEncLib.setNNPostFilterSEICharacteristicsSpatialExrapolationPrompt( m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[i], i);
       }
-#endif
-      }
-#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag  (m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsComponentLastFlag       (m_nnPostFilterSEICharacteristicsComponentLastFlag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsInpFormatIdc            (m_nnPostFilterSEICharacteristicsInpFormatIdc[i], i);
@@ -1366,13 +1353,11 @@ void EncApp::xInitLibCfg( int layerIdx )
       m_cEncLib.setNNPostFilterSEICharacteristicsPayloadFilename(m_nnPostFilterSEICharacteristicsPayloadFilename[i], i);
     }
     m_cEncLib.setNNPostFilterSEICharacteristicsAuxInpIdc               (m_nnPostFilterSEICharacteristicsAuxInpIdc[i], i);
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
     m_cEncLib.setNNPostFilterSEICharacteristicsInbandPromptFlag( m_nnPostFilterSEICharacteristicsInbandPromptFlag[i], i);
     if (m_cEncLib.getNNPostFilterSEICharacteristicsInbandPromptFlag(i))
     {
       m_cEncLib.setNNPostFilterSEICharacteristicsPrompt( m_nnPostFilterSEICharacteristicsPrompt[i], i);
     }
-#endif
     m_cEncLib.setNNPostFilterSEICharacteristicsSepColDescriptionFlag   (m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[i], i);
     if (m_cEncLib.getNNPostFilterSEICharacteristicsSepColDescriptionFlag(i))
     {
@@ -1380,12 +1365,10 @@ void EncApp::xInitLibCfg( int layerIdx )
       m_cEncLib.setNNPostFilterSEICharacteristicsTransCharacteristics  (m_nnPostFilterSEICharacteristicsTransCharacteristics[i],i);
       m_cEncLib.setNNPostFilterSEICharacteristicsMatrixCoeffs          (m_nnPostFilterSEICharacteristicsMatrixCoeffs[i],i);
     }
-#if JVET_AD0067_INCLUDE_SYNTAX
     if (m_cEncLib.getNNPostFilterSEICharacteristicsSepColDescriptionFlag(i) && (m_cEncLib.getNNPostFilterSEICharacteristicsOutFormatIdc(i)==1))
     {
       m_cEncLib.setNNPostFilterSEICharacteristicsFullRangeFlag         (m_nnPostFilterSEICharacteristicsFullRangeFlag[i],i);
     }
-#endif
   }
   m_cEncLib.setNnPostFilterSEIActivationEnabled                  (m_nnPostFilterSEIActivationEnabled);
   m_cEncLib.setNnPostFilterSEIActivationUseSuffixSEI             (m_nnPostFilterSEIActivationUseSuffixSEI);
@@ -1453,33 +1436,30 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setmSptiSEISourceType(m_sptiSourceType);
     m_cEncLib.setmSptiSEITimeScale(m_sptiTimeScale);
     m_cEncLib.setmSptiSEINumUnitsInElementalInterval(m_sptiNumUnitsInElementalInterval);
+#if JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG
+    m_cEncLib.setmSptiSEIDirectionFlag(m_sptiDirectionFlag);
+#endif
   }
 
   m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
   m_cEncLib.setPoSEIBreadthFirstFlag                             (m_poSEIBreadthFirstFlag);
   m_cEncLib.setPoSEIWrappingFlag                                 (m_poSEIWrappingFlag);
   m_cEncLib.setPoSEIImportanceFlag                               (m_poSEIImportanceFlag);
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
   m_cEncLib.setPoSEIProcessingDegreeFlag                         (m_poSEIProcessingDegreeFlag);
-#endif
   m_cEncLib.setPoSEIPrefixFlag                                   (m_poSEIPrefixFlag);
   m_cEncLib.setPoSEIPayloadType                                  (m_poSEIPayloadType);
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
   m_cEncLib.setPoSEINumOfPrefixBits                              (m_poSEINumOfPrefixBits);
   m_cEncLib.setPoSEIPrefixByte                                   (m_poSEIPrefixByte);
 
- #if JVET_AH2006_TXTDESCRINFO_SEI
   m_cEncLib.setTextDescriptionSEIId(m_SEITextDescriptionID);
   m_cEncLib.setTextSEICancelFlag(m_SEITextCancelFlag);
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
   m_cEncLib.setTextSEIIDCancelFlag(m_SEITextIDCancelFlag);
-#endif
   m_cEncLib.setTextSEIPersistenceFlag(m_SEITextPersistenceFlag);
   m_cEncLib.setTextSEIPurpose(m_SEITextDescriptionPurpose);
   m_cEncLib.setTextSEINumStringsMinus1(m_SEITextNumStringsMinus1);
   m_cEncLib.setTextSEIDescriptionStringLang(m_SEITextDescriptionStringLang);
   m_cEncLib.setTextSEIDescriptionString(m_SEITextDescriptionString);
-#endif
 
 
   m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
@@ -1595,7 +1575,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setDPFKeyLen(m_dpfKeyLen);
   m_cEncLib.setDPFNonkeyLen(m_dpfNonkeyLen);
 
-#if JVET_AJ0207_GFV
   m_cEncLib.setGenerativeFaceVideoSEIEnabled                            ( m_generativeFaceVideoEnabled );
   m_cEncLib.setGenerativeFaceVideoSEINumber                             ( m_generativeFaceVideoSEINumber );
   m_cEncLib.setGenerativeFaceVideoSEIId                                 ( m_generativeFaceVideoSEIId );
@@ -1634,7 +1613,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setGenerativeFaceVideoSEIMatrixHeight                       ( m_generativeFaceVideoSEIMatrixHeight );
   m_cEncLib.setGenerativeFaceVideoSEIMatrixElement                      ( m_generativeFaceVideoSEIMatrixElement );
   m_cEncLib.setGenerativeFaceVideoSEIPayloadFilename                    ( m_generativeFaceVideoSEIPayloadFilename );
-#endif
 }
 
 void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )

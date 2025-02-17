@@ -545,33 +545,26 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIProcessingOrderNesting((SEIProcessingOrderNesting&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
         pDecodedMessageOutputStream);
       break;
-#if JVET_AH2006_TXTDESCRINFO_SEI
-    case SEI::PayloadType::SEI_TEXT_DESCRIPTION:
+    case SEI::PayloadType::TEXT_DESCRIPTION:
       sei = new SEITextDescription;
       xParseSEITextDescription((SEITextDescription&)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     case SEI::PayloadType::POST_FILTER_HINT:
       sei = new SEIPostFilterHint;
       xParseSEIPostFilterHint((SEIPostFilterHint &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_AH2006_EOI_SEI
     case SEI::PayloadType::ENCODER_OPTIMIZATION_INFO:
       sei = new SEIEncoderOptimizationInfo;
       xParseSEIEncoderOptimizationInfo((SEIEncoderOptimizationInfo &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     case SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO:
       sei = new SEISourcePictureTimingInfo;
       xParseSEISourcePictureTimingInfo((SEISourcePictureTimingInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_AG0322_MODALITY_INFORMATION    
     case SEI::PayloadType::MODALITY_INFORMATION:
       sei = new SEIModalityInfo; 
       xParseSEIModalityInfo((SEIModalityInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
     case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION:
       sei = new SEIDigitallySignedContentInitialization;
       xParseSEIDigitallySignedContentInitialization((SEIDigitallySignedContentInitialization &) *sei, payloadSize, pDecodedMessageOutputStream);
@@ -580,7 +573,6 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIDigitallySignedContentSelection;
       xParseSEIDigitallySignedContentSelection((SEIDigitallySignedContentSelection &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -654,18 +646,14 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIProcessingOrderNesting((SEIProcessingOrderNesting&)*sei, nalUnitType, nuh_layer_id, payloadSize, vps, sps, hrd,
         pDecodedMessageOutputStream);
       break;
-#if JVET_AJ0207_GFV
     case SEI::PayloadType::GENERATIVE_FACE_VIDEO:
       sei = new SEIGenerativeFaceVideo;
       xParseSEIGenerativeFaceVideo((SEIGenerativeFaceVideo &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
     case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION:
       sei = new SEIDigitallySignedContentVerification;
       xParseSEIDigitallySignedContentVerification((SEIDigitallySignedContentVerification &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -825,23 +813,17 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
   sei.m_posPrefixByte.resize(numMaxSeiMessages);
   sei.m_posWrappingFlag.resize(numMaxSeiMessages);
   sei.m_posImportanceFlag.resize(numMaxSeiMessages);
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
   sei.m_posProcessingDegreeFlag.resize(numMaxSeiMessages);
-#endif
-#if JVET_AJ0129_SPO_SEI_LIST
   bool NNPFCFound = false;
   bool NNPFAFound = false;
-#endif
   for (i = 0; i < numMaxSeiMessages; i++)
   {
     sei_read_flag(decodedMessageOutputStream, val, "po_sei_wrapping_flag[i]");
     sei.m_posWrappingFlag[i] = val;
     sei_read_flag(decodedMessageOutputStream, val, "po_sei_importance_flag[i]");
     sei.m_posImportanceFlag[i] = val;
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
     sei_read_flag(decodedMessageOutputStream, val, "po_sei_processing_degree_flag[i]");
     sei.m_posProcessingDegreeFlag[i] = val;
-#endif
       sei_read_code(decodedMessageOutputStream, 13, val, "po_sei_payload_type[i]");
       sei.m_posPayloadType[i] = val;
       sei_read_flag(decodedMessageOutputStream, val, "po_sei_prefix_flag[i]");
@@ -849,16 +831,12 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
     sei_read_code(decodedMessageOutputStream, 8, val, "po_sei_processing_order[i]");
     sei.m_posProcessingOrder[i] = val;
     CHECK((i > 0) && (sei.m_posProcessingOrder[i] < sei.m_posProcessingOrder[i-1]) , "For i greater than 0, po_sei_processing_order[i] shall be greater than or equal to po_sei_processing_order[i-1]");
-#if JVET_AJ0129_SPO_SEI_LIST
     NNPFCFound = NNPFCFound || (sei.m_posPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
     NNPFAFound = NNPFAFound || (sei.m_posPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
     CHECK(!NNPFCFound && NNPFAFound, "NNPFA payload type found before NNPFC payload type in SPO SEI");
-#endif
   }
   CHECK(i<2, "An SEI processing order SEI message shall contain at least two pairs sei_payloadType[i] and sei_processingOrder[i]");
-#if JVET_AJ0129_SPO_SEI_LIST
   CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
-#endif
 
   for (i = 0; i < numMaxSeiMessages; i++)
   {
@@ -887,7 +865,6 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
     }
   }
 
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
   uint32_t numProcStgs = sei.m_posNumMinus2 + 2;
   std::vector<uint32_t> seiTypeIdx;
   for (uint32_t j = 0; j < numProcStgs; j++)
@@ -923,7 +900,6 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
       sei.m_posSubChainIdx[j] = subChainFlag * subChainPrevIdx;
     }
   }
-#endif
 }
 
 void SEIReader::xParseSEIProcessingOrderNesting(SEIProcessingOrderNesting& sei, const NalUnitType nalUnitType, const uint32_t nuhLayerId, uint32_t payloadSize, const VPS* vps, const SPS* sps, HRD& hrd, std::ostream* decodedMessageOutputStream)
@@ -2085,7 +2061,6 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
   }
 }
 
-#if JVET_AH2006_EOI_SEI
 void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
 {
   uint32_t val;
@@ -2100,21 +2075,14 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
     sei.m_forHumanViewingIdc = val;
     sei_read_code(pDecodedMessageOutputStream, 2, val, "eoi_for_machine_analysis_idc");
     sei.m_forMachineAnalysisIdc = val;
-#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
     sei_read_code(pDecodedMessageOutputStream, 2, val, "eoi_reserved_zero_2bits");
     CHECK(val != 0, "non-zero value parsed for eoi_reserved_zero_2bits");
-#endif
     sei_read_code(pDecodedMessageOutputStream, 16, val, "eoi_type");
     sei.m_type = val;
     if ((sei.m_type & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) != 0)
     {
-#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
       sei_read_code(pDecodedMessageOutputStream, 16, val, "eoi_object_based_idc");
       sei.m_objectBasedIdc = val;
-#else
-      sei_read_uvlc(pDecodedMessageOutputStream, val, "eoi_object_based_idc");
-      sei.m_objectBasedIdc = val;
-#endif
     }
     if ((sei.m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
     {
@@ -2144,21 +2112,14 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
     
     if ((sei.m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
     {
-#if JVET_AJ0063_ENCODER_OPTIMIZATION_INFORMATION
       sei_read_code(pDecodedMessageOutputStream, 16, val, "eoi_privacy_protection_type_idc");
       sei.m_privacyProtectionTypeIdc = val;
-#else
-      sei_read_code(pDecodedMessageOutputStream, 4, val, "eoi_privacy_protection_type_idc");
-      sei.m_privacyProtectionTypeIdc = val;
-#endif
       sei_read_code(pDecodedMessageOutputStream, 8, val, "eoi_privacy_protected_info_type");
       sei.m_privacyProtectedInfoType = val;
     }
   }
 }
-#endif 
 
-#if JVET_AG0322_MODALITY_INFORMATION
 void SEIReader::xParseSEIModalityInfo(SEIModalityInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   uint32_t code;
@@ -2185,7 +2146,6 @@ void SEIReader::xParseSEIModalityInfo(SEIModalityInfo& sei, uint32_t payloadSize
     }
   }
 }
-#endif
 
 void SEIReader::xParseSEIFrameFieldinfo(SEIFrameFieldInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
@@ -3288,7 +3248,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_numberExtrapolatedPicturesMinus1 = val;
     }
 
-#if NNPFC_SPATIAL_EXTRAPOLATION
     if((sei.m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0)
     {
       int32_t value;
@@ -3300,23 +3259,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei.m_spatialExtrapolationTopOffset = value;
       sei_read_svlc(pDecodedMessageOutputStream, value, "nnpfc_spatial_extrapolation_bottom_offset");
       sei.m_spatialExtrapolationBottomOffset = value;
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_spatial_extrapolation_prompt_present_flag");
-      sei.m_spatialExtrapolationPromptPresentFlag = val;
-      if (sei.m_spatialExtrapolationPromptPresentFlag)
-      {
-        std::string valp;
-        while (!isByteAligned())
-        {
-          sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_alignment_zero_bit_c");
-          CHECK(val != 0, "nnpfc_alignment_zero_bit_c not equal to zero");
-        }
-        sei_read_string(pDecodedMessageOutputStream, valp, "nnpfc_prompt");
-        sei.m_prompt = valp;
-      }
-#endif
     }
-#endif
 
     sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_component_last_flag");
     sei.m_componentLastFlag = val;
@@ -3327,7 +3270,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_auxiliary_inp_idc");
     sei.m_auxInpIdc = val;
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
     CHECK(val > 3, "The value of nnpfc_auxiliary_inp_idc shall be in the range of 0 to 3");
     if ((sei.m_auxInpIdc & 2) > 0)
     {
@@ -3345,9 +3287,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei.m_prompt = valp;
       }
     }
-#else
-    CHECK(val > 1, "The value of nnpfc_auxiliary_inp_idc shall be in the range of 0 to 1");
-#endif
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
     CHECK(val > 3, "The value of nnpfc_inp_order_idc shall be in the range of 0 to 3");
@@ -3425,13 +3364,11 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       }
     }
 
-#if JVET_AD0067_INCLUDE_SYNTAX
     if (sei.m_sepColDescriptionFlag & (sei.m_outFormatIdc == 1))
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_full_range_flag");
       sei.m_fullRangeFlag = val;
     }
-#endif
 
     if (sei.m_outOrderIdc != 0)
     {
@@ -3460,14 +3397,12 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_constant_patch_size_flag");
       sei.m_constantPatchSizeFlag = val;
-#ifdef JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION
     }
     else
     {
       sei.m_overlap = 0;
       sei.m_constantPatchSizeFlag = 1;
     }
-#endif
 
     if (sei.m_constantPatchSizeFlag)
     {
@@ -3485,9 +3420,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_extended_patch_height_cd_delta_minus1");
       sei.m_extendedPatchHeightCdDeltaMinus1 = val;
     }
-#ifndef JVET_AJ0234_PATCH_WISE_SPATIAL_EXTRAPOLATION
-    }
-#endif
 
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_padding_type");
     sei.m_paddingType = val;
@@ -3718,6 +3650,10 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
       sei.m_sptiTimeScale = val;
       sei_read_code(pDecodedMessageOutputStream, 32, val, "spti_num_units_in_elemental_interval");
       sei.m_sptiNumUnitsInElementalInterval = val;
+#if JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG
+      sei_read_flag(pDecodedMessageOutputStream, val, "spti_direction_flag");
+      sei.m_sptiDirectionFlag = val;
+#endif
 
       if (sei.m_sptiPersistenceFlag)
       {
@@ -3736,35 +3672,23 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
   }
 }
 
-#if JVET_AH2006_TXTDESCRINFO_SEI
   void SEIReader::xParseSEITextDescription(SEITextDescription &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
   {
     uint32_t val;
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
     sei_read_code(pDecodedMessageOutputStream, 8, val, "txt_descr_purpose");
     sei.m_textDescriptionPurpose = val;
-#else
-    sei_read_code(pDecodedMessageOutputStream, 14, val, "txt_descr_id");
-    sei.m_textDescriptionID = val;
-#endif
     sei_read_flag(pDecodedMessageOutputStream, val, "txt_cancel_flag");
     sei.m_textCancelFlag = val;
     if (!sei.m_textCancelFlag)
     {
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
       sei_read_code(pDecodedMessageOutputStream, 13, val, "txt_descr_id");
       sei.m_textDescriptionID = val;
       sei_read_flag(pDecodedMessageOutputStream, val, "txt_id_cancel_flag");
       sei.m_textIDCancelFlag = val;
       if (!sei.m_textIDCancelFlag)
       {
-#endif
         sei_read_flag(pDecodedMessageOutputStream, val, "txt_persistence_flag");
         sei.m_textPersistenceFlag = val;
-#if !JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
-        sei_read_code(pDecodedMessageOutputStream, 8, val, "txt_descr_purpose");
-        sei.m_textDescriptionPurpose = val;
-#endif
         sei_read_code(pDecodedMessageOutputStream, 8, val, "txt_num_strings_minus1");
         sei.m_textNumStringsMinus1 = val;
         sei.m_textDescriptionStringLang.resize(sei.m_textNumStringsMinus1+1);
@@ -3774,13 +3698,10 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
           sei_read_string(pDecodedMessageOutputStream, sei.m_textDescriptionStringLang[i], "txt_descr_string_lang[i]");
           sei_read_string(pDecodedMessageOutputStream, sei.m_textDescriptionString[i], "txt_descr_string[i]");
         }
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
       }
-#endif
       
     }
   }
-#endif
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE
 void SeiCfgFileDump::write360SeiDump (std::string decoded360MessageFileName, SEIMessages& seis, const SPS* sps)
@@ -3981,7 +3902,6 @@ void SEIReader::xParseSEISEIPrefixIndication(SEIPrefixIndication &sei, uint32_t 
   }
 }
 
-#if JVET_AJ0207_GFV
 void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
@@ -4689,9 +4609,7 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
     }
   }
 }
-#endif
 
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
 void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   unsigned int val;
@@ -4746,5 +4664,4 @@ void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedCo
     sei.dscvSignature[i] = val;
   }
 }
-#endif
 //! \}

@@ -757,11 +757,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_FgcSEICompModelValueComp2              (0, 65535,  0, 256 * 6);
   SMultiValueInput<unsigned>   cfg_siiSEIInputNumUnitsInSI(0, std::numeric_limits<uint32_t>::max(), 0, 7);
   SMultiValueInput<bool>       cfg_poSEIWrappingFlag(false, true, 0, 256);
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
   SMultiValueInput<uint16_t>   cfg_poSEIImportanceIdc(0, 3, 0, 256);
-#else
-  SMultiValueInput<bool>       cfg_poSEIImportanceFlag(false, true, 0, 256);
-#endif
   SMultiValueInput<bool>       cfg_poSEIPrefixFlag(false, true, 0, 256);
   SMultiValueInput<uint16_t>   cfg_poSEIPayloadType(0, 32768, 0, 256 * 2);
   SMultiValueInput<uint16_t>   cfg_poSEIProcessingOrder(0, 65535, 0, 65536);
@@ -780,7 +776,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
   SMultiValueInput<bool>       cfg_nnPostFilterSEIActivationOutputFlagList(0, 1, 1, 0);
 
-#if JVET_AJ0207_GFV
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIId                                  (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEICnt                                 (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIDrivePicFusionFlag                  (0, 2550, 0, 102400);
@@ -810,7 +805,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyValue                      (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag             (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyThrValue                   (0, 2550, 0, 102400);  
-#endif
 
 #if ENABLE_TRACING
   std::string sTracingRule;
@@ -1533,6 +1527,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEISPTISourceType", m_sptiSourceType, 0u, "Indicates the timing relationship between source pictures and corresponding decoded output pictures.")
 ("SEISPTITimeScale", m_sptiTimeScale, 27000000u, "Specifies the number of time units that pass in one second.")
 ("SEISPTINumUnitsInElementalInterval", m_sptiNumUnitsInElementalInterval, 1080000u, "Specifies the number of time units of a clock operating at the frequency spti_time_scale Hz that corresponds to the indicated elemental source picture interval of consecutive pictures in output order in the CLVS.")
+#if JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG
+("SEISPTIDirectionFlag", m_sptiDirectionFlag, false, "Indicates the direction of the signalled source picture intervals.")
+#endif
 #if JVET_AJ0151_DSC_SEI
 ("SEIDSCEnabled", m_cfgDigitallySignedContentSEI.enabled, false, "Control generation of Digitally Signed Content SEI messages")
 ("SEIDSCHashMethod", m_cfgDigitallySignedContentSEI.hashMethod, 0 , "Hash type to be used:\n"
@@ -1554,7 +1551,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("TraceFile", sTracingFile, std::string(""), "Tracing file")
 #endif
 
-#if JVET_AH2006_EOI_SEI
 ("SEIEOIEnabled", m_eoiSEIEnabled, false, "Control use of the Encoder Optimization Information SEI")
 ("SEIEOICancelFlag", m_eoiSEICancelFlag, false, "Specifies that the persistence of the previous applied optimization")
 ("SEIEOIPersistenceFlag", m_eoiSEIPersistenceFlag, false, "Specifies the persistence of the optimization the current layer")
@@ -1570,9 +1566,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEIEOISpatialResamplingTypeFlag", m_eoiSEISpatialResamplingTypeFlag, false, "specifies the type of the spatial resampling optimization.")
 ("SEIEOIPrivacyProtectionTypeIdc", m_eoiSEIPrivacyProtectionTypeIdc, 0u, "indicates the type of privacy protection optimization")
 ("SEIEOIPrivacyProtectedInfoType", m_eoiSEIPrivacyProtectedInfoType, 0u, "indicates the types of protected information")
-#endif 
 
-#if JVET_AG0322_MODALITY_INFORMATION
 // Modality Information SEI 
   ("SEIModalityInfoEnabled",                          m_miSEIEnabled,                                    false, "Control generation of Modality Information SEI messages")
   ("SEIMiCancelFlag",                                 m_miCancelFlag,                                    false, "Indicates that Modality Information SEI message cancels the persistence or follows")
@@ -1583,7 +1577,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIMiMinWavelengthExponentPlus15",                m_miMinWavelengthExponentPlus15,                       0, "Specifies the exponent part of the minimum wavelength indicating the spectral band of optical radiation")
   ("SEIMiMaxWavelengthMantissa",                      m_miMaxWavelengthMantissa,                             0, "Specifies the mantissa part of the maximum wavelength indicating the spectral band of optical radiation")
   ("SEIMiMaxWavelengthExponentPlus15",                m_miMaxWavelengthExponentPlus15,                       0, "Specifies the exponent part of the maximum wavelength indicating the spectral band of optical radiation")
-#endif
 
 
 // film grain characteristics SEI
@@ -1739,11 +1732,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPONumMinus2",                                  m_poSEINumMinus2,                                     0u, "Specifies the number of SEIs minus 2 in the SEI processing order SEI message")
   ("SEIPOBreadthFirstFlag",                           m_poSEIBreadthFirstFlag,                           false, "Specifies that breadth-first handling of processing chain is applied (1), or that either breadth-first or depth-first can be applied (0, default)")
   ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,             cfg_poSEIWrappingFlag, "Specifies whether a correspoding processing-order-nested SEI message exists or not")
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
   ("SEIPOImportanceIdc",                              cfg_poSEIImportanceIdc,           cfg_poSEIImportanceIdc, "Specifies degree of importance (0..3) for the SEI messages")
-#else
-  ("SEIPOImportanceFlag",                             cfg_poSEIImportanceFlag,         cfg_poSEIImportanceFlag, "Specifies degree of importance for the SEI messages")
-#endif
   ("SEIPOPrefixFlag",                                 cfg_poSEIPrefixFlag,                 cfg_poSEIPrefixFlag, "Specifies whether SEI message prefix is present or not")
   ("SEIPOPayLoadType",                                cfg_poSEIPayloadType,               cfg_poSEIPayloadType, "List of payloadType for processing")
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
@@ -1856,7 +1845,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("TemporalFilterStrengthFrame*", m_gopBasedTemporalFilterStrengths, std::map<int, double>(), "Strength for every * frame in GOP based temporal filter, where * is an integer."
                                                                                                                   " E.g. --TemporalFilterStrengthFrame8 0.95 will enable GOP based temporal filter at every 8th frame with strength 0.95");
   
-#if JVET_AJ0207_GFV
   opts.addOptions()
     ("SEIGenerativeFaceVideoEnabled",                         m_generativeFaceVideoEnabled,                             false,                                                         "Control use of the Generative Face Video SEI on current picture")
     ("SEIGenerativeFaceVideoNumber",                          m_generativeFaceVideoSEINumber,                           0u,                                                            "Total number of Generative Face Video SEI to be carried")
@@ -1896,7 +1884,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("SEIGenerativeFaceVideoChromaKeyValue",                  cfg_generativeFaceVideoSEIChromaKeyValue,                 cfg_generativeFaceVideoSEIChromaKeyValue,                      "specifies the chroma key value corresponding to the c-th colour component")
     ("SEIGenerativeFaceVideoChromaKeyThrPresentFlag",         cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag,        cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag,             "indicates that the syntax element gfv_chroma_thr_value[ i ] is present")
     ("SEIGenerativeFaceVideoChromaKeyThrValue",               cfg_generativeFaceVideoSEIChromaKeyThrValue,              cfg_generativeFaceVideoSEIChromaKeyThrValue,                   "specifies the i-th chroma key threshold value");
-#endif    
   // clang-format on
 
 #if EXTENSION_360_VIDEO
@@ -2011,11 +1998,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     sepColDescriptionFlag << "SEINNPFCSepColDescriptionFlag" << i;
     opts.addOptions()(sepColDescriptionFlag.str(), m_nnPostFilterSEICharacteristicsSepColDescriptionFlag[i], false, "Specifies the presence of seperate color descriptions in the Nueral Network Post Filter Characteristics SEI message");
 
-#if JVET_AD0067_INCLUDE_SYNTAX
     std::ostringstream fullRangeFlag;
     fullRangeFlag << "SEINNPFCFullRangeFlag" << i;
     opts.addOptions()(fullRangeFlag.str(), m_nnPostFilterSEICharacteristicsFullRangeFlag[i], false, "Specifies scaling and offset values applied in association with the matrix coefficients as specified by nnpfc_matrix_coeff.");
-#endif
   
     std::ostringstream colPrimaries;
     colPrimaries << "SEINNPFCColPrimaries" << i;
@@ -2154,7 +2139,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream numberExtrapolatedPicturesMinus1;
     numberExtrapolatedPicturesMinus1 << "SEINNPFCNumberExtrapolatedPicsMinus1" << i; 
     opts.addOptions()(numberExtrapolatedPicturesMinus1.str(), m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i], 0u, "Number of pictures to extrapolate");
-#if NNPFC_SPATIAL_EXTRAPOLATION
     std::ostringstream spatialExtrapolationLeftOffset;
     spatialExtrapolationLeftOffset << "SEINNPFCSpatialExtrapolationLeftOffset" << i; 
     opts.addOptions()(spatialExtrapolationLeftOffset.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[i], 0, "Left offset of spatial extrapolation");
@@ -2170,23 +2154,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream spatialExtrapolationBottomOffset;
     spatialExtrapolationBottomOffset << "SEINNPFCSpatialExtrapolationLeftOffset" << i; 
     opts.addOptions()(spatialExtrapolationBottomOffset.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i], 0, "Bottom offset of spatial extrapolation");
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-    std::ostringstream spatialextrapolationPromptPresentFlag;
-    spatialextrapolationPromptPresentFlag << "SEINNPFCSpatialExtrapolationPromptPresentFlag" << i;
-    opts.addOptions()(spatialextrapolationPromptPresentFlag.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationPromptPresentFlag[i], false, "equal to 1 specifies that nnpfc_prompt syntax element is present and nnpfc_alignment_zero_bit_c syntax element may be present. nnpfc_spatial_extrapolation_prompt_present_flag equal to 0 specifies that nnpfc_prompt syntax element and nnpfc_alignment_zero_bit_c syntax element are not present.");
-    std::ostringstream spatialextrapolationPrompt;
-    spatialextrapolationPrompt << "SEINNPFCSpatialExtrapolationPrompt" << i;
-    opts.addOptions()(spatialextrapolationPrompt.str(), m_nnPostFilterSEICharacteristicsSpatialExtrapolationPrompt[i], std::string(""), "specifies the text string prompt used for generating the contents of the spatial extrapolation image area.");
-#endif
-#endif
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
     std::ostringstream inbandPromptFlag;
     inbandPromptFlag << "SEINNPFCInbandPromptFlag" << i;
     opts.addOptions()(inbandPromptFlag.str(), m_nnPostFilterSEICharacteristicsInbandPromptFlag[i], false, "equal to 1 specifies that nnpfc_prompt syntax element is present and nnpfc_alignment_zero_bit_c syntax element may be present. nnpfc_spatial_extrapolation_prompt_present_flag equal to 0 specifies that nnpfc_prompt syntax element and nnpfc_alignment_zero_bit_c syntax element are not present.");
     std::ostringstream prompt;
     prompt << "SEINNPFCPrompt" << i;
     opts.addOptions()(prompt.str(), m_nnPostFilterSEICharacteristicsPrompt[i], std::string(""), "specifies the text string prompt");
-#endif
     std::ostringstream InputPicOutputFlag;
     InputPicOutputFlag << "SEINNPFCInputPicOutputFlag" << i;
     opts.addOptions()(InputPicOutputFlag.str(), cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i], "Indicates whether NNPF will generate a corresponding output picture for the input picture");
@@ -2205,20 +2178,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies a list indicating whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
   }
 
-#if JVET_AH2006_TXTDESCRINFO_SEI
   opts.addOptions()("SEITextDescriptionID", m_SEITextDescriptionID, 1u, "Identifier value of this text description information SEI message, must be in the range 1-16383");
-#if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
   opts.addOptions()("SEITextDescriptionCancelFlag", m_SEITextCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_purpose");
   opts.addOptions()("SEITextDescriptionIDCancelFlag", m_SEITextIDCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_id and the same txt_descr_purpose");
-#else
-  opts.addOptions()("SEITextDescriptionCancelFlag", m_SEITextCancelFlag, true, "Cancels the persistence of any previous text description information SEI message with the same txt_descr_id");
-#endif
   opts.addOptions()("SEITextDescriptionPersistenceFlag", m_SEITextPersistenceFlag, true, "Specifies the persistence of the text information description message for the current layer");
-#if JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR
   opts.addOptions()("SEITextDescriptionPurpose", m_SEITextDescriptionPurpose, 0u, "Indicates the purpose of the text description, must be in the range 0-6");
-#else
-  opts.addOptions()("SEITextDescriptionPurpose", m_SEITextDescriptionPurpose, 0u, "Indicates the purpose of the text description, must be in the range 0-5");
-#endif
   opts.addOptions()("SEITextDescriptionsNumStringsMinus1", m_SEITextNumStringsMinus1, 0u, "Indicates the number of entries plus 1 for txt_descr_string_lang[ i ] and txt_descr_string[ i ]");
   m_SEITextDescriptionStringLang.resize(256);
   m_SEITextDescriptionString.resize(256);
@@ -2231,7 +2195,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     stringDesc << "SEITextDescriptionString" << i;
     opts.addOptions()(stringDesc.str(), m_SEITextDescriptionString[0], std::string(""), "Specifies the i-th text description information string");
   }
-#endif
 
   po::setDefaults(opts);
   po::ErrorReporter err;
@@ -2245,8 +2208,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_scalingRatioHor = 2.0;
       m_scalingRatioVer = 2.0;
     }
-    // enable dmvr encoder selection
-    m_dmvrEncSelect = true;
   }
   m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0 || m_gopBasedRPREnabledFlag || m_rprFunctionalityTestingEnabledFlag;
   m_resChangeInClvsEnabled = m_resChangeInClvsEnabled && m_rprEnabledFlag;
@@ -3859,36 +3820,24 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     CHECK(cfg_poSEIPrefixFlag.values.size() <= 1, "there should be at least 2 SEIPOPrefixFlag");
     CHECK(cfg_poSEIPayloadType.values.size() != m_poSEINumMinus2 + 2, "the number of SEIPOPayLoadType should be equal to the number of SEI messages");
     CHECK(cfg_poSEIWrappingFlag.values.size() != m_poSEINumMinus2 + 2, "the number of SEIPOWrappingFlag should be equal to the number of SEI messages");
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
     CHECK(cfg_poSEIImportanceIdc.values.size() != m_poSEINumMinus2 + 2, "the number of SEIImportanceIdc should be equal to the number of SEI messages");
-#else
-    CHECK(cfg_poSEIImportanceFlag.values.size() != m_poSEINumMinus2 + 2, "the number of SEIImportanceFlag should be equal to the number of SEI messages");
-#endif
     m_poSEIWrappingFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
     m_poSEIImportanceFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
     m_poSEIProcessingDegreeFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
-#endif
     m_poSEIPrefixFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
     m_poSEIPayloadType.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     m_poSEIProcessingOrder.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     m_poSEINumOfPrefixBits.resize((uint32_t) cfg_poSEINumofPrefixBits.values.size());
     m_poSEIPrefixByte.resize((uint32_t) cfg_poSEIPayloadType.values.size());
     uint16_t prefixByteIdx = 0;
-#if JVET_AJ0129_SPO_SEI_LIST
     bool NNPFCFound = false;
     bool NNPFAFound = false;
-#endif
     for (uint32_t i = 0; i < (m_poSEINumMinus2 + 2); i++)
     {
       m_poSEIPrefixFlag[i] =      cfg_poSEIPrefixFlag.values[i];
       m_poSEIWrappingFlag[i] = cfg_poSEIWrappingFlag.values[i];
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
       m_poSEIImportanceFlag[i] = (cfg_poSEIImportanceIdc.values[i] & 2) != 0;
       m_poSEIProcessingDegreeFlag[i] = (cfg_poSEIImportanceIdc.values[i] & 1) != 0;
-#else
-      m_poSEIImportanceFlag[i] = cfg_poSEIImportanceFlag.values[i];
-#endif
       m_poSEIPayloadType[i]     = cfg_poSEIPayloadType.values[i];
       if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::MASTERING_DISPLAY_COLOUR_VOLUME ||
           m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::CONTENT_LIGHT_LEVEL_INFO ||
@@ -3904,11 +3853,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       {
         CHECK(m_poSEIPrefixFlag[i] == true, "The value of po_sei_prefix_flag shall be equal to 0 when po_sei_payload_type is equal to 137, 144, 147, 148, 179, 180, 200, 201, 208, and 213");
       }
-#if JVET_AJ0129_SPO_SEI_LIST
       NNPFCFound = NNPFCFound || (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
       NNPFAFound = NNPFAFound || (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
       CHECK(!NNPFCFound && NNPFAFound, "NNPFA payload type found before NNPFC payload type in SPO SEI");
-#endif
       m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
       if (m_poSEIPrefixFlag[i])
       {
@@ -3948,9 +3895,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         }
       }
     }
-#if JVET_AJ0129_SPO_SEI_LIST
     CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
-#endif
   }
 
   if (m_postFilterHintSEIEnabled)
@@ -3964,7 +3909,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_postFilterHintValues[i] = cfg_postFilterHintSEIValues.values[i];
     }
   }
-#if JVET_AJ0207_GFV
   if (m_generativeFaceVideoEnabled)
   {
     CHECK(cfg_generativeFaceVideoSEIId.values.size() != m_generativeFaceVideoSEINumber, "Number of GFV ID must be equal to SEINumber");
@@ -4203,7 +4147,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
   }
-#endif
 
   if( m_costMode == COST_LOSSLESS_CODING )
   {
@@ -5717,7 +5660,6 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsPurpose[i] > 127, "SEINNPFCPurpose must be in the range of 0 to 127");
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] > 63, "SEINNPFCNumberInputDecodedPicturesMinus1 must be in the range of 0 to 63");
       xConfirmPara(m_nnPostFilterSEICharacteristicsNumberExtrapolatedPicturesMinus1[i] > 62, "SEINNPFCNumberExtrapolatedPicsMinus1 must be in the range of 0 to 62");
-#if NNPFC_SPATIAL_EXTRAPOLATION
       xConfirmPara(m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[i] < -65536 || m_nnPostFilterSEICharacteristicsSpatialExtrapolationLeftOffset[i] > 65536,
                     "SEINNPFCCharacteristicSpatialExtrapolationLeftOffset must be in the range of -65536 to 65536");
       xConfirmPara(m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[i] < -65536 || m_nnPostFilterSEICharacteristicsSpatialExtrapolationRightOffset[i] > 65536,
@@ -5726,7 +5668,6 @@ bool EncAppCfg::xCheckParameter()
                     "SEINNPFCCharacteristicSpatialExtrapolationTopOffset must be in the range of -65536 to 65536");
       xConfirmPara(m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i] < -65536 || m_nnPostFilterSEICharacteristicsSpatialExtrapolationBottomOffset[i] > 65536,
                     "SEINNPFCCharacteristicSpatialExtrapolationBottomOffset must be in the range of -65536 to 65536");
-#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthLumaMinus8[i] > 24, "SEINNPFCInpTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsInpTensorBitDepthChromaMinus8[i] > 24, "SEINNPFCInpTensorBitDepthChromaMinus8 must be in the range of 0 to 24");
       xConfirmPara(m_nnPostFilterSEICharacteristicsOutTensorBitDepthLumaMinus8[i] > 24, "SEINNPFCOutTensorBitDepthLumaMinus8 must be in the range of 0 to 24");
@@ -5795,15 +5736,9 @@ bool EncAppCfg::xCheckParameter()
     xConfirmPara(m_piVerPhaseNumReducedResolution > m_piVerPhaseDenMinus1ReducedResolution + 1, "m_piVerPhaseNumReducedResolution must be in the range of 0 to m_piVerPhaseDenMinus1ReducedResolution + 1, inclusive");
   }
 
-#if JVET_AH2006_TXTDESCRINFO_SEI
   xConfirmPara(m_SEITextDescriptionID < 1 && m_SEITextDescriptionID > 16383, "m_SEITextDescriptionID must be in the range of 1 to 16383, inclusive");
-#if  JVET_AJ0241_TXTDESCRINFO_SEI_ENCODER_DESCR
   xConfirmPara(m_SEITextDescriptionPurpose > 6, "m_SEITextDescriptionPurpose must be in the range of 0 to 6, inclusive");
-#else
-  xConfirmPara(m_SEITextDescriptionPurpose > 5, "m_SEITextDescriptionPurpose must be in the range of 0 to 5, inclusive");
-#endif
   xConfirmPara(m_SEITextNumStringsMinus1 > 255, "m_SEITextNumStringsMinus1 must be in the range 0f 0 to 255, inclusive");
-#endif
 
   xConfirmPara(m_log2ParallelMergeLevel < 2, "Log2ParallelMergeLevel should be larger than or equal to 2");
   xConfirmPara(m_log2ParallelMergeLevel > m_ctuSize, "Log2ParallelMergeLevel should be less than or equal to CTU size");

@@ -118,20 +118,13 @@ protected:
 #if GREEN_METADATA_SEI_ENABLED
   void xWriteSEIGreenMetadataInfo                 (const SEIGreenMetadataInfo &sei);
 #endif
-#if JVET_AH2006_TXTDESCRINFO_SEI
   void xWriteSEITextDescription(const SEITextDescription &sei);
-#endif
   void xWriteSEIPostFilterHint(const SEIPostFilterHint &sei);
 
-#if JVET_AH2006_EOI_SEI
   void xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInfo &sei);
-#endif
   void xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
-#if JVET_AG0322_MODALITY_INFORMATION
   void xWriteSEIModalityInfo(const SEIModalityInfo &sei);
-#endif
 
-#if JVET_AJ0207_GFV
   void xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo& sei);
   std::vector<double>  prevcoordinateXRec;
   std::vector<double>  prevcoordinateYRec;
@@ -142,7 +135,6 @@ protected:
   std::vector<uint32_t> prevnumMatricesVec;
   bool doUpdateGFVcoordinate= false;
   bool doUpdateGFVmatrix= false;
-#endif
 
 #if JVET_AJ0151_DSC_SEI
   void xWriteSEIDigitallySignedContentInitialization(const SEIDigitallySignedContentInitialization &sei);

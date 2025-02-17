@@ -205,7 +205,7 @@ fontsize=\footnotesize}
 \maketitle
 \begin{abstract}
 This document is a user manual describing usage of the VTM reference software
-for the VVC project. It applies to version 23.5 of the software.
+for the VVC project. It applies to version 23.7 of the software.
 \end{abstract}
 
 \tableofcontents
@@ -6284,6 +6284,10 @@ Specifies the number of time units that pass in one second.
 \Option{SEISPTINumUnitsInElementalInterval} &
 \Default{1080000} &
 Specifies the number of time units of a clock operating at the frequency spti_time_scale Hz that corresponds to the indicated elemental source picture interval of consecutive pictures in output order in the CLVS.
+\\
+\Option{SEISPTIDirectionFlag} &
+\Default{false} &
+Indicates the direction of the signalled source picture intervals. spti_direction_flag equal to 0 indicates that source picture intervals are expressed relative to previous output pictures. spti_direction_flag equal to 1 indicates that source picture intervals are expressed relative to future output pictures.
 \\
 \end{OptionTableNoShorthand}
 

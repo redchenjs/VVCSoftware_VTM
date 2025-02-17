@@ -484,17 +484,11 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::PHASE_INDICATION, "Phase Indication" },
   { SEI::PayloadType::SEI_PROCESSING_ORDER, "SEI messages Processing order" },
   { SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO, "Source picture timing info" },
-#if JVET_AG0322_MODALITY_INFORMATION
   { SEI::PayloadType::MODALITY_INFORMATION, "Modality information" },
-#endif
-#if JVET_AJ0151_DSC_SEI_DECODER_SYNTAX
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION, "Digitally Signed Content Initialization" },
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION, "Digitally Signed Content Selection" },
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION, "Digitally Signed Content Verification" },
-#endif
-#if JVET_AJ0207_GFV
   { SEI::PayloadType::GENERATIVE_FACE_VIDEO, "Generative face video" }
-#endif
 };
 
 const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
@@ -526,6 +520,9 @@ SEISourcePictureTimingInfo::SEISourcePictureTimingInfo(const SEISourcePictureTim
   m_sptiSourceType                         = sei.m_sptiSourceType;
   m_sptiTimeScale                          = sei.m_sptiTimeScale;
   m_sptiNumUnitsInElementalInterval        = sei.m_sptiNumUnitsInElementalInterval;
+#if JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG
+  m_sptiDirectionFlag                      = sei.m_sptiDirectionFlag;
+#endif
 }
 
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
@@ -538,9 +535,7 @@ SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei
   m_posBreadthFirstFlag = sei.m_posBreadthFirstFlag;
   m_posWrappingFlag = sei.m_posWrappingFlag;
   m_posImportanceFlag = sei.m_posImportanceFlag;
-#if JVET_AJ0128_SPO_PROCESSING_DEGREE
   m_posProcessingDegreeFlag = sei.m_posProcessingDegreeFlag;
-#endif
   m_posPrefixFlag = sei.m_posPrefixFlag;
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;
@@ -978,9 +973,7 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_inpFormatIdc = sei.m_inpFormatIdc;
   m_auxInpIdc = sei.m_auxInpIdc;
   m_sepColDescriptionFlag = sei.m_sepColDescriptionFlag;
-#if JVET_AD0067_INCLUDE_SYNTAX
   m_fullRangeFlag = sei.m_fullRangeFlag;
-#endif
   m_colPrimaries = sei.m_colPrimaries;
   m_transCharacteristics = sei.m_transCharacteristics;
   m_matrixCoeffs = sei.m_matrixCoeffs;
@@ -1014,20 +1007,12 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_numberInputDecodedPicturesMinus1 = sei.m_numberInputDecodedPicturesMinus1;
   m_numberInterpolatedPictures = sei.m_numberInterpolatedPictures;
   m_numberExtrapolatedPicturesMinus1 = sei.m_numberExtrapolatedPicturesMinus1;
-#if NNPFC_SPATIAL_EXTRAPOLATION
   m_spatialExtrapolationLeftOffset = sei.m_spatialExtrapolationLeftOffset;
   m_spatialExtrapolationRightOffset = sei.m_spatialExtrapolationRightOffset;
   m_spatialExtrapolationTopOffset = sei.m_spatialExtrapolationTopOffset;
   m_spatialExtrapolationBottomOffset = sei.m_spatialExtrapolationBottomOffset;
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-  m_spatialExtrapolationPromptPresentFlag = sei.m_spatialExtrapolationPromptPresentFlag;
-  m_prompt =  sei.m_prompt;
-#endif
-#endif
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
   m_inbandPromptFlag = sei.m_inbandPromptFlag;
   m_prompt =  sei.m_prompt;
-#endif
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
 }
 
@@ -1056,9 +1041,7 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_inpFormatIdc == sei.m_inpFormatIdc &&
   m_auxInpIdc == sei.m_auxInpIdc &&
   m_sepColDescriptionFlag == sei.m_sepColDescriptionFlag &&
-#if JVET_AD0067_INCLUDE_SYNTAX
   m_fullRangeFlag == sei.m_fullRangeFlag &&
-#endif
   m_colPrimaries == sei.m_colPrimaries &&
   m_transCharacteristics == sei.m_transCharacteristics &&
   m_matrixCoeffs == sei.m_matrixCoeffs &&
@@ -1088,20 +1071,12 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_numberInputDecodedPicturesMinus1 == sei.m_numberInputDecodedPicturesMinus1 &&
   m_numberInterpolatedPictures == sei.m_numberInterpolatedPictures &&
   m_numberExtrapolatedPicturesMinus1 == sei.m_numberExtrapolatedPicturesMinus1 &&
-#if NNPFC_SPATIAL_EXTRAPOLATION
   m_spatialExtrapolationLeftOffset == sei.m_spatialExtrapolationLeftOffset &&
   m_spatialExtrapolationRightOffset == sei.m_spatialExtrapolationRightOffset &&
   m_spatialExtrapolationTopOffset == sei.m_spatialExtrapolationTopOffset &&
   m_spatialExtrapolationBottomOffset == sei.m_spatialExtrapolationBottomOffset &&
-#if !JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
-  m_spatialExtrapolationPromptPresentFlag == sei.m_spatialExtrapolationPromptPresentFlag  &&
-  m_prompt ==  sei.m_prompt  &&
-#endif
-#endif
-#if JVET_AJ0131_NNPFC_INBAND_PROMPT_FLAG
   m_inbandPromptFlag == sei.m_inbandPromptFlag  &&
   m_prompt ==  sei.m_prompt  &&
-#endif
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
   m_payloadLength == sei.m_payloadLength;
 
@@ -1140,14 +1115,11 @@ SEIPostFilterHint::SEIPostFilterHint(const SEIPostFilterHint& sei)
   m_filterHintValues = sei.m_filterHintValues;
 }
 
-#if JVET_AH2006_TXTDESCRINFO_SEI
   SEITextDescription::SEITextDescription(const SEITextDescription& sei)
   {
     m_textDescriptionID = sei.m_textDescriptionID;
     m_textCancelFlag = sei.m_textCancelFlag;
-  #if JVET_AI0059_TXTDESCRINFO_SEI_PERSISTANCE
     m_textIDCancelFlag = sei.m_textIDCancelFlag;
-#endif
     m_textPersistenceFlag = sei.m_textPersistenceFlag;
     m_textDescriptionPurpose = sei.m_textDescriptionPurpose;
     m_textNumStringsMinus1 = sei.m_textNumStringsMinus1;
@@ -1159,7 +1131,6 @@ SEIPostFilterHint::SEIPostFilterHint(const SEIPostFilterHint& sei)
       m_textDescriptionString[i] = sei.m_textDescriptionString[i];
     }
   }
-#endif
 
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t id)
 {
@@ -1187,7 +1158,6 @@ SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMess
   return nullptr;
 }
 
-#if JVET_AH2006_EOI_SEI
 SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
   const SEIEncoderOptimizationInfo& sei)
 {
@@ -1207,9 +1177,7 @@ SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
   m_privacyProtectedInfoType = sei.m_privacyProtectedInfoType;
 
 }
-#endif
 
-#if JVET_AG0322_MODALITY_INFORMATION
 SEIModalityInfo::SEIModalityInfo(const SEIModalityInfo& sei)
 {
   m_miCancelFlag = sei.m_miCancelFlag;
@@ -1221,9 +1189,7 @@ SEIModalityInfo::SEIModalityInfo(const SEIModalityInfo& sei)
   m_miMaxWavelengthMantissa = sei.m_miMaxWavelengthMantissa;
   m_miMaxWavelengthExponentPlus15 = sei.m_miMaxWavelengthExponentPlus15;
 }
-#endif
 
-#if JVET_AJ0207_GFV
 SEIGenerativeFaceVideo::SEIGenerativeFaceVideo(const SEIGenerativeFaceVideo & sei)
 {
   m_number = sei.m_number;
@@ -1270,4 +1236,3 @@ SEIGenerativeFaceVideo::SEIGenerativeFaceVideo(const SEIGenerativeFaceVideo & se
   m_matrixWidthstore = sei.m_matrixWidthstore;
   m_matrixHeightstore = sei.m_matrixHeightstore;
 }
-#endif
