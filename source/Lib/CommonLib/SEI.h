@@ -175,7 +175,7 @@ public:
   uint32_t              m_sptiSourceType;
   uint32_t              m_sptiTimeScale;
   uint32_t              m_sptiNumUnitsInElementalInterval;
-#if JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG
+#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
   bool                  m_sptiDirectionFlag;
 #endif
   bool                  m_sptiCancelFlag;
