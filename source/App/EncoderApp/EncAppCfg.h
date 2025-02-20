@@ -547,6 +547,10 @@ protected:
   uint32_t m_eoiSEIForMachineAnalysisIdc;
   uint32_t m_eoiSEIType;
   uint32_t m_eoiSEIObjectBasedIdc;
+#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
+  uint32_t m_eoiSEIQuantThresholdDelta;
+  bool     m_eoiSEIPicQuantObjectFlag;
+#endif
   bool m_eoiSEITemporalResamplingTypeFlag;
   uint32_t m_eoiSEINumIntPics;
   bool     m_eoiSEIOrigPicDimensionsFlag;

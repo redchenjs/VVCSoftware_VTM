@@ -1651,6 +1651,10 @@ public:
     , m_forMachineAnalysisIdc(0)
     , m_type(0)
     , m_objectBasedIdc(0)
+#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
+    , m_quantThresholdDelta(0)
+    , m_picQuantObjectFlag(false)
+#endif
     , m_temporalResamplingTypeFlag(false)
     , m_numIntPics(0)
     , m_origPicDimensionsFlag(false)
@@ -1670,6 +1674,10 @@ public:
   uint32_t m_forMachineAnalysisIdc;
   uint32_t m_type;
   uint32_t m_objectBasedIdc;
+#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
+  uint32_t m_quantThresholdDelta;
+  bool     m_picQuantObjectFlag;
+#endif
   bool     m_temporalResamplingTypeFlag;
   uint32_t m_numIntPics;
   bool     m_origPicDimensionsFlag;

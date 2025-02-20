@@ -6178,6 +6178,14 @@ Specifies the value of object based indication.
  (SEIEOIObjectBasedIdc \& 0x04)  !=  0 & Areas outside the detected objects have been overwritten. For example, an encoding system can overwrite areas outside the detected objects with a constant sample value. \\
 \end{tabular}
 \\
+\Option{SEIEOIQuantThresholdDelta} &
+\Default{0} &
+Indicates the quantization parameter threshold determining areas classified to be outside the detected objects or to include one or more detected objects (0 = unknown or unspecified).
+\\
+\Option{SEIEOIPicQuantObjectFlag} &
+\Default{0} &
+Value of 1 indicates that areas with $QP >= PicQuant + SEIEOIQuantThresholdDelta$ represent areas outside the detected objects. Value of 0 indicates that areas with $QP <= PicQuant - SEIEOIQuantThresholdDelta$ represent areas that include objects.
+\\
 \Option{SEIEOITemporalResamplingTypeFlag} &
 \Default{1} &
 Specifies whether temporal resampling type optimization is enabled.
