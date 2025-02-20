@@ -3591,6 +3591,32 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
       sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_output_flag" );
       sei.m_outputFlag[i] = val;
     }
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE||JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+    if (m_pcBitstream->getNumBitsLeft())
+    {
+#endif 
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
+      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfa_prompt_update_flag");
+      sei.m_promptUpdateFlag = val;
+      if (sei.m_promptUpdateFlag)
+      {
+        std::string val2;
+        while (!isByteAligned())
+        {
+          sei_read_flag(pDecodedMessageOutputStream, val, "nnpfa_alignment_zero_bit");
+          CHECK(val != 0, "nnpfa_alignment_zero_bit not equal to zero");
+        }
+        sei_read_string(pDecodedMessageOutputStream, val2, "nnpfa_prompt");
+        sei.m_prompt = val2;
+      }
+#endif
+#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfa_num_input_pic_shift");
+      sei.m_numInputPicShift = val;
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE||JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+    }
+#endif 
+#endif 
   }
 }
 

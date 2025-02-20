@@ -72,6 +72,9 @@
 
 //########### place macros to be be kept below this line ###############
 
+#define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1
+#define JVET_AJ0114_NNPFA_NUM_PIC_SHIFT   1
+
 #ifndef JVET_AJ0151_DSC_SEI
 #define JVET_AJ0151_DSC_SEI   1                      // Digitally signed content signing and verification (requires OpenSSL v3)
 #endif
