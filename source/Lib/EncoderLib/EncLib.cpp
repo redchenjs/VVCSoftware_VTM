@@ -1151,8 +1151,6 @@ void EncLib::xInitVPS( const SPS& sps )
 
   m_vps->m_olsHrdParams.clear();
   m_vps->m_olsHrdParams.resize(m_vps->getNumOlsTimingHrdParamsMinus1(), std::vector<OlsHrdParams>(m_vps->getMaxSubLayers()));
-  ProfileTierLevelFeatures profileTierLevelFeatures;
-  profileTierLevelFeatures.extractPTLInformation( sps );
   m_vps->setMaxTidIlRefPicsPlus1(m_cfgVPSParameters.m_maxTidILRefPicsPlus1);
   m_vps->deriveOutputLayerSets();
   m_vps->deriveTargetOutputLayerSet( m_vps->m_targetOlsIdx );
@@ -1198,6 +1196,16 @@ void EncLib::xInitVPS( const SPS& sps )
     if ( m_vps->getNumLayersInOls(i) > 1 )
     {
       const int dpbIdx = m_vps->getOlsDpbParamsIdx(i);
+      ProfileTierLevelFeatures profileTierLevelFeatures;
+      if (m_vps->getProfileTierLevel(i).getLevelIdc() != Level::NONE 
+        && m_vps->getProfileTierLevel(i).getProfileIdc() != Profile::NONE)
+      {
+        profileTierLevelFeatures.extractPTLInformation( m_vps->getProfileTierLevel(i) );
+      }
+      else
+      {
+        profileTierLevelFeatures.extractPTLInformation( sps );
+      }
 
       if( m_vps->getMaxSubLayers() == 1 )
       {
