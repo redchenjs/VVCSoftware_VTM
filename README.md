@@ -22,6 +22,13 @@ The CMake tool is used to create platform-specific build files.
 
 Although CMake may be able to generate 32-bit binaries, **it is generally suggested to build 64-bit binaries**. 32-bit binaries are not able to access more than 2GB of RAM, which will not be sufficient for coding larger image formats. Building in 32-bit environments is not tested and will not be supported.
 
+Dependencies
+------------
+
+For generating and verifying cryptographic signatures using digitally signed content SEI messages, OpenSSL is required in version 1.1.1 or greater. Testing is performed on OpenSSL 3.
+If OpenSSL is not found or the version is too low, only parsing of digitally signed content SEI messages will be available.
+
+Detection of OpenSSL can be disabled using the cmake option "-DENABLE_SEARCH_OPENSSL=off"
 
 Build instructions for plain CMake (suggested)
 ----------------------------------------------

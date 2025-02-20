@@ -269,6 +269,14 @@ This allows the software to use more than 2GB of RAM.
 
 The software uses CMake to create platform-specific build files. 
 
+\subsection {Dependencies}
+
+For generating and verifying cryptographic signatures using digitally signed content SEI messages, OpenSSL is required in version 1.1.1 or greater.
+Testing is performed on OpenSSL 3.
+If OpenSSL is not found or the version is too low, only parsing of digitally signed content SEI messages will be available.
+
+Detection of OpenSSL can be disabled using the cmake option "-DENABLE_SEARCH_OPENSSL=off"
+
 \subsection {Build instructions for plain CMake (suggested)}
 
 \textbf{Note:} A working CMake installation is required for building the software.
