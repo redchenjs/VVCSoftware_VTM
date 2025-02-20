@@ -3650,7 +3650,7 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
       sei.m_sptiTimeScale = val;
       sei_read_code(pDecodedMessageOutputStream, 32, val, "spti_num_units_in_elemental_interval");
       sei.m_sptiNumUnitsInElementalInterval = val;
-#if JVET_AJ0170_SPTI_SEI_DIRECTION_FLAG
+#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
       sei_read_flag(pDecodedMessageOutputStream, val, "spti_direction_flag");
       sei.m_sptiDirectionFlag = val;
 #endif
