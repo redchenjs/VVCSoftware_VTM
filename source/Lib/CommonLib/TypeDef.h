@@ -68,6 +68,8 @@
 
 #define JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD              1 // QP threshold for object-based optimization in EOI SEI
 
+#define JVET_AJ0048_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList
+
 //########### place macros to be be kept below this line ###############
 
 #ifndef JVET_AJ0151_DSC_SEI
