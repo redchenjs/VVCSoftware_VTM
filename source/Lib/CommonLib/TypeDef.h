@@ -64,6 +64,8 @@
 
 #define JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG               1 // JVET-AJ0308: Add direction flag to SPTI SEI MESSAGE
 
+#define JVET_AK0072_NNPF_TEMP_EXTR_UPDATES                1 // JVET-AK0072 items 1 and 2: nnpfc_input_pic_filering flag inference and constraint
+
 //########### place macros to be be kept below this line ###############
 
 #ifndef JVET_AJ0151_DSC_SEI
