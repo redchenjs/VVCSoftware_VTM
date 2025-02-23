@@ -70,6 +70,8 @@
 
 #define JVET_AJ0048_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList
 
+#define JVET_AK0055_SPO_SEI_CONSTRAINT                    1 // Add FPA, RWP, ERP, GCMP constraints
+
 //########### place macros to be be kept below this line ###############
 
 #define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1

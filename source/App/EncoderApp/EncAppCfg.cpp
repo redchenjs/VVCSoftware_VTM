@@ -3854,6 +3854,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     uint16_t prefixByteIdx = 0;
     bool NNPFCFound = false;
     bool NNPFAFound = false;
+#if JVET_AK0055_SPO_SEI_CONSTRAINT
+    std::vector<int> ERPIndices, GCMPIndices, RWPIndices, FPAIndices;
+#endif
     for (uint32_t i = 0; i < (m_poSEINumMinus2 + 2); i++)
     {
       m_poSEIPrefixFlag[i] =      cfg_poSEIPrefixFlag.values[i];
@@ -3878,6 +3881,41 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       NNPFCFound = NNPFCFound || (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
       NNPFAFound = NNPFAFound || (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
       CHECK(!NNPFCFound && NNPFAFound, "NNPFA payload type found before NNPFC payload type in SPO SEI");
+#if JVET_AK0055_SPO_SEI_CONSTRAINT
+      if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::EQUIRECTANGULAR_PROJECTION)
+      {
+        CHECK(GCMPIndices.empty(), "ERP and GCMP SEI messages cannot coexist");
+        ERPIndices.push_back(i);
+      }
+      else if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::GENERALIZED_CUBEMAP_PROJECTION)
+      {
+        CHECK(ERPIndices.empty(), "ERP and GCMP SEI messages cannot coexist");
+        GCMPIndices.push_back(i);
+      }
+      else if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::REGION_WISE_PACKING)
+      {
+        RWPIndices.push_back(i);
+      }
+      else if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::FRAME_PACKING)
+      {
+        FPAIndices.push_back(i);
+      }
+      m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
+      if (m_poSEIPrefixFlag[i])
+      {
+        m_poSEINumOfPrefixBits[i] = cfg_poSEINumofPrefixBits.values[i];
+        m_poSEIPrefixByte[i].resize((cfg_poSEINumofPrefixBits.values[i] + 7) >> 3);
+        for (uint32_t j = 0; j < (uint32_t)m_poSEIPrefixByte[i].size(); j++)
+        {
+          m_poSEIPrefixByte[i][j] = (uint8_t) cfg_poSEIPrefixByte.values[prefixByteIdx++];
+        }
+      }
+      else
+      {
+        cfg_poSEINumofPrefixBits.values[i] = 0;
+        m_poSEINumOfPrefixBits[i] = 0;
+      }
+#endif
       m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
       if (m_poSEIPrefixFlag[i])
       {
@@ -3918,6 +3956,46 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
     CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
+#if JVET_AK0055_SPO_SEI_CONSTRAINT
+    if (!RWPIndices.empty())
+    {
+      CHECK(!ERPIndices.empty() || !GCMPIndices.empty(), "If RWP is present, at least one of ERP or GCMP must be present");
+      for (int rwpIdx : RWPIndices)
+      {
+        for (int erpIdx : ERPIndices)
+          CHECK(rwpIdx < erpIdx, "ERP must come after RWP");
+        for (int gcmpIdx : GCMPIndices)
+          CHECK(rwpIdx < gcmpIdx, "GCMP must come after RWP");
+      }
+    }
+
+    if (!FPAIndices.empty())
+    {
+      for (int fpaIdx : FPAIndices)
+      {
+        for (int erpIdx : ERPIndices)
+          CHECK(fpaIdx < erpIdx, "ERP must come after FPA");
+        for (int gcmpIdx : GCMPIndices)
+          CHECK(fpaIdx < gcmpIdx, "GCMP must come after FPA");
+      }
+    }
+
+    if (!RWPIndices.empty() && !FPAIndices.empty() && !ERPIndices.empty())
+    {
+      for (int rwpIdx : RWPIndices)
+        for (int fpaIdx : FPAIndices)
+          for (int erpIdx : ERPIndices)
+            CHECK(rwpIdx < fpaIdx && fpaIdx < erpIdx, "Order must be: RWP < FPA < ERP");
+    }
+
+    if (!RWPIndices.empty() && !FPAIndices.empty() && !GCMPIndices.empty())
+    {
+      for (int rwpIdx : RWPIndices)
+        for (int fpaIdx : FPAIndices)
+          for (int gcmpIdx : GCMPIndices)
+            CHECK(rwpIdx < fpaIdx && fpaIdx < gcmpIdx, "Order must be: RWP < FPA < GCMP");
+    }
+#endif
   }
 
   if (m_postFilterHintSEIEnabled)
