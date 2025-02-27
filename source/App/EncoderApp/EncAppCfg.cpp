@@ -5733,6 +5733,12 @@ bool EncAppCfg::xCheckParameter()
   if (m_nnPostFilterSEIActivationEnabled)
   {
     xConfirmPara(m_nnPostFilterSEIActivationTargetId > MAX_NNPFA_ID, "SEINNPostFilterActivationTargetId must be in the range of 0 to 2^32-2");
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE && JVET_AK0072_NNPF_NULL_PROMPT_CONTRAINT
+    if (m_nnPostFilterSEIActivationPromptUpdateFlag)
+    {
+      xConfirmPara(m_nnPostFilterSEIActivationPrompt.empty(), "When present in the bitstream, SEINNPostFilterActivationPrompt shall not be a null string");
+    }
+#endif
   }
 
   if (m_phaseIndicationSEIEnabledFullResolution)

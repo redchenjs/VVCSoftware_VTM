@@ -3608,6 +3608,9 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
         }
         sei_read_string(pDecodedMessageOutputStream, val2, "nnpfa_prompt");
         sei.m_prompt = val2;
+#if JVET_AK0072_NNPF_NULL_PROMPT_CONTRAINT
+        CHECK(sei.m_prompt.empty(), "When present in the bitstream, nnpfa_prompt shall not be a null string");
+#endif
       }
 #endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
