@@ -1628,6 +1628,33 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setGenerativeFaceVideoSEIMatrixHeight                       ( m_generativeFaceVideoSEIMatrixHeight );
   m_cEncLib.setGenerativeFaceVideoSEIMatrixElement                      ( m_generativeFaceVideoSEIMatrixElement );
   m_cEncLib.setGenerativeFaceVideoSEIPayloadFilename                    ( m_generativeFaceVideoSEIPayloadFilename );
+#if JVET_AK0239_GFVE
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIEnabled                            ( m_generativeFaceVideoEnhancementEnabled );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEINumber                             ( m_generativeFaceVideoEnhancementSEINumber );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIId                                 ( m_generativeFaceVideoEnhancementSEIId );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIGFVCnt                             ( m_generativeFaceVideoEnhancementSEIGFVCnt );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIGFVId                              ( m_generativeFaceVideoEnhancementSEIGFVId );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIBasePicFlag                        ( m_generativeFaceVideoEnhancementSEIBasePicFlag );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEINNPresentFlag                      ( m_generativeFaceVideoEnhancementSEINNPresentFlag );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEINNModeIdc                          ( m_generativeFaceVideoEnhancementSEINNModeIdc );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEINNTagURI                           ( m_generativeFaceVideoEnhancementSEINNTagURI );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEINNURI                              ( m_generativeFaceVideoEnhancementSEINNURI );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIMatrixElementPrecisionFactor       ( m_generativeFaceVideoEnhancementSEIMatrixElementPrecisionFactor );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIMatrixPredFlag                     ( m_generativeFaceVideoEnhancementSEIMatrixPredFlag);
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIMatrixPresentFlag                  ( m_generativeFaceVideoEnhancementSEIMatrixPresentFlag);
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEINumMatrices                        ( m_generativeFaceVideoEnhancementSEINumMatrices );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIMatrixWidth                        ( m_generativeFaceVideoEnhancementSEIMatrixWidth );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIMatrixHeight                       ( m_generativeFaceVideoEnhancementSEIMatrixHeight );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIMatrixElement                      ( m_generativeFaceVideoEnhancementSEIMatrixElement );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPayloadFilename                    ( m_generativeFaceVideoEnhancementSEIPayloadFilename );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilPresentIdx                    ( m_generativeFaceVideoEnhancementSEIPupilPresentIdx );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilCoordinatePrecisionFactor     ( m_generativeFaceVideoEnhancementSEIPupilCoordinatePrecisionFactor );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateX            ( m_generativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateX );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY            ( m_generativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX           ( m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY           ( m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY );
+#endif
+
 }
 
 void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )

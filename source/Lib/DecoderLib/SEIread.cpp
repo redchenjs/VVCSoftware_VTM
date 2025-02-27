@@ -650,6 +650,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIGenerativeFaceVideo;
       xParseSEIGenerativeFaceVideo((SEIGenerativeFaceVideo &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
+#if JVET_AK0239_GFVE 
+    case SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT:
+      sei = new SEIGenerativeFaceVideoEnhancement;
+      xParseSEIGenerativeFaceVideoEnhancement((SEIGenerativeFaceVideoEnhancement &)*sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION:
       sei = new SEIDigitallySignedContentVerification;
       xParseSEIDigitallySignedContentVerification((SEIDigitallySignedContentVerification &) *sei, payloadSize, pDecodedMessageOutputStream);
@@ -4658,6 +4664,338 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
     }
   }
 }
+
+#if JVET_AK0239_GFVE
+void SEIReader::xParseSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement & sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
+{
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  uint32_t   val;
+  bool       valueSignFlag;
+  uint32_t   gfveId;
+  uint32_t   gfveGfvId;
+  uint32_t   gfveGfvCnt;
+  bool       matrixPresentFlag;
+  bool       matrixPredFlag;
+
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_id");
+  gfveId = val;
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_gfv_id");
+  gfveGfvId = val;
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_gfv_cnt");
+  gfveGfvCnt = val;
+
+  if (gfveGfvCnt == 0)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "gfve_base_picture_flag");
+    sei.m_basePicFlag = val;
+  }
+  else
+  {
+    sei.m_basePicFlag = 0;
+  }
+  if (sei.m_basePicFlag)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "gfve_nn_present_flag");
+    sei.m_nnPresentFlag = val;
+    if (sei.m_nnPresentFlag)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_nn_mode_idc");
+      sei.m_nnModeIdc = val;
+      if (sei.m_nnModeIdc == 1)
+      {
+        std::string val2;
+        while (!isByteAligned())
+        {
+          sei_read_flag(pDecodedMessageOutputStream, val, "gfve_nn_alignment_zero_bit_a");
+          CHECK(val != 0, "gfv_nn_alignment_zero_bit_a not equal to zero");
+        }
+        sei_read_string(pDecodedMessageOutputStream, val2, "gfve_nn_uri_tag");
+        sei.m_nnTagURI = val2;
+        val2 = "";
+        sei_read_string(pDecodedMessageOutputStream, val2, "gfve_nn_uri");
+        sei.m_nnURI = val2;
+      }
+    }
+  }
+  gfveBaseMatrix.push_back(std::vector<std::vector<double>>());
+  gfvePrevMatrix.push_back(std::vector<std::vector<double>>());
+  sei_read_flag(pDecodedMessageOutputStream, val, "gfve_matrix_present_flag");
+  matrixPresentFlag = val;
+  if (matrixPresentFlag)
+  {
+    uint32_t matrixWidth = 0;
+    uint32_t matrixHeight = 0;
+    uint32_t numMatrices = 0;
+    std::vector<uint32_t> matrixWidthVec;
+    std::vector<uint32_t> matrixHeightVec;
+    uint32_t   matrixElementPrecisionFactor;
+    std::vector<std::vector<std::vector<double>>>   matrixElement;
+    if (!sei.m_basePicFlag)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "gfve_matrix_pred_flag");
+      matrixPredFlag = val;
+    }
+    else
+    {
+      matrixPredFlag = 0;
+    }
+    if (!matrixPredFlag)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_matrix_element_precision_factor_minus1");
+      CHECK(val < 0 || val > 31, "The value of gfve_matrix_element_precision_factor_minus1 shall be in the range of 0 to 31, inclusive");
+      matrixElementPrecisionFactor = val + 1;
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_num_matrices_minus1");
+      numMatrices = val + 1;
+      if (sei.m_basePicFlag)
+      {
+        gfveBaseMatrixElementPrecisionFactor = matrixElementPrecisionFactor;
+        gfveBaseNumMatrices = numMatrices;
+      }
+      for (uint32_t j = 0; j < numMatrices; j++)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_matrix_height_minus1");
+        matrixHeight = val + 1;
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_matrix_width_minus1");
+        matrixWidth = val + 1;
+        matrixHeightVec.push_back(matrixHeight);
+        matrixWidthVec.push_back(matrixWidth);
+        if (sei.m_basePicFlag)
+        {
+          gfveBaseMatrixHeight.push_back(matrixHeight);
+          gfveBaseMatrixWidth.push_back(matrixWidth);
+        }
+      }
+    }
+    else
+    {
+      matrixElementPrecisionFactor = gfveBaseMatrixElementPrecisionFactor;
+      numMatrices = gfveBaseNumMatrices;
+      matrixWidthVec = gfveBaseMatrixWidth;
+      matrixHeightVec = gfveBaseMatrixHeight;
+    }
+
+    for (uint32_t j = 0; j < numMatrices; j++)
+    {
+      matrixElement.push_back(std::vector<std::vector<double>>());
+      for (uint32_t k = 0; k < matrixHeightVec[j]; k++)
+      {
+        matrixElement[j].push_back(std::vector<double>());
+        for (uint32_t l = 0; l < matrixWidthVec[j]; l++)
+        {
+          if (!matrixPredFlag)
+          {
+            sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_matrix_element_int");
+            CHECK(val < 0 || val > 4294967296 - 2, "The value of gfve_matrix_element_int[ j ][ k ][ m ] shall be in the range of 0 to 2^(32) - 2, inclusive");
+            int matrixElementAbsInteger = val;
+            sei_read_code(pDecodedMessageOutputStream, matrixElementPrecisionFactor, val, "gfve_matrix_element_dec");
+            int curMatrixDecIntValue = val;
+            double matrixElementAbsDecimal = ((double)curMatrixDecIntValue*1.0) / (1 << matrixElementPrecisionFactor);
+            valueSignFlag = 0;
+            if (matrixElementAbsInteger || curMatrixDecIntValue)
+            {
+              sei_read_flag(pDecodedMessageOutputStream, val, "gfve_matrix_element_sign_flag");
+              valueSignFlag = val;
+            }
+            double matrixElementDecimal = valueSignFlag ? -(matrixElementAbsDecimal + matrixElementAbsInteger) : (matrixElementAbsDecimal + matrixElementAbsInteger);
+            matrixElement[j][k].push_back(matrixElementDecimal);
+          }
+          else
+          {
+            sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_matrix_delta_element_int");
+            CHECK(val < 0 || val > 4294967296 - 2, "The value of gfve_matrix_delta_element_int[ j ][ k ][ m ] shall be in the range of 0 to 2^(32) - 2, inclusive");
+            int matrixElementAbsInteger = val;
+            sei_read_code(pDecodedMessageOutputStream, matrixElementPrecisionFactor, val, "gfve_matrix_delta_element_dec");
+            int curMatrixDecIntValue = val;
+            double matrixElementAbsDecimal = ((double)curMatrixDecIntValue*1.0) / (1 << matrixElementPrecisionFactor);
+            valueSignFlag = 0;
+            if (matrixElementAbsInteger || curMatrixDecIntValue)
+            {
+              sei_read_flag(pDecodedMessageOutputStream, val, "gfve_matrix_delta_element_sign_flag");
+              valueSignFlag = val;
+            }
+            double matrixElementDecimal = (valueSignFlag ? -(matrixElementAbsDecimal + matrixElementAbsInteger) : (matrixElementAbsDecimal + matrixElementAbsInteger)) + (gfveGfvCnt == 0 ? gfveBaseMatrix[j][k][l] : gfvePrevMatrix[j][k][l]);
+            matrixElement[j][k].push_back(matrixElementDecimal);
+          }
+        }
+      }
+    }
+    gfvePrevMatrix = matrixElement;
+    if (sei.m_basePicFlag)
+    {
+      gfveBaseMatrix = matrixElement;
+    }
+    if (pDecodedMessageOutputStream)
+    {
+      (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfveMatrixNumber" << ": " << numMatrices << "\n";
+      (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfveMatrixWidthXHeight" << ": ";
+      for (uint32_t mj = 0; mj < numMatrices; mj++) // 
+      {
+        (*pDecodedMessageOutputStream) << (matrixWidthVec[mj]) << "x" << (matrixHeightVec[mj]) << " ";
+      }
+      (*pDecodedMessageOutputStream) << "\n";
+      (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfveMatrixElement" << ": ";
+      for (uint32_t mj = 0; mj < numMatrices; mj++) // 
+      {
+        for (uint32_t mk = 0; mk < matrixHeightVec[mj]; mk++)
+        {
+          for (uint32_t ml = 0; ml < matrixWidthVec[mj]; ml++)
+          {
+            (*pDecodedMessageOutputStream) << (matrixElement[mj][mk][ml]) << " ";
+          }
+        }
+      }
+      (*pDecodedMessageOutputStream) << "\n";
+    }
+  }
+
+  sei_read_code(pDecodedMessageOutputStream, 2, val, "gfve_pupil_coordinate_present_idx");
+  uint32_t pupilPresentIdx = val;
+  double   pupilLeftEyeCoordinateX;
+  double   pupilLeftEyeCoordinateY;
+  double   pupilRightEyeCoordinateX;
+  double   pupilRightEyeCoordinateY;
+  uint32_t pupilCoordinatePrecisionFactor = 0;
+  if (pupilPresentIdx)
+  {
+    if (sei.m_basePicFlag)
+    {
+      checkBasePicPupilPresentIdx = true;
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_pupil_coordinate_precision_factor_minus1");
+      CHECK(val < 0 || val > 31, "The value of gfve_pupil_coordinate_precision_factor_minus1 shall be in the range of 0 to 31, inclusive");
+      pupilCoordinatePrecisionFactor = val + 1;
+
+      gfveBasePupilCoordinatePrecisionFactor = pupilCoordinatePrecisionFactor;
+    }
+    else
+    {
+      pupilCoordinatePrecisionFactor = gfveBasePupilCoordinatePrecisionFactor;
+    }
+  }
+  if (checkBasePicPupilPresentIdx)
+  {
+    double gfveLeftPupilCoordinateXRef = 0.0;
+    double gfveLeftPupilCoordinateYRef = 0.0;
+    double gfveRightPupilCoordinateXRef = 0.0;
+    double gfveRightPupilCoordinateYRef = 0.0;
+    if (gfveGfvCnt == 0)
+    {
+      if (!sei.m_basePicFlag)
+      {
+        gfveLeftPupilCoordinateXRef = baseGfveLeftPupilCoordinateX;
+        gfveLeftPupilCoordinateYRef = baseGfveLeftPupilCoordinateY;
+        gfveRightPupilCoordinateXRef = baseGfveRightPupilCoordinateX;
+        gfveRightPupilCoordinateYRef = baseGfveRightPupilCoordinateY;
+      }
+    }
+    else
+    {
+      gfveLeftPupilCoordinateXRef = prevGfveLeftPupilCoordinateX;
+      gfveLeftPupilCoordinateYRef = prevGfveLeftPupilCoordinateY;
+      gfveRightPupilCoordinateXRef = prevGfveRightPupilCoordinateX;
+      gfveRightPupilCoordinateYRef = prevGfveRightPupilCoordinateY;
+    }
+    if (pupilPresentIdx == 1 || pupilPresentIdx == 3)
+    {
+      pupilLeftEyeCoordinateX = xParseSEIPupilCoordinate(pDecodedMessageOutputStream, gfveLeftPupilCoordinateXRef, pupilCoordinatePrecisionFactor, "left", "x");
+      pupilLeftEyeCoordinateY = xParseSEIPupilCoordinate(pDecodedMessageOutputStream, gfveLeftPupilCoordinateYRef, pupilCoordinatePrecisionFactor, "left", "y");
+    }
+    else
+    {
+      pupilLeftEyeCoordinateX = gfveLeftPupilCoordinateXRef;
+      pupilLeftEyeCoordinateY = gfveLeftPupilCoordinateYRef;
+    }
+    if (sei.m_basePicFlag)
+    {
+      gfveRightPupilCoordinateXRef = pupilLeftEyeCoordinateX;
+      gfveRightPupilCoordinateYRef = pupilLeftEyeCoordinateY;
+    }
+    if (pupilPresentIdx == 2 || pupilPresentIdx == 3)
+    {
+      pupilRightEyeCoordinateX = xParseSEIPupilCoordinate(pDecodedMessageOutputStream, gfveRightPupilCoordinateXRef, pupilCoordinatePrecisionFactor, "right", "x");
+      pupilRightEyeCoordinateY = xParseSEIPupilCoordinate(pDecodedMessageOutputStream, gfveRightPupilCoordinateYRef, pupilCoordinatePrecisionFactor, "right", "y");
+    }
+    else
+    {
+      pupilRightEyeCoordinateX = gfveRightPupilCoordinateXRef;
+      pupilRightEyeCoordinateY = gfveRightPupilCoordinateYRef;
+    }
+
+    if (sei.m_basePicFlag)
+    {
+      baseGfveLeftPupilCoordinateX = pupilLeftEyeCoordinateX;
+      baseGfveLeftPupilCoordinateY = pupilLeftEyeCoordinateY;
+      baseGfveRightPupilCoordinateX = pupilRightEyeCoordinateX;
+      baseGfveRightPupilCoordinateY = pupilRightEyeCoordinateY;
+    }
+    prevGfveLeftPupilCoordinateX = pupilLeftEyeCoordinateX;
+    prevGfveLeftPupilCoordinateY = pupilLeftEyeCoordinateY;
+    prevGfveRightPupilCoordinateX = pupilRightEyeCoordinateX;
+    prevGfveRightPupilCoordinateY = pupilRightEyeCoordinateY;
+
+    if (pDecodedMessageOutputStream)
+    {
+      (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfve_PupilCoordinate" << ": ";
+
+      (*pDecodedMessageOutputStream) << (pupilLeftEyeCoordinateX) << " ";
+      (*pDecodedMessageOutputStream) << (pupilLeftEyeCoordinateY) << " ";
+      (*pDecodedMessageOutputStream) << (pupilRightEyeCoordinateX) << " ";
+      (*pDecodedMessageOutputStream) << (pupilRightEyeCoordinateY) << " ";
+
+      (*pDecodedMessageOutputStream) << "\n";
+    }
+  }
+
+  if (sei.m_nnPresentFlag)
+  {
+    if (sei.m_nnModeIdc == 0)
+    {
+      while (!isByteAligned())
+      {
+        sei_read_flag(pDecodedMessageOutputStream, val, "gfve_nn_alignment_zero_bit_b");
+        CHECK(val != 0, "gfve_nn_alignment_zero_bit_b not equal to zero");
+      }
+      int payloadBytesRemaining = getBitstream()->getNumBitsLeft() / 8;
+      sei.m_payloadLength = payloadBytesRemaining;
+      sei.m_payloadByte = new char[sei.m_payloadLength];
+      int code;
+      std::string filename = "payloadByte_" + std::to_string(gfveId) + "_" + std::to_string(gfveGfvId) + ".nnr";
+      std::ofstream outFile(filename.c_str(), std::ofstream::binary);
+      for (int i = 0; i < payloadBytesRemaining; i++)
+      {
+        sei_read_scode(pDecodedMessageOutputStream, 8, code, "gfv_nn_payload_byte[i]");
+        sei.m_payloadByte[i] = (char)code;
+        outFile.write((char*)&code, 1);
+      }
+      outFile.close();
+    }
+  }
+}
+double SEIReader::xParseSEIPupilCoordinate(std::ostream *pOS, double refCoordinate, int precisionFactor, const char* eye, const char* axis)
+{
+  uint32_t val;
+  bool     valueSignFlag;
+
+  CHECK(std::string(eye) != "left" && std::string(eye) != "right", "Invalid value for 'eye'. Allowed values are 'left' or 'right'.");
+  CHECK(std::string(axis) != "x" && std::string(axis) != "y", "Invalid value for 'axis'. Allowed values are 'x' or 'y'.");
+  std::string checkMessage = "The value of gfve_pupil_" + std::string(eye) + "_eye_d" + std::string(axis) + "_coordinate_abs shall be be 0 to 1 << (gfve_pupil_coordinate_precision_factor_minus1 + 2), inclusive";
+  std::string absSymbolName = "gfve_pupil_" + std::string(eye) + "_eye_d" + std::string(axis) + "_coordinate_abs";
+
+  sei_read_uvlc(pOS, val, absSymbolName.c_str());
+  CHECK(val < 0 || val >(1 << (precisionFactor + 1)), checkMessage.c_str());
+  double coordinateAbs = static_cast<double>(val) / (1 << precisionFactor);
+
+  valueSignFlag = 0;
+  if (val)
+  {
+    std::string signSymbolName = "gfve_pupil_" + std::string(eye) + "_eye_d" + std::string(axis) + "_coordinate_sign_flag";
+    sei_read_flag(pOS, val, signSymbolName.c_str());
+    valueSignFlag = val;
+  }
+
+  return (valueSignFlag ? -coordinateAbs : coordinateAbs) + refCoordinate;
+}
+#endif
+
 
 void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
