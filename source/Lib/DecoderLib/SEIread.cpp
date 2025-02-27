@@ -877,6 +877,31 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
   for (uint32_t j = 0; j < numProcStgs; j++)
   {
     uint32_t idx = seiTypeIdx[j];
+#if JVET_AK0333_SPO_SEI_NESTED_SUBCHAINS
+    if (sei.m_posImportanceFlag[idx] && sei.m_posProcessingDegreeFlag[idx])
+    {
+      if (subChainFlag == 0)
+      {
+        sei.m_posSubChainIdx[j] = 0;
+      }
+      else
+      {
+        sei.m_posSubChainIdx[j] = subChainPrevIdx;
+      }
+    }
+    else if (!sei.m_posImportanceFlag[idx] && sei.m_posProcessingDegreeFlag[idx])
+    {
+      sei.m_posSubChainIdx[j] = subChainFlag * subChainPrevIdx;
+      CHECK(sei.m_posSubChainIdx[j] == 0, "When pos_sei_importance_flag[idx] is equal to 0 and po_sei_processing_degree_flag[idx] is equal to 1, poSubChainIdx[j] shall be greater than 0")
+      subChainFlag = 0;
+    }
+    else if (sei.m_posImportanceFlag[idx] && !sei.m_posProcessingDegreeFlag[idx])
+    {
+      subChainPrevIdx++;
+      sei.m_posSubChainIdx[j] = subChainPrevIdx;
+      subChainFlag = 1;
+    }
+#else
     if (sei.m_posImportanceFlag[idx] && sei.m_posProcessingDegreeFlag[idx])
     {
       sei.m_posSubChainIdx[j] = 0;
@@ -895,6 +920,7 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
       sei.m_posSubChainIdx[j] = subChainPrevIdx;
       subChainFlag = 1;
     }
+#endif
     else
     {
       sei.m_posSubChainIdx[j] = subChainFlag * subChainPrevIdx;
