@@ -2743,8 +2743,8 @@ void SEIWriter::xWriteSEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceV
           if(!sei.m_matrixPredFlag)
           {
             double curMatrixElementAbs = fabs(sei.m_matrixElement[j][k][l]);
-            int curMatrixElementAbsInt = (int)(curMatrixElementAbs);
-            CHECK(curMatrixElementAbsInt < 0 || curMatrixElementAbsInt > 4294967294, "The value of gfve_matrix_element_int shall be in the range of 0 to 2^(32) - 2, inclusive");
+            uint32_t curMatrixElementAbsInt = (int)(curMatrixElementAbs);
+            CHECK(curMatrixElementAbsInt < 0 || curMatrixElementAbsInt > 4294967296 - 2, "The value of gfve_matrix_element_int shall be in the range of 0 to 2^(32) - 2, inclusive");
             xWriteUvlc(curMatrixElementAbsInt, "gfve_matrix_element_int");
             double curMatrixElementAbsDecimal = curMatrixElementAbs - curMatrixElementAbsInt;
             CHECK(curMatrixElementAbsDecimal < 0, "");
@@ -2761,8 +2761,8 @@ void SEIWriter::xWriteSEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceV
           else
           {
             double curMatrixElementAbs = fabs(sei.m_matrixElement[j][k][l] - (sei.m_gfvcnt==0 ? baseGfveMatrixRec[j][k][l] : prevGfveMatrixRec[j][k][l]));
-            int curMatrixElementAbsInt = (int)curMatrixElementAbs;
-            CHECK(curMatrixElementAbsInt < 0 || curMatrixElementAbsInt > 4294967294, "The value of gfve_matrix_element_int shall be in the range of 0 to 2^(32) - 2, inclusive");
+            uint32_t curMatrixElementAbsInt = (int)curMatrixElementAbs;
+            CHECK(curMatrixElementAbsInt < 0 || curMatrixElementAbsInt > 4294967296 - 2, "The value of gfve_matrix_element_int shall be in the range of 0 to 2^(32) - 2, inclusive");
             xWriteUvlc(curMatrixElementAbsInt, "gfve_matrix_delta_element_int");
             double curMatrixElementAbsDecimal = curMatrixElementAbs - curMatrixElementAbsInt;
             CHECK(curMatrixElementAbsDecimal < 0, "");
