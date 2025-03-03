@@ -3140,6 +3140,15 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
   xWriteString(sei.dsciKeySourceUri, "dsci_key_source_uri");
   CHECK (sei.dsciNumVerificationSubstreams < 1, "Number of DSC verification substreams has to be greater than zero");
   xWriteUvlc(sei.dsciNumVerificationSubstreams - 1, "dsci_num_verification_substreams_minus1");
+#if  JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  for (int i = 1; i < sei.dsciNumVerificationSubstreams; i++)
+  {
+    for (int j = 0; j < i; j++)
+    {
+      xWriteFlag(sei.dsciRefSubstreamFlag[i][j], "dsci_ref_substream_flag");
+    }
+  }
+#endif
   xWriteUvlc(sei.dsciKeyRetrievalModeIdc, "dsci_key_retrieval_mode_idc");
   if (sei.dsciKeyRetrievalModeIdc == 1)
   {

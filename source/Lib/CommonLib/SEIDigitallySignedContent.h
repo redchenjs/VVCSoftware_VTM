@@ -68,6 +68,9 @@ public:
   int8_t       dsciHashMethodType            = 0;
   std::string  dsciKeySourceUri;
   int8_t       dsciNumVerificationSubstreams = 0;
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  std::vector<std::vector<bool>> dsciRefSubstreamFlag;
+#endif
   int8_t       dsciKeyRetrievalModeIdc       = 0;
   bool         dsciUseKeyRegisterIdxFlag     = false;
   int32_t      dsciKeyRegisterIdx            = 0;

@@ -82,6 +82,8 @@
 
 #define JVET_AK0238_GFV_FIX_CLEANUP                       1// bug fixes and codes cleanup for GFV SEI
 
+#define JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG           1 // Signal flags for substreams to indicate substream dependency
+
 //########### place macros to be be kept below this line ###############
 
 #define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1
