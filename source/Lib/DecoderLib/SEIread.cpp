@@ -865,6 +865,9 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
     }
   }
 
+#if JVET_AK0333_SPO_SEI_NESTED_SUBCHAINS
+  // The following code generates subchain indices from the syntax. It can be used for testing and verification of the syntax, but is not otherwise needed in VTM.
+#endif
   uint32_t numProcStgs = sei.m_posNumMinus2 + 2;
   std::vector<uint32_t> seiTypeIdx;
   for (uint32_t j = 0; j < numProcStgs; j++)
