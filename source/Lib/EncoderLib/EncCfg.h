@@ -3314,7 +3314,7 @@ public:
   bool              getGenerativeFaceVideoEnhancementSEINNPresentFlag()                              const { return m_generativeFaceVideoEnhancementSEINNPresentFlag; }
   void              setGenerativeFaceVideoEnhancementSEINNModeIdc(uint32_t NNModeIdc)                      { m_generativeFaceVideoEnhancementSEINNModeIdc = NNModeIdc; }
   uint32_t          getGenerativeFaceVideoEnhancementSEINNModeIdc()                                  const { return m_generativeFaceVideoEnhancementSEINNModeIdc; }
-  void              setGenerativeFaceVideoEnhancementSEINNTagURI(const std::string &NNTagURI)              { m_generativeFaceVideoSEINNTagURI = NNTagURI; }
+  void              setGenerativeFaceVideoEnhancementSEINNTagURI(const std::string &NNTagURI)              { m_generativeFaceVideoEnhancementSEINNTagURI = NNTagURI; }
   const std::string getGenerativeFaceVideoEnhancementSEINNTagURI()                                   const { return m_generativeFaceVideoEnhancementSEINNTagURI; }
   void              setGenerativeFaceVideoEnhancementSEINNURI(const std::string &NNURI)                    { m_generativeFaceVideoEnhancementSEINNURI = NNURI; }
   const std::string getGenerativeFaceVideoEnhancementSEINNURI()                                      const { return m_generativeFaceVideoEnhancementSEINNURI; }
