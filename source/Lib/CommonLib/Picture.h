@@ -51,6 +51,9 @@
 #include "SEIColourTransform.h"
 #include <deque>
 #include "SEIFilmGrainSynthesizer.h"
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+#include "SEIPackedRegionsInfoProcess.h"
+#endif
 
 class SEI;
 class AQpLayer;
@@ -263,6 +266,9 @@ public:
 #endif
   std::deque<Slice*> slices;
   SEIMessages        SEIs;
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  SEIPackedRegionsInfoProcess m_priProcess;
+#endif
 
   uint32_t           getPicWidthInLumaSamples() const                                { return  getRecoBuf( COMPONENT_Y ).width; }
   uint32_t           getPicHeightInLumaSamples() const                               { return  getRecoBuf( COMPONENT_Y ).height; }

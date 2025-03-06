@@ -490,7 +490,10 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION, "Digitally Signed Content Verification" },
   { SEI::PayloadType::GENERATIVE_FACE_VIDEO, "Generative face video" },
 #if JVET_AK0239_GFVE
-  { SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT, "Generative face video enhancement" }
+  { SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT, "Generative face video enhancement" },
+#endif
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  { SEI::PayloadType::PACKED_REGIONS_INFO, "Packed regions info" }
 #endif
 };
 
@@ -1256,6 +1259,7 @@ SEIGenerativeFaceVideo::SEIGenerativeFaceVideo(const SEIGenerativeFaceVideo & se
   m_matrixWidthstore = sei.m_matrixWidthstore;
   m_matrixHeightstore = sei.m_matrixHeightstore;
 }
+
 #if JVET_AK0239_GFVE
 SEIGenerativeFaceVideoEnhancement::SEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement & sei)
 {
@@ -1285,5 +1289,35 @@ SEIGenerativeFaceVideoEnhancement::SEIGenerativeFaceVideoEnhancement(const SEIGe
   m_pupilLeftEyeCoordinateY = sei.m_pupilLeftEyeCoordinateY;
   m_pupilRightEyeCoordinateX = sei.m_pupilRightEyeCoordinateX;
   m_pupilRightEyeCoordinateY = sei.m_pupilRightEyeCoordinateY;
+}
+#endif
+
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+SEIPackedRegionsInfo::SEIPackedRegionsInfo(SEIPackedRegionsInfo& sei)
+{
+  m_cancelFlag = sei.m_cancelFlag;
+  m_persistenceFlag = sei.m_persistenceFlag;
+  m_numRegionsMinus1 = sei.m_numRegionsMinus1;
+  m_useMaxDimensionsFlag = sei.m_useMaxDimensionsFlag;
+  m_log2UnitSize = sei.m_log2UnitSize;
+  m_regionSizeLenMinus1 = sei.m_regionSizeLenMinus1;
+  m_regionIdPresentFlag = sei.m_regionIdPresentFlag;
+  m_targetPicParamsPresentFlag = sei.m_targetPicParamsPresentFlag;
+  m_targetPicWidthMinus1 = sei.m_targetPicWidthMinus1;
+  m_targetPicHeightMinus1 = sei.m_targetPicHeightMinus1;
+  m_numResamplingRatiosMinus1 = sei.m_numResamplingRatiosMinus1;
+  m_resamplingWidthNumMinus1 = sei.m_resamplingWidthNumMinus1;
+  m_resamplingWidthDenomMinus1 = sei.m_resamplingWidthDenomMinus1;
+  m_fixedAspectRatioFlag = sei.m_fixedAspectRatioFlag;
+  m_resamplingHeightNumMinus1 = sei.m_resamplingHeightNumMinus1;
+  m_resamplingHeightDenomMinus1 = sei.m_resamplingHeightDenomMinus1;
+  m_regionId = sei.m_regionId;
+  m_regionTopLeftInUnitsX = sei.m_regionTopLeftInUnitsX;
+  m_regionTopLeftInUnitsY = sei.m_regionTopLeftInUnitsY;
+  m_regionWidthInUnitsMinus1 = sei.m_regionWidthInUnitsMinus1;
+  m_regionHeightInUnitsMinus1 = sei.m_regionHeightInUnitsMinus1;
+  m_resamplingRatioIdx = sei.m_resamplingRatioIdx;
+  m_targetRegionTopLeftX = sei.m_targetRegionTopLeftX;
+  m_targetRegionTopLeftY = sei.m_targetRegionTopLeftY;
 }
 #endif

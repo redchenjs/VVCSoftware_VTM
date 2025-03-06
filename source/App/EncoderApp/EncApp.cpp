@@ -45,6 +45,9 @@
 #include "EncApp.h"
 #include "EncoderLib/AnnexBwrite.h"
 #include "EncoderLib/EncLibCommon.h"
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+#include "CommonLib/SEIPackedRegionsInfoProcess.h"
+#endif
 
 //! \ingroup EncoderApp
 //! \{
@@ -1485,6 +1488,33 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setTextSEIDescriptionString(m_SEITextDescriptionString);
 
 
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  m_cEncLib.setPriSEIEnabled(m_priSEIEnabled);
+  m_cEncLib.setPriSEICancelFlag(m_priSEICancelFlag);
+  m_cEncLib.setPriSEIPersistenceFlag(m_priSEIPersistenceFlag);
+  m_cEncLib.setPriSEINumRegionsMinus1(m_priSEINumRegionsMinus1);
+  m_cEncLib.setPriSEIUseMaxDimensionsFlag(m_priSEIUseMaxDimensionsFlag);
+  m_cEncLib.setPriSEILog2UnitSize(m_priSEILog2UnitSize);
+  m_cEncLib.setPriSEIRegionSizeLenMinus1(m_priSEIRegionSizeLenMinus1);
+  m_cEncLib.setPriSEIRegionIdPresentFlag(m_priSEIRegionIdPresentFlag);
+  m_cEncLib.setPriSEITargetPicParamsPresentFlag(m_priSEITargetPicParamsPresentFlag);
+  m_cEncLib.setPriSEITargetPicWidthMinus1(m_priSEITargetPicWidthMinus1);
+  m_cEncLib.setPriSEITargetPicHeightMinus1(m_priSEITargetPicHeightMinus1);
+  m_cEncLib.setPriSEINumResamplingRatiosMinus1(m_priSEINumResamplingRatiosMinus1);
+  m_cEncLib.setPriSEIResamplingWidthNumMinus1(m_priSEIResamplingWidthNumMinus1);
+  m_cEncLib.setPriSEIResamplingWidthDenomMinus1(m_priSEIResamplingWidthDenomMinus1);
+  m_cEncLib.setPriSEIFixedAspectRatioFlag(m_priSEIFixedAspectRatioFlag);
+  m_cEncLib.setPriSEIResamplingHeightNumMinus1(m_priSEIResamplingHeightNumMinus1);
+  m_cEncLib.setPriSEIResamplingHeightDenomMinus1(m_priSEIResamplingHeightDenomMinus1);
+  m_cEncLib.setPriSEIRegionId(m_priSEIRegionId);
+  m_cEncLib.setPriSEIRegionTopLeftInUnitsX(m_priSEIRegionTopLeftInUnitsX);
+  m_cEncLib.setPriSEIRegionTopLeftInUnitsY(m_priSEIRegionTopLeftInUnitsY);
+  m_cEncLib.setPriSEIRegionWidthInUnitsMinus1(m_priSEIRegionWidthInUnitsMinus1);
+  m_cEncLib.setPriSEIRegionHeightInUnitsMinus1(m_priSEIRegionHeightInUnitsMinus1);
+  m_cEncLib.setPriSEIResamplingRatioIdx(m_priSEIResamplingRatioIdx);
+  m_cEncLib.setPriSEITargetRegionTopLeftX(m_priSEITargetRegionTopLeftX);
+  m_cEncLib.setPriSEITargetRegionTopLeftY(m_priSEITargetRegionTopLeftY);
+#endif
   m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
   m_cEncLib.setPostFilterHintSEICancelFlag(m_postFilterHintSEICancelFlag);
   m_cEncLib.setPostFilterHintSEIPersistenceFlag(m_postFilterHintSEIPersistenceFlag);
@@ -2112,7 +2142,11 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         }
         else
         {
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+          ppsID = ((sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) && !m_explicitScalingWindowEnabled) ? (m_resChangeInClvsEnabled || m_priSEIEnabled) ? (ENC_PPS_ID_RPR + layerId) : layerId : layerId;
+#else
           ppsID = ((sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) && !m_explicitScalingWindowEnabled) ? m_resChangeInClvsEnabled ? (ENC_PPS_ID_RPR + layerId) : layerId : layerId;
+#endif
         }
         const PPS& pps = *m_cEncLib.getPPS(ppsID);
         if( (m_cEncLib.isResChangeInClvsEnabled() || m_upscaledOutputWidth || m_upscaledOutputHeight) && m_cEncLib.getUpscaledOutput() )
@@ -2122,6 +2156,19 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
                                                       m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay,
                                                       m_upscaledOutputWidth, m_upscaledOutputHeight);
         }
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+        else if (m_cEncLib.getPriSEIEnabled() && m_cEncLib.getPriSEITargetPicParamsPresentFlag())
+        {
+          const PPS& pps = *m_cEncLib.getPPS(ppsID);
+          PelStorage outPic;
+          const Area a = Area( Position(0, 0), Size(m_cEncLib.getPriSEITargetPicWidthMinus1() + 1, m_cEncLib.getPriSEITargetPicHeightMinus1() + 1) );
+          outPic.create( pcPicYuvRec->chromaFormat, a, m_cEncLib.getMaxCUWidth() );
+          m_cEncLib.getPriProcess().reconstruct(*pcPicYuvRec, outPic, sps, pps);
+          m_cVideoIOYuvReconFile.write(
+            outPic.get(COMPONENT_Y).width, outPic.get(COMPONENT_Y).height, outPic, ipCSC,
+            m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
+        }
+#endif
         else
         {
           Window confWindowPPS = pps.getConformanceWindow();

@@ -155,6 +155,18 @@ uint32_t DecApp::decode()
     }
   }
 
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  if (!m_packedRegionsInfoSEIFileName.empty())
+  {
+    std::ofstream ofile(m_packedRegionsInfoSEIFileName.c_str());
+    if (!ofile.good() || !ofile.is_open())
+    {
+      fprintf(stderr, "\nUnable to open file '%s' for writing packed regions info SEI\n", m_packedRegionsInfoSEIFileName.c_str());
+      exit(EXIT_FAILURE);
+    }
+  }
+#endif
+
   // main decoder loop
   bool loopFiltered[MAX_VPS_LAYERS] = { false };
 
@@ -1130,7 +1142,21 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         {
           const Window &conf = pcPic->getConformanceWindow();
           ChromaFormat  chromaFormatIdc = pcPic->m_chromaFormatIdc;
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+          if (pcPic->m_priProcess.m_enabled && pcPic->m_priProcess.m_targetPicWidth > 0 && pcPic->m_priProcess.m_targetPicHeight > 0)
+          {
+            PelStorage outPic;
+            const Area a = Area( Position(0, 0), Size(pcPic->m_priProcess.m_targetPicWidth, pcPic->m_priProcess.m_targetPicHeight) );
+            outPic.create( chromaFormatIdc, a, 0 );
+            pcPic->m_priProcess.reconstruct(pcPic->getRecoBuf(), outPic, *pcPic->cs->sps, *pcPic->cs->pps);
+            m_cVideoIOYuvReconFile[pcPic->layerId].write(
+              outPic.get(COMPONENT_Y).width, outPic.get(COMPONENT_Y).height, outPic, m_outputColourSpaceConvert,
+              m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
+          }
+          else if( m_upscaledOutput )
+#else
           if( m_upscaledOutput )
+#endif
           {
             const SPS* sps = pcPic->cs->sps;
             m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
@@ -1224,6 +1250,12 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         {
           xOutputObjectMaskInfos(pcPic);
         }
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+        if (!m_packedRegionsInfoSEIFileName.empty())
+        {
+          xOutputPackedRegionsInfo(pcPic);
+        }
+#endif
         // update POC of display order
         m_iPOCLastDisplay = pcPic->getPOC();
 
@@ -1349,7 +1381,21 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
           {
             const Window &conf = pcPic->getConformanceWindow();
             ChromaFormat  chromaFormatIdc = pcPic->m_chromaFormatIdc;
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+            if (pcPic->m_priProcess.m_enabled && pcPic->m_priProcess.m_targetPicWidth > 0 && pcPic->m_priProcess.m_targetPicHeight > 0)
+            {
+              PelStorage outPic;
+              const Area a = Area( Position(0, 0), Size(pcPic->m_priProcess.m_targetPicWidth, pcPic->m_priProcess.m_targetPicHeight) );
+              outPic.create( chromaFormatIdc, a, 0 );
+              pcPic->m_priProcess.reconstruct(pcPic->getRecoBuf(), outPic, *pcPic->cs->sps, *pcPic->cs->pps);
+              m_cVideoIOYuvReconFile[pcPic->layerId].write(
+                outPic.get(COMPONENT_Y).width, outPic.get(COMPONENT_Y).height, outPic, m_outputColourSpaceConvert,
+                m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
+            }
+            else if( m_upscaledOutput )
+#else
             if( m_upscaledOutput )
+#endif
             {
               const SPS* sps = pcPic->cs->sps;
               m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
@@ -1441,6 +1487,12 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
           {
             xOutputObjectMaskInfos(pcPic);
           }
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+          if (!m_packedRegionsInfoSEIFileName.empty())
+          {
+            xOutputPackedRegionsInfo(pcPic);
+          }
+#endif
         // update POC of display order
         m_iPOCLastDisplay = pcPic->getPOC();
 
@@ -1896,6 +1948,66 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
     }
   }
 }
+#endif
+
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+void DecApp::xOutputPackedRegionsInfo(Picture* pcPic)
+{
+  SEIMessages seis = getSeisByType(pcPic->SEIs, SEI::PayloadType::PACKED_REGIONS_INFO);
+  if (!seis.empty())
+  {
+    const SEIPackedRegionsInfo& sei = *((SEIPackedRegionsInfo*)seis.front());
+    FILE* fp = fopen(m_packedRegionsInfoSEIFileName.c_str(), "a");
+    if (fp == nullptr)
+    {
+      std::cout << "Not able to open file for writing packed regions info SEI messages" << std::endl;
+    }
+    else
+    {
+      fprintf(fp, "SEIPRICancelFlag : %d\n", sei.m_cancelFlag);
+      fprintf(fp, "SEIPRIPersistenceFlag : %d\n", sei.m_persistenceFlag);
+      fprintf(fp, "SEIPRINumRegionsMinus1 : %d\n", sei.m_numRegionsMinus1);
+      fprintf(fp, "SEIPRIUseMaxDimensionsFlag : %d\n", sei.m_useMaxDimensionsFlag);
+      fprintf(fp, "SEIPRILog2UnitSize : %d\n", sei.m_log2UnitSize);
+      fprintf(fp, "SEIPRIRegionSizeLenMinus1 : %d\n", sei.m_regionSizeLenMinus1);
+      fprintf(fp, "SEIPRIRegionIdPresentFlag : %d\n", sei.m_regionIdPresentFlag);
+      fprintf(fp, "SEIPRITargetPicParamsPresentFlag : %d\n", sei.m_targetPicParamsPresentFlag);
+      if (sei.m_targetPicParamsPresentFlag)
+      {
+        fprintf(fp, "SEIPRITargetPicWidthMinus1 : %d\n", sei.m_targetPicWidthMinus1);
+        fprintf(fp, "SEIPRITargetPicHeightMinus1 : %d\n", sei.m_targetPicHeightMinus1);
+      }
+      fprintf(fp, "SEIPRINumResamplingRatiosMinus1 : %d\n", sei.m_numResamplingRatiosMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingWidthNumMinus1 :", sei.m_resamplingWidthNumMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingWidthDenomMinus1 :", sei.m_resamplingWidthDenomMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingHeightNumMinus1 :", sei.m_resamplingHeightNumMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingHeightDenomMinus1 :", sei.m_resamplingHeightDenomMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionId :", sei.m_regionId);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionTopLeftInUnitsX :", sei.m_regionTopLeftInUnitsX);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionTopLeftInUnitsY :", sei.m_regionTopLeftInUnitsY);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionWidthInUnitsMinus1 :", sei.m_regionWidthInUnitsMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionHeightInUnitsMinus1 :", sei.m_regionHeightInUnitsMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingRatioIdx :", sei.m_resamplingRatioIdx);
+      if (sei.m_targetPicParamsPresentFlag)
+      {
+        xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftX :", sei.m_targetRegionTopLeftX);
+        xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftY :", sei.m_targetRegionTopLeftY);
+      }
+      fclose(fp);
+    }
+  }
+}
+
+void DecApp::xOutputPackedRegionsInfoVector(FILE* fp, const char* paramName, const std::vector<uint32_t>& l)
+{
+  fprintf(fp, "%s", paramName);
+  for (auto it : l)
+  {
+    fprintf(fp, " %d", it);
+  }
+  fprintf(fp, "\n");
+}
+
 #endif
 
 /** \param nalu Input nalu to check whether its LayerId is within targetDecLayerIdSet

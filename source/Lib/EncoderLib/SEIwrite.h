@@ -176,6 +176,9 @@ protected:
   void xWriteSEIDigitallySignedContentSelection(const SEIDigitallySignedContentSelection &sei);
   void xWriteSEIDigitallySignedContentVerification(const SEIDigitallySignedContentVerification &sei);
 #endif
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  void xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei);
+#endif
 protected:
   HRD m_nestingHrd;
 };

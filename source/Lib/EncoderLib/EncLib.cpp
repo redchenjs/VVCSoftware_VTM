@@ -44,6 +44,9 @@
 #include "CommonLib/CommonDef.h"
 #include "CommonLib/ChromaFormat.h"
 #include "EncLibCommon.h"
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+#include "CommonLib/SEIPackedRegionsInfoProcess.h"
+#endif
 #include "CommonLib/ProfileTierLevel.h"
 
 //! \ingroup EncoderLib
@@ -440,6 +443,53 @@ void EncLib::init(AUWriterIf *auWriterIf)
     }
   }
 
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  int packedRegionsWidth = 0;
+  int packedRegionsHeight = 0;
+  if (m_priSEIEnabled)
+  {
+    CHECK(m_resChangeInClvsEnabled, "Cannot use RPR resolution change with packed regions info SEI");
+    PPS& pps = *(m_ppsMap.allocatePS(ENC_PPS_ID_RPR + m_layerId));  // Reuse RPR pps for packed regions info SEI
+    int minSizeUnit = std::max(8, 1 << sps0.getLog2MinCodingBlockSize());
+    uint32_t priUnitSize = 1 << m_priSEILog2UnitSize;
+    for (uint32_t i = 0; i <= m_priSEINumRegionsMinus1; i++)
+    {
+      packedRegionsWidth = std::max(packedRegionsWidth, (int)(m_priSEIRegionTopLeftInUnitsX[i] + (m_priSEIRegionWidthInUnitsMinus1[i] + 1) * priUnitSize));
+      packedRegionsHeight = std::max(packedRegionsHeight, (int)(m_priSEIRegionTopLeftInUnitsY[i] + (m_priSEIRegionHeightInUnitsMinus1[i] + 1) * priUnitSize));
+    }
+    packedRegionsWidth = (packedRegionsWidth + (minSizeUnit - 1)) & ~(minSizeUnit - 1);
+    packedRegionsHeight = (packedRegionsHeight + (minSizeUnit - 1)) & ~(minSizeUnit - 1);
+    pps.setPicWidthInLumaSamples(packedRegionsWidth);
+    pps.setPicHeightInLumaSamples(packedRegionsHeight);
+    pps.setSliceChromaQpFlag(true);
+
+    //register the width/height of the current pic into reference SPS
+    if (!sps0.getPPSValidFlag(pps.getPPSId()))
+    {
+      sps0.setPPSValidFlag(pps.getPPSId(), true);
+      sps0.setScalingWindowSizeInPPS(pps.getPPSId(), packedRegionsWidth, packedRegionsHeight);
+    }
+
+    // disable picture partitioning for scaled RPR pictures (slice/tile config only provided for the original resolution)
+    m_noPicPartitionFlag = true;
+
+    xInitPPS(pps, sps0); // will allocate memory for and initialize pps.pcv inside
+
+    if (pps.getWrapAroundEnabledFlag())
+    {
+      const int minCbSizeY = 1 << sps0.getLog2MinCodingBlockSize();
+      pps.setPicWidthMinusWrapAroundOffset((pps.getPicWidthInLumaSamples() / minCbSizeY) - (m_wrapAroundOffset * pps.getPicWidthInLumaSamples() / pps0.getPicWidthInLumaSamples() / minCbSizeY));
+      pps.setWrapAroundOffset(minCbSizeY * (pps.getPicWidthInLumaSamples() / minCbSizeY - pps.getPicWidthMinusWrapAroundOffset()));
+
+    }
+    else
+    {
+      pps.setPicWidthMinusWrapAroundOffset(0);
+      pps.setWrapAroundOffset(0);
+    }
+  }
+#endif
+
 #if ER_CHROMA_QP_WCG_PPS
   if (m_wcgChromaQpControl.isEnabled())
   {
@@ -469,6 +519,15 @@ void EncLib::init(AUWriterIf *auWriterIf)
   m_cGOPEncoder.  init( this );
   m_cSliceEncoder.init( this, sps0 );
   m_cCuEncoder.   init( this, sps0 );
+
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  if (m_priSEIEnabled)
+  {
+    SEIPackedRegionsInfo sei;
+    m_cGOPEncoder.getSEIEncoder().initSEIPackedRegionsInfo(&sei);
+    m_priProcess.init(sei, sps0, packedRegionsWidth, packedRegionsHeight);
+  }
+#endif
 
   // initialize transform & quantization class
   m_cTrQuant.init( nullptr,
@@ -794,6 +853,13 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, const InputColourSp
       ppsID = m_vps->getGeneralLayerIdx( m_layerId );
     }
 
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+    if (m_priSEIEnabled)
+    {
+      ppsID = ENC_PPS_ID_RPR + m_layerId;
+    }
+#endif
+
     xGetNewPicBuffer( rcListPicYuvRecOut, pcPicCurr, ppsID );
 
     const PPS *pPPS = ( ppsID < 0 ) ? m_ppsMap.getFirstPS() : m_ppsMap.getPS( ppsID );
@@ -835,6 +901,17 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, const InputColourSp
                               pPPS->getScalingWindow(), chromaFormatIdc, pSPS->getBitDepths(), true, true,
                               pSPS->getHorCollocatedChromaFlag(), pSPS->getVerCollocatedChromaFlag());
     }
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+    else if (m_priSEIEnabled)
+    {
+      pcPicCurr->M_BUFS( 0, PIC_ORIGINAL_INPUT ).getBuf( COMPONENT_Y ).copyFrom( pcPicYuvOrg->getBuf( COMPONENT_Y ) );
+      pcPicCurr->M_BUFS( 0, PIC_ORIGINAL_INPUT ).getBuf( COMPONENT_Cb ).copyFrom( pcPicYuvOrg->getBuf( COMPONENT_Cb ) );
+      pcPicCurr->M_BUFS( 0, PIC_ORIGINAL_INPUT ).getBuf( COMPONENT_Cr ).copyFrom( pcPicYuvOrg->getBuf( COMPONENT_Cr ) );
+
+      PelUnitBuf dst = pcPicCurr->getOrigBuf();
+      m_priProcess.packRegions(*pcPicYuvOrg, dst, *pSPS);
+    }
+#endif
     else
     {
       pcPicCurr->M_BUFS( 0, PIC_ORIGINAL ).swap( *pcPicYuvOrg );
@@ -1116,7 +1193,11 @@ void EncLib::xGetNewPicBuffer ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Pict
     rpcPic->create(sps.getWrapAroundEnabledFlag(), sps.getChromaFormatIdc(), Size(pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples()),
       sps.getMaxCUWidth(), sps.getMaxCUWidth() + PIC_MARGIN, false, m_layerId, getShutterFilterFlag());
 
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+    if (m_resChangeInClvsEnabled || m_priSEIEnabled)
+#else
     if (m_resChangeInClvsEnabled)
+#endif
     {
       int thePPS = m_layerId;
       const PPS& pps0 = *m_ppsMap.getPS(thePPS);
@@ -1734,7 +1815,11 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setInterLayerPresentFlag( m_layerId > 0 && m_vps->getMaxLayers() > 1 && !m_vps->getAllIndependentLayersFlag() && !m_vps->getIndependentLayerFlag( m_vps->getGeneralLayerIdx( m_layerId ) ) );
   CHECK( m_vps->getIndependentLayerFlag( m_vps->getGeneralLayerIdx( m_layerId ) ) && sps.getInterLayerPresentFlag(), " When vps_independent_layer_flag[GeneralLayerIdx[nuh_layer_id ]]  is equal to 1, the value of inter_layer_ref_pics_present_flag shall be equal to 0." );
 
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  sps.setResChangeInClvsEnabledFlag(m_resChangeInClvsEnabled || m_constrainedRaslEncoding || scalingWindowResChanged || m_priSEIEnabled);
+#else
   sps.setResChangeInClvsEnabledFlag(m_resChangeInClvsEnabled || m_constrainedRaslEncoding || scalingWindowResChanged);
+#endif
   sps.setRprEnabledFlag(m_rprEnabledFlag || m_explicitScalingWindowEnabled || scalingWindowResChanged);
   sps.setGOPBasedRPREnabledFlag(m_gopBasedRPREnabledFlag);
   sps.setLog2ParallelMergeLevelMinus2( m_log2ParallelMergeLevelMinus2 );
