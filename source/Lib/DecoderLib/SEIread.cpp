@@ -3515,6 +3515,14 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
           numberExtensionBitsUsed += (static_cast<uint32_t>(sei.m_applicationPurposeTagUri.length() + 1) * 8);
         }
       }
+#if NNPFC_SCAN_TYPE_IDC
+      if((sei.m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0 || (sei.m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_scan_type_idc");
+        sei.m_scanTypeIdc = val;
+        numberExtensionBitsUsed += 2;
+      }
+#endif
       sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_for_human_viewing_idc");
       sei.m_forHumanViewingIdc = val;
       numberExtensionBitsUsed += 2;

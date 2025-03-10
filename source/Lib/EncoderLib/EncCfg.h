@@ -757,6 +757,9 @@ protected:
   bool                    m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[MAX_NUM_NN_POST_FILTERS];
   std::string             m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[MAX_NUM_NN_POST_FILTERS];
+#if NNPFC_SCAN_TYPE_IDC
+  uint32_t                m_nnPostFilterSEICharacteristicsScanTypeIdc[MAX_NUM_NN_POST_FILTERS];
+#endif
   uint32_t                m_nnPostFilterSEICharacteristicsForHumanViewingIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[MAX_NUM_NN_POST_FILTERS];
   std::string             m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
@@ -2185,6 +2188,10 @@ public:
   bool        getNNPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag(int filterIdx) const                 { return m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsApplicationPurposeTagUri(std::string applicationPurposeTagUri, int filterIdx) { m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[filterIdx] = applicationPurposeTagUri; }
   std::string getNNPostFilterSEICharacteristicsApplicationPurposeTagUri(int filterIdx) const                             { return m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[filterIdx]; }
+#if NNPFC_SCAN_TYPE_IDC
+  void        setNNPostFilterSEICharacteristicsScanTypeIdc(uint32_t scanTypeIdc, int filterIdx)                         { m_nnPostFilterSEICharacteristicsScanTypeIdc[filterIdx] = scanTypeIdc; }
+  uint32_t    getNNPostFilterSEICharacteristicsScanTypeIdc(int filterIdx) const                                         { return m_nnPostFilterSEICharacteristicsScanTypeIdc[filterIdx]; }
+#endif
   void        setNNPostFilterSEICharacteristicsForHumanViewingIdc(uint32_t forHumanViewingIdc, int filterIdx)           { m_nnPostFilterSEICharacteristicsForHumanViewingIdc[filterIdx] = forHumanViewingIdc; }
   uint32_t    getNNPostFilterSEICharacteristicsForHumanViewingIdc(int filterIdx) const                                  { return m_nnPostFilterSEICharacteristicsForHumanViewingIdc[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsForMachineAnalysisIdc(uint32_t forMachineAnalysisIdc, int filterIdx)     { m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[filterIdx] = forMachineAnalysisIdc; }

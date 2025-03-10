@@ -2089,6 +2089,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     applicationPurposeTagUri << "SEINNPFCApplicationPurposeTagUri" << i;
     opts.addOptions()(applicationPurposeTagUri.str(), m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[i], std::string(""), "specifies a tag URI with syntax and semantics as specified in IETF RFC 4151 identifying the application determined purpose of the NNPF, when nnpfc_purpose is equal to 0.");
 
+#if NNPFC_SCAN_TYPE_IDC
+    std::ostringstream scanTypeIdc;
+    scanTypeIdc << "SEINNPFCScanTypeIdc" << i;
+    opts.addOptions()(scanTypeIdc.str(), m_nnPostFilterSEICharacteristicsScanTypeIdc[i], 0u, "the preferred display method for the pictures output by the NNPF: not overscan (2), overscan (1), unknown or unspecified (0).");
+#endif
+
     std::ostringstream forHumanViewingIdc;
     forHumanViewingIdc << "SEINNPFCForHumanViewingIdc" << i;
     opts.addOptions()(forHumanViewingIdc.str(), m_nnPostFilterSEICharacteristicsForHumanViewingIdc[i], 0u, "Specifies the user viewing usage level of a neural-network post-filter: optimal for human viewing (3), suitable (2), unsuitable (1), unknown (0)");
@@ -5725,6 +5731,9 @@ bool EncAppCfg::xCheckParameter()
       xConfirmPara(m_nnPostFilterSEICharacteristicsLumaPadding[i] > ((1 << m_inputBitDepth[ChannelType::LUMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthLuma - 1");
       xConfirmPara(m_nnPostFilterSEICharacteristicsCbPadding[i] > ((1 << m_inputBitDepth[ChannelType::CHROMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthChroma - 1");
       xConfirmPara(m_nnPostFilterSEICharacteristicsCrPadding[i] > ((1 << m_inputBitDepth[ChannelType::CHROMA]) - 1), "SEINNPFCLumaPadding must be in the range of 0 to 2^bitDepthChroma - 1");
+#if NNPFC_SCAN_TYPE_IDC
+      xConfirmPara(m_nnPostFilterSEICharacteristicsScanTypeIdc[i] > 2, "SEINNPFCScanTypeIdc must be in the range of 0 to 2");
+#endif
       xConfirmPara(m_nnPostFilterSEICharacteristicsForHumanViewingIdc[i] > 3, "SEINNPFCForHumanViewingIdc must be in the range of 0 to 3");
       xConfirmPara(m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[i] > 3, "SEINNPFCForMachineAnalysisIdc must be in the range of 0 to 3");
     }

@@ -1845,6 +1845,12 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_applicationPurposeTagUri = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUri(filterIdx);
       }
     }
+#if NNPFC_SCAN_TYPE_IDC
+    if((sei->m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0 || (sei->m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
+    {
+      sei->m_scanTypeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsScanTypeIdc(filterIdx);
+    }
+#endif
     sei->m_forHumanViewingIdc = m_pcCfg->getNNPostFilterSEICharacteristicsForHumanViewingIdc(filterIdx);
     sei->m_forMachineAnalysisIdc = m_pcCfg->getNNPostFilterSEICharacteristicsForMachineAnalysisIdc(filterIdx);
   }
