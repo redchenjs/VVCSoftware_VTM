@@ -36,6 +36,7 @@
  */
 
 #include "SequenceParameterSet.h"
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 #include "Picture.h"
 #include "SEIPackedRegionsInfoProcess.h"
 
@@ -182,3 +183,4 @@ void SEIPackedRegionsInfoProcess::reconstruct(const PelUnitBuf& src, PelUnitBuf&
     }
   }
 }
+#endif
