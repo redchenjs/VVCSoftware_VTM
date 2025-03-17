@@ -42,7 +42,7 @@
 #include "Unit.h"
 #include "Buffer.h"
 #include "Unit.h"
-
+struct Picture;
 
 //! \ingroup CommonLib
 //! \{
@@ -55,7 +55,8 @@ class SEIPackedRegionsInfoProcess
 {
 public:
   SEIPackedRegionsInfoProcess()
-    : m_enabled(false)
+    : m_layerId(0)
+    , m_enabled(false)
     , m_persistence(false)
     , m_picWidth(0)
     , m_picHeight(0)
@@ -70,12 +71,14 @@ public:
     , m_subWidthC(2)
     , m_subHeightC(2)
     , m_priNumRegions(0)
+    , m_multilayerFlag(false)
   {}
   ~SEIPackedRegionsInfoProcess() {}
   void init(SEIPackedRegionsInfo& sei, const SPS& sps, uint32_t picWidth, uint32_t picHeight);
-  void packRegions(PelUnitBuf& src, PelUnitBuf& dst, const SPS& sps);
-  void reconstruct(const PelUnitBuf& src, PelUnitBuf& dst, const SPS& sps, const PPS& pps);
+  void packRegions(PelUnitBuf& src, int layerId, PelUnitBuf& dst, const SPS& sps);
+  void reconstruct(PicList* pcListPic, Picture* currentPic, PelUnitBuf& dst, const SPS& sps);
 
+  int                   m_layerId;
   bool                  m_enabled;
   bool                  m_persistence;
   uint32_t              m_picWidth;
@@ -91,6 +94,7 @@ public:
   uint32_t              m_subWidthC;
   uint32_t              m_subHeightC;
   uint32_t              m_priNumRegions;
+  bool                  m_multilayerFlag;
   std::vector<uint32_t> m_priRegionTopLeftX;
   std::vector<uint32_t> m_priRegionTopLeftY;
   std::vector<uint32_t> m_priRegionWidth;
@@ -104,6 +108,8 @@ public:
   std::vector<uint32_t> m_priTargetRegionWidth;
   std::vector<uint32_t> m_priTargetRegionHeight;
   std::vector<uint32_t> m_priRegionId;
+  std::vector<uint32_t> m_regionLayerId;
+  std::vector<uint8_t>  m_regionIsALayerFlag;
 };
 
 //! \}

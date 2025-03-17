@@ -45,6 +45,8 @@ void SEIPackedRegionsInfoProcess::init(SEIPackedRegionsInfo& sei, const SPS& sps
 {
   m_enabled = true;
   m_persistence = sei.m_persistenceFlag;
+  m_layerId = sei.m_layerId;
+  m_multilayerFlag = sei.m_multilayerFlag;
   m_priUnitSize = 1 << sei.m_log2UnitSize;
   m_picWidth = picWidth;
   m_picHeight = picHeight;
@@ -75,7 +77,11 @@ void SEIPackedRegionsInfoProcess::init(SEIPackedRegionsInfo& sei, const SPS& sps
   m_priTargetRegionWidth.resize(sei.m_numRegionsMinus1 + 1);
   m_priTargetRegionHeight.resize(sei.m_numRegionsMinus1 + 1);
   m_priRegionId.resize(sei.m_numRegionsMinus1 + 1);
-
+  if (sei.m_multilayerFlag)
+  {
+    m_regionLayerId = sei.m_regionLayerId;
+    m_regionIsALayerFlag = sei.m_regionIsALayerFlag;
+  }
   for (uint32_t i = 0; i <= sei.m_numRegionsMinus1; i++)
   {
     if (!sei.m_useMaxDimensionsFlag)
@@ -109,7 +115,7 @@ void SEIPackedRegionsInfoProcess::init(SEIPackedRegionsInfo& sei, const SPS& sps
   m_priRegionId = sei.m_regionId;
 }
 
-void SEIPackedRegionsInfoProcess::packRegions(PelUnitBuf& src, PelUnitBuf& dst, const SPS& sps)
+void SEIPackedRegionsInfoProcess::packRegions(PelUnitBuf& src, int layerId, PelUnitBuf& dst, const SPS& sps)
 {
   for (int comp = 0; comp < ::getNumberValidComponents(m_chromaFormat); comp++)
   {
@@ -118,6 +124,10 @@ void SEIPackedRegionsInfoProcess::packRegions(PelUnitBuf& src, PelUnitBuf& dst, 
   }
   for (uint32_t i = 0; i < m_priNumRegions; i++)
   {
+    if (m_multilayerFlag && (m_regionLayerId[i] != layerId || m_regionIsALayerFlag[i]))
+    {
+      continue;
+    }      
     int xScale = ((m_priTargetRegionWidth[i] << ScalingRatio::BITS) + (m_priRegionWidth[i] >> 1)) / m_priRegionWidth[i];
     int yScale = ((m_priTargetRegionHeight[i] << ScalingRatio::BITS) + (m_priRegionHeight[i] >> 1)) / m_priRegionHeight[i];
     ScalingRatio scalingRatio = { xScale, yScale };
@@ -141,12 +151,8 @@ void SEIPackedRegionsInfoProcess::packRegions(PelUnitBuf& src, PelUnitBuf& dst, 
   }
 }
 
-void SEIPackedRegionsInfoProcess::reconstruct(const PelUnitBuf& src, PelUnitBuf& dst, const SPS& sps, const PPS& pps)
+void SEIPackedRegionsInfoProcess::reconstruct(PicList* pcListPic, Picture* currentPic, PelUnitBuf& dst, const SPS& sps)
 {
-  Window win = pps.getConformanceWindow();
-  int winLeftOffset = win.getWindowLeftOffset() * m_subWidthC;
-  int winTopOffset = win.getWindowTopOffset() * m_subHeightC;
-
   for (int comp = 0; comp < ::getNumberValidComponents(m_chromaFormat); comp++)
   {
     ComponentID compID = ComponentID(comp);
@@ -160,6 +166,43 @@ void SEIPackedRegionsInfoProcess::reconstruct(const PelUnitBuf& src, PelUnitBuf&
     if (it != m_priRegionId.end())
     {
       int i = (int)(it - m_priRegionId.begin());
+      Picture* picSrc = currentPic;
+      if (m_multilayerFlag && m_regionLayerId[i] != currentPic->layerId)
+      {
+        const VPS* vps = currentPic->cs->vps;
+        CHECK(vps == nullptr, "vps does not exist");
+        CHECK(currentPic->layerId == 0, "current layer is 0");
+        CHECK(vps->getIndependentLayerFlag(vps->getGeneralLayerIdx(currentPic->layerId)), "current layer is independent");
+        CHECK(!vps->getDirectRefLayerFlag(vps->getGeneralLayerIdx(currentPic->layerId), vps->getGeneralLayerIdx(m_regionLayerId[i])), "src layer is not a reference layer for current layer");
+
+        bool found = false;
+        for (auto& checkPic : *pcListPic)
+        {
+          if (checkPic != nullptr && checkPic->layerId == m_regionLayerId[i] && checkPic->getPOC() == currentPic->getPOC())
+          {
+            picSrc = checkPic;
+            found = true;
+            break;
+          }
+        }
+        CHECK(!found, "did not found picture of other layer");
+      }      
+      const PelUnitBuf& src = picSrc->getRecoBuf();
+      Window win = picSrc->getConformanceWindow();
+      int winLeftOffset = win.getWindowLeftOffset() * SPS::getWinUnitX(picSrc->m_chromaFormatIdc);;
+      int winTopOffset = win.getWindowTopOffset() * SPS::getWinUnitY(picSrc->m_chromaFormatIdc);
+      if (m_multilayerFlag && m_regionIsALayerFlag[i] != 0)
+      {
+        int winRightOffset = win.getWindowRightOffset() * SPS::getWinUnitX(picSrc->m_chromaFormatIdc);;
+        int winBottomOffset = win.getWindowBottomOffset() * SPS::getWinUnitY(picSrc->m_chromaFormatIdc);
+        m_priRegionTopLeftX[i] =0;
+        m_priRegionTopLeftY[i] =0;
+        m_priRegionWidth[i] = src.get(COMPONENT_Y).width - winLeftOffset - winRightOffset;
+        m_priRegionHeight[i] = src.get(COMPONENT_Y).height - winTopOffset - winBottomOffset;
+        m_priTargetRegionWidth[i] = ((uint32_t)(((double)m_priRegionWidth[i] * m_priResampleWidthNum[i]) / (m_priResampleWidthDenom[i] * m_subWidthC) + 0.5)) * m_subWidthC;
+        m_priTargetRegionHeight[i] = ((uint32_t)(((double)m_priRegionHeight[i] * m_priResampleHeightNum[i]) / (m_priResampleHeightDenom[i] * m_subHeightC) + 0.5)) * m_subHeightC;
+
+      }
       int xScale = ((m_priRegionWidth[i] << ScalingRatio::BITS) + (m_priTargetRegionWidth[i] >> 1)) / m_priTargetRegionWidth[i];
       int yScale = ((m_priRegionHeight[i] << ScalingRatio::BITS) + (m_priTargetRegionHeight[i] >> 1)) / m_priTargetRegionHeight[i];
       ScalingRatio scalingRatio = { xScale, yScale };

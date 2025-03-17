@@ -912,7 +912,7 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, const InputColourSp
       pcPicCurr->M_BUFS( 0, PIC_ORIGINAL_INPUT ).getBuf( COMPONENT_Cr ).copyFrom( pcPicYuvOrg->getBuf( COMPONENT_Cr ) );
 
       PelUnitBuf dst = pcPicCurr->getOrigBuf();
-      m_priProcess.packRegions(*pcPicYuvOrg, dst, *pSPS);
+      m_priProcess.packRegions(*pcPicYuvOrg, m_layerId, dst, *pSPS);
     }
 #endif
     else

@@ -836,6 +836,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t> cfg_priSEIResamplingRatioIdx(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEITargetRegionTopLeftX(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEITargetRegionTopLeftY(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t> cfg_priSEIRegionLayerId(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<bool> cfg_priSEIRegionIsALayerFlag(0, 1, 0, std::numeric_limits<uint32_t>::max());
 #endif
 
 #if ENABLE_TRACING
@@ -1819,6 +1821,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPRIResamplingRatioIdx",                        cfg_priSEIResamplingRatioIdx, cfg_priSEIResamplingRatioIdx, "Specifies a list of resampling ration indices for the regions")
   ("SEIPRITargetRegionTopLeftX",                      cfg_priSEITargetRegionTopLeftX, cfg_priSEITargetRegionTopLeftX, "Specifies a list of horizontal top left postions in units of luma samples for the regions in reconstructed target picture")
   ("SEIPRITargetRegionTopLeftY",                      cfg_priSEITargetRegionTopLeftY, cfg_priSEITargetRegionTopLeftY, "Specifies a list of vertical top left postions in units of luma samples for the regions in reconstructed target picture")
+  ("SEIPRIMultilayerFlag",                            m_priSEIMultilayerFlag,                            false, "Specifies whether layer IDs are signalled")
+  ("SEIPRIRegionLayerId",                             cfg_priSEIRegionLayerId,         cfg_priSEIRegionLayerId, "Specifies a list of the layer ids of the picture that the region information relate to")
+  ("SEIPRIRegionIsALayerFlag",                        cfg_priSEIRegionIsALayerFlag, cfg_priSEIRegionIsALayerFlag, "Specifies a list of flags indicating for each region if the picture width and height in the layer are the same as the region's")
 #endif
 
   ("DebugBitstream",                                  m_decodeBitstreams[0],             std::string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
@@ -4459,6 +4464,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       std::sort(tmpVec.begin(), tmpVec.end());
       auto it = std::unique(tmpVec.begin(), tmpVec.end());
       CHECK(it != tmpVec.end(), "SEIRegionId values must be unique");
+    }
+    if (m_priSEIMultilayerFlag)
+    {
+      m_priSEIRegionLayerId = cfg_priSEIRegionLayerId.values;
+      m_priSEIRegionIsALayerFlag = cfg_priSEIRegionIsALayerFlag.values;
     }
     CHECK(cfg_priSEIRegionTopLeftInUnitsX.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRIRegionTopLeftInUnitsX must be equal to SEIPRINumRegionsMinus1 + 1");
     CHECK(cfg_priSEIRegionTopLeftInUnitsY.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRIRegionTopLeftInUnitsY must be equal to SEIPRINumRegionsMinus1 + 1");

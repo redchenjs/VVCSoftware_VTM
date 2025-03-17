@@ -1528,6 +1528,12 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPriSEIResamplingRatioIdx(m_priSEIResamplingRatioIdx);
   m_cEncLib.setPriSEITargetRegionTopLeftX(m_priSEITargetRegionTopLeftX);
   m_cEncLib.setPriSEITargetRegionTopLeftY(m_priSEITargetRegionTopLeftY);
+  m_cEncLib.setPriSEIMultilayerFlag(m_priSEIMultilayerFlag);
+  if (m_priSEIMultilayerFlag)
+  {
+    m_cEncLib.setPriSEIRegionLayerId(m_priSEIRegionLayerId);
+    m_cEncLib.setPriSEIRegionIsALayerFlag(m_priSEIRegionIsALayerFlag);
+  }
 #endif
   m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
   m_cEncLib.setPostFilterHintSEICancelFlag(m_postFilterHintSEICancelFlag);
@@ -2171,11 +2177,21 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
         else if (m_cEncLib.getPriSEIEnabled() && m_cEncLib.getPriSEITargetPicParamsPresentFlag())
         {
-          const PPS& pps = *m_cEncLib.getPPS(ppsID);
           PelStorage outPic;
           const Area a = Area( Position(0, 0), Size(m_cEncLib.getPriSEITargetPicWidthMinus1() + 1, m_cEncLib.getPriSEITargetPicHeightMinus1() + 1) );
           outPic.create( pcPicYuvRec->chromaFormat, a, m_cEncLib.getMaxCUWidth() );
-          m_cEncLib.getPriProcess().reconstruct(*pcPicYuvRec, outPic, sps, pps);
+          Picture* pcPic = nullptr;
+          PicList* pcListPic = m_cEncLib.getListPic();
+          for (auto& pic : *pcListPic)
+          {
+            if (pcPicYuvRec->Y().buf == pic->getRecoBuf().Y().buf)
+            {
+              pcPic = pic;
+              break;
+            }
+          }
+          CHECK(pcPic == nullptr, "did not found Associated picture for recBuf");
+          m_cEncLib.getPriProcess().reconstruct(pcListPic, pcPic, outPic, sps);
           m_cVideoIOYuvReconFile.write(
             outPic.get(COMPONENT_Y).width, outPic.get(COMPONENT_Y).height, outPic, ipCSC,
             m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
