@@ -110,6 +110,11 @@ void SEIPackedRegionsInfoProcess::init(SEIPackedRegionsInfo& sei, const SPS& sps
 
 void SEIPackedRegionsInfoProcess::packRegions(PelUnitBuf& src, PelUnitBuf& dst, const SPS& sps)
 {
+  for (int comp = 0; comp < ::getNumberValidComponents(m_chromaFormat); comp++)
+  {
+    ComponentID compID = ComponentID(comp);
+    dst.get(compID).fill(1 << ((isLuma(compID) ? m_bitDepthY : m_bitDepthC) - 1));
+  }
   for (uint32_t i = 0; i < m_priNumRegions; i++)
   {
     int xScale = ((m_priTargetRegionWidth[i] << ScalingRatio::BITS) + (m_priRegionWidth[i] >> 1)) / m_priRegionWidth[i];
