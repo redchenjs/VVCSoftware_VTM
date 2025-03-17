@@ -401,6 +401,9 @@ public:
     m_trustStoreDir = trustStoreDir;
   }
 #endif
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  SEIPackedRegionsInfoProcess& getPriProcess() { return m_priProcess; }
+#endif
 
 protected:
   void  xUpdateRasInit(Slice* slice);

@@ -2179,11 +2179,6 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     {
       SEIPackedRegionsInfo* sei = (SEIPackedRegionsInfo*)packedRegionsInfoSEIs.front();
       m_priProcess.init(*sei, *sps, pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples());
-      m_pcPic->m_priProcess = m_priProcess;
-    }
-    else if (m_priProcess.m_enabled)
-    {
-      m_pcPic->m_priProcess = m_priProcess;
     }
 #endif
     m_firstPictureInSequence = false;

@@ -1143,12 +1143,12 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
           const Window &conf = pcPic->getConformanceWindow();
           ChromaFormat  chromaFormatIdc = pcPic->m_chromaFormatIdc;
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
-          if (pcPic->m_priProcess.m_enabled && pcPic->m_priProcess.m_targetPicWidth > 0 && pcPic->m_priProcess.m_targetPicHeight > 0)
+          if (m_cDecLib.getPriProcess().m_enabled && m_cDecLib.getPriProcess().m_targetPicWidth > 0 && m_cDecLib.getPriProcess().m_targetPicHeight > 0)
           {
             PelStorage outPic;
-            const Area a = Area( Position(0, 0), Size(pcPic->m_priProcess.m_targetPicWidth, pcPic->m_priProcess.m_targetPicHeight) );
+            const Area a = Area( Position(0, 0), Size(m_cDecLib.getPriProcess().m_targetPicWidth, m_cDecLib.getPriProcess().m_targetPicHeight) );
             outPic.create( chromaFormatIdc, a, 0 );
-            pcPic->m_priProcess.reconstruct(pcPic->getRecoBuf(), outPic, *pcPic->cs->sps, *pcPic->cs->pps);
+            m_cDecLib.getPriProcess().reconstruct(pcPic->getRecoBuf(), outPic, *pcPic->cs->sps, *pcPic->cs->pps);
             m_cVideoIOYuvReconFile[pcPic->layerId].write(
               outPic.get(COMPONENT_Y).width, outPic.get(COMPONENT_Y).height, outPic, m_outputColourSpaceConvert,
               m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
@@ -1382,12 +1382,12 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
             const Window &conf = pcPic->getConformanceWindow();
             ChromaFormat  chromaFormatIdc = pcPic->m_chromaFormatIdc;
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
-            if (pcPic->m_priProcess.m_enabled && pcPic->m_priProcess.m_targetPicWidth > 0 && pcPic->m_priProcess.m_targetPicHeight > 0)
+            if (m_cDecLib.getPriProcess().m_enabled && m_cDecLib.getPriProcess().m_targetPicWidth > 0 && m_cDecLib.getPriProcess().m_targetPicHeight > 0)
             {
               PelStorage outPic;
-              const Area a = Area( Position(0, 0), Size(pcPic->m_priProcess.m_targetPicWidth, pcPic->m_priProcess.m_targetPicHeight) );
+              const Area a = Area( Position(0, 0), Size(m_cDecLib.getPriProcess().m_targetPicWidth, m_cDecLib.getPriProcess().m_targetPicHeight) );
               outPic.create( chromaFormatIdc, a, 0 );
-              pcPic->m_priProcess.reconstruct(pcPic->getRecoBuf(), outPic, *pcPic->cs->sps, *pcPic->cs->pps);
+              m_cDecLib.getPriProcess().reconstruct(pcPic->getRecoBuf(), outPic, *pcPic->cs->sps, *pcPic->cs->pps);
               m_cVideoIOYuvReconFile[pcPic->layerId].write(
                 outPic.get(COMPONENT_Y).width, outPic.get(COMPONENT_Y).height, outPic, m_outputColourSpaceConvert,
                 m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
