@@ -1675,7 +1675,11 @@ public:
   uint32_t   m_coordinatePointNum;
   std::vector<double>   m_coordinateX;
   std::vector<double>   m_coordinateY;
+#if JVET_AK0238_GFV_FIX_CLEANUP 
+  uint32_t       m_coordinateZMaxValue;
+#else
   std::vector<uint32_t>   m_coordinateZMaxValue;
+#endif
   std::vector<double>   m_coordinateZ;
   bool           m_matrixPresentFlag;
   uint32_t       m_matrixElementPrecisionFactor;
