@@ -70,6 +70,8 @@
 
 #define JVET_AJ0048_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList
 
+#define JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG                  1 // JVET-AJ0183: Add source picture flag to EOI SEI message
+
 //########### place macros to be be kept below this line ###############
 
 #define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1

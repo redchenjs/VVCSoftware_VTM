@@ -1179,6 +1179,9 @@ SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
   m_picQuantObjectFlag = sei.m_picQuantObjectFlag;
 #endif
   m_temporalResamplingTypeFlag = sei.m_temporalResamplingTypeFlag;
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+  m_srcPicFlag = sei.m_srcPicFlag;
+#endif
   m_numIntPics = sei.m_numIntPics;
   m_origPicDimensionsFlag = sei.m_origPicDimensionsFlag;
   m_origPicWidth = sei.m_origPicWidth;

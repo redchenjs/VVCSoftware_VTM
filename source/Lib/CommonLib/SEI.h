@@ -1674,6 +1674,9 @@ public:
     , m_picQuantObjectFlag(false)
 #endif
     , m_temporalResamplingTypeFlag(false)
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+    , m_srcPicFlag(false)
+#endif
     , m_numIntPics(0)
     , m_origPicDimensionsFlag(false)
     , m_origPicWidth(0)
@@ -1697,6 +1700,9 @@ public:
   bool     m_picQuantObjectFlag;
 #endif
   bool     m_temporalResamplingTypeFlag;
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+  bool     m_srcPicFlag;
+#endif
   uint32_t m_numIntPics;
   bool     m_origPicDimensionsFlag;
   uint32_t m_origPicWidth;

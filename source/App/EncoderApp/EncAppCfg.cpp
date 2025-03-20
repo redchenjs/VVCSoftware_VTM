@@ -1564,6 +1564,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif
 ("SEIEOITemporalResamplingTypeFlag", m_eoiSEITemporalResamplingTypeFlag, false, "specifies the type of the temporal resampling optimization.")
 ("SEIEOINumIntPics", m_eoiSEINumIntPics, 0u, "indicates that the count of pictures that the encoding system excluded or added between each pair of coded pictures in output order within the persistence of this SEI message is constant")
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+("SEIEOISrcPicFlag", m_eoiSEISrcPicFlag, false, "Value of 1 specifies that the picture in the same access unit that contains the EOI SEI message is a source picture. Value of 0 provides no such indication.")
+#endif
 ("SEIEOIOrigPicDimensionsFlag",m_eoiSEIOrigPicDimensionsFlag, false, "specifies if original source picture dimensions are present.")
 ("SEIEOIOrigPicWidth", m_eoiSEIOrigPicWidth, 0u, "indicates the width of the original source picture.")
 ("SEIEOIOrigPicHeight", m_eoiSEIOrigPicHeight, 0u, "indicates the height of the original source picture.")
