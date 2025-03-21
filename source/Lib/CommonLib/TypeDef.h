@@ -66,6 +66,8 @@
 
 #define JVET_AK0072_NNPF_TEMP_EXTR_UPDATES                1 // JVET-AK0072 items 1 and 2: nnpfc_input_pic_filering flag inference and constraint
 
+#define JVET_AK0072_NNPF_NULL_PROMPT_CONTRAINT            1 // JVET-AK0072 item 3: NNPF prompt null string contraint
+
 #define JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD              1 // QP threshold for object-based optimization in EOI SEI
 
 #define JVET_AJ0048_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList
