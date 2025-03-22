@@ -3855,7 +3855,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     bool NNPFCFound = false;
     bool NNPFAFound = false;
 #if JVET_AK0055_SPO_SEI_CONSTRAINT
-    std::vector<int> ERPIndices, GCMPIndices, RWPIndices, FPAIndices;
+    std::vector<int> erp_indices, gcmp_indices, rwp_indices, fpa_indices;
 #endif
     for (uint32_t i = 0; i < (m_poSEINumMinus2 + 2); i++)
     {
@@ -3884,21 +3884,21 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #if JVET_AK0055_SPO_SEI_CONSTRAINT
       if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::EQUIRECTANGULAR_PROJECTION)
       {
-        CHECK(GCMPIndices.empty(), "ERP and GCMP SEI messages cannot coexist");
-        ERPIndices.push_back(i);
+        CHECK(gcmp_indices.empty(), "ERP and GCMP SEI messages cannot coexist");
+        erp_indices.push_back(i);
       }
       else if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::GENERALIZED_CUBEMAP_PROJECTION)
       {
-        CHECK(ERPIndices.empty(), "ERP and GCMP SEI messages cannot coexist");
-        GCMPIndices.push_back(i);
+        CHECK(erp_indices.empty(), "ERP and GCMP SEI messages cannot coexist");
+        gcmp_indices.push_back(i);
       }
       else if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::REGION_WISE_PACKING)
       {
-        RWPIndices.push_back(i);
+        rwp_indices.push_back(i);
       }
       else if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::FRAME_PACKING)
       {
-        FPAIndices.push_back(i);
+        fpa_indices.push_back(i);
       }
       m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
       if (m_poSEIPrefixFlag[i])
@@ -3957,43 +3957,63 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
     CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
 #if JVET_AK0055_SPO_SEI_CONSTRAINT
-    if (!RWPIndices.empty())
+    if (!rwp_indices.empty())
     {
-      CHECK(!ERPIndices.empty() || !GCMPIndices.empty(), "If RWP is present, at least one of ERP or GCMP must be present");
-      for (int rwpIdx : RWPIndices)
+      CHECK(!erp_indices.empty() || !gcmp_indices.empty(), "If RWP is present, at least one of ERP or GCMP must be present");
+      for (int rwpIdx : rwp_indices)
       {
-        for (int erpIdx : ERPIndices)
+        for (int erpIdx : erp_indices)
+        {
           CHECK(rwpIdx < erpIdx, "ERP must come after RWP");
-        for (int gcmpIdx : GCMPIndices)
+        }
+        for (int gcmpIdx : gcmp_indices)
+        {
           CHECK(rwpIdx < gcmpIdx, "GCMP must come after RWP");
+        }
       }
     }
 
-    if (!FPAIndices.empty())
+    if (!fpa_indices.empty())
     {
-      for (int fpaIdx : FPAIndices)
+      for (int fpaIdx : fpa_indices)
       {
-        for (int erpIdx : ERPIndices)
+        for (int erpIdx : erp_indices)
+        {
           CHECK(fpaIdx < erpIdx, "ERP must come after FPA");
-        for (int gcmpIdx : GCMPIndices)
+        }
+        for (int gcmpIdx : gcmp_indices)
+        {
           CHECK(fpaIdx < gcmpIdx, "GCMP must come after FPA");
+        }
       }
     }
 
-    if (!RWPIndices.empty() && !FPAIndices.empty() && !ERPIndices.empty())
+    if (!rwp_indices.empty() && !fpa_indices.empty() && !erp_indices.empty())
     {
-      for (int rwpIdx : RWPIndices)
-        for (int fpaIdx : FPAIndices)
-          for (int erpIdx : ERPIndices)
+      for (int rwpIdx : rwp_indices)
+      {
+        for (int fpaIdx : fpa_indices)
+        {
+          for (int erpIdx : erp_indices)
+          {
             CHECK(rwpIdx < fpaIdx && fpaIdx < erpIdx, "Order must be: RWP < FPA < ERP");
+          }
+        }
+      }
     }
 
-    if (!RWPIndices.empty() && !FPAIndices.empty() && !GCMPIndices.empty())
+    if (!rwp_indices.empty() && !fpa_indices.empty() && !gcmp_indices.empty())
     {
-      for (int rwpIdx : RWPIndices)
-        for (int fpaIdx : FPAIndices)
-          for (int gcmpIdx : GCMPIndices)
+      for (int rwpIdx : rwp_indices)
+      {
+        for (int fpaIdx : fpa_indices)
+        {
+          for (int gcmpIdx : gcmp_indices)
+          {
             CHECK(rwpIdx < fpaIdx && fpaIdx < gcmpIdx, "Order must be: RWP < FPA < GCMP");
+          }
+        }
+      }
     }
 #endif
   }
