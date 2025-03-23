@@ -161,6 +161,27 @@ protected:
   std::vector<uint32_t>                                      baseMatrixWidth;
   std::vector<uint32_t>                                      baseMatrixHeight;
   std::vector<std::vector<std::vector<std::vector<double>>>> prevMatrix;
+
+#if JVET_AK0239_GFVE
+  void xParseSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement & sei, uint32_t payloadSize,std::ostream* pDecodedMessageOutputStream);
+  double xParseSEIPupilCoordinate(std::ostream *pOS, double refCoordinate, int precisionFactor, const char* eye, const char* axis);
+  uint32_t                                                   gfveBaseMatrixElementPrecisionFactor;
+  uint32_t                                                   gfveBaseNumMatrices;
+  std::vector<uint32_t>                                      gfveBaseMatrixWidth;
+  std::vector<uint32_t>                                      gfveBaseMatrixHeight;
+  std::vector<std::vector<std::vector<double>>>              gfveBaseMatrix;
+  std::vector<std::vector<std::vector<double>>>              gfvePrevMatrix;
+  uint32_t                                                   gfveBasePupilCoordinatePrecisionFactor;
+  double                                                     prevGfveLeftPupilCoordinateX;
+  double                                                     prevGfveLeftPupilCoordinateY;
+  double                                                     prevGfveRightPupilCoordinateX;
+  double                                                     prevGfveRightPupilCoordinateY;
+  double                                                     baseGfveLeftPupilCoordinateX;
+  double                                                     baseGfveLeftPupilCoordinateY;
+  double                                                     baseGfveRightPupilCoordinateX;
+  double                                                     baseGfveRightPupilCoordinateY;
+  bool                                                       checkBasePicPupilPresentIdx = false;
+#endif
 };
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE

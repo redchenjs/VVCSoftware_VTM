@@ -1156,6 +1156,18 @@ void EncGOP::xCreateGenerativeFaceVideoSEIMessages(SEIMessages& seiMessages)
   }
 }
 
+#if JVET_AK0239_GFVE
+void EncGOP::xCreateGenerativeFaceVideoEnhancementSEIMessages(SEIMessages& seiMessages)
+{
+  for (int frameIndex = 0; frameIndex < m_pcCfg->getGenerativeFaceVideoEnhancementSEINumber(); frameIndex++)
+  {
+    SEIGenerativeFaceVideoEnhancement *seiGenerativeFaceVideoEnhancement = new SEIGenerativeFaceVideoEnhancement;
+    m_seiEncoder.initSEIGenerativeFaceVideoEnhancement(seiGenerativeFaceVideoEnhancement, frameIndex);
+    seiMessages.push_back(seiGenerativeFaceVideoEnhancement);
+  }
+}
+#endif
+
 void EncGOP::xCreateNNPostFilterCharacteristicsSEIMessages(SEIMessages& seiMessages)
 {
   for (int i = 0; i < m_pcCfg->getNNPostFilterSEICharacteristicsNumFilters(); i++)
@@ -4130,6 +4142,13 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         xCreateGenerativeFaceVideoSEIMessages(trailingSeiMessages);
       }
+#if JVET_AK0239_GFVE
+      if (writePS && m_pcCfg->getGenerativeFaceVideoEnhancementSEIEnabled())
+      {
+        xCreateGenerativeFaceVideoEnhancementSEIMessages(trailingSeiMessages);
+      }
+#endif
+
       //send LMCS APS when LMCSModel is updated. It can be updated even current slice does not enable reshaper.
       //For example, in RA, update is on intra slice, but intra slice may not use reshaper
       if (pcSlice->getSPS()->getUseLmcs())
