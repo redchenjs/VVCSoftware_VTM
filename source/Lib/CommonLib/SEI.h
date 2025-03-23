@@ -1428,6 +1428,9 @@ public:
     , m_complexityInfoPresentFlag(false)
     , m_applicationPurposeTagUriPresentFlag(false)
     , m_applicationPurposeTagUri("")
+#if NNPFC_SCAN_TYPE_IDC
+    , m_scanTypeIdc(0)
+#endif
     , m_forHumanViewingIdc(0)
     , m_forMachineAnalysisIdc(0)
     , m_uriTag("")
@@ -1508,6 +1511,9 @@ public:
   bool           m_complexityInfoPresentFlag;
   bool           m_applicationPurposeTagUriPresentFlag;
   std::string    m_applicationPurposeTagUri;
+#if NNPFC_SCAN_TYPE_IDC
+  uint32_t       m_scanTypeIdc;
+#endif
   uint32_t       m_forHumanViewingIdc;
   uint32_t       m_forMachineAnalysisIdc;
   std::string    m_uriTag;

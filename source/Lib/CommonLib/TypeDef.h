@@ -93,6 +93,8 @@
 
 #define JVET_S0257_DUMP_360SEI_MESSAGE                    1 // Software support of 360 SEI messages
 
+#define NNPFC_SCAN_TYPE_IDC                               1 // nnpfc_scan_type_idc from JVET-AH0174 and KVET-AJ0073
+
 #define JVET_R0164_MEAN_SCALED_SATD                       1 // JVET-R0164: Use a mean scaled version of SATD in encoder decisions
 
 #define JVET_M0497_MATRIX_MULT                            0 // 0: Fast method; 1: Matrix multiplication

@@ -998,6 +998,9 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_complexityInfoPresentFlag = sei.m_complexityInfoPresentFlag;
   m_applicationPurposeTagUriPresentFlag = sei.m_applicationPurposeTagUriPresentFlag;
   m_applicationPurposeTagUri = sei.m_applicationPurposeTagUri;
+#if NNPFC_SCAN_TYPE_IDC
+  m_scanTypeIdc = sei.m_scanTypeIdc;
+#endif 
   m_forHumanViewingIdc = sei.m_forHumanViewingIdc;
   m_forMachineAnalysisIdc = sei.m_forMachineAnalysisIdc;
   m_uriTag = sei.m_uriTag;
@@ -1078,6 +1081,9 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_spatialExtrapolationRightOffset == sei.m_spatialExtrapolationRightOffset &&
   m_spatialExtrapolationTopOffset == sei.m_spatialExtrapolationTopOffset &&
   m_spatialExtrapolationBottomOffset == sei.m_spatialExtrapolationBottomOffset &&
+#if NNPFC_SCAN_TYPE_IDC
+  m_scanTypeIdc == sei.m_scanTypeIdc &&
+#endif
   m_inbandPromptFlag == sei.m_inbandPromptFlag  &&
   m_prompt ==  sei.m_prompt  &&
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&

@@ -2071,6 +2071,12 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
           xWriteString(sei.m_applicationPurposeTagUri, "nnpfc_application_purpose_tag_uri"); 
         }
       }
+#if NNPFC_SCAN_TYPE_IDC
+      if((sei.m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0 || (sei.m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
+      {
+        xWriteCode(sei.m_scanTypeIdc, 2, "nnpfc_scan_type_idc");
+      }
+#endif
       xWriteCode(sei.m_forHumanViewingIdc, 2, "nnpfc_for_human_viewing_idc");
       xWriteCode(sei.m_forMachineAnalysisIdc, 2, "nnpfc_for_machine_analysis_idc");
     }
