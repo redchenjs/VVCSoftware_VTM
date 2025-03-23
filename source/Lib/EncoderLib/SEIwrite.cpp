@@ -2257,11 +2257,21 @@ void SEIWriter::xWriteSEISourcePictureTimingInfo(const SEISourcePictureTimingInf
         xWriteCode(sei.m_sptiMaxSublayersMinus1, 3, "spti_max_sublayers_minus_1");
       }
 
+#if JVET_AK2006_SPTI_SEI_UPDATES
+      int sptiMinTemporalSublayer = (sei.m_sptiPersistenceFlag ? 0 : sei.m_sptiMaxSublayersMinus1);
+
+      for (int i = sptiMinTemporalSublayer; i <= sei.m_sptiMaxSublayersMinus1; i++)
+      {
+        xWriteUvlc(sei.m_sptiSublayerIntervalScaleFactor[i], "spti_sublayer_interval_scale_factor");
+        xWriteFlag(sei.m_sptiSublayerSynthesizedPictureFlag[i], "spti_sublayer_synthesized_picture_flag");
+      }
+#else
       for (int i = 0; i <= sei.m_sptiMaxSublayersMinus1; i++)
       {
         xWriteUvlc(sei.m_sptiSublayerIntervalScaleFactor[i], "spti_sublayer_interval_scale_factor");
         xWriteFlag(sei.m_sptiSublayerSynthesizedPictureFlag[i], "spti_sublayer_synthesized_picture_flag");
       }
+#endif
     }
   }
 }

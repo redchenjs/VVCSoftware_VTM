@@ -594,14 +594,26 @@ void SEIEncoder::initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEIS
   SEISourcePictureTimingInfo->m_sptiCancelFlag                  = 0;
   SEISourcePictureTimingInfo->m_sptiPersistenceFlag             = 1;
   SEISourcePictureTimingInfo->m_sptiSourceTypePresentFlag = (SEISourcePictureTimingInfo->m_sptiSourceType == 0 ? 0 : 1);
+#if JVET_AK2006_SPTI_SEI_UPDATES
+  int sptiMinTemporalSublayer =
+    (SEISourcePictureTimingInfo->m_sptiPersistenceFlag ? 0 : SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1);
+
+  for (int i = sptiMinTemporalSublayer; i <= SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1; i++)
+  {
+    SEISourcePictureTimingInfo->m_sptiSublayerIntervalScaleFactor[i] =
+      1 << (SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 - i);
+    SEISourcePictureTimingInfo->m_sptiSublayerSynthesizedPictureFlag[i] = false;
+  }
+#else
   SEISourcePictureTimingInfo->m_sptiSublayerSynthesizedPictureFlag =
-    std::vector<bool>(SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 + 1, 0);
+    std::vector<bool>(SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 + 1, false);
 
   for (int i = 0; i <= SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1; i++)
   {
     SEISourcePictureTimingInfo->m_sptiSublayerIntervalScaleFactor.push_back(
       1 << (SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 - i));
   }
+#endif
 }
 void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting)
 {
