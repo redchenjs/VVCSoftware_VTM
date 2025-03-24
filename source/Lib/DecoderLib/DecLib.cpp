@@ -251,6 +251,28 @@ bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::strin
                       pcEncPic->slices[i]->setCcAlfCrEnabledFlag(pic->slices[i]->getCcAlfCrEnabledFlag());
                     }
                   }
+                  if (pic->cs->sps->getUseLmcs())
+                  {
+                    //set all necessary information in LMCS APS and picture header
+                    pcEncPic->cs->picHeader->setLmcsEnabledFlag(pic->cs->picHeader->getLmcsEnabledFlag());
+                    pcEncPic->cs->picHeader->setLmcsChromaResidualScaleFlag(pic->cs->picHeader->getLmcsChromaResidualScaleFlag());
+                    bool sliceHasLmcs = false;
+                    for (int i = 0; i < pic->slices.size(); i++)
+                    {
+                      pcEncPic->slices[i]->setLmcsEnabledFlag(pic->slices[i]->getLmcsEnabledFlag());
+                      sliceHasLmcs |= pic->slices[i]->getLmcsEnabledFlag();
+                    }
+                    if (pic->cs->picHeader->getLmcsEnabledFlag() && sliceHasLmcs)
+                    {
+                      APS *aps = pic->cs->picHeader->getLmcsAPSId() >= 0 ? (*apsMap)[ApsType::LMCS].getPS(pic->cs->picHeader->getLmcsAPSId()) : nullptr;
+                      pcEncPic->cs->picHeader->setLmcsAPS(aps);
+                      CHECK(pcEncPic->cs->picHeader->getLmcsAPSId() != pic->cs->picHeader->getLmcsAPSId(), "WRONG LMCS APS ID stored");
+                    }
+                  }
+                  else
+                  {
+                    pcEncPic->cs->picHeader->setLmcsAPS( nullptr );
+                  }
 
                   pcDecLib->executeLoopFilters();
                   if (pic->cs->sps->getSAOEnabledFlag())
@@ -360,8 +382,6 @@ bool tryDecodePicture(Picture *pcEncPic, const int expectedPoc, const std::strin
           pcDecLib->updateAssociatedIRAP();
           pcDecLib->updatePrevGDRInSameLayer();
           pcDecLib->updatePrevIRAPAndGDRSubpic();
-          // LMCS APS will be assigned later in LMCS initialization step
-          pcEncPic->cs->picHeader->setLmcsAPS( nullptr );
           if (bitstreamFile[layerIdx])
           {
             pcDecLib->resetAccessUnitNals();

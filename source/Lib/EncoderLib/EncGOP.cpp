@@ -3505,7 +3505,10 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       }
     }
 
-    xPicInitLMCS(pcPic, picHeader, pcSlice);
+    if (encPic)
+    {
+      xPicInitLMCS(pcPic, picHeader, pcSlice);
+    }
 
     if( pcSlice->getSPS()->getScalingListFlag() && m_pcCfg->getUseScalingListId() == SCALING_LIST_FILE_READ )
     {
