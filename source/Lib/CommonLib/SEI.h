@@ -109,7 +109,10 @@ public:
     DIGITALLY_SIGNED_CONTENT_INITIALIZATION = 220,
     DIGITALLY_SIGNED_CONTENT_SELECTION      = 221,
     DIGITALLY_SIGNED_CONTENT_VERIFICATION   = 222,
-    GENERATIVE_FACE_VIDEO                      = 223,
+    GENERATIVE_FACE_VIDEO                   = 223,
+#if JVET_AK0239_GFVE
+    GENERATIVE_FACE_VIDEO_ENHANCEMENT       = 224,
+#endif
   };
 
   SEI() {}
@@ -165,7 +168,25 @@ class SEISourcePictureTimingInfo : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::SOURCE_PICTURE_TIMING_INFO; }
+#if JVET_AK2006_SPTI_SEI_UPDATES
+  SEISourcePictureTimingInfo(int temporalId)
+    : m_sptiSourceTimingEqualsOutputTimingFlag(false)
+    , m_sptiSourceType(0)
+    , m_sptiTimeScale(27000000)
+    , m_sptiNumUnitsInElementalInterval(1080000)
+    , m_sptiDirectionFlag(false)
+    , m_sptiCancelFlag(false)
+    , m_sptiPersistenceFlag(true)
+    , m_sptiSourceTypePresentFlag(false)
+    , m_sptiMaxSublayersMinus1(temporalId)
+
+  {
+    m_sptiSublayerIntervalScaleFactor.resize(MAX_TLAYER + 1, 0);
+    m_sptiSublayerSynthesizedPictureFlag.resize(MAX_TLAYER + 1, false);
+  }
+#else
   SEISourcePictureTimingInfo() {}
+#endif
 
   SEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
   virtual ~SEISourcePictureTimingInfo() {}
@@ -1425,6 +1446,9 @@ public:
     , m_complexityInfoPresentFlag(false)
     , m_applicationPurposeTagUriPresentFlag(false)
     , m_applicationPurposeTagUri("")
+#if NNPFC_SCAN_TYPE_IDC
+    , m_scanTypeIdc(0)
+#endif
     , m_forHumanViewingIdc(0)
     , m_forMachineAnalysisIdc(0)
     , m_uriTag("")
@@ -1505,6 +1529,9 @@ public:
   bool           m_complexityInfoPresentFlag;
   bool           m_applicationPurposeTagUriPresentFlag;
   std::string    m_applicationPurposeTagUri;
+#if NNPFC_SCAN_TYPE_IDC
+  uint32_t       m_scanTypeIdc;
+#endif
   uint32_t       m_forHumanViewingIdc;
   uint32_t       m_forMachineAnalysisIdc;
   std::string    m_uriTag;
@@ -1655,6 +1682,43 @@ public:
   std::vector<uint32_t>    m_matrixWidthstore;
   std::vector<uint32_t>    m_matrixHeightstore;
 };
+
+#if JVET_AK0239_GFVE
+class SEIGenerativeFaceVideoEnhancement : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT; }
+  SEIGenerativeFaceVideoEnhancement() {}
+  SEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement & sei);
+  virtual ~SEIGenerativeFaceVideoEnhancement() {}
+  uint32_t                 m_number;
+  uint32_t                 m_currentid;
+  bool                     m_basePicFlag;
+  bool                     m_nnPresentFlag;
+  uint32_t                 m_nnModeIdc;
+  std::string              m_nnTagURI;
+  std::string              m_nnURI;
+  uint32_t                 m_id;
+  uint32_t                 m_gfvcnt;
+  uint32_t                 m_gfvid;  
+  uint32_t                 m_matrixElementPrecisionFactor;
+  bool                     m_matrixPresentFlag;
+  bool                     m_matrixPredFlag;
+  uint32_t                 m_numMatrices;
+  std::vector<uint32_t>    m_matrixWidth;
+  std::vector<uint32_t>    m_matrixHeight;
+  std::vector<std::vector<std::vector<double>>>   m_matrixElement;
+  std::string              m_payloadFilename;
+  uint64_t                 m_payloadLength;
+  char*                    m_payloadByte;
+  uint32_t                 m_pupilPresentIdx;
+  uint32_t                 m_pupilCoordinatePrecisionFactor;
+  double                   m_pupilLeftEyeCoordinateX;
+  double                   m_pupilLeftEyeCoordinateY;
+  double                   m_pupilRightEyeCoordinateX;
+  double                   m_pupilRightEyeCoordinateY;
+};
+#endif
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t nnpfaTargetId);
 SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMessages &seiList);
 

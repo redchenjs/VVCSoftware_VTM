@@ -136,6 +136,28 @@ protected:
   bool doUpdateGFVcoordinate= false;
   bool doUpdateGFVmatrix= false;
 
+#if JVET_AK0239_GFVE
+  void xWriteSEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement& sei);
+  double xWriteSEIPupilCoordinate(double coordinate, double refCoordinate, int precisionFactor, const char* eye, const char* axis);
+  std::vector<std::vector<std::vector<double>>> prevGfveMatrixRec;
+  std::vector<std::vector<std::vector<double>>> baseGfveMatrixRec;
+  std::vector<uint32_t> baseGfveMatrixWidthVec;
+  std::vector<uint32_t> baseGfveMatrixHeightVec;
+  uint32_t baseGfveNumMatrices;
+  uint32_t baseMatrixElementPrecisionFactor;
+  bool doUpdateGFVEmatrix= false;
+  double prevgfveLeftPupilCoordinateX;
+  double prevgfveLeftPupilCoordinateY;
+  double prevgfveRightPupilCoordinateX;
+  double prevgfveRightPupilCoordinateY;
+  double basegfveLeftPupilCoordinateX;
+  double basegfveLeftPupilCoordinateY;
+  double basegfveRightPupilCoordinateX;
+  double basegfveRightPupilCoordinateY;
+  bool checkBasePicPupilPresentIdx = false;
+  bool doUpdateGFVPupilCoordinate  = false;
+#endif
+
 #if JVET_AJ0151_DSC_SEI
   void xWriteSEIDigitallySignedContentInitialization(const SEIDigitallySignedContentInitialization &sei);
   void xWriteSEIDigitallySignedContentSelection(const SEIDigitallySignedContentSelection &sei);

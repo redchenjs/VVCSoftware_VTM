@@ -66,11 +66,17 @@
 
 #define JVET_AK0072_NNPF_TEMP_EXTR_UPDATES                1 // JVET-AK0072 items 1 and 2: nnpfc_input_pic_filering flag inference and constraint
 
+#define JVET_AK0072_NNPF_NULL_PROMPT_CONTRAINT            1 // JVET-AK0072 item 3: NNPF prompt null string contraint
+
 #define JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD              1 // QP threshold for object-based optimization in EOI SEI
 
 #define JVET_AJ0048_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList
 
 #define JVET_AK0055_SPO_SEI_CONSTRAINT                    1 // Add FPA, RWP, ERP, GCMP constraints
+
+#define JVET_AK0239_GFVE                                  1 //generative face video enhancement (GFVE) SEI
+
+#define JVET_AK2006_SPTI_SEI_UPDATES                      1 //updates for SPTI SEI message
 
 //########### place macros to be be kept below this line ###############
 
@@ -90,6 +96,8 @@
 #endif
 
 #define JVET_S0257_DUMP_360SEI_MESSAGE                    1 // Software support of 360 SEI messages
+
+#define NNPFC_SCAN_TYPE_IDC                               1 // nnpfc_scan_type_idc from JVET-AH0174 and KVET-AJ0073
 
 #define JVET_R0164_MEAN_SCALED_SATD                       1 // JVET-R0164: Use a mean scaled version of SATD in encoder decisions
 

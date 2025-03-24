@@ -594,14 +594,26 @@ void SEIEncoder::initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEIS
   SEISourcePictureTimingInfo->m_sptiCancelFlag                  = 0;
   SEISourcePictureTimingInfo->m_sptiPersistenceFlag             = 1;
   SEISourcePictureTimingInfo->m_sptiSourceTypePresentFlag = (SEISourcePictureTimingInfo->m_sptiSourceType == 0 ? 0 : 1);
+#if JVET_AK2006_SPTI_SEI_UPDATES
+  int sptiMinTemporalSublayer =
+    (SEISourcePictureTimingInfo->m_sptiPersistenceFlag ? 0 : SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1);
+
+  for (int i = sptiMinTemporalSublayer; i <= SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1; i++)
+  {
+    SEISourcePictureTimingInfo->m_sptiSublayerIntervalScaleFactor[i] =
+      1 << (SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 - i);
+    SEISourcePictureTimingInfo->m_sptiSublayerSynthesizedPictureFlag[i] = false;
+  }
+#else
   SEISourcePictureTimingInfo->m_sptiSublayerSynthesizedPictureFlag =
-    std::vector<bool>(SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 + 1, 0);
+    std::vector<bool>(SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 + 1, false);
 
   for (int i = 0; i <= SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1; i++)
   {
     SEISourcePictureTimingInfo->m_sptiSublayerIntervalScaleFactor.push_back(
       1 << (SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 - i));
   }
+#endif
 }
 void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting)
 {
@@ -1845,6 +1857,12 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_applicationPurposeTagUri = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUri(filterIdx);
       }
     }
+#if NNPFC_SCAN_TYPE_IDC
+    if((sei->m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0 || (sei->m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
+    {
+      sei->m_scanTypeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsScanTypeIdc(filterIdx);
+    }
+#endif
     sei->m_forHumanViewingIdc = m_pcCfg->getNNPostFilterSEICharacteristicsForHumanViewingIdc(filterIdx);
     sei->m_forMachineAnalysisIdc = m_pcCfg->getNNPostFilterSEICharacteristicsForMachineAnalysisIdc(filterIdx);
   }
@@ -2144,7 +2162,69 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
     }
   }
 }
+#if JVET_AK0239_GFVE
+void SEIEncoder::initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement *sei, int currframeindex)
+{
+  CHECK(!m_isInitialized, "Unspecified error");
+  CHECK(sei == nullptr, "Unspecified error");
+  sei->m_number = m_pcCfg->getGenerativeFaceVideoEnhancementSEINumber();
+  sei->m_basePicFlag = m_pcCfg->getGenerativeFaceVideoEnhancementSEIBasePicFlag();
+  sei->m_nnPresentFlag = m_pcCfg->getGenerativeFaceVideoEnhancementSEINNPresentFlag();
+  sei->m_nnModeIdc = m_pcCfg->getGenerativeFaceVideoEnhancementSEINNModeIdc();
+  sei->m_nnTagURI = m_pcCfg->getGenerativeFaceVideoEnhancementSEINNTagURI();
+  sei->m_nnURI = m_pcCfg->getGenerativeFaceVideoEnhancementSEINNURI();  
+  sei->m_payloadFilename = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPayloadFilename();
+  sei->m_currentid = currframeindex;
+  sei->m_id = m_pcCfg->getGenerativeFaceVideoEnhancementSEIId(sei->m_currentid);
+  sei->m_gfvcnt = m_pcCfg->getGenerativeFaceVideoEnhancementSEIGFVCnt(sei->m_currentid);
+  sei->m_gfvid = m_pcCfg->getGenerativeFaceVideoEnhancementSEIGFVId(sei->m_currentid);  
+  sei->m_pupilPresentIdx = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPupilPresentIdx(sei->m_currentid);
+  sei->m_pupilCoordinatePrecisionFactor = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPupilCoordinatePrecisionFactor(sei->m_currentid);
+  sei->m_pupilLeftEyeCoordinateX = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateX(sei->m_currentid);
+  sei->m_pupilLeftEyeCoordinateY = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY(sei->m_currentid);
+  sei->m_pupilRightEyeCoordinateX = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX(sei->m_currentid);
+  sei->m_pupilRightEyeCoordinateY = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY(sei->m_currentid);
+  sei->m_matrixElementPrecisionFactor = m_pcCfg->getGenerativeFaceVideoEnhancementSEIMatrixElementPrecisionFactor(sei->m_currentid);
+  sei->m_numMatrices = m_pcCfg->getGenerativeFaceVideoEnhancementSEINumMatrices(sei->m_currentid);
+  sei->m_matrixPresentFlag = m_pcCfg->getGenerativeFaceVideoEnhancementSEIMatrixPresentFlag(sei->m_currentid);
+  sei->m_matrixPredFlag = m_pcCfg->getGenerativeFaceVideoEnhancementSEIMatrixPredFlag(sei->m_currentid);
+  if (sei->m_matrixPresentFlag == 1)
+  {
+    for (uint32_t j = 0; j <  sei->m_numMatrices; j++)
+    {
+      sei->m_matrixElement.push_back(std::vector< std::vector<double>>());
 
+      sei->m_matrixWidth.push_back(m_pcCfg->getGenerativeFaceVideoEnhancementSEIMatrixWidth(sei->m_currentid, j));
+      sei->m_matrixHeight.push_back(m_pcCfg->getGenerativeFaceVideoEnhancementSEIMatrixHeight(sei->m_currentid, j));
+      for (uint32_t k = 0; k < sei->m_matrixWidth[j]; k++)
+      {
+        sei->m_matrixElement[j].push_back(std::vector<double>());
+        for (uint32_t l = 0; l < sei->m_matrixHeight[j]; l++)
+        {
+          sei->m_matrixElement[j][k].push_back(m_pcCfg->getGenerativeFaceVideoEnhancementSEIMatrixElement(sei->m_currentid, j, k, l));
+        }
+      }
+    }
+  }
+  if (sei->m_nnPresentFlag)
+  {
+    if (sei->m_nnModeIdc == 0)
+    {
+      std::ifstream     bitstreamFile(sei->m_payloadFilename.c_str(), std::ifstream::in | std::ifstream::binary);
+      if (!bitstreamFile)
+      {
+        EXIT("Failed to open bitstream file " << sei->m_payloadFilename.c_str() << " for reading");
+      }
+      bitstreamFile.seekg(0, std::ifstream::end);
+      sei->m_payloadLength = bitstreamFile.tellg();
+      bitstreamFile.seekg(0, std::ifstream::beg);
+      sei->m_payloadByte = new char[sei->m_payloadLength];
+      bitstreamFile.read(sei->m_payloadByte, sei->m_payloadLength);
+      bitstreamFile.close();
+    }
+  }
+}
+#endif
 #if JVET_AJ0151_DSC_SEI
 void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei)
 {
