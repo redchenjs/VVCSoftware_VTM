@@ -6713,6 +6713,15 @@ An example file can be found in cfg/sei_vui/object_mask_infos/intra/mask_info_0.
   \Option{SEIPRIEnabled} &
   \Default{false} &
   Specifies whether packet regions info SEI is enabled.
+  When packed regions info SEI (PRI SEI) is enabled, encoder creates a modified
+  picture to be coded that consists of regions extracted from the original
+  picture. The regions can be independently scaled and are placed in the picture
+  to be coded as instructed by the PRI SEI config parameters. The resulting
+  modified picture is encoded and decoded as usual by VTM. Encoder calculates
+  the resolution of the coded pictures based on the placement of the regions in
+  the coded picture. Encoder or decoder then takes the regions from the decoded
+  picture and scales and places regions back at the correct locations in the
+  final reconstructed picture. This final reconstruction step is non-normative.
   \\
   \Option{SEIPRICancelFlag} &
   \Default{false} &
@@ -7036,6 +7045,12 @@ If no value is specified, the SEI message will not be output.
 \Default{\NotSet} &
 When a non-empty file name is specified, object mask information using the decoded SEI messages will be output to the indicated file.
 If no value is specified, the SEI message will not be output.
+\\
+
+\Option{SEIPackedRegionsInfoFilename} &
+%\ShortOption{\None} &
+\Default{\NotSet} &
+Packed regions info SEI output file name. If empty, no object information will be saved
 \\
 
 \Option{OutputColourSpaceConvert} &
