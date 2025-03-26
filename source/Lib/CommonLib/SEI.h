@@ -182,7 +182,7 @@ public:
 
   {
     m_sptiSublayerIntervalScaleFactor.resize(MAX_TLAYER + 1, 0);
-    m_sptiSublayerSynthesizedPictureFlag.resize(MAX_TLAYER + 1, false);
+    m_sptiSublayerSynthesizedPictureFlag.fill(false);
   }
 #else
   SEISourcePictureTimingInfo() {}
@@ -204,7 +204,7 @@ public:
   bool                  m_sptiSourceTypePresentFlag;
   uint32_t              m_sptiMaxSublayersMinus1;
   std::vector<uint32_t> m_sptiSublayerIntervalScaleFactor;
-  std::vector<bool>     m_sptiSublayerSynthesizedPictureFlag;
+  std::array<bool, MAX_TLAYER + 1> m_sptiSublayerSynthesizedPictureFlag;
 };
 class SEIProcessingOrderInfo : public SEI
 {
