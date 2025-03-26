@@ -718,7 +718,7 @@ protected:
   std::vector<uint32_t> m_omniViewportSEIHorRange;
   std::vector<uint32_t> m_omniViewportSEIVerRange;
   std::string           m_arSEIFileRoot;  // Annotated region SEI - initialized from external file
-  std::string           m_omiSEIFileRoot;   // Object mask information SEI - initialized from external file
+  std::string           m_omiSEIFileRoot;  // Object mask information SEI - initialized from external file
   bool                  m_rwpSEIEnabled;
   bool                  m_rwpSEIRwpCancelFlag;
   bool                  m_rwpSEIRwpPersistenceFlag;

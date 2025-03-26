@@ -76,6 +76,8 @@
 
 #define JVET_AK2006_SPTI_SEI_UPDATES                      1 //updates for SPTI SEI message
 
+#define JVET_AK0330_OMI_SEI                               1 // JVET-AK0330: OMI-SEI modification
+
 //########### place macros to be be kept below this line ###############
 
 #define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1
