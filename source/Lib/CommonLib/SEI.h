@@ -1319,8 +1319,13 @@ public:
 
   struct ObjectMaskInfo
   {
+#if JVET_AK0330_OMI_SEI
+    ObjectMaskInfo() : maskNew(false), maskBoundingBoxPresentFlag(false) {}
+    bool        maskNew;
+#else
     ObjectMaskInfo() : maskCancel(false), maskBoundingBoxPresentFlag(false) {}
     bool        maskCancel;
+#endif
     uint32_t    maskId;
     uint32_t    auxSampleValue;
     bool        maskBoundingBoxPresentFlag;
@@ -1335,10 +1340,13 @@ public:
 
   struct ObjectMaskInfoHeader
   {
+#if JVET_AK0330_OMI_SEI
+    ObjectMaskInfoHeader() : m_cancelFlag(true), m_receivedSettingsOnce(false), m_persistenceFlag(false) {}
+#else
     ObjectMaskInfoHeader() : m_cancelFlag(true), m_receivedSettingsOnce(false) {}
+#endif
     bool m_cancelFlag;
-    bool m_receivedSettingsOnce;   // used for decoder conformance checking. Other confidence flags must be unchanged
-                                  // once this flag is set.
+    bool m_receivedSettingsOnce;   // used for decoder conformance checking. Other confidence flags must be unchanged once this flag is set.
     bool m_persistenceFlag;
     uint32_t    m_numAuxPicLayerMinus1;
     uint32_t    m_maskIdLengthMinus1;
@@ -1346,17 +1354,23 @@ public:
     bool        m_maskConfidenceInfoPresentFlag;
     uint32_t    m_maskConfidenceLengthMinus1;   // Only valid if m_maskConfidenceInfoPresentFlag
     bool        m_maskDepthInfoPresentFlag;
-    uint32_t    m_maskDepthLengthMinus1;   // Only valid if m_maskDepthInfoPresentFlag
+    uint32_t    m_maskDepthLengthMinus1;        // Only valid if m_maskDepthInfoPresentFlag
     bool        m_maskLabelInfoPresentFlag;
-    bool        m_maskLabelLanguagePresentFlag;   // Only valid if m_maskLabelInfoPresentFlag
+    bool        m_maskLabelLanguagePresentFlag; // Only valid if m_maskLabelInfoPresentFlag
     // SEIOmiBitEqualToZero
-    std::string m_maskLabelLanguage;   // Only valid if m_maskLabelLanguagePresentFlag
+    std::string m_maskLabelLanguage;            // Only valid if m_maskLabelLanguagePresentFlag
   };
 
   ObjectMaskInfoHeader        m_hdr;
+#if JVET_AK0330_OMI_SEI
+  std::vector<uint32_t>       m_maskPicUpdateFlag; // No masks exist in the initial stage.
+  std::vector<uint32_t>       m_numMaskInPic;
+  std::vector<ObjectMaskInfo> m_objectMaskInfos;   // The ObjectMaskInfo objects have unique maskId in m_objectMaskInfos list.
+#else
   std::vector<uint32_t>       m_maskPicUpdateFlag;
   std::vector<uint32_t>       m_numMaskInPicUpdate;
   std::vector<ObjectMaskInfo> m_objectMaskInfos;
+#endif
 };
 
 class SEIExtendedDrapIndication : public SEI

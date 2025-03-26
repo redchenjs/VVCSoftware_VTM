@@ -70,6 +70,8 @@
 
 #define JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD              1 // QP threshold for object-based optimization in EOI SEI
 
+#define JVET_AK0333_SPO_SEI_NESTED_SUBCHAINS              1 // JVET-AK0333: Nested sub-chains in SPO SEI
+
 #define JVET_AJ0048_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList
 
 #define JVET_AK0055_SPO_SEI_CONSTRAINT                    1 // Add FPA, RWP, ERP, GCMP constraints
@@ -77,6 +79,8 @@
 #define JVET_AK0239_GFVE                                  1 //generative face video enhancement (GFVE) SEI
 
 #define JVET_AK2006_SPTI_SEI_UPDATES                      1 //updates for SPTI SEI message
+
+#define JVET_AK0330_OMI_SEI                               1 // JVET-AK0330: OMI-SEI modification
 
 //########### place macros to be be kept below this line ###############
 
