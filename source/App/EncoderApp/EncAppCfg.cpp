@@ -3971,6 +3971,49 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
     CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
+#if JVET_AK0333_SPO_SEI_NESTED_SUBCHAINS
+    // The following code generares sub-chain indices for conformance checking.
+    uint32_t numProcStgs = m_poSEINumMinus2 + 2;
+    std::vector<uint32_t> seiTypeIdx;
+    for (uint32_t j = 0; j < numProcStgs; j++)
+    {
+      seiTypeIdx.push_back(j);
+    }
+    uint32_t subChainFlag = 0;
+    uint32_t subChainPrevIdx = 0;
+    std::vector<uint32_t> subChainIdx(numProcStgs);
+    for (uint32_t j = 0; j < numProcStgs; j++)
+    {
+      uint32_t idx = seiTypeIdx[j];
+      if (m_poSEIImportanceFlag[idx] && m_poSEIProcessingDegreeFlag[idx])
+      {
+        if (subChainFlag == 0)
+        {
+          subChainIdx[j] = 0;
+        }
+        else
+        {
+          subChainIdx[j] = subChainPrevIdx;
+        }
+      }
+      else if (!m_poSEIImportanceFlag[idx] && m_poSEIProcessingDegreeFlag[idx])
+      {
+        subChainIdx[j] = subChainFlag * subChainPrevIdx;
+        CHECK(subChainIdx[j] == 0, "When pos_sei_importance_flag[idx] is equal to 0 and po_sei_processing_degree_flag[idx] is equal to 1, poSubChainIdx[j] shall be greater than 0")
+        subChainFlag = 0;
+      }
+      else if (m_poSEIImportanceFlag[idx] && !m_poSEIProcessingDegreeFlag[idx])
+      {
+        subChainPrevIdx++;
+        subChainIdx[j] = subChainPrevIdx;
+        subChainFlag = 1;
+      }
+      else
+      {
+        subChainIdx[j] = subChainFlag * subChainPrevIdx;
+      }
+    }
+#endif
   }
 
   if (m_postFilterHintSEIEnabled)
