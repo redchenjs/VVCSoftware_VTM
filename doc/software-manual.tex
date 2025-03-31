@@ -2000,6 +2000,7 @@ Defines the initial maximum size of the tenary tree for inter slices.
 \Default{$-1$} &
 Specifies the intra frame period.
 A value of $-1$ implies an infinite period.
+A value of $-N$ implies a period that is a multiple $N$ based on frame rate $r$: $\mathrm{round}(r / N) \cdot N$. 
 \\
 
 \Option{DecodingRefreshType (-dr)} &
