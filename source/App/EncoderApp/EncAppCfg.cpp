@@ -1184,7 +1184,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("Log2MaxTbSize",                                   m_log2MaxTbSize,                                      6, "Maximum transform block size in logarithm base 2 (Default: 6)")
 
   // Coding structure paramters
-  ("IntraPeriod,-ip",                                 m_intraPeriod,                                      -1, "Intra period in frames, (-1: only first frame)")
+  ("IntraPeriod,-ip",                                 m_intraPeriod,                                      -1, "Intra period in frames, (-1: only first frame, -N: set to a multiple of N based on frame rate)")
 #if GDR_ENABLED
   ("GdrEnabled",                                      m_gdrEnabled,                                     false, "GDR enabled")
   ("GdrPocStart",                                     m_gdrPocStart,                                       -1, "GDR poc start")
@@ -2291,6 +2291,21 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   m_frameRate.num = std::stoi(frameRate.substr(0, columnPos));
   m_frameRate.den = columnPos == std::string::npos ? 1 : std::stoi(frameRate.substr(columnPos + 1));
+
+  if (m_intraPeriod < -1)
+  {
+    // Set IntraPeriod to a multiple of -m_intraPeriod according to frame rate of source
+    // When setting to m_intraPeriod to -32, it is changed to appropriate value according to CTC:
+    // Frame rate | IntraPeriod
+    //     20     |     32
+    //     24     |     32
+    //     30     |     32
+    //     50     |     64
+    //     60     |     64
+    //    100     |     96
+    const int ipBase = -m_intraPeriod;
+    m_intraPeriod    = std::max((m_frameRate.getIntValRound() + ipBase / 2) / ipBase, 1) * ipBase;
+  }
 
   if( m_fractionOfFrames != 1.0 )
   {
