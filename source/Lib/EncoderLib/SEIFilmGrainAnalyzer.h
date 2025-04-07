@@ -61,7 +61,7 @@ static constexpr int      QUANT_LEVELS                              = 4;     // 
 static constexpr int      INTERVAL_SIZE                             = 16;
 static constexpr int      MIN_ELEMENT_NUMBER_PER_INTENSITY_INTERVAL = 8;
 static constexpr int      MIN_POINTS_FOR_INTENSITY_ESTIMATION       = 40;    // 5*8 = 40; 5 intervals with at least 8 points
-static constexpr int      MIN_BLOCKS_FOR_CUTOFF_ESTIMATION          = 2;     // 2 blocks of 64 x 64 size
+static constexpr int      MIN_BLOCKS_FOR_CUTOFF_ESTIMATION          = 2;     // 2 blocks of n x n size
 static constexpr int      POINT_STEP                                = 16;    // step size in point extension
 static constexpr int      MAX_NUM_POINT_TO_EXTEND                   = 4;     // max point in extension
 static constexpr double   POINT_SCALE                               = 1.25;  // scaling in point extension
@@ -152,6 +152,7 @@ public:
             const bool doAnalysis[],
             std::string filmGrainExternalMask,
             std::string filmGrainExternalDenoised);
+  		   
   void destroy        ();
   void initBufs       (Picture* pic);
   void estimate_grain (Picture* pic);
@@ -186,15 +187,33 @@ private:
   PelStorage *m_workingBuf  = nullptr;
   PelStorage *m_maskBuf     = nullptr;
 
+#if JVET_AL0282
+  std::vector<int> stored_vec_mean_intensity[3];
+  std::vector<int> stored_vec_variance_intensity[3];
+  std::vector<int> stored_element_number_per_interval[3];
+#endif
+
   void findMask                     ();
 
   void estimate_grain_parameters    ();
+#if JVET_AL0282
+  void block_transform              (const PelStorage& buff1, std::vector<PelMatrix>& squared_dct_grain_block_list, int offsetX, int offsetY, unsigned int bitDepth, ComponentID compID, unsigned int windowSize);
+  void estimate_cutoff_freq         (const std::vector<PelMatrix>& blocks, const std::vector<int>& vec_mean, unsigned int bitDepth, ComponentID compID, unsigned int windowSize);
+  int  cutoff_frequency             (std::vector<double>& mean, unsigned int windowSize);
+#else
   void block_transform              (const PelStorage& buff1, std::vector<PelMatrix>& squared_dct_grain_block_list, int offsetX, int offsetY, unsigned int bitDepth, ComponentID compID);
   void estimate_cutoff_freq         (const std::vector<PelMatrix>& blocks, ComponentID compID);
   int  cutoff_frequency             (std::vector<double>& mean);
+#endif
   void estimate_scaling_factors     (std::vector<int>& data_x, std::vector<int>& data_y, unsigned int bitDepth, ComponentID compID);
+
+#if JVET_AL0282
+    bool fit_function               (std::vector<int>& data_x, std::vector<int>& data_y, std::vector<double>& coeffs, std::vector<double>& scalingVec,
+                                     int order, int bitDepth, bool second_pass, ComponentID compID);
+#else
   bool fit_function                 (std::vector<int>& data_x, std::vector<int>& data_y, std::vector<double>& coeffs, std::vector<double>& scalingVec,
                                      int order, int bitDepth, bool second_pass);
+#endif
   void avg_scaling_vec              (std::vector<double> &scalingVec, ComponentID compID, int bitDepth);
   bool lloyd_max                    (std::vector<double>& scalingVec, std::vector<int>& quantizedVec, double& distortion, int numQuantizedLevels, int bitDepth);
   void quantize                     (std::vector<double>& scalingVec, std::vector<double>& quantizedVec, double& distortion, std::vector<double> partition, std::vector<double> codebook);
