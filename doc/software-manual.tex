@@ -2220,6 +2220,17 @@ If not present, then the LambdaModifier$N$ settings are used instead. If the lis
 the last value is repeated as required.
 \\
 
+\Option{LambdaScaleTowardsNextQP} &
+\Default{0.0} &
+Specifies a scaling of lambda that corresponds to a fractional QP offset from the slice QP as $2^(LambdaScaleTowardsNextQP/3)$.
+Can be used for matching a target bitrate located inbetween the bitrate given by two adjacent base QPs.
+Start from the base QP that gives a bitrate closest to target bitrate.
+When the bitrate given by the base QP is above the target bitrate use a positive LambdaScaleTowardsNextQP to reduce the bitrate.
+When the bitrate given by the base QP is below the target bitrate use a negative LambdaScaleTowardsNextQP to increase the bitrate.
+A value of 0.5 gives approximately a bitrate given by the average of the bitrate for the base QP and the bitrate for the base QP + 1.
+A value of -0.5 gives approximately a bitrate given by the average of the bitrate for the base QP and the bitrate for the base QP - 1.
+\\
+
 \Option{IQPFactor (-IQF)} &
 %\ShortOption{-IQF} &
 \Default{-1} &

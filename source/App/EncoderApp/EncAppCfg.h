@@ -270,6 +270,9 @@ protected:
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
   int       m_intraQPOffset;                                  ///< QP offset for intra slice (integer)
   bool      m_lambdaFromQPEnable;                             ///< enable flag for QP:lambda fix
+#if JVET_AL0207
+  double    m_lambdaScaleTowardsNextQP;                       ///< scale lambda towards lambda of next QP
+#endif
   std::string m_dQPFileName;                                  ///< QP offset for each slice (initialized from external file)
 
   FrameDeltaQps m_frameDeltaQps;   // array of frame delta QP values

@@ -294,7 +294,9 @@ protected:
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
   int       m_intraQPOffset;                    ///< QP offset for intra slice (integer)
   int       m_lambdaFromQPEnable;               ///< enable lambda derivation from QP
-
+#if JVET_AL0207
+  double    m_lambdaScaleTowardsNextQP;         ///< scale lambda towards lambda of next QP
+#endif
   bool      m_AccessUnitDelimiter;               ///< add Access Unit Delimiter NAL units
   bool      m_enablePictureHeaderInSliceHeader;  ///< Enable Picture Header in Slice Header
 
@@ -1526,6 +1528,7 @@ public:
     return m_gdrNoHash;
   }
 #endif
+
   void      setMaxMTTHierarchyDepth         ( unsigned uiMaxMTTHierarchyDepth, unsigned uiMaxMTTHierarchyDepthI, unsigned uiMaxMTTHierarchyDepthIChroma )
                                                              { m_uiMaxMTTHierarchyDepth = uiMaxMTTHierarchyDepth; m_uiMaxMTTHierarchyDepthI = uiMaxMTTHierarchyDepthI; m_uiMaxMTTHierarchyDepthIChroma = uiMaxMTTHierarchyDepthIChroma; }
   unsigned  getMaxMTTHierarchyDepth         ()         const { return m_uiMaxMTTHierarchyDepth; }
@@ -1886,6 +1889,10 @@ public:
   const std::vector<double>& getIntraLambdaModifier()                        const { return m_adIntraLambdaModifier;         }
   void      setIntraQpFactor                ( double dValue )               { m_dIntraQpFactor = dValue;              }
   double    getIntraQpFactor                ()                        const { return m_dIntraQpFactor;                }
+#if JVET_AL0207
+  void      setLambdaScaleTowardsNextQP     (double  scale) { m_lambdaScaleTowardsNextQP = scale; }
+  double    getLambdaScaleTowardsNextQP     () const        { return m_lambdaScaleTowardsNextQP; }
+#endif
 
   //==== Coding Structure ========
   int       getIntraPeriod                  () const     { return  m_intraPeriod; }
