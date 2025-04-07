@@ -58,7 +58,7 @@
 //########### place macros to be removed in next cycle below this line ###############
 
 
-
+#define JVET_AL0207                                       1 // JVET-AL207: Control target bitrate between two base QPs
 
 
 
