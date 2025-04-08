@@ -188,9 +188,9 @@ private:
   PelStorage *m_maskBuf     = nullptr;
 
 #if JVET_AL0282
-  std::vector<int> stored_vec_mean_intensity[3];
-  std::vector<int> stored_vec_variance_intensity[3];
-  std::vector<int> stored_element_number_per_interval[3];
+  std::vector<int> m_storedVecMeanIntensity[3];
+  std::vector<int> m_storedVecVarianceIntensity[3];
+  std::vector<int> m_storedElementNumberPerInterval[3];
 #endif
 
   void findMask                     ();
@@ -208,7 +208,7 @@ private:
   void estimate_scaling_factors     (std::vector<int>& data_x, std::vector<int>& data_y, unsigned int bitDepth, ComponentID compID);
 
 #if JVET_AL0282
-    bool fit_function               (std::vector<int>& data_x, std::vector<int>& data_y, std::vector<double>& coeffs, std::vector<double>& scalingVec,
+  bool fit_function                 (std::vector<int>& data_x, std::vector<int>& data_y, std::vector<double>& coeffs, std::vector<double>& scalingVec,
                                      int order, int bitDepth, bool second_pass, ComponentID compID);
 #else
   bool fit_function                 (std::vector<int>& data_x, std::vector<int>& data_y, std::vector<double>& coeffs, std::vector<double>& scalingVec,

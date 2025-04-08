@@ -1435,13 +1435,13 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
   }
 
 #if  JVET_AL0282
-  if (!stored_vec_mean_intensity[compID].empty() && !stored_vec_variance_intensity[compID].empty())
+  if (!m_storedVecMeanIntensity[compID].empty() && !m_storedVecVarianceIntensity[compID].empty())
   {
     for (int block_idx = 0; block_idx < INTENSITY_INTERVAL_NUMBER; block_idx++)
     {
-      element_number_per_interval[block_idx] += stored_element_number_per_interval[compID][block_idx];
-      vec_mean_intensity[block_idx] += stored_vec_mean_intensity[compID][block_idx];
-      vec_variance_intensity[block_idx] += stored_vec_variance_intensity[compID][block_idx];
+      element_number_per_interval[block_idx] += m_storedElementNumberPerInterval[compID][block_idx];
+      vec_mean_intensity[block_idx] += m_storedVecMeanIntensity[compID][block_idx];
+      vec_variance_intensity[block_idx] += m_storedVecVarianceIntensity[compID][block_idx];
     }
   }
 #endif
@@ -1460,12 +1460,12 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
   if (second_pass)
   {
     // save data for fitting function in the next frames (to get better estimation by agregating estimation over different frames)
-    stored_vec_mean_intensity[compID].resize(0);
-    stored_vec_variance_intensity[compID].resize(0);
-    stored_element_number_per_interval[compID].resize(0);
-    stored_vec_mean_intensity[compID] = vec_mean_intensity;
-    stored_vec_variance_intensity[compID] = vec_variance_intensity;
-    stored_element_number_per_interval[compID] = element_number_per_interval;
+    m_storedVecMeanIntensity[compID].resize(0);
+    m_storedVecVarianceIntensity[compID].resize(0);
+    m_storedElementNumberPerInterval[compID].resize(0);
+    m_storedVecMeanIntensity[compID] = vec_mean_intensity;
+    m_storedVecVarianceIntensity[compID] = vec_variance_intensity;
+    m_storedElementNumberPerInterval[compID] = element_number_per_interval;
   }
 #endif
 
