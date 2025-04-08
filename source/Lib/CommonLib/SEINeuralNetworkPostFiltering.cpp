@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2024, ITU/ISO/IEC
+ * Copyright (c) 2010-2025, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,6 +73,9 @@ void SEINeuralNetworkPostFiltering::setPicActivatedNnpfc(Picture* picture)
         m_isNnpfActiveForCLVS[nnpfa->m_targetId] = false;  // Cancel the persistence of an NNPFA SEI message with any subsequent NNPFA SEI message with the same nnpfa_target_id
       }
       CHECK((uint32_t)nnpfa->m_outputFlag.size() > nnpfc->m_numInpPicsInOutputTensor, "The value of nnpfa_num_output_entries shall be in the range of 0 to NumInpPicsInOutputTensor");
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE && JVET_AK0072_NNPF_NULL_PROMPT_CONTRAINT
+      CHECK(!nnpfa->m_promptUpdateFlag && nnpfc->m_inbandPromptFlag && nnpfc->m_prompt.empty(), "When nnpfa_prompt_update_flag is equal 0 and nnpfc_inband_prompt_flag is equal 1, nnpfc_prompt shall not be a null string")
+#endif
     }
   }
 

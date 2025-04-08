@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2024, ITU/ISO/IEC
+ * Copyright (c) 2010-2025, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,12 +58,34 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AL0282 1 // film grain analysis improvements
+#define JVET_AL0282                                       1 // film grain analysis improvements
 
+#define JVET_AL0207                                       1 // JVET-AL207: Control target bitrate between two base QPs
 
+#define JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG               1 // JVET-AJ0308: Add direction flag to SPTI SEI MESSAGE
 
+#define JVET_AK0072_NNPF_TEMP_EXTR_UPDATES                1 // JVET-AK0072 items 1 and 2: nnpfc_input_pic_filering flag inference and constraint
+
+#define JVET_AK0072_NNPF_NULL_PROMPT_CONTRAINT            1 // JVET-AK0072 item 3: NNPF prompt null string contraint
+
+#define JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD              1 // QP threshold for object-based optimization in EOI SEI
+
+#define JVET_AK0333_SPO_SEI_NESTED_SUBCHAINS              1 // JVET-AK0333: Nested sub-chains in SPO SEI
+
+#define JVET_AJ0048_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList
+
+#define JVET_AK0239_GFVE                                  1 //generative face video enhancement (GFVE) SEI
+
+#define JVET_AK2006_SPTI_SEI_UPDATES                      1 //updates for SPTI SEI message
+
+#define JVET_AK0330_OMI_SEI                               1 // JVET-AK0330: OMI-SEI modification
+
+#define JVET_AK0238_GFV_FIX_CLEANUP                       1// bug fixes and codes cleanup for GFV SEI
 
 //########### place macros to be be kept below this line ###############
+
+#define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1
+#define JVET_AJ0114_NNPFA_NUM_PIC_SHIFT   1
 
 #ifndef JVET_AJ0151_DSC_SEI
 #define JVET_AJ0151_DSC_SEI   1                      // Digitally signed content signing and verification (requires OpenSSL v3)
@@ -78,6 +100,8 @@
 #endif
 
 #define JVET_S0257_DUMP_360SEI_MESSAGE                    1 // Software support of 360 SEI messages
+
+#define NNPFC_SCAN_TYPE_IDC                               1 // nnpfc_scan_type_idc from JVET-AH0174 and KVET-AJ0073
 
 #define JVET_R0164_MEAN_SCALED_SATD                       1 // JVET-R0164: Use a mean scaled version of SATD in encoder decisions
 

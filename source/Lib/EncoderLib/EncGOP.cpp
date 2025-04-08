@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2024, ITU/ISO/IEC
+ * Copyright (c) 2010-2025, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -357,6 +357,9 @@ int EncGOP::xWriteVPS (AccessUnit &accessUnit, const VPS *vps)
   m_HLSWriter->setBitstream(&nalu.m_bitstream);
   CHECK( nalu.m_temporalId, "The value of TemporalId of VPS NAL units shall be equal to 0" );
   m_HLSWriter->codeVPS( vps );
+#if JVET_AJ0151_DSC_SEI
+  xAddToSubstream(0, nalu);
+#endif
   accessUnit.push_back(new NALUnitEBSP(nalu));
   return (int)(accessUnit.back()->m_nalUnitData.str().size()) * 8;
 }
@@ -983,7 +986,11 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
   }
   if (m_pcCfg->getSptiSEIEnabled())
   {
+#if JVET_AK2006_SPTI_SEI_UPDATES
+    SEISourcePictureTimingInfo* seiSourcePictureTimingInfo = new SEISourcePictureTimingInfo(sps->getMaxTLayers() - 1);
+#else
     SEISourcePictureTimingInfo* seiSourcePictureTimingInfo = new SEISourcePictureTimingInfo;
+#endif
     m_seiEncoder.initSEISourcePictureTimingInfo(seiSourcePictureTimingInfo);
     seiMessages.push_back(seiSourcePictureTimingInfo);
   }
@@ -1152,6 +1159,18 @@ void EncGOP::xCreateGenerativeFaceVideoSEIMessages(SEIMessages& seiMessages)
     seiMessages.push_back(seiGenerativeFaceVideo);
   }
 }
+
+#if JVET_AK0239_GFVE
+void EncGOP::xCreateGenerativeFaceVideoEnhancementSEIMessages(SEIMessages& seiMessages)
+{
+  for (int frameIndex = 0; frameIndex < m_pcCfg->getGenerativeFaceVideoEnhancementSEINumber(); frameIndex++)
+  {
+    SEIGenerativeFaceVideoEnhancement *seiGenerativeFaceVideoEnhancement = new SEIGenerativeFaceVideoEnhancement;
+    m_seiEncoder.initSEIGenerativeFaceVideoEnhancement(seiGenerativeFaceVideoEnhancement, frameIndex);
+    seiMessages.push_back(seiGenerativeFaceVideoEnhancement);
+  }
+}
+#endif
 
 void EncGOP::xCreateNNPostFilterCharacteristicsSEIMessages(SEIMessages& seiMessages)
 {
@@ -4127,6 +4146,13 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         xCreateGenerativeFaceVideoSEIMessages(trailingSeiMessages);
       }
+#if JVET_AK0239_GFVE
+      if (writePS && m_pcCfg->getGenerativeFaceVideoEnhancementSEIEnabled())
+      {
+        xCreateGenerativeFaceVideoEnhancementSEIMessages(trailingSeiMessages);
+      }
+#endif
+
       //send LMCS APS when LMCSModel is updated. It can be updated even current slice does not enable reshaper.
       //For example, in RA, update is on intra slice, but intra slice may not use reshaper
       if (pcSlice->getSPS()->getUseLmcs())
@@ -7133,7 +7159,7 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
           for (const auto &pic: rcListPic)
           {
             int refLayerIdx = vps->getGeneralLayerIdx(pic->layerId);
-            if (refLayerIdx == rpl->getInterLayerRefPicIdx(ii) && pic->referenced && pic->getPOC() == curPic->getPOC()
+            if (refLayerIdx == vps->getDirectRefLayerIdx(layerIdx, rpl->getInterLayerRefPicIdx(ii)) && pic->referenced && pic->getPOC() == curPic->getPOC()
                 && vps->getDirectRefLayerFlag(layerIdx, refLayerIdx) && xCheckMaxTidILRefPics(layerIdx, pic, slice->isIRAP()))
             {
               localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
@@ -7161,7 +7187,7 @@ void EncGOP::xCreateExplicitReferencePictureSetFromReference( Slice* slice, PicL
             localRpl[l].setRefPicIdentifier(num[l], 0, true, true, vps->getInterLayerRefIdc(layerIdx, refLayerIdx));
             num[l]++;
             numIlrp[l]++;
-            msg(WARNING, "WARNING: inter slice at POC %d and LId %d has an ampty L0 list => Automatically adding inter-layer reference from LId %d\n", slice->getPOC(), curPic->layerId, pic->layerId);
+            msg(WARNING, "WARNING: inter slice at POC %d and LId %d has an empty L0 list => Automatically adding inter-layer reference from LId %d\n", slice->getPOC(), curPic->layerId, pic->layerId);
             break;//only add 1 Inter-layer ref pic automatically.
           }
         }

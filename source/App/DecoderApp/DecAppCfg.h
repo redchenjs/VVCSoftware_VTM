@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2024, ITU/ISO/IEC
+ * Copyright (c) 2010-2025, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -78,7 +78,7 @@ protected:
   std::string   m_SEICTIFileName;                     ///< output Recon with CTI file name
   std::string   m_SEIFGSFileName;                     ///< output file name for reconstructed sequence with film grain
   std::string   m_annotatedRegionsSEIFileName;        ///< annotated regions file name
-  std::string m_objectMaskInfoSEIFileName;            ///< object mask information file name
+  std::string   m_objectMaskInfoSEIFileName;          ///< object mask information file name
   std::vector<int> m_targetDecLayerIdSet;             ///< set of LayerIds to be included in the sub-bitstream extraction process.
   std::string   m_outputDecodedSEIMessagesFilename;   ///< filename to output decoded SEI messages to. If '-', then use stdout. If empty, do not output details.
 #if JVET_S0257_DUMP_360SEI_MESSAGE

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2024, ITU/ISO/IEC
+ * Copyright (c) 2010-2025, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -950,8 +950,11 @@ double EncSlice::initializeLambda(const Slice *slice, const int gopId, const int
     dQPFactor = 0.57;
   }
 
+#if JVET_AL0207
+  dLambda = dQPFactor * pow(2.0, (dQP + m_pcCfg->getLambdaScaleTowardsNextQP() + bitDepthShift) / 3.0);
+#else
   dLambda = dQPFactor * pow(2.0, (dQP + bitDepthShift) / 3.0);
-
+#endif
   if (slice->getHierPredLayerIdx() > 0 && !m_pcCfg->getLambdaFromQPEnable())
   {
     dLambda *= Clip3(2.0, 4.0, ((refQP + bitDepthShift) / 6.0));

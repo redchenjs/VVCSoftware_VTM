@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2024, ITU/ISO/IEC
+ * Copyright (c) 2010-2025, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -115,6 +115,9 @@ public:
   void initSEIGreenMetadataInfo(SEIGreenMetadataInfo *sei, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics, SEIComplexityMetrics greenMetadata);
 #endif
   void initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int currframeindex);
+#if JVET_AK0239_GFVE
+  void initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement *sei, int currframeindex);
+#endif
 private:
   EncCfg* m_pcCfg;
   EncLib* m_pcEncLib;

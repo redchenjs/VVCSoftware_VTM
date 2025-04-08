@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2024, ITU/ISO/IEC
+ * Copyright (c) 2010-2025, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -728,18 +728,15 @@ void DecLib::xStoreNALUnitForSignature(InputNALUnit &nalu)
 void DecLib::xProcessStoredNALUnitsForSignature(int substreamId)
 {
   const bool verificationActive = m_dscSubstreamManager.isVerificationActive();
-  if (m_dscSubstreamManager.isVerificationActive())
+  for (auto nalu: m_signedContentNalUnitBuffer)
   {
-    for (auto nalu: m_signedContentNalUnitBuffer)
+    if (verificationActive)
     {
-      if (verificationActive)
-      {
-        m_dscSubstreamManager.addToSubstream(substreamId, (char*)nalu.data, nalu.length);
-      }
-      free (nalu.data);
+      m_dscSubstreamManager.addToSubstream(substreamId, (char*)nalu.data, nalu.length);
     }
-    m_signedContentNalUnitBuffer.clear();
+    delete[] (nalu.data);
   }
+  m_signedContentNalUnitBuffer.clear();
 }
 #endif
 
@@ -1754,7 +1751,11 @@ void DecLib::checkSeiContentInAccessUnit()
         CHECK((payloadType1 == payloadType2) && (payLoadLayerId1 == payLoadLayerId2) && (duiIdx1 == duiIdx2) && (subPicId1 == subPicId2) && ((payloadSize1 != payloadSize2) || memcmp(payload1, payload2, payloadSize1*sizeof(uint8_t))), "When there are multiple SEI messages with a particular value of payloadType not equal to 133 that are associated with a particular AU or DU and apply to a particular OLS or layer, regardless of whether some or all of these SEI messages are scalable-nested, the SEI messages shall have the same SEI payload content.");
       }
       else
-      if(payloadType1 != SEI::PayloadType::GENERATIVE_FACE_VIDEO)
+      if(payloadType1 != SEI::PayloadType::GENERATIVE_FACE_VIDEO
+#if JVET_AK0239_GFVE
+          && payloadType1 != SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT
+#endif
+          )
       {
         bool sameLayer = false;
         if (!payLoadNested1 && !payLoadNested2)
@@ -3855,6 +3856,9 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
   switch (nalu.m_nalUnitType)
   {
   case NAL_UNIT_VPS:
+#if JVET_AJ0151_DSC_SEI
+    xStoreNALUnitForSignature(nalu);
+#endif
     xDecodeVPS(nalu);
     if (getTOlsIdxExternalFlag())
     {

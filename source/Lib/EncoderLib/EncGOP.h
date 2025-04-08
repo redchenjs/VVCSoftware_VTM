@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2024, ITU/ISO/IEC
+ * Copyright (c) 2010-2025, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -365,6 +365,9 @@ protected:
   void xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SEIMessages &nestedSeiMessages,
                                SEIMessages &duInfoSeiMessages, Slice *slice, bool isField, std::deque<DUData> &duData);
   void xCreateGenerativeFaceVideoSEIMessages(SEIMessages& seiMessage);
+#if JVET_AK0239_GFVE
+  void xCreateGenerativeFaceVideoEnhancementSEIMessages(SEIMessages& seiMessage);
+#endif 
   void xUpdateDuData(AccessUnit &testAU, std::deque<DUData> &duData);
   void xUpdateTimingSEI(SEIPictureTiming* pt, std::deque<DUData>& duData, const SPS* sps);
   void xUpdateDuInfoSEI(SEIMessages& duInfoSeiMessages, SEIPictureTiming* pt);

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2024, ITU/ISO/IEC
+ * Copyright (c) 2010-2025, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -613,7 +613,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   }
   m_cEncLib.setIntraLambdaModifier                               ( m_adIntraLambdaModifier );
   m_cEncLib.setIntraQpFactor                                     ( m_dIntraQpFactor );
-
+#if JVET_AL0207
+  m_cEncLib.setLambdaScaleTowardsNextQP                          ( m_lambdaScaleTowardsNextQP );
+#endif
   m_cEncLib.setBaseQP                                            ( m_iQP );
 
   m_cEncLib.setIntraQPOffset                                     ( m_intraQPOffset );
@@ -1126,6 +1128,10 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setEOISEIForMachineAnalysisIdc(m_eoiSEIForMachineAnalysisIdc);
   m_cEncLib.setEOISEIType(m_eoiSEIType);
   m_cEncLib.setEOISEIObjectBasedIdc(m_eoiSEIObjectBasedIdc);
+#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
+  m_cEncLib.setEOISEIQuantThresholdDelta(m_eoiSEIQuantThresholdDelta);
+  m_cEncLib.setEOISEIPicQuantObjectFlag(m_eoiSEIPicQuantObjectFlag);
+#endif
   m_cEncLib.setEOISEITemporalResamplingTypeFlag(m_eoiSEITemporalResamplingTypeFlag);
   m_cEncLib.setEOISEINumIntPics(m_eoiSEINumIntPics);
   m_cEncLib.setEOISEIOrigPicDimensionsFlag(m_eoiSEIOrigPicDimensionsFlag);
@@ -1269,10 +1275,14 @@ void EncApp::xInitLibCfg( int layerIdx )
         m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightDenominatorMinus1   (m_nnPostFilterSEICharacteristicsPicHeightDenominator[i] - 1, i);
       }
       m_cEncLib.setNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i], i);
+#if JVET_AK0072_NNPF_TEMP_EXTR_UPDATES
+      m_cEncLib.setNNPostFilterSEICharacteristicsInputPicOutputFlag( m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i], i);
+#else
       if (m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] > 0)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsInputPicOutputFlag( m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i], i);
       }
+#endif
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInterpolatedPictures( m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i], i);
@@ -1343,6 +1353,12 @@ void EncApp::xInitLibCfg( int layerIdx )
           m_cEncLib.setNNPostFilterSEICharacteristicsApplicationPurposeTagUri(m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[i],i);
         }
       }
+#if NNPFC_SCAN_TYPE_IDC
+      if((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0 || (m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsScanTypeIdc            ( m_nnPostFilterSEICharacteristicsScanTypeIdc[i], i);
+      }
+#endif
       m_cEncLib.setNNPostFilterSEICharacteristicsForHumanViewingIdc      ( m_nnPostFilterSEICharacteristicsForHumanViewingIdc[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsForMachineAnalysisIdc   ( m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsUriTag                  ( m_nnPostFilterSEICharacteristicsUriTag[i], i);
@@ -1379,6 +1395,13 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setNnPostFilterSEIActivationNoFollCLVSFlag           (m_nnPostFilterSEIActivationNoFollCLVSFlag);
   m_cEncLib.setNnPostFilterSEIActivationPersistenceFlag          (m_nnPostFilterSEIActivationPersistenceFlag);
   m_cEncLib.setNnPostFilterSEIActivationOutputFlag               (m_nnPostFilterSEIActivationOutputFlag);
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
+  m_cEncLib.setNnPostFilterSEIActivationPromptUpdateFlag         (m_nnPostFilterSEIActivationPromptUpdateFlag);
+  m_cEncLib.setNnPostFilterSEIActivationPrompt                   (m_nnPostFilterSEIActivationPrompt);
+#endif
+#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+  m_cEncLib.setNnPostFilterSEIActivationNumInputPicShift         (m_nnPostFilterSEIActivationNumInputPicShift);
+#endif 
   m_cEncLib.setEntropyCodingSyncEnabledFlag                      ( m_entropyCodingSyncEnabledFlag );
   m_cEncLib.setEntryPointPresentFlag                             ( m_entryPointPresentFlag );
   m_cEncLib.setTMVPModeId                                        ( m_TMVPModeId );
@@ -1436,6 +1459,9 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setmSptiSEISourceType(m_sptiSourceType);
     m_cEncLib.setmSptiSEITimeScale(m_sptiTimeScale);
     m_cEncLib.setmSptiSEINumUnitsInElementalInterval(m_sptiNumUnitsInElementalInterval);
+#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
+    m_cEncLib.setmSptiSEIDirectionFlag(m_sptiDirectionFlag);
+#endif
   }
 
   m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
@@ -1610,6 +1636,33 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setGenerativeFaceVideoSEIMatrixHeight                       ( m_generativeFaceVideoSEIMatrixHeight );
   m_cEncLib.setGenerativeFaceVideoSEIMatrixElement                      ( m_generativeFaceVideoSEIMatrixElement );
   m_cEncLib.setGenerativeFaceVideoSEIPayloadFilename                    ( m_generativeFaceVideoSEIPayloadFilename );
+#if JVET_AK0239_GFVE
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIEnabled                            ( m_generativeFaceVideoEnhancementEnabled );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEINumber                             ( m_generativeFaceVideoEnhancementSEINumber );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIId                                 ( m_generativeFaceVideoEnhancementSEIId );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIGFVCnt                             ( m_generativeFaceVideoEnhancementSEIGFVCnt );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIGFVId                              ( m_generativeFaceVideoEnhancementSEIGFVId );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIBasePicFlag                        ( m_generativeFaceVideoEnhancementSEIBasePicFlag );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEINNPresentFlag                      ( m_generativeFaceVideoEnhancementSEINNPresentFlag );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEINNModeIdc                          ( m_generativeFaceVideoEnhancementSEINNModeIdc );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEINNTagURI                           ( m_generativeFaceVideoEnhancementSEINNTagURI );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEINNURI                              ( m_generativeFaceVideoEnhancementSEINNURI );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIMatrixElementPrecisionFactor       ( m_generativeFaceVideoEnhancementSEIMatrixElementPrecisionFactor );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIMatrixPredFlag                     ( m_generativeFaceVideoEnhancementSEIMatrixPredFlag);
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIMatrixPresentFlag                  ( m_generativeFaceVideoEnhancementSEIMatrixPresentFlag);
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEINumMatrices                        ( m_generativeFaceVideoEnhancementSEINumMatrices );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIMatrixWidth                        ( m_generativeFaceVideoEnhancementSEIMatrixWidth );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIMatrixHeight                       ( m_generativeFaceVideoEnhancementSEIMatrixHeight );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIMatrixElement                      ( m_generativeFaceVideoEnhancementSEIMatrixElement );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPayloadFilename                    ( m_generativeFaceVideoEnhancementSEIPayloadFilename );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilPresentIdx                    ( m_generativeFaceVideoEnhancementSEIPupilPresentIdx );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilCoordinatePrecisionFactor     ( m_generativeFaceVideoEnhancementSEIPupilCoordinatePrecisionFactor );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateX            ( m_generativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateX );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY            ( m_generativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX           ( m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX );
+  m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY           ( m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY );
+#endif
+
 }
 
 void EncApp::xCreateLib( std::list<PelUnitBuf*>& recBufList, const int layerId )

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2024, ITU/ISO/IEC
+ * Copyright (c) 2010-2025, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -106,7 +106,7 @@ protected:
 
   void xWriteSEIColourTransformInfo(const SEIColourTransformInfo& sei);
   void xWriteSEIAnnotatedRegions                  (const SEIAnnotatedRegions& sei);
-  void xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei);
+  void xWriteSEIObjectMaskInfos                   (const SEIObjectMaskInfos& sei);
   void xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &hrd, const uint32_t temporalId,
                             int SEIPrefixIndicationIdx = 0);
   void xWriteSEIShutterInterval(const SEIShutterIntervalInfo& sei);
@@ -129,12 +129,47 @@ protected:
   std::vector<double>  prevcoordinateXRec;
   std::vector<double>  prevcoordinateYRec;
   std::vector<double>  prevcoordinateZRec;
+#if JVET_AK0238_GFV_FIX_CLEANUP
+  std::vector<double>  baseCoordinateXRec;
+  std::vector<double>  baseCoordinateYRec;
+  std::vector<double>  baseCoordinateZRec;
+#endif
   std::vector<std::vector<std::vector<std::vector<double>>>> prevMatrixRec;
+#if !JVET_AK0238_GFV_FIX_CLEANUP
   std::vector<uint32_t> prevmatrixWidthVec;
   std::vector<uint32_t> prevmatrixHeightVec;
   std::vector<uint32_t> prevnumMatricesVec;
+#endif
+#if JVET_AK0238_GFV_FIX_CLEANUP
+  std::vector<std::vector<std::vector<std::vector<double>>>> baseMatrixRec;
+  std::vector<uint32_t> baseMatrixWidthVec;
+  std::vector<uint32_t> baseMatrixHeightVec;
+  std::vector<uint32_t> baseNumMatricesVec;
+#endif
   bool doUpdateGFVcoordinate= false;
   bool doUpdateGFVmatrix= false;
+
+#if JVET_AK0239_GFVE
+  void xWriteSEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement& sei);
+  double xWriteSEIPupilCoordinate(double coordinate, double refCoordinate, int precisionFactor, const char* eye, const char* axis);
+  std::vector<std::vector<std::vector<double>>> prevGfveMatrixRec;
+  std::vector<std::vector<std::vector<double>>> baseGfveMatrixRec;
+  std::vector<uint32_t> baseGfveMatrixWidthVec;
+  std::vector<uint32_t> baseGfveMatrixHeightVec;
+  uint32_t baseGfveNumMatrices;
+  uint32_t baseMatrixElementPrecisionFactor;
+  bool doUpdateGFVEmatrix= false;
+  double prevgfveLeftPupilCoordinateX;
+  double prevgfveLeftPupilCoordinateY;
+  double prevgfveRightPupilCoordinateX;
+  double prevgfveRightPupilCoordinateY;
+  double basegfveLeftPupilCoordinateX;
+  double basegfveLeftPupilCoordinateY;
+  double basegfveRightPupilCoordinateX;
+  double basegfveRightPupilCoordinateY;
+  bool checkBasePicPupilPresentIdx = false;
+  bool doUpdateGFVPupilCoordinate  = false;
+#endif
 
 #if JVET_AJ0151_DSC_SEI
   void xWriteSEIDigitallySignedContentInitialization(const SEIDigitallySignedContentInitialization &sei);
