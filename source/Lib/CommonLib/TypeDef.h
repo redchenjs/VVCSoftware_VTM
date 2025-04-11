@@ -60,7 +60,7 @@
 
 
 
-
+#define JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS              1 // JVET_AL0301: Add constraints to matrix_coeffs
 
 #define JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG               1 // JVET-AJ0308: Add direction flag to SPTI SEI MESSAGE
 
