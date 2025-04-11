@@ -55,6 +55,9 @@
 
 EncLib::EncLib(EncLibCommon *encLibCommon)
   : m_cListPic(encLibCommon->getPictureBuffer())
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  , m_cGOPEncoder(encLibCommon->getDscSubstreamManager())
+#endif
   , m_spsMap(encLibCommon->getSpsMap())
   , m_ppsMap(encLibCommon->getPpsMap())
   , m_apsMaps(encLibCommon->getApsMaps())
@@ -67,9 +70,6 @@ EncLib::EncLib(EncLibCommon *encLibCommon)
   , m_doPlt(true)
   , m_vps(encLibCommon->getVPS())
   , m_layerDecPicBuffering(encLibCommon->getDecPicBuffering())
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
-  , m_cGOPEncoder(encLibCommon->getDscSubstreamManager())
-#endif
 {
   m_pocLast          = -1;
   m_receivedPicCount = 0;
