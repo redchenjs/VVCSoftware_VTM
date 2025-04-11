@@ -2330,7 +2330,12 @@ void SEIEncoder::initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnh
 #if JVET_AJ0151_DSC_SEI
 void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei)
 {
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  sei->dsciNumVerificationSubstreams = m_pcCfg->getDigitallySignedContentSEICfg().numVerificationSubstreams;
+  sei->dsciRefSubstreamFlag = m_pcCfg->getDigitallySignedContentSEICfg().refSubstreamFlag;
+#else
   sei->dsciNumVerificationSubstreams = 1; //m_pcCfg->getMaxTempLayer();
+#endif
   sei->dsciHashMethodType = m_pcCfg->getDigitallySignedContentSEICfg().hashMethod;
   sei->dsciKeySourceUri = m_pcCfg->getDigitallySignedContentSEICfg().publicKeyUri;
   sei->dsciUseKeyRegisterIdxFlag = m_pcCfg->getDigitallySignedContentSEICfg().keyIdEnabled;

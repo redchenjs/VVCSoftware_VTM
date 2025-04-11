@@ -38,6 +38,12 @@
 
 #if JVET_AJ0151_DSC_SEI
 
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if _WIN32
+#include <openssl/applink.c>
+#endif
+#endif
+
 const EVP_MD* getHashFunction(int hashMethod)
 {
   switch (hashMethod)
@@ -150,7 +156,11 @@ bool DscSubstream::calculateHash()
 }
 
 
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+void DscSubstreamManager::initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid, const std::vector<std::vector<bool>> &refFlags)
+#else
 void DscSubstreamManager::initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid)
+#endif
 {
   if (!m_isInitialized)
   {
@@ -172,6 +182,10 @@ void DscSubstreamManager::initDscSubstreamManager (int numSubstreams, int hashMe
     m_isInitialized = true;
     m_isFirstSubstream = true;
 
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+    m_refSubstreamFlag = refFlags;
+#endif
+
     printf ("DSC: initializing %d substreams\n", numSubstreams);
   }
   else
@@ -181,28 +195,44 @@ void DscSubstreamManager::initDscSubstreamManager (int numSubstreams, int hashMe
     {
       printf ("DSC Warning: re-initializing with different number of substream, starting a new signed segment\n");
       uninitDscSubstreamManager();
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+      initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid, refFlags);
+#else
       initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid);
+#endif
       return;
     }
     if (hashMethodType  != m_hashMethodType)
     {
       printf ("DSC Warning: re-initializing with different hash method type, starting a new signed segment\n");
       uninitDscSubstreamManager();
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+      initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid, refFlags);
+#else
       initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid);
+#endif
       return;
     }
     if (certUri  != m_certUri)
     {
       printf ("DSC Warning: re-initializing with different certificate URI, starting a new signed segment\n");
       uninitDscSubstreamManager();
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+      initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid, refFlags);
+#else
       initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid);
+#endif
       return;
     }
     if (hasContentUuid  != m_hasContentUuid)
     {
       printf ("DSC Warning: re-initializing with different presence of content UUID, starting a new signed segment\n");
       uninitDscSubstreamManager();
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+      initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid, refFlags);
+#else
       initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid);
+#endif
       return;
     }
     for (auto &substream: m_substream)
@@ -262,6 +292,33 @@ void DscSubstreamManager::createDatapacket (int substreamId, std::vector<uint8_t
 
   m_substream[substreamId].getCurrentDigest(curDigest);
 
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  int numRefs = 0;
+  std::vector<int> refSubstreamId;
+  for (int i = 0; i < substreamId; i++)
+  {
+    if (m_refSubstreamFlag[substreamId][i])
+    {
+      numRefs++;
+      refSubstreamId.push_back(i);
+    }
+  }
+  if (m_isFirstSubstream)
+  {
+    refDigest.resize(curDigest.size());
+    std::memset(refDigest.data(), 0xFF, refDigest.size());
+  }
+  else
+  {
+    m_substream[numRefs > 0 ? refSubstreamId[0] : substreamId].getLastDigest(refDigest);
+  }
+  dataPacket.insert(dataPacket.end(), refDigest.begin(), refDigest.end());
+  for (int i = 0; i < numRefs; i++)
+  {
+    m_substream[refSubstreamId[i]].getCurrentDigest(refDigest);
+    dataPacket.insert(dataPacket.end(), refDigest.begin(), refDigest.end());
+  }
+#else
   if (substreamId == 0)
   {
     if (m_isFirstSubstream)
@@ -279,6 +336,7 @@ void DscSubstreamManager::createDatapacket (int substreamId, std::vector<uint8_t
     m_substream[substreamId - 1].getCurrentDigest(refDigest);
   }
   dataPacket.insert(dataPacket.end(), refDigest.begin(), refDigest.end());
+#endif
   dataPacket.insert(dataPacket.end(), curDigest.begin(), curDigest.end());
   dataPacket.insert(dataPacket.end(), m_hashMethodType);
   if (m_hasContentUuid)
@@ -286,6 +344,13 @@ void DscSubstreamManager::createDatapacket (int substreamId, std::vector<uint8_t
     dataPacket.insert(dataPacket.end(), m_contentUuid.begin(), m_contentUuid.end());
   }
 
+#if 0
+  for (auto a : dataPacket)
+  {
+    printf("%02x", a);
+  }
+  printf("\n");
+#endif
 };
 
 void DscSubstreamManager::signSubstream (int substreamId, std::vector<uint8_t> &signature)

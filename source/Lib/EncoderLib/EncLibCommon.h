@@ -40,6 +40,9 @@
 #include <fstream>
 #include "CommonLib/Slice.h"
 #include "CommonLib/ParameterSetManager.h"
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#include "CommonLib/SEIDigitallySignedContent.h"
+#endif
 
 class EncLibCommon
 {
@@ -50,6 +53,9 @@ private:
   PicList                   m_cListPic;           ///< DPB, it is shared across all layers
   VPS                       m_vps;
   int                       m_layerDecPicBuffering[MAX_VPS_LAYERS*MAX_TLAYER];  // to store number of required DPB pictures per layer
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  DscSubstreamManager       m_dscSubstreamManager;
+#endif
 
 public:
   EncLibCommon();
@@ -61,5 +67,8 @@ public:
   EnumArray<ParameterSetMap<APS>, ApsType> &getApsMaps() { return m_apsMaps; }
   VPS*                     getVPS()                { return &m_vps;       }
   int*                     getDecPicBuffering()    { return m_layerDecPicBuffering; }
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  DscSubstreamManager*     getDscSubstreamManager() { return &m_dscSubstreamManager; }
+#endif
 };
 

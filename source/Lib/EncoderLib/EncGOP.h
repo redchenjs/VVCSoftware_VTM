@@ -239,13 +239,24 @@ private:
 #if JVET_AJ0151_DSC_SEI
   void xAddToSubstream(int substreamId, OutputNALUnit &nalu);
 
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  DscSubstreamManager& m_dscSubstreamManager;
+#else
   DscSubstreamManager m_dscSubstreamManager;
+#endif
   int                 m_totalPicsCoded = 0;
   int                 m_prevPicTemporalId = 0;
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  int                 m_dscSubstreamId = 0;
+#endif
 #endif
 
 public:
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  EncGOP(DscSubstreamManager* m_dscSubstreamManager);
+#else
   EncGOP();
+#endif
   virtual ~EncGOP();
 
   void  create      ();

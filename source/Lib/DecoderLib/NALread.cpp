@@ -164,7 +164,11 @@ void read(InputNALUnit& nalu)
   // perform anti-emulation prevention
   const NalUnitType nut = (NalUnitType)(nalUnitBuf[1] >> 3);
 #if JVET_AJ0151_DSC_SEI
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  if (nut == NAL_UNIT_VPS || nut == NAL_UNIT_SPS || nut == NAL_UNIT_PPS || nut == NAL_UNIT_PREFIX_APS || nut == NAL_UNIT_SUFFIX_APS || nut == NAL_UNIT_PH || NALUnit::isVclNalUnitType(nut) )
+#else
   if (nut == NAL_UNIT_SPS || nut == NAL_UNIT_PPS || nut == NAL_UNIT_PREFIX_APS || nut == NAL_UNIT_SUFFIX_APS || nut == NAL_UNIT_PH || NALUnit::isVclNalUnitType(nut) )
+#endif
   {
     bitstream.copyToOrigFifo();
   }
