@@ -253,7 +253,7 @@ private:
 
 public:
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
-  EncGOP(DscSubstreamManager* m_dscSubstreamManager);
+  EncGOP(DscSubstreamManager* dscSubstreamManager);
 #else
   EncGOP();
 #endif
