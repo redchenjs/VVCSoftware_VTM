@@ -3446,6 +3446,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   CHECK(!m_fgcSEIEnabled && m_fgcSEIAnalysisEnabled, "FGC SEI must be enabled in order to perform film grain analysis!");
   if (m_fgcSEIEnabled)
   {
+#if !JVET_AL0282 // no reason not to do analysis for qp<17 if user requires that.
     if (m_iQP < 17 && m_fgcSEIAnalysisEnabled == true)
     {   // TODO: JVET_Z0047_FG_IMPROVEMENT: check this; the constraint may have gone
       msg(WARNING, "*************************************************************************\n");
@@ -3453,6 +3454,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       msg(WARNING, "*************************************************************************\n");
       m_fgcSEIAnalysisEnabled = false;
     }
+#endif
     if (m_intraPeriod < 1)
     {   // low delay configuration
       msg(WARNING, "*************************************************************************\n");
