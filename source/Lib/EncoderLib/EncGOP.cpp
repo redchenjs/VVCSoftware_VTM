@@ -65,7 +65,7 @@
 // ====================================================================================================================
 // Constructor / destructor / initialization / destroy
 // ====================================================================================================================
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AJ0151_DSC_SEI && JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
 EncGOP::EncGOP(DscSubstreamManager* dscSubstreamManager) : m_dscSubstreamManager(*dscSubstreamManager)
 #else
 EncGOP::EncGOP()
@@ -2651,7 +2651,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     }
 #endif
 
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AJ0151_DSC_SEI && JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
     if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
     {
       m_dscSubstreamId = m_pcEncLib->getVPS() == nullptr ? 0 : m_pcEncLib->getVPS()->getGeneralLayerIdx(m_pcEncLib->getLayerId());

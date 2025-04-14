@@ -344,13 +344,6 @@ void DscSubstreamManager::createDatapacket (int substreamId, std::vector<uint8_t
     dataPacket.insert(dataPacket.end(), m_contentUuid.begin(), m_contentUuid.end());
   }
 
-#if 0
-  for (auto a : dataPacket)
-  {
-    printf("%02x", a);
-  }
-  printf("\n");
-#endif
 };
 
 void DscSubstreamManager::signSubstream (int substreamId, std::vector<uint8_t> &signature)
