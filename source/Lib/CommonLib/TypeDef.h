@@ -60,6 +60,8 @@
 
 #define JVET_AL0282                                       1 // film grain analysis improvements
 
+#define JVET_AL0123_AL0310_EOI                            1 // JVET-AL0123 & JVET-AL0310 EOI SEI signalling changes 
+
 #define JVET_AL0207                                       1 // JVET-AL207: Control target bitrate between two base QPs
 
 #define JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG               1 // JVET-AJ0308: Add direction flag to SPTI SEI MESSAGE
