@@ -1184,7 +1184,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("Log2MaxTbSize",                                   m_log2MaxTbSize,                                      6, "Maximum transform block size in logarithm base 2 (Default: 6)")
 
   // Coding structure paramters
-  ("IntraPeriod,-ip",                                 m_intraPeriod,                                      -1, "Intra period in frames, (-1: only first frame)")
+  ("IntraPeriod,-ip",                                 m_intraPeriod,                                      -1, "Intra period in frames, (-1: only first frame, -N: set to a multiple of N based on frame rate)")
 #if GDR_ENABLED
   ("GdrEnabled",                                      m_gdrEnabled,                                     false, "GDR enabled")
   ("GdrPocStart",                                     m_gdrPocStart,                                       -1, "GDR poc start")
@@ -1222,7 +1222,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("LambdaModifier6,-LM6",                            m_adLambdaModifier[ 6 ],                  ( double )1.0, "Lambda modifier for temporal layer 6. If LambdaModifierI is used, this will not affect intra pictures")
   ("LambdaModifierI,-LMI",                            cfg_adIntraLambdaModifier,    cfg_adIntraLambdaModifier, "Lambda modifiers for Intra pictures, comma separated, up to one the number of temporal layer. If entry for temporalLayer exists, then use it, else if some are specified, use the last, else use the standard LambdaModifiers.")
   ("IQPFactor,-IQF",                                  m_dIntraQpFactor,                                  -1.0, "Intra QP Factor for Lambda Computation. If negative, the default will scale lambda based on GOP size (unless LambdaFromQpEnable then IntraQPOffset is used instead)")
-
+#if JVET_AL0207
+  ("LambdaScaleTowardsNextQP",                        m_lambdaScaleTowardsNextQP,                         0.0, "Scale lambda towards lambda for next integer QP. A negative number increase bitrate and a positive number decrease bitrate.")
+#endif
   /* Quantization parameters */
   ("QP,q",                                            m_iQP,                                               30, "Qp value")
   ("QPIncrementFrame,-qpif",                          m_qpIncrementAtSourceFrame,   std::optional<uint32_t>(), "If a source file frame number is specified, the internal QP will be incremented for all POCs associated with source frames >= frame number. If empty, do not increment.")
@@ -2291,6 +2293,21 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   m_frameRate.num = std::stoi(frameRate.substr(0, columnPos));
   m_frameRate.den = columnPos == std::string::npos ? 1 : std::stoi(frameRate.substr(columnPos + 1));
+
+  if (m_intraPeriod < -1)
+  {
+    // Set IntraPeriod to a multiple of -m_intraPeriod according to frame rate of source
+    // When setting to m_intraPeriod to -32, it is changed to appropriate value according to CTC:
+    // Frame rate | IntraPeriod
+    //     20     |     32
+    //     24     |     32
+    //     30     |     32
+    //     50     |     64
+    //     60     |     64
+    //    100     |     96
+    const int ipBase = -m_intraPeriod;
+    m_intraPeriod    = std::max((m_frameRate.getIntValRound() + ipBase / 2) / ipBase, 1) * ipBase;
+  }
 
   if( m_fractionOfFrames != 1.0 )
   {
@@ -3429,6 +3446,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   CHECK(!m_fgcSEIEnabled && m_fgcSEIAnalysisEnabled, "FGC SEI must be enabled in order to perform film grain analysis!");
   if (m_fgcSEIEnabled)
   {
+#if !JVET_AL0282 // no reason not to do analysis for qp<17 if user requires that.
     if (m_iQP < 17 && m_fgcSEIAnalysisEnabled == true)
     {   // TODO: JVET_Z0047_FG_IMPROVEMENT: check this; the constraint may have gone
       msg(WARNING, "*************************************************************************\n");
@@ -3436,6 +3454,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       msg(WARNING, "*************************************************************************\n");
       m_fgcSEIAnalysisEnabled = false;
     }
+#endif
     if (m_intraPeriod < 1)
     {   // low delay configuration
       msg(WARNING, "*************************************************************************\n");

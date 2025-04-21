@@ -2094,7 +2094,11 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
     }
     if (sei->m_3DCoordinateFlag == 1)
     {
+#if JVET_AK0238_GFV_FIX_CLEANUP
+      sei->m_coordinateZMaxValue = m_pcCfg->getGenerativeFaceVideoSEIZCoordinateMaxValue(sei->m_currentid, 0);
+#else
       sei->m_coordinateZMaxValue.push_back(m_pcCfg->getGenerativeFaceVideoSEIZCoordinateMaxValue(sei->m_currentid, 0));
+#endif
       for (uint32_t coordinateId = 0; coordinateId < sei->m_coordinatePointNum; coordinateId++)
       {
         sei->m_coordinateZ.push_back(m_pcCfg->getGenerativeFaceVideoSEICoordinateZTesonr(sei->m_currentid, coordinateId));
@@ -2121,6 +2125,48 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
       sei->m_matrixHeight.push_back(m_pcCfg->getGenerativeFaceVideoSEIMatrixHeight(sei->m_currentid, matrixId));
       sei->m_numMatricestonumKpsFlag.push_back(m_pcCfg->getGenerativeFaceVideoSEINumMatricestoNumKpsFlag(sei->m_currentid, matrixId));
       sei->m_numMatricesInfo.push_back(m_pcCfg->getGenerativeFaceVideoSEINumMatricesInfo(sei->m_currentid, matrixId));
+#if JVET_AK0238_GFV_FIX_CLEANUP
+      if (sei->m_matrixTypeIdx[matrixId] == 0 || sei->m_matrixTypeIdx[matrixId] == 1)
+      {
+        matrixHeight = sei->m_3DCoordinateFlag + 2;
+        matrixWidth = sei->m_3DCoordinateFlag + 2;
+      }
+      else if (sei->m_matrixTypeIdx[matrixId] == 4)
+      {
+        matrixWidth = (sei->m_coordinatePresentFlag ? sei->m_3DCoordinateFlag : sei->m_matrix3DSpaceFlag[matrixId]) + 2;
+        matrixHeight = (sei->m_coordinatePresentFlag ? sei->m_3DCoordinateFlag :  sei->m_matrix3DSpaceFlag[matrixId]) + 2;
+      }
+      else if (sei->m_matrixTypeIdx[matrixId] == 5 || sei->m_matrixTypeIdx[matrixId] == 6)
+      {
+        matrixWidth = 1;
+        matrixHeight = (sei->m_coordinatePresentFlag ? sei->m_3DCoordinateFlag : sei->m_matrix3DSpaceFlag[matrixId]) + 2;
+      }
+      else
+      {
+        matrixHeight = sei->m_matrixHeight[matrixId];
+        matrixWidth = sei->m_matrixWidth[matrixId];
+      }
+
+      if (sei->m_matrixTypeIdx[matrixId] == 0 || sei->m_matrixTypeIdx[matrixId] == 1)
+      {
+        if (sei->m_coordinatePresentFlag)
+        {
+          numMatrices = sei->m_numMatricestonumKpsFlag[matrixId] ? sei->m_coordinatePointNum : (sei->m_numMatricesInfo[matrixId] < (sei->m_coordinatePointNum - 1) ? (sei->m_numMatricesInfo[matrixId] + 1) : (sei->m_numMatricesInfo[matrixId] + 2));
+        }
+        else
+        {
+          numMatrices = sei->m_numMatricesInfo[matrixId] + 1;
+        }
+      }
+      else if (sei->m_matrixTypeIdx[matrixId] >= 2 && sei->m_matrixTypeIdx[matrixId] < 7)
+      {
+        numMatrices = 1;
+      }
+      else
+      {
+        numMatrices = sei->m_numMatrices[matrixId];
+      }
+#else
       if (sei->m_matrixTypeIdx[matrixId] == 0 || sei->m_matrixTypeIdx[matrixId] == 1)
       {
         if (sei->m_3DCoordinateFlag == 1 || sei->m_matrix3DSpaceFlag[matrixId] == 1)
@@ -2182,6 +2228,7 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
         }
         numMatrices = 1;
       }
+#endif
       sei->m_numMatricesstore.push_back(numMatrices);
       sei->m_matrixWidthstore.push_back(matrixWidth);
       sei->m_matrixHeightstore.push_back(matrixHeight);

@@ -55,12 +55,12 @@
 // clang-format off
 
 
+
 //########### place macros to be removed in next cycle below this line ###############
 
+#define JVET_AL0282                                       1 // film grain analysis improvements
 
-
-
-
+#define JVET_AL0207                                       1 // JVET-AL207: Control target bitrate between two base QPs
 
 #define JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG               1 // JVET-AJ0308: Add direction flag to SPTI SEI MESSAGE
 
@@ -81,6 +81,8 @@
 #define JVET_AK2006_SPTI_SEI_UPDATES                      1 //updates for SPTI SEI message
 
 #define JVET_AK0330_OMI_SEI                               1 // JVET-AK0330: OMI-SEI modification
+
+#define JVET_AK0238_GFV_FIX_CLEANUP                       1// bug fixes and codes cleanup for GFV SEI
 
 //########### place macros to be be kept below this line ###############
 

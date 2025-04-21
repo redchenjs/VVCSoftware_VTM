@@ -182,7 +182,7 @@ public:
 
   {
     m_sptiSublayerIntervalScaleFactor.resize(MAX_TLAYER + 1, 0);
-    m_sptiSublayerSynthesizedPictureFlag.resize(MAX_TLAYER + 1, false);
+    m_sptiSublayerSynthesizedPictureFlag.fill(false);
   }
 #else
   SEISourcePictureTimingInfo() {}
@@ -204,7 +204,7 @@ public:
   bool                  m_sptiSourceTypePresentFlag;
   uint32_t              m_sptiMaxSublayersMinus1;
   std::vector<uint32_t> m_sptiSublayerIntervalScaleFactor;
-  std::vector<bool>     m_sptiSublayerSynthesizedPictureFlag;
+  std::array<bool, MAX_TLAYER + 1> m_sptiSublayerSynthesizedPictureFlag;
 };
 class SEIProcessingOrderInfo : public SEI
 {
@@ -1675,7 +1675,11 @@ public:
   uint32_t   m_coordinatePointNum;
   std::vector<double>   m_coordinateX;
   std::vector<double>   m_coordinateY;
+#if JVET_AK0238_GFV_FIX_CLEANUP 
+  uint32_t       m_coordinateZMaxValue;
+#else
   std::vector<uint32_t>   m_coordinateZMaxValue;
+#endif
   std::vector<double>   m_coordinateZ;
   bool           m_matrixPresentFlag;
   uint32_t       m_matrixElementPrecisionFactor;
