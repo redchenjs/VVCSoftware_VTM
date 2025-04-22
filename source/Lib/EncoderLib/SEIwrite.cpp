@@ -2273,9 +2273,9 @@ void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInf
       else
       {
 #if JVET_AL0123_AL0310_EOI
-CHECK(sei.m_spatialHorResamplingTypeIdc == 0 && sei.m_spatialVerResamplingTypeIdc == 0, "When eoi_spatial_hor_resampling_type_idc and eoi_spatial_ver_resampling_type_idc are present, their values shall not be both equal to 0.");
-xWriteCode(sei.m_spatialHorResamplingTypeIdc, 2, "eoi_spatial_hor_resampling_type_idc");
-xWriteCode(sei.m_spatialVerResamplingTypeIdc, 2, "eoi_spatial_ver_resampling_type_idc");
+        CHECK(sei.m_spatialHorResamplingTypeIdc == 0 && sei.m_spatialVerResamplingTypeIdc == 0, "When eoi_spatial_hor_resampling_type_idc and eoi_spatial_ver_resampling_type_idc are present, their values shall not be both equal to 0.");
+        xWriteCode(sei.m_spatialHorResamplingTypeIdc, 2, "eoi_spatial_hor_resampling_type_idc");
+        xWriteCode(sei.m_spatialVerResamplingTypeIdc, 2, "eoi_spatial_ver_resampling_type_idc");
 #else
         xWriteFlag(sei.m_spatialResamplingTypeFlag, "eoi_spatial_resampling_type_flag");
 #endif
