@@ -147,33 +147,19 @@ protected:
   uint32_t                         baseCoordinateQuantizationFactor;
   uint32_t                                                   basdCoordinatePointNum;
   bool                                                       base3DCoordinateFlag;
-#if JVET_AK0238_GFV_FIX_CLEANUP
   uint32_t                                                   baseCoordinateZMaxValue;
-#else
-  std::vector<uint32_t>                                      baseCoordinateZMaxValue;
-#endif
   std::vector<double>                                        prevCoordinateX;
   std::vector<double>                                        prevCoordinateY;
   std::vector<double>                                        prevCoordinateZ;
-#if JVET_AK0238_GFV_FIX_CLEANUP
   std::vector<double>                                        baseCoordinateX;
   std::vector<double>                                        baseCoordinateY;
   std::vector<double>                                        baseCoordinateZ;
-#endif
   uint32_t                                                   baseMatrixElementPrecisionFactor;
   uint32_t                                                   baseNumMatrixType;
-#if !JVET_AK0238_GFV_FIX_CLEANUP
-  std::vector<uint32_t>                                      baseMatrixTypeIdx;
-  std::vector<uint32_t>                                      baseNumMatricestoNumKpsFlag;                                    
-  std::vector<uint32_t>                                      baseNumMatricesInfo;
-  std::vector<uint32_t>                                      baseMatrix3DSpaceFlag;
-#endif
   std::vector<uint32_t>                                      baseNumMatrices;
   std::vector<uint32_t>                                      baseMatrixWidth;
   std::vector<uint32_t>                                      baseMatrixHeight;
-#if JVET_AK0238_GFV_FIX_CLEANUP
   std::vector<std::vector<std::vector<std::vector<double>>>> baseMatrix;
-#endif
   std::vector<std::vector<std::vector<std::vector<double>>>> prevMatrix;
 
   void xParseSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement & sei, uint32_t payloadSize,std::ostream* pDecodedMessageOutputStream);

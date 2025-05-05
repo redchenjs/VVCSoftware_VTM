@@ -129,23 +129,14 @@ protected:
   std::vector<double>  prevcoordinateXRec;
   std::vector<double>  prevcoordinateYRec;
   std::vector<double>  prevcoordinateZRec;
-#if JVET_AK0238_GFV_FIX_CLEANUP
   std::vector<double>  baseCoordinateXRec;
   std::vector<double>  baseCoordinateYRec;
   std::vector<double>  baseCoordinateZRec;
-#endif
   std::vector<std::vector<std::vector<std::vector<double>>>> prevMatrixRec;
-#if !JVET_AK0238_GFV_FIX_CLEANUP
-  std::vector<uint32_t> prevmatrixWidthVec;
-  std::vector<uint32_t> prevmatrixHeightVec;
-  std::vector<uint32_t> prevnumMatricesVec;
-#endif
-#if JVET_AK0238_GFV_FIX_CLEANUP
   std::vector<std::vector<std::vector<std::vector<double>>>> baseMatrixRec;
   std::vector<uint32_t> baseMatrixWidthVec;
   std::vector<uint32_t> baseMatrixHeightVec;
   std::vector<uint32_t> baseNumMatricesVec;
-#endif
   bool doUpdateGFVcoordinate= false;
   bool doUpdateGFVmatrix= false;
 
