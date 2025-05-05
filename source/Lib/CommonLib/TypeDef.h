@@ -54,19 +54,7 @@
 
 // clang-format off
 
-
-
 //########### place macros to be removed in next cycle below this line ###############
-
-
-
-
-
-
-
-
-
-
 
 
 
