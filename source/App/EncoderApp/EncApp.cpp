@@ -613,9 +613,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   }
   m_cEncLib.setIntraLambdaModifier                               ( m_adIntraLambdaModifier );
   m_cEncLib.setIntraQpFactor                                     ( m_dIntraQpFactor );
-#if JVET_AL0207
   m_cEncLib.setLambdaScaleTowardsNextQP                          ( m_lambdaScaleTowardsNextQP );
-#endif
   m_cEncLib.setBaseQP                                            ( m_iQP );
 
   m_cEncLib.setIntraQPOffset                                     ( m_intraQPOffset );

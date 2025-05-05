@@ -59,7 +59,6 @@
 //########### place macros to be removed in next cycle below this line ###############
 
 
-#define JVET_AL0207                                       1 // JVET-AL207: Control target bitrate between two base QPs
 
 #define JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG               1 // JVET-AJ0308: Add direction flag to SPTI SEI MESSAGE
 
