@@ -61,7 +61,6 @@
 
 
 
-#define JVET_AK0072_NNPF_TEMP_EXTR_UPDATES                1 // JVET-AK0072 items 1 and 2: nnpfc_input_pic_filering flag inference and constraint
 
 #define JVET_AK0072_NNPF_NULL_PROMPT_CONTRAINT            1 // JVET-AK0072 item 3: NNPF prompt null string contraint
 

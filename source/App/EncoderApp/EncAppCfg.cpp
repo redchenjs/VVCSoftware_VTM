@@ -2828,7 +2828,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i].values;
     if (m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] == 0)
     {
-#if JVET_AK0072_NNPF_TEMP_EXTR_UPDATES
       if ((m_nnPostFilterSEICharacteristicsPurpose[i] & 0xff) != NNPC_PurposeType::TEMPORAL_EXTRAPOLATION)
       {
         m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = {1};
@@ -2837,9 +2836,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       {
         m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = {0};
       }
-#else
-      m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = {1};
-#endif
     }
     else
     {

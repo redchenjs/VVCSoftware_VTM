@@ -3330,27 +3330,16 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
           sei.m_numInpPicsInOutputTensor++;
         }
       }
-#if JVET_AK0072_NNPF_TEMP_EXTR_UPDATES
       if ((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) == 0 && (sei.m_purpose & NNPC_PurposeType::TEMPORAL_EXTRAPOLATION) == 0)
       {
         CHECK(!atLeastOne, "When picRateUpsamplingFlag is equal to 0 and nnpfc_num_input_pics_minus1 is greater than 0, at least one value of nnpfc_input_pic_filtering_flag[i] shall be greater than 0");
       }
-#else
-      if ((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) == 0)
-      {
-        CHECK(!atLeastOne, "When picRateUpsamplingFlag is equal to 0 and nnpfc_num_input_pics_minus1 is greater than 0, at least one value of nnpfc_input_pic_filtering_flag[i] shall be greater than 0");
-      }
-#endif
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_absent_input_pic_zero_flag");
       sei.m_absentInputPicZeroFlag = val;
     }
     else
     {
-#if JVET_AK0072_NNPF_TEMP_EXTR_UPDATES
       sei.m_inputPicOutputFlag.push_back((sei.m_purpose & 0xff) != NNPC_PurposeType::TEMPORAL_EXTRAPOLATION ? true : false);
-#else
-      sei.m_inputPicOutputFlag.push_back(true);
-#endif
       sei.m_numInpPicsInOutputTensor = 1;
     }
 
