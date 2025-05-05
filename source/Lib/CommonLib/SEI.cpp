@@ -489,9 +489,7 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION, "Digitally Signed Content Selection" },
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION, "Digitally Signed Content Verification" },
   { SEI::PayloadType::GENERATIVE_FACE_VIDEO, "Generative face video" },
-#if JVET_AK0239_GFVE
   { SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT, "Generative face video enhancement" }
-#endif
 };
 
 const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
@@ -1252,7 +1250,6 @@ SEIGenerativeFaceVideo::SEIGenerativeFaceVideo(const SEIGenerativeFaceVideo & se
   m_matrixWidthstore = sei.m_matrixWidthstore;
   m_matrixHeightstore = sei.m_matrixHeightstore;
 }
-#if JVET_AK0239_GFVE
 SEIGenerativeFaceVideoEnhancement::SEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement & sei)
 {
   m_number = sei.m_number;
@@ -1282,4 +1279,3 @@ SEIGenerativeFaceVideoEnhancement::SEIGenerativeFaceVideoEnhancement(const SEIGe
   m_pupilRightEyeCoordinateX = sei.m_pupilRightEyeCoordinateX;
   m_pupilRightEyeCoordinateY = sei.m_pupilRightEyeCoordinateY;
 }
-#endif

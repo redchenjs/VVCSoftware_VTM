@@ -656,12 +656,10 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIGenerativeFaceVideo;
       xParseSEIGenerativeFaceVideo((SEIGenerativeFaceVideo &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_AK0239_GFVE 
     case SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT:
       sei = new SEIGenerativeFaceVideoEnhancement;
       xParseSEIGenerativeFaceVideoEnhancement((SEIGenerativeFaceVideoEnhancement &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION:
       sei = new SEIDigitallySignedContentVerification;
       xParseSEIDigitallySignedContentVerification((SEIDigitallySignedContentVerification &) *sei, payloadSize, pDecodedMessageOutputStream);
@@ -5011,7 +5009,6 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
   }
 }
 
-#if JVET_AK0239_GFVE
 void SEIReader::xParseSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement & sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
@@ -5340,7 +5337,6 @@ double SEIReader::xParseSEIPupilCoordinate(std::ostream *pOS, double refCoordina
 
   return (valueSignFlag ? -coordinateAbs : coordinateAbs) + refCoordinate;
 }
-#endif
 
 
 void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)

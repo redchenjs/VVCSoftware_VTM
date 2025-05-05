@@ -209,11 +209,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
   case SEI::PayloadType::GENERATIVE_FACE_VIDEO:
     xWriteSEIGenerativeFaceVideo(*static_cast<const SEIGenerativeFaceVideo*>(&sei));
     break;
-#if JVET_AK0239_GFVE
   case SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT:
     xWriteSEIGenerativeFaceVideoEnhancement(*static_cast<const SEIGenerativeFaceVideoEnhancement*>(&sei));
     break;
-#endif
 
 #if JVET_AJ0151_DSC_SEI
   case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION:
@@ -2858,7 +2856,6 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
     }
   }
 }
-#if JVET_AK0239_GFVE
 void SEIWriter::xWriteSEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement &sei)
 {
   uint32_t basePicFlag = 0;
@@ -3126,7 +3123,6 @@ double SEIWriter::xWriteSEIPupilCoordinate(double coordinate, double refCoordina
   double deltaAbsRec = static_cast<double>(absIntValue) / (1 << precisionFactor);
   return (signFlag ? -deltaAbsRec : deltaAbsRec) + refCoordinate;
 }
-#endif
 
 
 #if JVET_AJ0151_DSC_SEI

@@ -149,7 +149,6 @@ protected:
   bool doUpdateGFVcoordinate= false;
   bool doUpdateGFVmatrix= false;
 
-#if JVET_AK0239_GFVE
   void xWriteSEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement& sei);
   double xWriteSEIPupilCoordinate(double coordinate, double refCoordinate, int precisionFactor, const char* eye, const char* axis);
   std::vector<std::vector<std::vector<double>>> prevGfveMatrixRec;
@@ -169,7 +168,6 @@ protected:
   double basegfveRightPupilCoordinateY;
   bool checkBasePicPupilPresentIdx = false;
   bool doUpdateGFVPupilCoordinate  = false;
-#endif
 
 #if JVET_AJ0151_DSC_SEI
   void xWriteSEIDigitallySignedContentInitialization(const SEIDigitallySignedContentInitialization &sei);

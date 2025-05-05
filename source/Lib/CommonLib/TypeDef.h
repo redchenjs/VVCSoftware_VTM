@@ -66,7 +66,6 @@
 
 
 
-#define JVET_AK0239_GFVE                                  1 //generative face video enhancement (GFVE) SEI
 
 #define JVET_AK2006_SPTI_SEI_UPDATES                      1 //updates for SPTI SEI message
 

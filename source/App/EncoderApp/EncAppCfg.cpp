@@ -806,7 +806,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag             (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyThrValue                   (0, 2550, 0, 102400);  
 
-#if JVET_AK0239_GFVE
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoEnhancementSEIId                                  (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoEnhancementSEIGFVId                               (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoEnhancementSEIGFVCnt                              (0, 2550, 0, 102400);
@@ -823,7 +822,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<double>     cfg_generativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY             (-50960.0, 50960.0, 0, 5095000);
   SMultiValueInput<double>     cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX            (-50960.0, 50960.0, 0, 5095000);
   SMultiValueInput<double>     cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY            (-50960.0, 50960.0, 0, 5095000);
-#endif
 
 #if ENABLE_TRACING
   std::string sTracingRule;
@@ -1903,7 +1901,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("SEIGenerativeFaceVideoChromaKeyValue",                  cfg_generativeFaceVideoSEIChromaKeyValue,                 cfg_generativeFaceVideoSEIChromaKeyValue,                      "specifies the chroma key value corresponding to the c-th colour component")
     ("SEIGenerativeFaceVideoChromaKeyThrPresentFlag",         cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag,        cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag,             "indicates that the syntax element gfv_chroma_thr_value[ i ] is present")
     ("SEIGenerativeFaceVideoChromaKeyThrValue",               cfg_generativeFaceVideoSEIChromaKeyThrValue,              cfg_generativeFaceVideoSEIChromaKeyThrValue,                   "specifies the i-th chroma key threshold value");
-#if JVET_AK0239_GFVE
   opts.addOptions()
     ("SEIGenerativeFaceVideoEnhancementEnabled",                         m_generativeFaceVideoEnhancementEnabled,                             false,                                                               "Control use of the Generative Face Video Enhancement SEI on current picture")
     ("SEIGenerativeFaceVideoEnhancementNumber",                          m_generativeFaceVideoEnhancementSEINumber,                           0u,                                                                  "Total number of Generative Face Video Enhancement SEI to be carried")  
@@ -1929,7 +1926,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("SEIGenerativeFaceVideoEnhancementPupilRightEyeCoordinateX",        cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX,       cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX,       "the X coordinate of the right eye pupil")
     ("SEIGenerativeFaceVideoEnhancementPupilRightEyeCoordinateY",        cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY,       cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY,       "the Y coordinate of the right eye pupil")
     ("SEIGenerativeFaceVideoEnhancementPayloadFilename",                 m_generativeFaceVideoEnhancementSEIPayloadFilename,                  std::string(""),                                                     "specify path to payloadfile") ;
-#endif    
   
   // clang-format on
 
@@ -4264,7 +4260,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
-#if JVET_AK0239_GFVE
   if (m_generativeFaceVideoEnhancementEnabled)
   {
     CHECK(cfg_generativeFaceVideoEnhancementSEIId.values.size() != m_generativeFaceVideoEnhancementSEINumber, "Number of GFVE ID must be equal to SEINumber");
@@ -4336,7 +4331,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       matrixNumBeforeSum=matrixNumBeforeSum+numMatrices;
     }
   }
-#endif
 
   if( m_costMode == COST_LOSSLESS_CODING )
   {

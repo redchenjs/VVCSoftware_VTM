@@ -2258,7 +2258,6 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
     }
   }
 }
-#if JVET_AK0239_GFVE
 void SEIEncoder::initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement *sei, int currframeindex)
 {
   CHECK(!m_isInitialized, "Unspecified error");
@@ -2320,7 +2319,6 @@ void SEIEncoder::initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnh
     }
   }
 }
-#endif
 #if JVET_AJ0151_DSC_SEI
 void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei)
 {

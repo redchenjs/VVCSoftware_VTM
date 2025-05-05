@@ -1183,7 +1183,6 @@ protected:
   std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixHeight;
   std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>   m_generativeFaceVideoSEIMatrixElement;
   std::string                          m_generativeFaceVideoSEIPayloadFilename;
-#if JVET_AK0239_GFVE
   bool                                 m_generativeFaceVideoEnhancementEnabled;
   uint32_t                             m_generativeFaceVideoEnhancementSEINumber;
   bool                                 m_generativeFaceVideoEnhancementSEIBasePicFlag;
@@ -1208,7 +1207,6 @@ protected:
   std::vector<double>                  m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX;
   std::vector<double>                  m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY;
   std::string                          m_generativeFaceVideoEnhancementSEIPayloadFilename;
-#endif
 
 public:
   EncCfg()
@@ -3305,7 +3303,6 @@ public:
   uint32_t          getGenerativeFaceVideoSEINumMatricesInfo(int idx,int idy)                                                                       const { return m_generativeFaceVideoSEINumMatricesInfo[idx][idy]; }
   void              setGenerativeFaceVideoSEIPayloadFilename(const std::string &payloadFilename)                                                          { m_generativeFaceVideoSEIPayloadFilename = payloadFilename; }
   const std::string getGenerativeFaceVideoSEIPayloadFilename()                                                                                      const { return m_generativeFaceVideoSEIPayloadFilename; }
-#if JVET_AK0239_GFVE
   void              setGenerativeFaceVideoEnhancementSEIEnabled(bool enabledFlag)                          { m_generativeFaceVideoEnhancementEnabled = enabledFlag; }
   bool              getGenerativeFaceVideoEnhancementSEIEnabled()                                    const { return m_generativeFaceVideoEnhancementEnabled; }
   void              setGenerativeFaceVideoEnhancementSEINumber(uint32_t number)                            { m_generativeFaceVideoEnhancementSEINumber = number; }
@@ -3354,7 +3351,6 @@ public:
   double            getGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX(int idx)                                                                     const { return m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX[idx]; }
   void              setGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY(const std::vector<double>& pupilRightEyeCoordinateY)                               { m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY = pupilRightEyeCoordinateY; }
   double            getGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY(int idx)                                                                     const { return m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY[idx]; }
-#endif
 
   const EncCfgParam::CfgVPSParameters &getVPSParameters() const
   {

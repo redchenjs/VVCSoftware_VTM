@@ -1156,7 +1156,6 @@ protected:
   std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixHeight;
   std::vector < std::vector<std::vector<std::vector<std::vector<double>>>>>   m_generativeFaceVideoSEIMatrixElement;
   std::string                          m_generativeFaceVideoSEIPayloadFilename;
-#if JVET_AK0239_GFVE
   bool                                 m_generativeFaceVideoEnhancementEnabled;
   uint32_t                             m_generativeFaceVideoEnhancementSEINumber;
   bool                                 m_generativeFaceVideoEnhancementSEIBasePicFlag;
@@ -1181,7 +1180,6 @@ protected:
   std::vector<double>                  m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX;
   std::vector<double>                  m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY;
   std::string                          m_generativeFaceVideoEnhancementSEIPayloadFilename;
-#endif
 
 #if EXTENSION_360_VIDEO
   TExt360AppEncCfg m_ext360;

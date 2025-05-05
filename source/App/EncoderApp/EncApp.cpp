@@ -1623,7 +1623,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setGenerativeFaceVideoSEIMatrixHeight                       ( m_generativeFaceVideoSEIMatrixHeight );
   m_cEncLib.setGenerativeFaceVideoSEIMatrixElement                      ( m_generativeFaceVideoSEIMatrixElement );
   m_cEncLib.setGenerativeFaceVideoSEIPayloadFilename                    ( m_generativeFaceVideoSEIPayloadFilename );
-#if JVET_AK0239_GFVE
   m_cEncLib.setGenerativeFaceVideoEnhancementSEIEnabled                            ( m_generativeFaceVideoEnhancementEnabled );
   m_cEncLib.setGenerativeFaceVideoEnhancementSEINumber                             ( m_generativeFaceVideoEnhancementSEINumber );
   m_cEncLib.setGenerativeFaceVideoEnhancementSEIId                                 ( m_generativeFaceVideoEnhancementSEIId );
@@ -1648,7 +1647,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY            ( m_generativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY );
   m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX           ( m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX );
   m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY           ( m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY );
-#endif
 
 }
 
