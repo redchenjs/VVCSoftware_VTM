@@ -58,7 +58,6 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AL0282                                       1 // film grain analysis improvements
 
 #define JVET_AL0207                                       1 // JVET-AL207: Control target bitrate between two base QPs
 
