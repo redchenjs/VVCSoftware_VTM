@@ -789,7 +789,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
         break;
       }
-#if JVET_AJ0048_SPO_SEI_LIST
       case SEI::PayloadType::OBJECT_MASK_INFO:
       {
         SEIObjectMaskInfos* sei = new SEIObjectMaskInfos;
@@ -804,7 +803,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
         break;
       }
-#endif
       default:
       {
         msg(ERROR, "not support in sei processing order SEI\n");
