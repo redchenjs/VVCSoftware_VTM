@@ -1309,13 +1309,8 @@ public:
 
   struct ObjectMaskInfo
   {
-#if JVET_AK0330_OMI_SEI
     ObjectMaskInfo() : maskNew(false), maskBoundingBoxPresentFlag(false) {}
     bool        maskNew;
-#else
-    ObjectMaskInfo() : maskCancel(false), maskBoundingBoxPresentFlag(false) {}
-    bool        maskCancel;
-#endif
     uint32_t    maskId;
     uint32_t    auxSampleValue;
     bool        maskBoundingBoxPresentFlag;
@@ -1330,11 +1325,7 @@ public:
 
   struct ObjectMaskInfoHeader
   {
-#if JVET_AK0330_OMI_SEI
     ObjectMaskInfoHeader() : m_cancelFlag(true), m_receivedSettingsOnce(false), m_persistenceFlag(false) {}
-#else
-    ObjectMaskInfoHeader() : m_cancelFlag(true), m_receivedSettingsOnce(false) {}
-#endif
     bool m_cancelFlag;
     bool m_receivedSettingsOnce;   // used for decoder conformance checking. Other confidence flags must be unchanged once this flag is set.
     bool m_persistenceFlag;
@@ -1352,15 +1343,9 @@ public:
   };
 
   ObjectMaskInfoHeader        m_hdr;
-#if JVET_AK0330_OMI_SEI
   std::vector<uint32_t>       m_maskPicUpdateFlag; // No masks exist in the initial stage.
   std::vector<uint32_t>       m_numMaskInPic;
   std::vector<ObjectMaskInfo> m_objectMaskInfos;   // The ObjectMaskInfo objects have unique maskId in m_objectMaskInfos list.
-#else
-  std::vector<uint32_t>       m_maskPicUpdateFlag;
-  std::vector<uint32_t>       m_numMaskInPicUpdate;
-  std::vector<ObjectMaskInfo> m_objectMaskInfos;
-#endif
 };
 
 class SEIExtendedDrapIndication : public SEI

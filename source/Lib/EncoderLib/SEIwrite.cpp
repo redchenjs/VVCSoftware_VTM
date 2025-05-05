@@ -959,7 +959,6 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
       }
     }
 
-#if JVET_AK0330_OMI_SEI
     uint32_t maskCnt = 0;
     for (uint32_t i = 0; i <= sei.m_hdr.m_numAuxPicLayerMinus1; i++)
     {
@@ -1006,57 +1005,6 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
         }
       }
     }
-#else
-    uint32_t maskCnt = 0;
-    for (uint32_t i = 0; i <= sei.m_hdr.m_numAuxPicLayerMinus1; i++)
-    {
-      xWriteFlag(sei.m_maskPicUpdateFlag[i], "omi_mask_pic_update_flag[i]");
-      if (sei.m_maskPicUpdateFlag[i])
-      {
-        xWriteUvlc((uint32_t) sei.m_numMaskInPicUpdate[i], "omi_num_mask_in_pic_update[i]");
-        for (uint32_t j = 0; j < sei.m_numMaskInPicUpdate[i]; j++)
-        {
-          xWriteCode(sei.m_objectMaskInfos[maskCnt].maskId, sei.m_hdr.m_maskIdLengthMinus1 + 1, "omi_mask_id[i][j]");
-          xWriteCode(sei.m_objectMaskInfos[maskCnt].auxSampleValue, sei.m_hdr.m_maskSampleValueLengthMinus8 + 8, "omi_aux_sample_value[i][j]");
-          xWriteFlag(sei.m_objectMaskInfos[maskCnt].maskCancel, "omi_mask_cancel[i][j]");
-          if (!sei.m_objectMaskInfos[maskCnt].maskCancel)
-          {
-            xWriteFlag(sei.m_objectMaskInfos[maskCnt].maskBoundingBoxPresentFlag, "omi_mask_bounding_box_present_flag[i][j]");
-            if (sei.m_objectMaskInfos[maskCnt].maskBoundingBoxPresentFlag)
-            {
-              xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskTop, 16, "omi_mask_top[i][j]");
-              xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskLeft, 16, "omi_mask_left[i][j]");
-              xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskWidth, 16, "omi_mask_width[i][j]");
-              xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskHeight, 16, "omi_mask_height[i][j]");
-            }
-            if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
-            {
-              xWriteCode(sei.m_objectMaskInfos[maskCnt].maskConfidence, sei.m_hdr.m_maskConfidenceLengthMinus1 + 1, "omi_mask_confidence[i][j]");
-            }
-            if (sei.m_hdr.m_maskDepthInfoPresentFlag)
-            {
-              xWriteCode(sei.m_objectMaskInfos[maskCnt].maskDepth, sei.m_hdr.m_maskDepthLengthMinus1 + 1, "omi_mask_depth[i][j]");
-            }
-            while (!isByteAligned())
-            {
-              xWriteFlag(0, "omi_bit_equal_to_zero");
-            }
-            if (sei.m_hdr.m_maskLabelInfoPresentFlag)
-            {
-              CHECK(sei.m_objectMaskInfos[maskCnt].maskLabel.size() > 255, "label oversize");
-              for (uint32_t m = 0; m < sei.m_objectMaskInfos[maskCnt].maskLabel.size(); m++)
-              {
-                char ch = sei.m_objectMaskInfos[maskCnt].maskLabel[m];
-                xWriteCode(ch, 8, "omi_mask_label");
-              }
-              xWriteCode('\0', 8, "omi_mask_label");
-            }
-          }
-          maskCnt++;
-        }
-      }
-    }
-#endif
   }
 }
 
