@@ -3971,7 +3971,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
     CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
-#if JVET_AK0333_SPO_SEI_NESTED_SUBCHAINS
     // The following code generares sub-chain indices for conformance checking.
     uint32_t numProcStgs = m_poSEINumMinus2 + 2;
     std::vector<uint32_t> seiTypeIdx;
@@ -4013,7 +4012,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         subChainIdx[j] = subChainFlag * subChainPrevIdx;
       }
     }
-#endif
   }
 
   if (m_postFilterHintSEIEnabled)

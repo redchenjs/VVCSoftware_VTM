@@ -877,9 +877,7 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
     }
   }
 
-#if JVET_AK0333_SPO_SEI_NESTED_SUBCHAINS
   // The following code generates subchain indices from the syntax. It can be used for testing and verification of the syntax, but is not otherwise needed in VTM.
-#endif
   uint32_t numProcStgs = sei.m_posNumMinus2 + 2;
   std::vector<uint32_t> seiTypeIdx;
   for (uint32_t j = 0; j < numProcStgs; j++)
@@ -892,7 +890,6 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
   for (uint32_t j = 0; j < numProcStgs; j++)
   {
     uint32_t idx = seiTypeIdx[j];
-#if JVET_AK0333_SPO_SEI_NESTED_SUBCHAINS
     if (sei.m_posImportanceFlag[idx] && sei.m_posProcessingDegreeFlag[idx])
     {
       if (subChainFlag == 0)
@@ -916,26 +913,6 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
       sei.m_posSubChainIdx[j] = subChainPrevIdx;
       subChainFlag = 1;
     }
-#else
-    if (sei.m_posImportanceFlag[idx] && sei.m_posProcessingDegreeFlag[idx])
-    {
-      sei.m_posSubChainIdx[j] = 0;
-    }
-    else if (!sei.m_posImportanceFlag[idx] && sei.m_posProcessingDegreeFlag[idx])
-    {
-      sei.m_posSubChainIdx[j] = subChainPrevIdx;
-      subChainFlag = 0;
-    }
-    else if (sei.m_posImportanceFlag[idx] && !sei.m_posProcessingDegreeFlag[idx])
-    {
-      if (subChainFlag == 0)
-      {
-        subChainPrevIdx++;
-      }
-      sei.m_posSubChainIdx[j] = subChainPrevIdx;
-      subChainFlag = 1;
-    }
-#endif
     else
     {
       sei.m_posSubChainIdx[j] = subChainFlag * subChainPrevIdx;
