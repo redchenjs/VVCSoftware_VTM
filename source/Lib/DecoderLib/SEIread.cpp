@@ -45,9 +45,7 @@
 #include "CommonLib/Picture.h"
 #include "CommonLib/dtrace_next.h"
 #include <iomanip>
-#if JVET_AK2006_SPTI_SEI_UPDATES
 #include <climits>
-#endif
 
 //! \ingroup DecoderLib
 //! \{
@@ -560,11 +558,7 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIEncoderOptimizationInfo((SEIEncoderOptimizationInfo &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
     case SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO:
-#if JVET_AK2006_SPTI_SEI_UPDATES
       sei = new SEISourcePictureTimingInfo(sps->getMaxTLayers() - 1);
-#else
-      sei = new SEISourcePictureTimingInfo;
-#endif
       xParseSEISourcePictureTimingInfo((SEISourcePictureTimingInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
     case SEI::PayloadType::MODALITY_INFORMATION:
@@ -3835,21 +3829,15 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
       {
           sei_read_code(pDecodedMessageOutputStream, 16, val, "spti_source_type");
           sei.m_sptiSourceType = val;
-#if JVET_AK2006_SPTI_SEI_UPDATES
           CHECK(sei.m_sptiSourceType > 127, "spti_source_type is out of range");
-#endif
       }
       sei_read_code(pDecodedMessageOutputStream, 32, val, "spti_time_scale");
       sei.m_sptiTimeScale = val;
-#if JVET_AK2006_SPTI_SEI_UPDATES
       CHECK(sei.m_sptiTimeScale == 0, "spti_time_scale shall not be equal to 0");
-#endif
 
       sei_read_code(pDecodedMessageOutputStream, 32, val, "spti_num_units_in_elemental_interval");
       sei.m_sptiNumUnitsInElementalInterval = val;
-#if JVET_AK2006_SPTI_SEI_UPDATES
       CHECK(sei.m_sptiNumUnitsInElementalInterval == 0, "spti_num_units_in_elemental_interval shall not be equal to 0");
-#endif
 
       sei_read_flag(pDecodedMessageOutputStream, val, "spti_direction_flag");
       sei.m_sptiDirectionFlag = val;
@@ -3860,7 +3848,6 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
           sei.m_sptiMaxSublayersMinus1 = val;
       }
 
-#if JVET_AK2006_SPTI_SEI_UPDATES
       int sptiMinTemporalSublayer = (sei.m_sptiPersistenceFlag ? 0 : sei.m_sptiMaxSublayersMinus1);
 
       for (int i = sptiMinTemporalSublayer; i <= sei.m_sptiMaxSublayersMinus1; i++)
@@ -3872,15 +3859,6 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
           sei_read_flag(pDecodedMessageOutputStream, val, "spti_sublayer_synthesized_picture_flag");
           sei.m_sptiSublayerSynthesizedPictureFlag[i] = val;
       }
-#else
-      for (int i = 0; i <= sei.m_sptiMaxSublayersMinus1; i++)
-      {
-          sei_read_uvlc(pDecodedMessageOutputStream, val, "spti_sublayer_interval_scale_factor");
-          sei.m_sptiSublayerIntervalScaleFactor.push_back(val);
-          sei_read_flag(pDecodedMessageOutputStream, val, "spti_sublayer_synthesized_picture_flag");
-          sei.m_sptiSublayerSynthesizedPictureFlag.push_back(val);
-      }
-#endif
     }
   }
 }

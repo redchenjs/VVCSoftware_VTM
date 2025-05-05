@@ -166,7 +166,6 @@ class SEISourcePictureTimingInfo : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::SOURCE_PICTURE_TIMING_INFO; }
-#if JVET_AK2006_SPTI_SEI_UPDATES
   SEISourcePictureTimingInfo(int temporalId)
     : m_sptiSourceTimingEqualsOutputTimingFlag(false)
     , m_sptiSourceType(0)
@@ -182,9 +181,6 @@ public:
     m_sptiSublayerIntervalScaleFactor.resize(MAX_TLAYER + 1, 0);
     m_sptiSublayerSynthesizedPictureFlag.fill(false);
   }
-#else
-  SEISourcePictureTimingInfo() {}
-#endif
 
   SEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
   virtual ~SEISourcePictureTimingInfo() {}

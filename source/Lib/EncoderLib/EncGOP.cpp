@@ -986,11 +986,7 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
   }
   if (m_pcCfg->getSptiSEIEnabled())
   {
-#if JVET_AK2006_SPTI_SEI_UPDATES
     SEISourcePictureTimingInfo* seiSourcePictureTimingInfo = new SEISourcePictureTimingInfo(sps->getMaxTLayers() - 1);
-#else
-    SEISourcePictureTimingInfo* seiSourcePictureTimingInfo = new SEISourcePictureTimingInfo;
-#endif
     m_seiEncoder.initSEISourcePictureTimingInfo(seiSourcePictureTimingInfo);
     seiMessages.push_back(seiSourcePictureTimingInfo);
   }
