@@ -587,9 +587,7 @@ void SEIEncoder::initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEIS
   SEISourcePictureTimingInfo->m_sptiSourceType                  = m_pcCfg->getmSptiSEISourceType();
   SEISourcePictureTimingInfo->m_sptiTimeScale                   = m_pcCfg->getmSptiSEITimeScale();
   SEISourcePictureTimingInfo->m_sptiNumUnitsInElementalInterval = m_pcCfg->getmSptiSEINumUnitsInElementalInterval();
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
   SEISourcePictureTimingInfo->m_sptiDirectionFlag               = m_pcCfg->getmSptiSEIDirectionFlag();
-#endif
   SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1          = m_pcCfg->getMaxTempLayer() - 1;
   SEISourcePictureTimingInfo->m_sptiCancelFlag                  = 0;
   SEISourcePictureTimingInfo->m_sptiPersistenceFlag             = 1;

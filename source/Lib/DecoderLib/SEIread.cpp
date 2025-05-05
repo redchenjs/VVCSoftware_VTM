@@ -3891,10 +3891,8 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
       CHECK(sei.m_sptiNumUnitsInElementalInterval == 0, "spti_num_units_in_elemental_interval shall not be equal to 0");
 #endif
 
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
       sei_read_flag(pDecodedMessageOutputStream, val, "spti_direction_flag");
       sei.m_sptiDirectionFlag = val;
-#endif
 
       if (sei.m_sptiPersistenceFlag)
       {
