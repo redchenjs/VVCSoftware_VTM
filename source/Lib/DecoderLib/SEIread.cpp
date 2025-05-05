@@ -2253,7 +2253,6 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
     {
       sei_read_code(pDecodedMessageOutputStream, 16, val, "eoi_object_based_idc");
       sei.m_objectBasedIdc = val;
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
       if (sei.m_objectBasedIdc & EOI_OBJECT_BASED::COARSER_QUANTIZATION)
       {
         sei_read_uvlc(pDecodedMessageOutputStream, val, "eoi_quant_threshold_delta");
@@ -2264,7 +2263,6 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
           sei.m_picQuantObjectFlag = val;
         }
       }
-#endif
     }
     if ((sei.m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
     {

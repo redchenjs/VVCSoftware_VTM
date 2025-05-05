@@ -804,10 +804,8 @@ protected:
   uint32_t  m_eoiSEIForMachineAnalysisIdc;
   uint32_t m_eoiSEIType;
   uint32_t m_eoiSEIObjectBasedIdc;
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
   uint32_t m_eoiSEIQuantThresholdDelta;
   bool     m_eoiSEIPicQuantObjectFlag;
-#endif
   bool m_eoiSEITemporalResamplingTypeFlag;
   uint32_t m_eoiSEINumIntPics;
   bool     m_eoiSEIOrigPicDimensionsFlag;
@@ -2557,12 +2555,10 @@ public:
   uint32_t getEOISEIType() const { return m_eoiSEIType; }
   void setEOISEIObjectBasedIdc(uint32_t objectBasedIdc) { m_eoiSEIObjectBasedIdc = objectBasedIdc; }
   uint32_t getEOISEIObjectBasedIdc() const { return m_eoiSEIObjectBasedIdc; }
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
   void setEOISEIQuantThresholdDelta(uint32_t quantThresholdDelta) { m_eoiSEIQuantThresholdDelta = quantThresholdDelta; }
   uint32_t getEOISEIQuantThresholdDelta() const { return m_eoiSEIQuantThresholdDelta; }
   void setEOISEIPicQuantObjectFlag(bool picQuantObjectFlag) { m_eoiSEIPicQuantObjectFlag = picQuantObjectFlag; }
   bool getEOISEIPicQuantObjectFlag() const { return m_eoiSEIPicQuantObjectFlag; }
-#endif
   void setEOISEITemporalResamplingTypeFlag(bool temporalResamplingTypeFlag) { m_eoiSEITemporalResamplingTypeFlag = temporalResamplingTypeFlag; }
   bool getEOISEITemporalResamplingTypeFlag() const { return m_eoiSEITemporalResamplingTypeFlag; }
   void setEOISEINumIntPics(uint32_t numIntPics) { m_eoiSEINumIntPics = numIntPics; }

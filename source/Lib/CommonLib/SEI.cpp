@@ -1181,10 +1181,8 @@ SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
   m_forMachineAnalysisIdc = sei.m_forMachineAnalysisIdc;
   m_type = sei.m_type;
   m_objectBasedIdc = sei.m_objectBasedIdc;
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
   m_quantThresholdDelta = sei.m_quantThresholdDelta;
   m_picQuantObjectFlag = sei.m_picQuantObjectFlag;
-#endif
   m_temporalResamplingTypeFlag = sei.m_temporalResamplingTypeFlag;
   m_numIntPics = sei.m_numIntPics;
   m_origPicDimensionsFlag = sei.m_origPicDimensionsFlag;
