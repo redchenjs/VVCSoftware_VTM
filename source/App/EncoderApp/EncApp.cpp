@@ -1043,7 +1043,24 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setGcmpSEIGuardBandSamplesMinus1                     ( (uint8_t)m_gcmpSEIGuardBandSamplesMinus1 );
   m_cEncLib.setSubpicureLevelInfoSEICfg                          (m_cfgSubpictureLevelInfoSEI);
 #if JVET_AJ0151_DSC_SEI
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  EncCfgParam::CfgSEIDigitallySignedContent cfgDigitallySignedContentSEI = m_cfgDigitallySignedContentSEI;
+  cfgDigitallySignedContentSEI.numVerificationSubstreams = vps.getMaxLayers();
+  if (vps.getMaxLayers() > 1)
+  {
+    cfgDigitallySignedContentSEI.refSubstreamFlag.resize(vps.getMaxLayers());
+    for (int i = 1; i < vps.getMaxLayers(); i++)
+    {
+      for (int j = 0; j < i; j++)
+      {
+        cfgDigitallySignedContentSEI.refSubstreamFlag[i].push_back(vps.getAllIndependentLayersFlag() || vps.getIndependentLayerFlag(i) ? false : vps.getDirectRefLayerFlag(i, j));
+      }
+    }
+  }
+  m_cEncLib.setDigitallySignedContentSEICfg                      (cfgDigitallySignedContentSEI);
+#else
   m_cEncLib.setDigitallySignedContentSEICfg                      (m_cfgDigitallySignedContentSEI);
+#endif
 #endif
   m_cEncLib.setSampleAspectRatioInfoSEIEnabled                   (m_sampleAspectRatioInfoSEIEnabled);
   m_cEncLib.setSariCancelFlag                                    (m_sariCancelFlag);

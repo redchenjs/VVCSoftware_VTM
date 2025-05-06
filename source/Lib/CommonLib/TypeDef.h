@@ -58,6 +58,8 @@
 
 #define JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG                  1 // JVET-AJ0183: Add source picture flag to EOI SEI message
 
+#define JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG           1 // Signal flags for substreams to indicate substream dependency
+
 //########### place macros to be be kept below this line ###############
 
 #define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1
