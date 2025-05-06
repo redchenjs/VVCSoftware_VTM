@@ -56,31 +56,7 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AL0282                                       1 // film grain analysis improvements
-
 #define JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS              1 // JVET_AL0301: Add constraints to matrix_coeffs
-
-#define JVET_AL0207                                       1 // JVET-AL207: Control target bitrate between two base QPs
-
-#define JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG               1 // JVET-AJ0308: Add direction flag to SPTI SEI MESSAGE
-
-#define JVET_AK0072_NNPF_TEMP_EXTR_UPDATES                1 // JVET-AK0072 items 1 and 2: nnpfc_input_pic_filering flag inference and constraint
-
-#define JVET_AK0072_NNPF_NULL_PROMPT_CONTRAINT            1 // JVET-AK0072 item 3: NNPF prompt null string contraint
-
-#define JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD              1 // QP threshold for object-based optimization in EOI SEI
-
-#define JVET_AK0333_SPO_SEI_NESTED_SUBCHAINS              1 // JVET-AK0333: Nested sub-chains in SPO SEI
-
-#define JVET_AJ0048_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList
-
-#define JVET_AK0239_GFVE                                  1 //generative face video enhancement (GFVE) SEI
-
-#define JVET_AK2006_SPTI_SEI_UPDATES                      1 //updates for SPTI SEI message
-
-#define JVET_AK0330_OMI_SEI                               1 // JVET-AK0330: OMI-SEI modification
-
-#define JVET_AK0238_GFV_FIX_CLEANUP                       1// bug fixes and codes cleanup for GFV SEI
 
 #define JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG                  1 // JVET-AJ0183: Add source picture flag to EOI SEI message
 
