@@ -109,7 +109,8 @@ public:
     DIGITALLY_SIGNED_CONTENT_INITIALIZATION = 220,
     DIGITALLY_SIGNED_CONTENT_SELECTION      = 221,
     DIGITALLY_SIGNED_CONTENT_VERIFICATION   = 222,
-    GENERATIVE_FACE_VIDEO                      = 223,
+    GENERATIVE_FACE_VIDEO                   = 223,
+    GENERATIVE_FACE_VIDEO_ENHANCEMENT       = 224,
   };
 
   SEI() {}
@@ -165,7 +166,21 @@ class SEISourcePictureTimingInfo : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::SOURCE_PICTURE_TIMING_INFO; }
-  SEISourcePictureTimingInfo() {}
+  SEISourcePictureTimingInfo(int temporalId)
+    : m_sptiSourceTimingEqualsOutputTimingFlag(false)
+    , m_sptiSourceType(0)
+    , m_sptiTimeScale(27000000)
+    , m_sptiNumUnitsInElementalInterval(1080000)
+    , m_sptiDirectionFlag(false)
+    , m_sptiCancelFlag(false)
+    , m_sptiPersistenceFlag(true)
+    , m_sptiSourceTypePresentFlag(false)
+    , m_sptiMaxSublayersMinus1(temporalId)
+
+  {
+    m_sptiSublayerIntervalScaleFactor.resize(MAX_TLAYER + 1, 0);
+    m_sptiSublayerSynthesizedPictureFlag.fill(false);
+  }
 
   SEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
   virtual ~SEISourcePictureTimingInfo() {}
@@ -175,15 +190,13 @@ public:
   uint32_t              m_sptiSourceType;
   uint32_t              m_sptiTimeScale;
   uint32_t              m_sptiNumUnitsInElementalInterval;
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
   bool                  m_sptiDirectionFlag;
-#endif
   bool                  m_sptiCancelFlag;
   bool                  m_sptiPersistenceFlag;
   bool                  m_sptiSourceTypePresentFlag;
   uint32_t              m_sptiMaxSublayersMinus1;
   std::vector<uint32_t> m_sptiSublayerIntervalScaleFactor;
-  std::vector<bool>     m_sptiSublayerSynthesizedPictureFlag;
+  std::array<bool, MAX_TLAYER + 1> m_sptiSublayerSynthesizedPictureFlag;
 };
 class SEIProcessingOrderInfo : public SEI
 {
@@ -234,10 +247,8 @@ public:
     case SEI::PayloadType::ANNOTATED_REGIONS:
     case SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO:
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
-#if JVET_AJ0048_SPO_SEI_LIST
     case SEI::PayloadType::OBJECT_MASK_INFO:
     case SEI::PayloadType::MODALITY_INFORMATION:
-#endif
      return true;
     default:
       return false;
@@ -1298,8 +1309,8 @@ public:
 
   struct ObjectMaskInfo
   {
-    ObjectMaskInfo() : maskCancel(false), maskBoundingBoxPresentFlag(false) {}
-    bool        maskCancel;
+    ObjectMaskInfo() : maskNew(false), maskBoundingBoxPresentFlag(false) {}
+    bool        maskNew;
     uint32_t    maskId;
     uint32_t    auxSampleValue;
     bool        maskBoundingBoxPresentFlag;
@@ -1314,10 +1325,9 @@ public:
 
   struct ObjectMaskInfoHeader
   {
-    ObjectMaskInfoHeader() : m_cancelFlag(true), m_receivedSettingsOnce(false) {}
+    ObjectMaskInfoHeader() : m_cancelFlag(true), m_receivedSettingsOnce(false), m_persistenceFlag(false) {}
     bool m_cancelFlag;
-    bool m_receivedSettingsOnce;   // used for decoder conformance checking. Other confidence flags must be unchanged
-                                  // once this flag is set.
+    bool m_receivedSettingsOnce;   // used for decoder conformance checking. Other confidence flags must be unchanged once this flag is set.
     bool m_persistenceFlag;
     uint32_t    m_numAuxPicLayerMinus1;
     uint32_t    m_maskIdLengthMinus1;
@@ -1325,17 +1335,17 @@ public:
     bool        m_maskConfidenceInfoPresentFlag;
     uint32_t    m_maskConfidenceLengthMinus1;   // Only valid if m_maskConfidenceInfoPresentFlag
     bool        m_maskDepthInfoPresentFlag;
-    uint32_t    m_maskDepthLengthMinus1;   // Only valid if m_maskDepthInfoPresentFlag
+    uint32_t    m_maskDepthLengthMinus1;        // Only valid if m_maskDepthInfoPresentFlag
     bool        m_maskLabelInfoPresentFlag;
-    bool        m_maskLabelLanguagePresentFlag;   // Only valid if m_maskLabelInfoPresentFlag
+    bool        m_maskLabelLanguagePresentFlag; // Only valid if m_maskLabelInfoPresentFlag
     // SEIOmiBitEqualToZero
-    std::string m_maskLabelLanguage;   // Only valid if m_maskLabelLanguagePresentFlag
+    std::string m_maskLabelLanguage;            // Only valid if m_maskLabelLanguagePresentFlag
   };
 
   ObjectMaskInfoHeader        m_hdr;
-  std::vector<uint32_t>       m_maskPicUpdateFlag;
-  std::vector<uint32_t>       m_numMaskInPicUpdate;
-  std::vector<ObjectMaskInfo> m_objectMaskInfos;
+  std::vector<uint32_t>       m_maskPicUpdateFlag; // No masks exist in the initial stage.
+  std::vector<uint32_t>       m_numMaskInPic;
+  std::vector<ObjectMaskInfo> m_objectMaskInfos;   // The ObjectMaskInfo objects have unique maskId in m_objectMaskInfos list.
 };
 
 class SEIExtendedDrapIndication : public SEI
@@ -1425,6 +1435,9 @@ public:
     , m_complexityInfoPresentFlag(false)
     , m_applicationPurposeTagUriPresentFlag(false)
     , m_applicationPurposeTagUri("")
+#if NNPFC_SCAN_TYPE_IDC
+    , m_scanTypeIdc(0)
+#endif
     , m_forHumanViewingIdc(0)
     , m_forMachineAnalysisIdc(0)
     , m_uriTag("")
@@ -1505,6 +1518,9 @@ public:
   bool           m_complexityInfoPresentFlag;
   bool           m_applicationPurposeTagUriPresentFlag;
   std::string    m_applicationPurposeTagUri;
+#if NNPFC_SCAN_TYPE_IDC
+  uint32_t       m_scanTypeIdc;
+#endif
   uint32_t       m_forHumanViewingIdc;
   uint32_t       m_forMachineAnalysisIdc;
   std::string    m_uriTag;
@@ -1634,7 +1650,7 @@ public:
   uint32_t   m_coordinatePointNum;
   std::vector<double>   m_coordinateX;
   std::vector<double>   m_coordinateY;
-  std::vector<uint32_t>   m_coordinateZMaxValue;
+  uint32_t       m_coordinateZMaxValue;
   std::vector<double>   m_coordinateZ;
   bool           m_matrixPresentFlag;
   uint32_t       m_matrixElementPrecisionFactor;
@@ -1655,6 +1671,41 @@ public:
   std::vector<uint32_t>    m_matrixWidthstore;
   std::vector<uint32_t>    m_matrixHeightstore;
 };
+
+class SEIGenerativeFaceVideoEnhancement : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT; }
+  SEIGenerativeFaceVideoEnhancement() {}
+  SEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement & sei);
+  virtual ~SEIGenerativeFaceVideoEnhancement() {}
+  uint32_t                 m_number;
+  uint32_t                 m_currentid;
+  bool                     m_basePicFlag;
+  bool                     m_nnPresentFlag;
+  uint32_t                 m_nnModeIdc;
+  std::string              m_nnTagURI;
+  std::string              m_nnURI;
+  uint32_t                 m_id;
+  uint32_t                 m_gfvcnt;
+  uint32_t                 m_gfvid;  
+  uint32_t                 m_matrixElementPrecisionFactor;
+  bool                     m_matrixPresentFlag;
+  bool                     m_matrixPredFlag;
+  uint32_t                 m_numMatrices;
+  std::vector<uint32_t>    m_matrixWidth;
+  std::vector<uint32_t>    m_matrixHeight;
+  std::vector<std::vector<std::vector<double>>>   m_matrixElement;
+  std::string              m_payloadFilename;
+  uint64_t                 m_payloadLength;
+  char*                    m_payloadByte;
+  uint32_t                 m_pupilPresentIdx;
+  uint32_t                 m_pupilCoordinatePrecisionFactor;
+  double                   m_pupilLeftEyeCoordinateX;
+  double                   m_pupilLeftEyeCoordinateY;
+  double                   m_pupilRightEyeCoordinateX;
+  double                   m_pupilRightEyeCoordinateY;
+};
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t nnpfaTargetId);
 SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMessages &seiList);
 
@@ -1669,10 +1720,8 @@ public:
     , m_forMachineAnalysisIdc(0)
     , m_type(0)
     , m_objectBasedIdc(0)
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
     , m_quantThresholdDelta(0)
     , m_picQuantObjectFlag(false)
-#endif
     , m_temporalResamplingTypeFlag(false)
 #if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
     , m_srcPicFlag(false)
@@ -1695,10 +1744,8 @@ public:
   uint32_t m_forMachineAnalysisIdc;
   uint32_t m_type;
   uint32_t m_objectBasedIdc;
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
   uint32_t m_quantThresholdDelta;
   bool     m_picQuantObjectFlag;
-#endif
   bool     m_temporalResamplingTypeFlag;
 #if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
   bool     m_srcPicFlag;

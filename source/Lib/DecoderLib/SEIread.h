@@ -147,20 +147,39 @@ protected:
   uint32_t                         baseCoordinateQuantizationFactor;
   uint32_t                                                   basdCoordinatePointNum;
   bool                                                       base3DCoordinateFlag;
-  std::vector<uint32_t>                                      baseCoordinateZMaxValue;
+  uint32_t                                                   baseCoordinateZMaxValue;
   std::vector<double>                                        prevCoordinateX;
   std::vector<double>                                        prevCoordinateY;
   std::vector<double>                                        prevCoordinateZ;
+  std::vector<double>                                        baseCoordinateX;
+  std::vector<double>                                        baseCoordinateY;
+  std::vector<double>                                        baseCoordinateZ;
   uint32_t                                                   baseMatrixElementPrecisionFactor;
   uint32_t                                                   baseNumMatrixType;
-  std::vector<uint32_t>                                      baseMatrixTypeIdx;
-  std::vector<uint32_t>                                      baseNumMatricestoNumKpsFlag;                                    
-  std::vector<uint32_t>                                      baseNumMatricesInfo;
-  std::vector<uint32_t>                                      baseMatrix3DSpaceFlag;
   std::vector<uint32_t>                                      baseNumMatrices;
   std::vector<uint32_t>                                      baseMatrixWidth;
   std::vector<uint32_t>                                      baseMatrixHeight;
+  std::vector<std::vector<std::vector<std::vector<double>>>> baseMatrix;
   std::vector<std::vector<std::vector<std::vector<double>>>> prevMatrix;
+
+  void xParseSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement & sei, uint32_t payloadSize,std::ostream* pDecodedMessageOutputStream);
+  double xParseSEIPupilCoordinate(std::ostream *pOS, double refCoordinate, int precisionFactor, const char* eye, const char* axis);
+  uint32_t                                                   gfveBaseMatrixElementPrecisionFactor;
+  uint32_t                                                   gfveBaseNumMatrices;
+  std::vector<uint32_t>                                      gfveBaseMatrixWidth;
+  std::vector<uint32_t>                                      gfveBaseMatrixHeight;
+  std::vector<std::vector<std::vector<double>>>              gfveBaseMatrix;
+  std::vector<std::vector<std::vector<double>>>              gfvePrevMatrix;
+  uint32_t                                                   gfveBasePupilCoordinatePrecisionFactor;
+  double                                                     prevGfveLeftPupilCoordinateX;
+  double                                                     prevGfveLeftPupilCoordinateY;
+  double                                                     prevGfveRightPupilCoordinateX;
+  double                                                     prevGfveRightPupilCoordinateY;
+  double                                                     baseGfveLeftPupilCoordinateX;
+  double                                                     baseGfveLeftPupilCoordinateY;
+  double                                                     baseGfveRightPupilCoordinateX;
+  double                                                     baseGfveRightPupilCoordinateY;
+  bool                                                       checkBasePicPupilPresentIdx = false;
 };
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE

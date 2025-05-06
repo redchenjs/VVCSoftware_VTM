@@ -115,6 +115,7 @@ public:
   void initSEIGreenMetadataInfo(SEIGreenMetadataInfo *sei, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics, SEIComplexityMetrics greenMetadata);
 #endif
   void initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int currframeindex);
+  void initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement *sei, int currframeindex);
 private:
   EncCfg* m_pcCfg;
   EncLib* m_pcEncLib;

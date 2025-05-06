@@ -950,8 +950,7 @@ double EncSlice::initializeLambda(const Slice *slice, const int gopId, const int
     dQPFactor = 0.57;
   }
 
-  dLambda = dQPFactor * pow(2.0, (dQP + bitDepthShift) / 3.0);
-
+  dLambda = dQPFactor * pow(2.0, (dQP + m_pcCfg->getLambdaScaleTowardsNextQP() + bitDepthShift) / 3.0);
   if (slice->getHierPredLayerIdx() > 0 && !m_pcCfg->getLambdaFromQPEnable())
   {
     dLambda *= Clip3(2.0, 4.0, ((refQP + bitDepthShift) / 6.0));

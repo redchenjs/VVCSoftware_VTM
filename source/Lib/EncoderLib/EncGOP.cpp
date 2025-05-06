@@ -986,7 +986,7 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
   }
   if (m_pcCfg->getSptiSEIEnabled())
   {
-    SEISourcePictureTimingInfo* seiSourcePictureTimingInfo = new SEISourcePictureTimingInfo;
+    SEISourcePictureTimingInfo* seiSourcePictureTimingInfo = new SEISourcePictureTimingInfo(sps->getMaxTLayers() - 1);
     m_seiEncoder.initSEISourcePictureTimingInfo(seiSourcePictureTimingInfo);
     seiMessages.push_back(seiSourcePictureTimingInfo);
   }
@@ -1153,6 +1153,16 @@ void EncGOP::xCreateGenerativeFaceVideoSEIMessages(SEIMessages& seiMessages)
     SEIGenerativeFaceVideo *seiGenerativeFaceVideo = new SEIGenerativeFaceVideo;
     m_seiEncoder.initSEIGenerativeFaceVideo(seiGenerativeFaceVideo, frameIndex);
     seiMessages.push_back(seiGenerativeFaceVideo);
+  }
+}
+
+void EncGOP::xCreateGenerativeFaceVideoEnhancementSEIMessages(SEIMessages& seiMessages)
+{
+  for (int frameIndex = 0; frameIndex < m_pcCfg->getGenerativeFaceVideoEnhancementSEINumber(); frameIndex++)
+  {
+    SEIGenerativeFaceVideoEnhancement *seiGenerativeFaceVideoEnhancement = new SEIGenerativeFaceVideoEnhancement;
+    m_seiEncoder.initSEIGenerativeFaceVideoEnhancement(seiGenerativeFaceVideoEnhancement, frameIndex);
+    seiMessages.push_back(seiGenerativeFaceVideoEnhancement);
   }
 }
 
@@ -4130,6 +4140,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       {
         xCreateGenerativeFaceVideoSEIMessages(trailingSeiMessages);
       }
+      if (writePS && m_pcCfg->getGenerativeFaceVideoEnhancementSEIEnabled())
+      {
+        xCreateGenerativeFaceVideoEnhancementSEIMessages(trailingSeiMessages);
+      }
+
       //send LMCS APS when LMCSModel is updated. It can be updated even current slice does not enable reshaper.
       //For example, in RA, update is on intra slice, but intra slice may not use reshaper
       if (pcSlice->getSPS()->getUseLmcs())

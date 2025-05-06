@@ -45,7 +45,7 @@
 #include "CommonLib/Picture.h"
 #include "CommonLib/dtrace_next.h"
 #include <iomanip>
-
+#include <climits>
 
 //! \ingroup DecoderLib
 //! \{
@@ -558,7 +558,7 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIEncoderOptimizationInfo((SEIEncoderOptimizationInfo &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
     case SEI::PayloadType::SOURCE_PICTURE_TIMING_INFO:
-      sei = new SEISourcePictureTimingInfo;
+      sei = new SEISourcePictureTimingInfo(sps->getMaxTLayers() - 1);
       xParseSEISourcePictureTimingInfo((SEISourcePictureTimingInfo&) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
     case SEI::PayloadType::MODALITY_INFORMATION:
@@ -649,6 +649,10 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
     case SEI::PayloadType::GENERATIVE_FACE_VIDEO:
       sei = new SEIGenerativeFaceVideo;
       xParseSEIGenerativeFaceVideo((SEIGenerativeFaceVideo &)*sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+    case SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT:
+      sei = new SEIGenerativeFaceVideoEnhancement;
+      xParseSEIGenerativeFaceVideoEnhancement((SEIGenerativeFaceVideoEnhancement &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
     case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION:
       sei = new SEIDigitallySignedContentVerification;
@@ -865,6 +869,7 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
     }
   }
 
+  // The following code generates subchain indices from the syntax. It can be used for testing and verification of the syntax, but is not otherwise needed in VTM.
   uint32_t numProcStgs = sei.m_posNumMinus2 + 2;
   std::vector<uint32_t> seiTypeIdx;
   for (uint32_t j = 0; j < numProcStgs; j++)
@@ -879,19 +884,24 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
     uint32_t idx = seiTypeIdx[j];
     if (sei.m_posImportanceFlag[idx] && sei.m_posProcessingDegreeFlag[idx])
     {
-      sei.m_posSubChainIdx[j] = 0;
+      if (subChainFlag == 0)
+      {
+        sei.m_posSubChainIdx[j] = 0;
+      }
+      else
+      {
+        sei.m_posSubChainIdx[j] = subChainPrevIdx;
+      }
     }
     else if (!sei.m_posImportanceFlag[idx] && sei.m_posProcessingDegreeFlag[idx])
     {
-      sei.m_posSubChainIdx[j] = subChainPrevIdx;
+      sei.m_posSubChainIdx[j] = subChainFlag * subChainPrevIdx;
+      CHECK(sei.m_posSubChainIdx[j] == 0, "When pos_sei_importance_flag[idx] is equal to 0 and po_sei_processing_degree_flag[idx] is equal to 1, poSubChainIdx[j] shall be greater than 0")
       subChainFlag = 0;
     }
     else if (sei.m_posImportanceFlag[idx] && !sei.m_posProcessingDegreeFlag[idx])
     {
-      if (subChainFlag == 0)
-      {
-        subChainPrevIdx++;
-      }
+      subChainPrevIdx++;
       sei.m_posSubChainIdx[j] = subChainPrevIdx;
       subChainFlag = 1;
     }
@@ -1986,74 +1996,68 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
         CHECK(sei.m_hdr.m_maskLabelLanguage.size() > 255, "label oversize");
       }
     }
-
     sei.m_maskPicUpdateFlag.resize(sei.m_hdr.m_numAuxPicLayerMinus1 + 1);
-    sei.m_numMaskInPicUpdate.resize(sei.m_hdr.m_numAuxPicLayerMinus1 + 1);
+    sei.m_numMaskInPic.resize(sei.m_hdr.m_numAuxPicLayerMinus1 + 1);
     for (uint32_t i = 0; i <= sei.m_hdr.m_numAuxPicLayerMinus1; i++)
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_pic_update_flag[i]");
       sei.m_maskPicUpdateFlag[i] = val;
       if (sei.m_maskPicUpdateFlag[i])
       {
-        sei_read_uvlc(pDecodedMessageOutputStream, val, "omi_num_mask_in_pic_update[i]");
-        sei.m_numMaskInPicUpdate[i] = val;
-        for (uint32_t j = 0; j < sei.m_numMaskInPicUpdate[i]; j++)
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "omi_num_mask_in_pic[i]");
+        sei.m_numMaskInPic[i] = val;
+        for (uint32_t j = 0; j < sei.m_numMaskInPic[i]; j++)
         {
           SEIObjectMaskInfos::ObjectMaskInfo objMaskInfo;
           sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskIdLengthMinus1 + 1, val, "omi_mask_id[i][j]");
           objMaskInfo.maskId = val;
+          sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_id_new_object_flag[i][j]");
+          objMaskInfo.maskNew = val;
           sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskSampleValueLengthMinus8 + 8, val, "omi_aux_sample_value[i][j]");
           objMaskInfo.auxSampleValue = val;
-          sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_cancel[i][j]");
-          objMaskInfo.maskCancel = val;
-          if (!objMaskInfo.maskCancel)
+          sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_bounding_box_present_flag[i][j]");
+          objMaskInfo.maskBoundingBoxPresentFlag = val;
+          if (objMaskInfo.maskBoundingBoxPresentFlag)
           {
-            sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_bounding_box_present_flag[i][j]");
-            objMaskInfo.maskBoundingBoxPresentFlag = val;
-            if (objMaskInfo.maskBoundingBoxPresentFlag)
-            {
-              sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_top[i][j]");
-              objMaskInfo.maskTop = val;
-              sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_left[i][j]");
-              objMaskInfo.maskLeft = val;
-              sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_width[i][j]");
-              objMaskInfo.maskWidth = val;
-              sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_height[i][j]");
-              objMaskInfo.maskHeight = val;
-            }
-
-            if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
-            {
-              sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskConfidenceLengthMinus1 + 1, val, "omi_mask_confidence[i][j]");
-              objMaskInfo.maskConfidence = val;
-            }
-            if (sei.m_hdr.m_maskDepthInfoPresentFlag)
-            {
-              sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskDepthLengthMinus1 + 1, val, "omi_mask_depth[i][j]");
-              objMaskInfo.maskDepth = val;
-            }
-            // byte alignment
-            while (!isByteAligned())
-            {
-              uint32_t code;
-              sei_read_flag(pDecodedMessageOutputStream, code, "omi_bit_equal_to_zero");
-              CHECK(code != 0, "non-zero value parsed for zero-bit");
-            }
-            if (sei.m_hdr.m_maskLabelInfoPresentFlag)
-            {
-              objMaskInfo.maskLabel.clear();
-              do
-              {
-                sei_read_code(pDecodedMessageOutputStream, 8, val, "omi_mask_label[i][j][k]");
-                if (val)
-                {
-                  objMaskInfo.maskLabel.push_back((char) val);
-                }
-              } while (val != '\0');
-              CHECK(objMaskInfo.maskLabel.size() > 255, "label oversize");
-            }
+            sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_top[i][j]");
+            objMaskInfo.maskTop = val;
+            sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_left[i][j]");
+            objMaskInfo.maskLeft = val;
+            sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_width[i][j]");
+            objMaskInfo.maskWidth = val;
+            sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_height[i][j]");
+            objMaskInfo.maskHeight = val;
           }
-
+          if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
+          {
+            sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskConfidenceLengthMinus1 + 1, val, "omi_mask_confidence[i][j]");
+            objMaskInfo.maskConfidence = val;
+          }
+          if (sei.m_hdr.m_maskDepthInfoPresentFlag)
+          {
+            sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskDepthLengthMinus1 + 1, val, "omi_mask_depth[i][j]");
+            objMaskInfo.maskDepth = val;
+          }
+          // byte alignment
+          while (!isByteAligned())
+          {
+            uint32_t code;
+            sei_read_flag(pDecodedMessageOutputStream, code, "omi_bit_equal_to_zero");
+            CHECK(code != 0, "non-zero value parsed for zero-bit");
+          }
+          if (sei.m_hdr.m_maskLabelInfoPresentFlag)
+          {
+            objMaskInfo.maskLabel.clear();
+            do
+            {
+              sei_read_code(pDecodedMessageOutputStream, 8, val, "omi_mask_label[i][j][k]");
+              if (val)
+              {
+                objMaskInfo.maskLabel.push_back((char) val);
+              }
+            } while (val != '\0');
+            CHECK(objMaskInfo.maskLabel.size() > 255, "label oversize");
+          }
           sei.m_objectMaskInfos.push_back(objMaskInfo);
         }
       }
@@ -2083,7 +2087,6 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
     {
       sei_read_code(pDecodedMessageOutputStream, 16, val, "eoi_object_based_idc");
       sei.m_objectBasedIdc = val;
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
       if (sei.m_objectBasedIdc & EOI_OBJECT_BASED::COARSER_QUANTIZATION)
       {
         sei_read_uvlc(pDecodedMessageOutputStream, val, "eoi_quant_threshold_delta");
@@ -2094,7 +2097,6 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
           sei.m_picQuantObjectFlag = val;
         }
       }
-#endif
     }
     if ((sei.m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
     {
@@ -3167,27 +3169,16 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
           sei.m_numInpPicsInOutputTensor++;
         }
       }
-#if JVET_AK0072_NNPF_TEMP_EXTR_UPDATES
       if ((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) == 0 && (sei.m_purpose & NNPC_PurposeType::TEMPORAL_EXTRAPOLATION) == 0)
       {
         CHECK(!atLeastOne, "When picRateUpsamplingFlag is equal to 0 and nnpfc_num_input_pics_minus1 is greater than 0, at least one value of nnpfc_input_pic_filtering_flag[i] shall be greater than 0");
       }
-#else
-      if ((sei.m_purpose & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) == 0)
-      {
-        CHECK(!atLeastOne, "When picRateUpsamplingFlag is equal to 0 and nnpfc_num_input_pics_minus1 is greater than 0, at least one value of nnpfc_input_pic_filtering_flag[i] shall be greater than 0");
-      }
-#endif
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_absent_input_pic_zero_flag");
       sei.m_absentInputPicZeroFlag = val;
     }
     else
     {
-#if JVET_AK0072_NNPF_TEMP_EXTR_UPDATES
       sei.m_inputPicOutputFlag.push_back((sei.m_purpose & 0xff) != NNPC_PurposeType::TEMPORAL_EXTRAPOLATION ? true : false);
-#else
-      sei.m_inputPicOutputFlag.push_back(true);
-#endif
       sei.m_numInpPicsInOutputTensor = 1;
     }
 
@@ -3522,6 +3513,14 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
           numberExtensionBitsUsed += (static_cast<uint32_t>(sei.m_applicationPurposeTagUri.length() + 1) * 8);
         }
       }
+#if NNPFC_SCAN_TYPE_IDC
+      if((sei.m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0 || (sei.m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_scan_type_idc");
+        sei.m_scanTypeIdc = val;
+        numberExtensionBitsUsed += 2;
+      }
+#endif
       sei_read_code(pDecodedMessageOutputStream, 2, val, "nnpfc_for_human_viewing_idc");
       sei.m_forHumanViewingIdc = val;
       numberExtensionBitsUsed += 2;
@@ -3615,6 +3614,7 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
         }
         sei_read_string(pDecodedMessageOutputStream, val2, "nnpfa_prompt");
         sei.m_prompt = val2;
+        CHECK(sei.m_prompt.empty(), "When present in the bitstream, nnpfa_prompt shall not be a null string");
       }
 #endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
@@ -3701,15 +3701,18 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
       {
           sei_read_code(pDecodedMessageOutputStream, 16, val, "spti_source_type");
           sei.m_sptiSourceType = val;
+          CHECK(sei.m_sptiSourceType > 127, "spti_source_type is out of range");
       }
       sei_read_code(pDecodedMessageOutputStream, 32, val, "spti_time_scale");
       sei.m_sptiTimeScale = val;
+      CHECK(sei.m_sptiTimeScale == 0, "spti_time_scale shall not be equal to 0");
+
       sei_read_code(pDecodedMessageOutputStream, 32, val, "spti_num_units_in_elemental_interval");
       sei.m_sptiNumUnitsInElementalInterval = val;
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
+      CHECK(sei.m_sptiNumUnitsInElementalInterval == 0, "spti_num_units_in_elemental_interval shall not be equal to 0");
+
       sei_read_flag(pDecodedMessageOutputStream, val, "spti_direction_flag");
       sei.m_sptiDirectionFlag = val;
-#endif
 
       if (sei.m_sptiPersistenceFlag)
       {
@@ -3717,12 +3720,16 @@ void SEIReader::xParseSEISourcePictureTimingInfo(SEISourcePictureTimingInfo& sei
           sei.m_sptiMaxSublayersMinus1 = val;
       }
 
-      for (int i = 0; i <= sei.m_sptiMaxSublayersMinus1; i++)
+      int sptiMinTemporalSublayer = (sei.m_sptiPersistenceFlag ? 0 : sei.m_sptiMaxSublayersMinus1);
+
+      for (int i = sptiMinTemporalSublayer; i <= sei.m_sptiMaxSublayersMinus1; i++)
       {
           sei_read_uvlc(pDecodedMessageOutputStream, val, "spti_sublayer_interval_scale_factor");
-          sei.m_sptiSublayerIntervalScaleFactor.push_back(val);
+          CHECK(val > UINT_MAX - 1, "spti_sublayer_interval_scale_factor[i] is out of range");
+          sei.m_sptiSublayerIntervalScaleFactor[i] = val;
+
           sei_read_flag(pDecodedMessageOutputStream, val, "spti_sublayer_synthesized_picture_flag");
-          sei.m_sptiSublayerSynthesizedPictureFlag.push_back(val);
+          sei.m_sptiSublayerSynthesizedPictureFlag[i] = val;
       }
     }
   }
@@ -3983,7 +3990,7 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
   std::vector<double>      coordinateX;
   std::vector<double>      coordinateY;
   std::vector<double>      coordinateZ;
-  std::vector<uint32_t>    coordinateZMaxValue;
+  uint32_t                 coordinateZMaxValue;
   std::vector<uint32_t>    matrixTypeIdx;
   std::vector<uint32_t>    matrix3DSpaceFlag;
   std::vector<uint32_t>    numMatrices;
@@ -4008,7 +4015,7 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
   }
   if (sei.m_basePicFlag)
   {
-    sei_read_flag(pDecodedMessageOutputStream, val, "gfv_nnPresentFlag");
+    sei_read_flag(pDecodedMessageOutputStream, val, "gfv_nn_present_flag");
     sei.m_nnPresentFlag = val;   
     if(sei.m_nnPresentFlag)
     {       
@@ -4043,9 +4050,9 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
           sei.m_chromaKeyValue[chromac] = val;
         }
       }
-      bool chromaaKeyDefaultValueFlag = (!(sei.m_chromaKeyValuePresentFlag[0] || sei.m_chromaKeyValuePresentFlag[1] || sei.m_chromaKeyValuePresentFlag[2]));  
+      bool chromaKeyDefaultValueFlag = (!(sei.m_chromaKeyValuePresentFlag[0] || sei.m_chromaKeyValuePresentFlag[1] || sei.m_chromaKeyValuePresentFlag[2]));
       std::vector<uint32_t> gfvChromaKeyValue;
-      if (chromaaKeyDefaultValueFlag == 1)
+      if (chromaKeyDefaultValueFlag == 1)
       {
         gfvChromaKeyValue.push_back(50);
         gfvChromaKeyValue.push_back(220);
@@ -4124,10 +4131,10 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
       if (m3DCoordinateFlag== 1)
       {
         sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_coordinate_z_max_value_minus1");
-        coordinateZMaxValue.push_back(val + 1);
+        coordinateZMaxValue = val + 1;
         if (sei.m_basePicFlag)
         {
-          baseCoordinateZMaxValue.push_back(val + 1);
+          baseCoordinateZMaxValue = coordinateZMaxValue;
         }
       }
     }
@@ -4139,11 +4146,20 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
       m3DCoordinateFlag            = base3DCoordinateFlag;
       if (m3DCoordinateFlag == 1)
       {
-        coordinateZMaxValue.push_back(baseCoordinateZMaxValue[0]);
+        coordinateZMaxValue = baseCoordinateZMaxValue;
       }
     }
     //X_coordinate_tensor && Y_coordinate_tensor  && Z_coordinate_tensor
+    if (sei.m_basePicFlag)
+    {
+      baseCoordinateX.resize(0);
+      baseCoordinateY.resize(0);
+      baseCoordinateZ.resize(0);
+      prevCoordinateX.resize(0);
+      prevCoordinateY.resize(0);
+      prevCoordinateZ.resize(0);
 
+    }
     for (uint32_t i = 0; i < coordinatePointNum; i++)
     {
       if (!coordinatePredFlag)
@@ -4161,6 +4177,7 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
         coordinateX.push_back(coordinateXTensor);
         if (sei.m_basePicFlag)
         {
+          baseCoordinateX.push_back(coordinateXTensor);
           prevCoordinateX.push_back(coordinateXTensor);
         }
         else
@@ -4180,6 +4197,7 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
         coordinateY.push_back(coordinateYTensor);
         if (sei.m_basePicFlag)
         {
+          baseCoordinateY.push_back(coordinateYTensor);
           prevCoordinateY.push_back(coordinateYTensor);
         }
         else
@@ -4201,6 +4219,7 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
           coordinateZ.push_back(coordinateZTensor);
           if (sei.m_basePicFlag)
           {
+            baseCoordinateZ.push_back(coordinateZTensor);
             prevCoordinateZ.push_back(coordinateZTensor);
           }
           else
@@ -4220,10 +4239,11 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
           sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_dx_sign_flag");
           valueSignFlag = val;
         }
-        double  coordinateXTensor = (valueSignFlag ? -coordinateXTensorAbs : coordinateXTensorAbs) + (sei.m_basePicFlag ? (i == 0 ? 0 : prevCoordinateX[i - 1]) : prevCoordinateX[i]);
+        double  coordinateXTensor = (valueSignFlag ? -coordinateXTensorAbs : coordinateXTensorAbs) + (sei.m_basePicFlag ? (i == 0 ? 0 : prevCoordinateX[i - 1]) : (cnt == 0 ? baseCoordinateX[i] : prevCoordinateX[i]));
         coordinateX.push_back(coordinateXTensor);
         if (sei.m_basePicFlag)
         {
+          baseCoordinateX.push_back(coordinateXTensor);
           prevCoordinateX.push_back(coordinateXTensor);
         }
         else
@@ -4239,10 +4259,11 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
           sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_dy_sign_flag");
           valueSignFlag = val;
         }
-        double  coordinateYTensor = (valueSignFlag ? -coordinateYTensorAbs : coordinateYTensorAbs) + (sei.m_basePicFlag ? (i == 0 ? 0 : prevCoordinateY[i - 1]) : prevCoordinateY[i]);
+        double  coordinateYTensor = (valueSignFlag ? -coordinateYTensorAbs : coordinateYTensorAbs) + (sei.m_basePicFlag ? (i == 0 ? 0 : prevCoordinateY[i - 1]) : (cnt == 0 ? baseCoordinateY[i] : prevCoordinateY[i]));
         coordinateY.push_back(coordinateYTensor);
         if (sei.m_basePicFlag)
         {
+          baseCoordinateY.push_back(coordinateYTensor);
           prevCoordinateY.push_back(coordinateYTensor);
         }
         else
@@ -4260,10 +4281,11 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
             sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_dz_sign_flag");
             valueSignFlag = val;
           }
-          double  coordinateZTensor = (valueSignFlag ? -coordinateZTensorAbs : coordinateZTensorAbs) + (sei.m_basePicFlag ? (i == 0 ? 0 : prevCoordinateZ[i - 1]) : prevCoordinateZ[i]);
+          double  coordinateZTensor = (valueSignFlag ? -coordinateZTensorAbs : coordinateZTensorAbs) + (sei.m_basePicFlag ? (i == 0 ? 0 : prevCoordinateZ[i - 1]) : (cnt == 0 ? baseCoordinateZ[i] : prevCoordinateZ[i]));
           coordinateZ.push_back(coordinateZTensor);
           if (sei.m_basePicFlag)
           {
+            baseCoordinateZ.push_back(coordinateZTensor);
             prevCoordinateZ.push_back(coordinateZTensor);
           }
           else
@@ -4309,8 +4331,6 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
     m3DCoordinateFlag = 0; 
     coordinatePointNum = 0;
   }
-  matrixElement.push_back(std::vector<std::vector<std::vector<double>>>());
-  prevMatrix.push_back(std::vector<std::vector<std::vector<double>>>());
   sei_read_flag(pDecodedMessageOutputStream, val, "gfv_matrix_present_flag");
   matrixPresentFlag = val;
   CHECK((!coordinatePresentFlag) && (!matrixPresentFlag), "When gfv_coordinate_present_flag is equal to 0, gfv_matrix_present_flag shall be equal to 1");
@@ -4331,7 +4351,7 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
     {
       matrixPredFlag = 0;
     }
-    if (sei.m_basePicFlag || !matrixPredFlag)
+    if (!matrixPredFlag)
     {
       sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_matrix_element_precision_factor_minus1");
       CHECK(val < 0 || val > 31, "The value of gfv_matrix_element_precision_factor_minus1 shall be in the range of 0 to 31, inclusive");
@@ -4343,56 +4363,20 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
         baseMatrixElementPrecisionFactor = matrixElementPrecisionFactor;
         baseNumMatrixType                = numMatrixType;
       }
-    }
-    else
-    {
-      matrixElementPrecisionFactor = baseMatrixElementPrecisionFactor;
-      numMatrixType                = baseNumMatrixType;
-    }
-    for (uint32_t matrixId = 0; matrixId < numMatrixType; matrixId++)
-    {
-      if (sei.m_basePicFlag || !matrixPredFlag)
+      for (uint32_t matrixId = 0; matrixId < numMatrixType; matrixId++)
       {
-        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_matrix_type_idx");
-        CHECK(val < 0 || val > 64, "The value of gfv_matrix_type_idx[ i ] shall be in the range of 0 to 63, inclusive");
+        sei_read_code(pDecodedMessageOutputStream, 6, val, "gfv_matrix_type_idx");
         matrixTypeIdx.push_back(val);
-        if (sei.m_basePicFlag)
-        {
-          baseMatrixTypeIdx.push_back(val);
-        }
         if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1)
         {
-          if (coordinatePresentFlag)
-          {
-            sei_read_flag(pDecodedMessageOutputStream, val, "gfv_num_matrices_equal_to_num_kps_flag");
-            numMatricestoNumKpsFlag.push_back(val);
-            if (sei.m_basePicFlag)
-            {
-              baseNumMatricestoNumKpsFlag.push_back(val);
-            }
-          }
-          else
-          {
-            numMatricestoNumKpsFlag.push_back(0);
-            if (sei.m_basePicFlag)
-            {
-              baseNumMatricestoNumKpsFlag.push_back(0);
-            }
-          }
+          CHECK(coordinatePresentFlag == 0, "coordinatePresentFlag shall be 1 when matrix type is 0 or 1");
+          sei_read_flag(pDecodedMessageOutputStream, val, "gfv_num_matrices_equal_to_num_kps_flag");
+          numMatricestoNumKpsFlag.push_back(val);
           if (!numMatricestoNumKpsFlag[matrixId])
           {
             sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_num_matrices_info");
             CHECK(val < 0 || val >(1 << 10) - 1, "The value of gfv_num_matrices_info[ i ] shall be in the range of 0 to 2^(10) - 1, inclusive")
-              numMatricesInfo.push_back(val);
-            if (sei.m_basePicFlag)
-            {
-              baseNumMatricesInfo.push_back(val);
-            }
-          }
-          matrix3DSpaceFlag.push_back(0);
-          if (sei.m_basePicFlag)
-          {
-            baseMatrix3DSpaceFlag.push_back(0);
+            numMatricesInfo.push_back(val);
           }
         }
         else if (matrixTypeIdx[matrixId] == 2 || matrixTypeIdx[matrixId] == 3 || matrixTypeIdx[matrixId] >= 7)
@@ -4401,14 +4385,14 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
           {
             sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_num_matrices_minus1");
             CHECK(val < 0 || val >(1 << 10) - 1, "The value of gfv_num_matrices_minus1[ i ] shall be in the range of 0 to 2^(10) - 1, inclusive")
-              numMatrices = val + 1;
+            numMatrices = val + 1;
           }
           sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_matrix_width_minus1");
           CHECK(val < 0 || val >(1 << 10) - 1, "The value of gfv_matrix_width_minus1[ i ] shall be in the range of 0 to 2^(10) - 1, inclusive")
-            matrixWidth = val + 1;
+          matrixWidth = val + 1;
           sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_matrix_height_minus1");
           CHECK(val < 0 || val >(1 << 10) - 1, "The value of gfv_matrix_height_minus1[ i ] shall be in the range of 0 to 2^(10) - 1, inclusive")
-            matrixHeight = val + 1;
+          matrixHeight = val + 1;
         }
         else if (matrixTypeIdx[matrixId] >= 4 && matrixTypeIdx[matrixId] <= 6)
         {
@@ -4416,45 +4400,26 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
           {
             sei_read_flag(pDecodedMessageOutputStream, val, "gfv_Matrix3DSpaceFlag");
             matrix3DSpaceFlag.push_back(val);
-            if (sei.m_basePicFlag)
-            {
-              baseMatrix3DSpaceFlag.push_back(val);
-            }
           }
           else
           {
-            matrix3DSpaceFlag.push_back(0);
-            if (sei.m_basePicFlag)
-            {
-              baseMatrix3DSpaceFlag.push_back(0);
-            }
+            matrix3DSpaceFlag.push_back(m3DCoordinateFlag);
           }
         }
-        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1 || matrixTypeIdx[matrixId] == 4)
+        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1 )
         {
-          if (m3DCoordinateFlag == 1 || matrix3DSpaceFlag[matrixId] == 1)
-          {
-            matrixWidth = 3;
-          }
-          else
-          {
-            matrixWidth = 2;
-          }
+          matrixWidth = m3DCoordinateFlag + 2;
+          matrixHeight = m3DCoordinateFlag + 2;
+        }
+        else if (matrixTypeIdx[matrixId] == 4)
+        {
+          matrixWidth = matrix3DSpaceFlag[matrixId] + 2;
+          matrixHeight = matrix3DSpaceFlag[matrixId] + 2;
         }
         else if (matrixTypeIdx[matrixId] == 5 || matrixTypeIdx[matrixId] == 6)
         {
           matrixWidth = 1;
-        }
-        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1 || matrixTypeIdx[matrixId] == 4 || matrixTypeIdx[matrixId] == 5 || matrixTypeIdx[matrixId] == 6)
-        {
-          if (m3DCoordinateFlag == 1 || matrix3DSpaceFlag[matrixId] == 1)
-          {
-            matrixHeight = 3;
-          }
-          else
-          {
-            matrixHeight = 2;
-          }
+          matrixHeight = matrix3DSpaceFlag[matrixId] + 2;
         }
         if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1)
         {
@@ -4471,106 +4436,31 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
         {
           numMatrices = 1;
         }
+        if (sei.m_basePicFlag)
+        {
+          baseNumMatrices.push_back(numMatrices);
+          baseMatrixWidth.push_back(matrixWidth);
+          baseMatrixHeight.push_back(matrixHeight);
+        }
+        numMatricesVec.push_back(numMatrices);
+        matrixWidthVec.push_back(matrixWidth);
+        matrixHeightVec.push_back(matrixHeight);
       }
-      else
+    }
+    else
+    {
+      matrixElementPrecisionFactor = baseMatrixElementPrecisionFactor;
+      numMatrixType                = baseNumMatrixType;
+      for (uint32_t matrixId = 0; matrixId < numMatrixType; matrixId++)
       {
-        matrixTypeIdx.push_back(baseMatrixTypeIdx[matrixId]);
-        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1)
-        {
-          if (coordinatePresentFlag)
-          {
-            numMatricestoNumKpsFlag.push_back(baseNumMatricestoNumKpsFlag[matrixId]);
-          }
-          else
-          {
-            numMatricestoNumKpsFlag.push_back(0);
-          }
-          if (!numMatricestoNumKpsFlag[matrixId])
-          {
-            numMatricesInfo.push_back(baseNumMatricesInfo[matrixId]);
-          }
-          else
-          {
-            numMatricesInfo.push_back(0);
-          }
-          matrix3DSpaceFlag.push_back(0);
-        }
-        else if (matrixTypeIdx[matrixId] == 2 || matrixTypeIdx[matrixId] == 3 || matrixTypeIdx[matrixId] >= 7)
-        {
-          if (matrixTypeIdx[matrixId] >= 7)
-          {
-            numMatrices = baseNumMatrices[matrixId];
-          }
-          else
-          {
-            numMatrices = 1;
-          }
-          matrixWidth = baseMatrixWidth[matrixId];
-          matrixHeight = baseMatrixHeight[matrixId];
-          matrix3DSpaceFlag.push_back(0);
-        }
-        else if (matrixTypeIdx[matrixId] >= 4 && matrixTypeIdx[matrixId] <= 6)
-        {
-          if (!coordinatePresentFlag)
-          {
-            matrix3DSpaceFlag.push_back(baseMatrix3DSpaceFlag[matrixId]);
-          }
-          else
-          {
-            matrix3DSpaceFlag.push_back(0);
-          }
-        }
-        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1 || matrixTypeIdx[matrixId] == 4)
-        {
-          if (m3DCoordinateFlag == 1 || matrix3DSpaceFlag[matrixId] == 1)
-          {
-            matrixWidth = 3;
-          }
-          else
-          {
-            matrixWidth = 2;
-          }
-        }
-        else if (matrixTypeIdx[matrixId] == 5 || matrixTypeIdx[matrixId] == 6)
-        {
-          matrixWidth = 1;
-        }
-        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1 || matrixTypeIdx[matrixId] == 4 || matrixTypeIdx[matrixId] == 5 || matrixTypeIdx[matrixId] == 6)
-        {
-          if (m3DCoordinateFlag == 1 || matrix3DSpaceFlag[matrixId] == 1)
-          {
-            matrixHeight = 3;
-          }
-          else
-          {
-            matrixHeight = 2;
-          }
-        }
-        if (matrixTypeIdx[matrixId] == 0 || matrixTypeIdx[matrixId] == 1)
-        {
-          if (coordinatePresentFlag)
-          {
-            numMatrices = numMatricestoNumKpsFlag[matrixId] ? coordinatePointNum : (numMatricesInfo[matrixId] < (coordinatePointNum - 1) ? (numMatricesInfo[matrixId] + 1) : (numMatricesInfo[matrixId] + 2));
-          }
-          else
-          {
-            numMatrices = numMatricesInfo[matrixId] + 1;
-          }
-        }
-        else if (matrixTypeIdx[matrixId] >= 2 && matrixTypeIdx[matrixId] < 7)
-        {
-          numMatrices = 1;
-        }
+        numMatrices = baseNumMatrices[matrixId];
+        matrixWidth = baseMatrixWidth[matrixId];
+        matrixHeight = baseMatrixHeight[matrixId];
+
+        numMatricesVec.push_back(numMatrices);
+        matrixWidthVec.push_back(matrixWidth);
+        matrixHeightVec.push_back(matrixHeight);
       }
-      if (sei.m_basePicFlag)
-      {
-        baseNumMatrices.push_back(numMatrices);
-        baseMatrixWidth.push_back(matrixWidth);
-        baseMatrixHeight.push_back(matrixHeight);
-      }
-      numMatricesVec.push_back(numMatrices);
-      matrixWidthVec.push_back(matrixWidth);
-      matrixHeightVec.push_back(matrixHeight);
     }
     for (uint32_t matrixId = 0; matrixId < numMatrixType; matrixId++)
     {
@@ -4583,7 +4473,7 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
           matrixElement[matrixId][j].push_back(std::vector<double>());
           for (uint32_t l = 0; l < matrixWidthVec[matrixId]; l++)
           {
-            if (sei.m_basePicFlag || !matrixPredFlag)
+            if(!matrixPredFlag)
             {
               sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_matrix_element_int");
               CHECK(val < 0 || val > 4294967296 - 2, "The value of gfv_matrix_element_int[ i ][ j ][ k ][ m ] shall be in the range of 0 to 2^(32) - 2, inclusive");
@@ -4613,7 +4503,8 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
                 sei_read_flag(pDecodedMessageOutputStream, val, "gfv_matrix_delta_element_sign_flag");
                 valueSignFlag = val;
               }
-              double matrixElementDecimal = (valueSignFlag ? -(matrixElementAbsDecimal + matrixElementAbsInteger) : (matrixElementAbsDecimal + matrixElementAbsInteger)) + prevMatrix[matrixId][j][k][l];
+              CHECK(sei.m_basePicFlag, "matrixPredFlag shall be 0 for base picture");
+              double matrixElementDecimal = (valueSignFlag ? -(matrixElementAbsDecimal + matrixElementAbsInteger) : (matrixElementAbsDecimal + matrixElementAbsInteger)) + (cnt==0 ? baseMatrix[matrixId][j][k][l] : prevMatrix[matrixId][j][k][l]);
               matrixElement[matrixId][j][k].push_back(matrixElementDecimal);
             }
           }
@@ -4621,6 +4512,7 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
       }
     }
     prevMatrix = matrixElement;
+    baseMatrix = matrixElement;
     if (pDecodedMessageOutputStream)
     {
       (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfv_MatrixElement" << ": ";
@@ -4665,6 +4557,336 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
     }
   }
 }
+
+void SEIReader::xParseSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement & sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
+{
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  uint32_t   val;
+  bool       valueSignFlag;
+  uint32_t   gfveId;
+  uint32_t   gfveGfvId;
+  uint32_t   gfveGfvCnt;
+  bool       matrixPresentFlag;
+  bool       matrixPredFlag;
+
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_id");
+  gfveId = val;
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_gfv_id");
+  gfveGfvId = val;
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_gfv_cnt");
+  gfveGfvCnt = val;
+
+  if (gfveGfvCnt == 0)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "gfve_base_picture_flag");
+    sei.m_basePicFlag = val;
+  }
+  else
+  {
+    sei.m_basePicFlag = 0;
+  }
+  if (sei.m_basePicFlag)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "gfve_nn_present_flag");
+    sei.m_nnPresentFlag = val;
+    if (sei.m_nnPresentFlag)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_nn_mode_idc");
+      sei.m_nnModeIdc = val;
+      if (sei.m_nnModeIdc == 1)
+      {
+        std::string val2;
+        while (!isByteAligned())
+        {
+          sei_read_flag(pDecodedMessageOutputStream, val, "gfve_nn_alignment_zero_bit_a");
+          CHECK(val != 0, "gfv_nn_alignment_zero_bit_a not equal to zero");
+        }
+        sei_read_string(pDecodedMessageOutputStream, val2, "gfve_nn_uri_tag");
+        sei.m_nnTagURI = val2;
+        val2 = "";
+        sei_read_string(pDecodedMessageOutputStream, val2, "gfve_nn_uri");
+        sei.m_nnURI = val2;
+      }
+    }
+  }
+  gfveBaseMatrix.push_back(std::vector<std::vector<double>>());
+  gfvePrevMatrix.push_back(std::vector<std::vector<double>>());
+  sei_read_flag(pDecodedMessageOutputStream, val, "gfve_matrix_present_flag");
+  matrixPresentFlag = val;
+  if (matrixPresentFlag)
+  {
+    uint32_t matrixWidth = 0;
+    uint32_t matrixHeight = 0;
+    uint32_t numMatrices = 0;
+    std::vector<uint32_t> matrixWidthVec;
+    std::vector<uint32_t> matrixHeightVec;
+    uint32_t   matrixElementPrecisionFactor;
+    std::vector<std::vector<std::vector<double>>>   matrixElement;
+    if (!sei.m_basePicFlag)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "gfve_matrix_pred_flag");
+      matrixPredFlag = val;
+    }
+    else
+    {
+      matrixPredFlag = 0;
+    }
+    if (!matrixPredFlag)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_matrix_element_precision_factor_minus1");
+      CHECK(val < 0 || val > 31, "The value of gfve_matrix_element_precision_factor_minus1 shall be in the range of 0 to 31, inclusive");
+      matrixElementPrecisionFactor = val + 1;
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_num_matrices_minus1");
+      numMatrices = val + 1;
+      if (sei.m_basePicFlag)
+      {
+        gfveBaseMatrixElementPrecisionFactor = matrixElementPrecisionFactor;
+        gfveBaseNumMatrices = numMatrices;
+      }
+      for (uint32_t j = 0; j < numMatrices; j++)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_matrix_height_minus1");
+        matrixHeight = val + 1;
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_matrix_width_minus1");
+        matrixWidth = val + 1;
+        matrixHeightVec.push_back(matrixHeight);
+        matrixWidthVec.push_back(matrixWidth);
+        if (sei.m_basePicFlag)
+        {
+          gfveBaseMatrixHeight.push_back(matrixHeight);
+          gfveBaseMatrixWidth.push_back(matrixWidth);
+        }
+      }
+    }
+    else
+    {
+      matrixElementPrecisionFactor = gfveBaseMatrixElementPrecisionFactor;
+      numMatrices = gfveBaseNumMatrices;
+      matrixWidthVec = gfveBaseMatrixWidth;
+      matrixHeightVec = gfveBaseMatrixHeight;
+    }
+
+    for (uint32_t j = 0; j < numMatrices; j++)
+    {
+      matrixElement.push_back(std::vector<std::vector<double>>());
+      for (uint32_t k = 0; k < matrixHeightVec[j]; k++)
+      {
+        matrixElement[j].push_back(std::vector<double>());
+        for (uint32_t l = 0; l < matrixWidthVec[j]; l++)
+        {
+          if (!matrixPredFlag)
+          {
+            sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_matrix_element_int");
+            CHECK(val < 0 || val > 4294967296 - 2, "The value of gfve_matrix_element_int[ j ][ k ][ m ] shall be in the range of 0 to 2^(32) - 2, inclusive");
+            int matrixElementAbsInteger = val;
+            sei_read_code(pDecodedMessageOutputStream, matrixElementPrecisionFactor, val, "gfve_matrix_element_dec");
+            int curMatrixDecIntValue = val;
+            double matrixElementAbsDecimal = ((double)curMatrixDecIntValue*1.0) / (1 << matrixElementPrecisionFactor);
+            valueSignFlag = 0;
+            if (matrixElementAbsInteger || curMatrixDecIntValue)
+            {
+              sei_read_flag(pDecodedMessageOutputStream, val, "gfve_matrix_element_sign_flag");
+              valueSignFlag = val;
+            }
+            double matrixElementDecimal = valueSignFlag ? -(matrixElementAbsDecimal + matrixElementAbsInteger) : (matrixElementAbsDecimal + matrixElementAbsInteger);
+            matrixElement[j][k].push_back(matrixElementDecimal);
+          }
+          else
+          {
+            sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_matrix_delta_element_int");
+            CHECK(val < 0 || val > 4294967296 - 2, "The value of gfve_matrix_delta_element_int[ j ][ k ][ m ] shall be in the range of 0 to 2^(32) - 2, inclusive");
+            int matrixElementAbsInteger = val;
+            sei_read_code(pDecodedMessageOutputStream, matrixElementPrecisionFactor, val, "gfve_matrix_delta_element_dec");
+            int curMatrixDecIntValue = val;
+            double matrixElementAbsDecimal = ((double)curMatrixDecIntValue*1.0) / (1 << matrixElementPrecisionFactor);
+            valueSignFlag = 0;
+            if (matrixElementAbsInteger || curMatrixDecIntValue)
+            {
+              sei_read_flag(pDecodedMessageOutputStream, val, "gfve_matrix_delta_element_sign_flag");
+              valueSignFlag = val;
+            }
+            double matrixElementDecimal = (valueSignFlag ? -(matrixElementAbsDecimal + matrixElementAbsInteger) : (matrixElementAbsDecimal + matrixElementAbsInteger)) + (gfveGfvCnt == 0 ? gfveBaseMatrix[j][k][l] : gfvePrevMatrix[j][k][l]);
+            matrixElement[j][k].push_back(matrixElementDecimal);
+          }
+        }
+      }
+    }
+    gfvePrevMatrix = matrixElement;
+    if (sei.m_basePicFlag)
+    {
+      gfveBaseMatrix = matrixElement;
+    }
+    if (pDecodedMessageOutputStream)
+    {
+      (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfveMatrixNumber" << ": " << numMatrices << "\n";
+      (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfveMatrixWidthXHeight" << ": ";
+      for (uint32_t mj = 0; mj < numMatrices; mj++) // 
+      {
+        (*pDecodedMessageOutputStream) << (matrixWidthVec[mj]) << "x" << (matrixHeightVec[mj]) << " ";
+      }
+      (*pDecodedMessageOutputStream) << "\n";
+      (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfveMatrixElement" << ": ";
+      for (uint32_t mj = 0; mj < numMatrices; mj++) // 
+      {
+        for (uint32_t mk = 0; mk < matrixHeightVec[mj]; mk++)
+        {
+          for (uint32_t ml = 0; ml < matrixWidthVec[mj]; ml++)
+          {
+            (*pDecodedMessageOutputStream) << (matrixElement[mj][mk][ml]) << " ";
+          }
+        }
+      }
+      (*pDecodedMessageOutputStream) << "\n";
+    }
+  }
+
+  sei_read_code(pDecodedMessageOutputStream, 2, val, "gfve_pupil_coordinate_present_idx");
+  uint32_t pupilPresentIdx = val;
+  double   pupilLeftEyeCoordinateX;
+  double   pupilLeftEyeCoordinateY;
+  double   pupilRightEyeCoordinateX;
+  double   pupilRightEyeCoordinateY;
+  uint32_t pupilCoordinatePrecisionFactor = 0;
+  if (pupilPresentIdx)
+  {
+    if (sei.m_basePicFlag)
+    {
+      checkBasePicPupilPresentIdx = true;
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfve_pupil_coordinate_precision_factor_minus1");
+      CHECK(val < 0 || val > 31, "The value of gfve_pupil_coordinate_precision_factor_minus1 shall be in the range of 0 to 31, inclusive");
+      pupilCoordinatePrecisionFactor = val + 1;
+
+      gfveBasePupilCoordinatePrecisionFactor = pupilCoordinatePrecisionFactor;
+    }
+    else
+    {
+      pupilCoordinatePrecisionFactor = gfveBasePupilCoordinatePrecisionFactor;
+    }
+  }
+  if (checkBasePicPupilPresentIdx)
+  {
+    double gfveLeftPupilCoordinateXRef = 0.0;
+    double gfveLeftPupilCoordinateYRef = 0.0;
+    double gfveRightPupilCoordinateXRef = 0.0;
+    double gfveRightPupilCoordinateYRef = 0.0;
+    if (gfveGfvCnt == 0)
+    {
+      if (!sei.m_basePicFlag)
+      {
+        gfveLeftPupilCoordinateXRef = baseGfveLeftPupilCoordinateX;
+        gfveLeftPupilCoordinateYRef = baseGfveLeftPupilCoordinateY;
+        gfveRightPupilCoordinateXRef = baseGfveRightPupilCoordinateX;
+        gfveRightPupilCoordinateYRef = baseGfveRightPupilCoordinateY;
+      }
+    }
+    else
+    {
+      gfveLeftPupilCoordinateXRef = prevGfveLeftPupilCoordinateX;
+      gfveLeftPupilCoordinateYRef = prevGfveLeftPupilCoordinateY;
+      gfveRightPupilCoordinateXRef = prevGfveRightPupilCoordinateX;
+      gfveRightPupilCoordinateYRef = prevGfveRightPupilCoordinateY;
+    }
+    if (pupilPresentIdx == 1 || pupilPresentIdx == 3)
+    {
+      pupilLeftEyeCoordinateX = xParseSEIPupilCoordinate(pDecodedMessageOutputStream, gfveLeftPupilCoordinateXRef, pupilCoordinatePrecisionFactor, "left", "x");
+      pupilLeftEyeCoordinateY = xParseSEIPupilCoordinate(pDecodedMessageOutputStream, gfveLeftPupilCoordinateYRef, pupilCoordinatePrecisionFactor, "left", "y");
+    }
+    else
+    {
+      pupilLeftEyeCoordinateX = gfveLeftPupilCoordinateXRef;
+      pupilLeftEyeCoordinateY = gfveLeftPupilCoordinateYRef;
+    }
+    if (sei.m_basePicFlag)
+    {
+      gfveRightPupilCoordinateXRef = pupilLeftEyeCoordinateX;
+      gfveRightPupilCoordinateYRef = pupilLeftEyeCoordinateY;
+    }
+    if (pupilPresentIdx == 2 || pupilPresentIdx == 3)
+    {
+      pupilRightEyeCoordinateX = xParseSEIPupilCoordinate(pDecodedMessageOutputStream, gfveRightPupilCoordinateXRef, pupilCoordinatePrecisionFactor, "right", "x");
+      pupilRightEyeCoordinateY = xParseSEIPupilCoordinate(pDecodedMessageOutputStream, gfveRightPupilCoordinateYRef, pupilCoordinatePrecisionFactor, "right", "y");
+    }
+    else
+    {
+      pupilRightEyeCoordinateX = gfveRightPupilCoordinateXRef;
+      pupilRightEyeCoordinateY = gfveRightPupilCoordinateYRef;
+    }
+
+    if (sei.m_basePicFlag)
+    {
+      baseGfveLeftPupilCoordinateX = pupilLeftEyeCoordinateX;
+      baseGfveLeftPupilCoordinateY = pupilLeftEyeCoordinateY;
+      baseGfveRightPupilCoordinateX = pupilRightEyeCoordinateX;
+      baseGfveRightPupilCoordinateY = pupilRightEyeCoordinateY;
+    }
+    prevGfveLeftPupilCoordinateX = pupilLeftEyeCoordinateX;
+    prevGfveLeftPupilCoordinateY = pupilLeftEyeCoordinateY;
+    prevGfveRightPupilCoordinateX = pupilRightEyeCoordinateX;
+    prevGfveRightPupilCoordinateY = pupilRightEyeCoordinateY;
+
+    if (pDecodedMessageOutputStream)
+    {
+      (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfve_PupilCoordinate" << ": ";
+
+      (*pDecodedMessageOutputStream) << (pupilLeftEyeCoordinateX) << " ";
+      (*pDecodedMessageOutputStream) << (pupilLeftEyeCoordinateY) << " ";
+      (*pDecodedMessageOutputStream) << (pupilRightEyeCoordinateX) << " ";
+      (*pDecodedMessageOutputStream) << (pupilRightEyeCoordinateY) << " ";
+
+      (*pDecodedMessageOutputStream) << "\n";
+    }
+  }
+
+  if (sei.m_nnPresentFlag)
+  {
+    if (sei.m_nnModeIdc == 0)
+    {
+      while (!isByteAligned())
+      {
+        sei_read_flag(pDecodedMessageOutputStream, val, "gfve_nn_alignment_zero_bit_b");
+        CHECK(val != 0, "gfve_nn_alignment_zero_bit_b not equal to zero");
+      }
+      int payloadBytesRemaining = getBitstream()->getNumBitsLeft() / 8;
+      sei.m_payloadLength = payloadBytesRemaining;
+      sei.m_payloadByte = new char[sei.m_payloadLength];
+      int code;
+      std::string filename = "payloadByte_" + std::to_string(gfveId) + "_" + std::to_string(gfveGfvId) + ".nnr";
+      std::ofstream outFile(filename.c_str(), std::ofstream::binary);
+      for (int i = 0; i < payloadBytesRemaining; i++)
+      {
+        sei_read_scode(pDecodedMessageOutputStream, 8, code, "gfv_nn_payload_byte[i]");
+        sei.m_payloadByte[i] = (char)code;
+        outFile.write((char*)&code, 1);
+      }
+      outFile.close();
+    }
+  }
+}
+double SEIReader::xParseSEIPupilCoordinate(std::ostream *pOS, double refCoordinate, int precisionFactor, const char* eye, const char* axis)
+{
+  uint32_t val;
+  bool     valueSignFlag;
+
+  CHECK(std::string(eye) != "left" && std::string(eye) != "right", "Invalid value for 'eye'. Allowed values are 'left' or 'right'.");
+  CHECK(std::string(axis) != "x" && std::string(axis) != "y", "Invalid value for 'axis'. Allowed values are 'x' or 'y'.");
+  std::string checkMessage = "The value of gfve_pupil_" + std::string(eye) + "_eye_d" + std::string(axis) + "_coordinate_abs shall be be 0 to 1 << (gfve_pupil_coordinate_precision_factor_minus1 + 2), inclusive";
+  std::string absSymbolName = "gfve_pupil_" + std::string(eye) + "_eye_d" + std::string(axis) + "_coordinate_abs";
+
+  sei_read_uvlc(pOS, val, absSymbolName.c_str());
+  CHECK(val < 0 || val >(1 << (precisionFactor + 1)), checkMessage.c_str());
+  double coordinateAbs = static_cast<double>(val) / (1 << precisionFactor);
+
+  valueSignFlag = 0;
+  if (val)
+  {
+    std::string signSymbolName = "gfve_pupil_" + std::string(eye) + "_eye_d" + std::string(axis) + "_coordinate_sign_flag";
+    sei_read_flag(pOS, val, signSymbolName.c_str());
+    valueSignFlag = val;
+  }
+
+  return (valueSignFlag ? -coordinateAbs : coordinateAbs) + refCoordinate;
+}
+
 
 void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {

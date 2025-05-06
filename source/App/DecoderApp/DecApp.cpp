@@ -1622,18 +1622,30 @@ void DecApp::xOutputAnnotatedRegions(PicList* pcListPic)
 
 void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
 {
+  if (pcPic->getPictureType() == NAL_UNIT_CODED_SLICE_CRA || pcPic->getPictureType() == NAL_UNIT_CODED_SLICE_IDR_N_LP)
+  {
+    m_omiMasks.clear();
+    m_omiHeader.m_receivedSettingsOnce = false;
+  }
   SEIMessages objectMaskInfoSEIs = getSeisByType(pcPic->SEIs, SEI::PayloadType::OBJECT_MASK_INFO);
   for (auto it = objectMaskInfoSEIs.begin(); it != objectMaskInfoSEIs.end(); it++)
   {
     const SEIObjectMaskInfos& seiObjectMaskInfo = *(SEIObjectMaskInfos*) (*it);
-
-    if (!seiObjectMaskInfo.m_hdr.m_cancelFlag)
+    if (m_omiMasks.empty())
+    {
+      CHECK(seiObjectMaskInfo.m_hdr.m_cancelFlag, "OMI SEI message cannot be cancel from empty.");
+    }
+    if (seiObjectMaskInfo.m_hdr.m_cancelFlag)
+    {
+      m_omiMasks.clear();
+    }
+    else
     {
       if (m_omiHeader.m_receivedSettingsOnce)
       {
-        CHECK(m_omiHeader.m_numAuxPicLayerMinus1 != seiObjectMaskInfo.m_hdr.m_numAuxPicLayerMinus1, "omi_num_aux_pic_layer_minus1 should be consistent within the CLVS.")
-        CHECK(m_omiHeader.m_maskIdLengthMinus1 != seiObjectMaskInfo.m_hdr.m_maskIdLengthMinus1, "omi_mask_id_length_minus1 should be consistent within the CLVS.")
-        CHECK(m_omiHeader.m_maskSampleValueLengthMinus8 != seiObjectMaskInfo.m_hdr.m_maskSampleValueLengthMinus8,"omi_mask_sample_value_length_minus8 should be consistent within the CLVS.")
+        CHECK(m_omiHeader.m_numAuxPicLayerMinus1 != seiObjectMaskInfo.m_hdr.m_numAuxPicLayerMinus1, "The value of omi_num_aux_pic_layer_minus1 should be consistent within the CLVS.")
+        CHECK(m_omiHeader.m_maskIdLengthMinus1 != seiObjectMaskInfo.m_hdr.m_maskIdLengthMinus1, "The value of omi_mask_id_length_minus1 should be consistent within the CLVS.")
+        CHECK(m_omiHeader.m_maskSampleValueLengthMinus8 != seiObjectMaskInfo.m_hdr.m_maskSampleValueLengthMinus8,"The value of omi_mask_sample_value_length_minus8 should be consistent within the CLVS.")
         CHECK(m_omiHeader.m_maskConfidenceInfoPresentFlag != seiObjectMaskInfo.m_hdr.m_maskConfidenceInfoPresentFlag,"Confidence info present flag should be consistent within the CLVS.");
         if (m_omiHeader.m_maskConfidenceInfoPresentFlag)
         {
@@ -1647,11 +1659,50 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
       }
       else
       {
-        m_omiHeader                        = seiObjectMaskInfo.m_hdr;   // copy the settings.
+        m_omiHeader                        = seiObjectMaskInfo.m_hdr;  
         m_omiHeader.m_receivedSettingsOnce = true;
+        m_omiMasks.resize(m_omiHeader.m_numAuxPicLayerMinus1 + 1);
+      }
+      m_omiHeader.m_persistenceFlag = seiObjectMaskInfo.m_hdr.m_persistenceFlag;
+      uint32_t objMaskInfoCnt = 0;
+      for (uint32_t i = 0; i <= m_omiHeader.m_numAuxPicLayerMinus1; i++)
+      {
+        if (seiObjectMaskInfo.m_maskPicUpdateFlag[i])
+        {
+          if (m_omiMasks[i].empty())
+          {
+            CHECK(!seiObjectMaskInfo.m_numMaskInPic[i], "The value of omi_num_mask_in_pic should not be equal to 0 at the first update.");
+          }
+          m_omiMasks[i].resize(seiObjectMaskInfo.m_numMaskInPic[i]);
+          for (uint32_t j = 0; j < seiObjectMaskInfo.m_numMaskInPic[i]; j++)
+          {
+            m_omiMasks[i][j] = (std::pair<uint32_t, SEIObjectMaskInfos::ObjectMaskInfo>(seiObjectMaskInfo.m_objectMaskInfos[objMaskInfoCnt].maskId + (1 << (seiObjectMaskInfo.m_hdr.m_maskIdLengthMinus1 + 1)) * i, seiObjectMaskInfo.m_objectMaskInfos[objMaskInfoCnt]));
+            ++objMaskInfoCnt;
+          }
+        }
+      }
+      if (!m_omiMasks.empty())
+      {
+        std::set<uint32_t> MaskIdSet;
+        for (auto masks : m_omiMasks)
+        {
+          for (auto mask : masks)
+          {
+            if (MaskIdSet.find(mask.first) == MaskIdSet.end())
+            {
+              MaskIdSet.insert(mask.first);
+            }
+            else
+            {
+              CHECK(true, "MaskId is a globle id, which should be unique.");
+            }
+          }
+        }
       }
     }
-
+  }
+  if ((!objectMaskInfoSEIs.empty() && !m_omiMasks.empty()) || (objectMaskInfoSEIs.empty() && m_omiHeader.m_persistenceFlag))
+  {
     FILE* fpPersist = fopen(m_objectMaskInfoSEIFileName.c_str(), "ab");
     if (fpPersist == nullptr)
     {
@@ -1659,74 +1710,65 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
     }
     else
     {
-      fprintf(fpPersist, "POC %d\n", (int) pcPic->getPOC());
+      fprintf(fpPersist, "======== POC %d ========\n", (int)pcPic->getPOC());
       // header
-      fprintf(fpPersist, "OMI Cancel Flag = %d\n", seiObjectMaskInfo.m_hdr.m_cancelFlag);
-      if (!seiObjectMaskInfo.m_hdr.m_cancelFlag)
+      fprintf(fpPersist, "OMI Cancel Flag = %d\n", m_omiHeader.m_cancelFlag);
+      if (!m_omiHeader.m_cancelFlag)
       {
-        fprintf(fpPersist, "OMI Persistence Flag = %d\n", seiObjectMaskInfo.m_hdr.m_persistenceFlag);
-        fprintf(fpPersist, "OMI AuxPicLayer Num = %d\n", seiObjectMaskInfo.m_hdr.m_numAuxPicLayerMinus1 + 1);
-        fprintf(fpPersist, "OMI MaskId Length = %d\n", seiObjectMaskInfo.m_hdr.m_maskIdLengthMinus1 + 1);
-        fprintf(fpPersist, "OMI MaskSampleValue Length = %d\n",seiObjectMaskInfo.m_hdr.m_maskSampleValueLengthMinus8 + 8);
-        fprintf(fpPersist, "OMI MaskConf Present = %d\n", seiObjectMaskInfo.m_hdr.m_maskConfidenceInfoPresentFlag);
-        if (seiObjectMaskInfo.m_hdr.m_maskConfidenceInfoPresentFlag)
+        fprintf(fpPersist, "OMI Persistence Flag = %d\n", m_omiHeader.m_persistenceFlag);
+        fprintf(fpPersist, "OMI AuxPicLayer Num = %d\n", m_omiHeader.m_numAuxPicLayerMinus1 + 1);
+        fprintf(fpPersist, "OMI MaskId Length = %d\n", m_omiHeader.m_maskIdLengthMinus1 + 1);
+        fprintf(fpPersist, "OMI MaskSampleValue Length = %d\n", m_omiHeader.m_maskSampleValueLengthMinus8 + 8);
+        fprintf(fpPersist, "OMI MaskConf Present = %d\n", m_omiHeader.m_maskConfidenceInfoPresentFlag);
+        if (m_omiHeader.m_maskConfidenceInfoPresentFlag)
         {
-          fprintf(fpPersist, "OMI MaskConf Length = %d\n", seiObjectMaskInfo.m_hdr.m_maskConfidenceLengthMinus1 + 1);
+          fprintf(fpPersist, "OMI MaskConf Length = %d\n", m_omiHeader.m_maskConfidenceLengthMinus1 + 1);
         }
-        fprintf(fpPersist, "OMI MaskDepth Present = %d\n", seiObjectMaskInfo.m_hdr.m_maskDepthInfoPresentFlag);
-        if (seiObjectMaskInfo.m_hdr.m_maskDepthInfoPresentFlag)
+        fprintf(fpPersist, "OMI MaskDepth Present = %d\n", m_omiHeader.m_maskDepthInfoPresentFlag);
+        if (m_omiHeader.m_maskDepthInfoPresentFlag)
         {
-          fprintf(fpPersist, "OMI MaskDepth Length = %d\n", seiObjectMaskInfo.m_hdr.m_maskDepthLengthMinus1 + 1);
+          fprintf(fpPersist, "OMI MaskDepth Length = %d\n", m_omiHeader.m_maskDepthLengthMinus1 + 1);
         }
-        fprintf(fpPersist, "OMI MaskLabel Present = %d\n", seiObjectMaskInfo.m_hdr.m_maskLabelInfoPresentFlag);
-        if (seiObjectMaskInfo.m_hdr.m_maskLabelInfoPresentFlag)
+        fprintf(fpPersist, "OMI MaskLabel Present = %d\n", m_omiHeader.m_maskLabelInfoPresentFlag);
+        if (m_omiHeader.m_maskLabelInfoPresentFlag)
         {
-          fprintf(fpPersist, "OMI MaskLabelLang Present = %d\n",seiObjectMaskInfo.m_hdr.m_maskLabelLanguagePresentFlag);
-          if (seiObjectMaskInfo.m_hdr.m_maskLabelLanguagePresentFlag)
+          fprintf(fpPersist, "OMI MaskLabelLang Present = %d\n", m_omiHeader.m_maskLabelLanguagePresentFlag);
+          if (m_omiHeader.m_maskLabelLanguagePresentFlag)
           {
-            fprintf(fpPersist, "OMI MaskLabelLang = %s\n", seiObjectMaskInfo.m_hdr.m_maskLabelLanguage.c_str());
+            fprintf(fpPersist, "OMI MaskLabelLang = %s\n", m_omiHeader.m_maskLabelLanguage.c_str());
           }
         }
         fprintf(fpPersist, "\n");
-
         // infos
-        uint32_t maskIdx = 0;
-        for (uint32_t i = 0; i <= seiObjectMaskInfo.m_hdr.m_numAuxPicLayerMinus1; i++)
+        for (int layerIdx = 0; layerIdx < m_omiMasks.size(); layerIdx++)
         {
-          fprintf(fpPersist, "OMI MaskUpdateFlag[%d] = %d\n", i, seiObjectMaskInfo.m_maskPicUpdateFlag[i]);
-          if (seiObjectMaskInfo.m_maskPicUpdateFlag[i])
+          fprintf(fpPersist, "[Auxiliary Layer-%d]\n", layerIdx);
+          fprintf(fpPersist, "MaskNumInPic[%d]: %d\n\n", layerIdx, (int)m_omiMasks[layerIdx].size());
+
+          for (int maskIdx = 0; maskIdx < m_omiMasks[layerIdx].size(); maskIdx++)
           {
-            fprintf(fpPersist, "OMI MaskUpdateNum[%d] = %d\n", i, seiObjectMaskInfo.m_numMaskInPicUpdate[i]);
-            for (uint32_t j = 0; j < seiObjectMaskInfo.m_numMaskInPicUpdate[i]; j++)
+            fprintf(fpPersist, "MaskId[%d][%d]: %d\n", layerIdx, maskIdx, (m_omiMasks[layerIdx][maskIdx].second.maskId + (1 << (m_omiHeader.m_maskIdLengthMinus1 + 1)) * layerIdx));
+            fprintf(fpPersist, "MaskIdNewObjectFlag[%d][%d]: %d\n", layerIdx, maskIdx, m_omiMasks[layerIdx][maskIdx].second.maskNew);
+            fprintf(fpPersist, "AuxSampleValue[%d][%d]: %d\n", layerIdx, maskIdx, m_omiMasks[layerIdx][maskIdx].second.auxSampleValue);
+            fprintf(fpPersist, "MaskBBoxPresentFlag[%d][%d]: %d\n", layerIdx, maskIdx, m_omiMasks[layerIdx][maskIdx].second.maskBoundingBoxPresentFlag);
+            if (m_omiMasks[layerIdx][maskIdx].second.maskBoundingBoxPresentFlag)
             {
-              fprintf(fpPersist, "MaskId[%d][%d] = %d\n", i, j, seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskId);
-              fprintf(fpPersist, "AuxSampleValue[%d][%d] = %d\n", i, j, seiObjectMaskInfo.m_objectMaskInfos[maskIdx].auxSampleValue);
-              fprintf(fpPersist, "MaskCancel[%d][%d] = %d\n", i, j,
-                      seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskCancel);
-              if (!seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskCancel)
-              {
-                fprintf(fpPersist, "MaskBBoxPresentFlag[%d][%d] = %d\n", i, j, seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskBoundingBoxPresentFlag);
-                if (seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskBoundingBoxPresentFlag)
-                {
-                  fprintf(fpPersist, "MaskTop[%d][%d] = %d\n", i, j,seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskTop);
-                  fprintf(fpPersist, "MaskLeft[%d][%d] = %d\n", i, j,seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskLeft);
-                  fprintf(fpPersist, "MaskWidth[%d][%d] = %d\n", i, j,seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskWidth);
-                  fprintf(fpPersist, "MaskHeight[%d][%d] = %d\n", i, j, seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskHeight);
-                }
-                if (seiObjectMaskInfo.m_hdr.m_maskConfidenceInfoPresentFlag)
-                {
-                  fprintf(fpPersist, "MaskConf[%d][%d] = %d\n", i, j,seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskConfidence);
-                }
-                if (seiObjectMaskInfo.m_hdr.m_maskDepthInfoPresentFlag)
-                {
-                  fprintf(fpPersist, "MaskDepth[%d][%d] = %d\n", i, j,seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskDepth);
-                }
-                if (m_omiHeader.m_maskLabelInfoPresentFlag)
-                {
-                  fprintf(fpPersist, "MaskLabel[%d][%d] = %s\n", i, j, seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskLabel.c_str());
-                }
-              }
-              maskIdx++;
+              fprintf(fpPersist, "MaskTop[%d][%d]: %d\n", layerIdx, maskIdx, m_omiMasks[layerIdx][maskIdx].second.maskTop);
+              fprintf(fpPersist, "MaskLeft[%d][%d]: %d\n", layerIdx, maskIdx, m_omiMasks[layerIdx][maskIdx].second.maskLeft);
+              fprintf(fpPersist, "MaskWidth[%d][%d]: %d\n", layerIdx, maskIdx, m_omiMasks[layerIdx][maskIdx].second.maskWidth);
+              fprintf(fpPersist, "MaskHeight[%d][%d]: %d\n", layerIdx, maskIdx, m_omiMasks[layerIdx][maskIdx].second.maskHeight);
+            }
+            if (m_omiHeader.m_maskConfidenceInfoPresentFlag)
+            {
+              fprintf(fpPersist, "MaskConf[%d][%d]: %d\n", layerIdx, maskIdx, m_omiMasks[layerIdx][maskIdx].second.maskConfidence);
+            }
+            if (m_omiHeader.m_maskDepthInfoPresentFlag)
+            {
+              fprintf(fpPersist, "MaskDepth[%d][%d]: %d\n", layerIdx, maskIdx, m_omiMasks[layerIdx][maskIdx].second.maskDepth);
+            }
+            if (m_omiHeader.m_maskLabelInfoPresentFlag)
+            {
+              fprintf(fpPersist, "MaskLabel[%d][%d]: %s\n", layerIdx, maskIdx, m_omiMasks[layerIdx][maskIdx].second.maskLabel.c_str());
             }
             fprintf(fpPersist, "\n");
           }

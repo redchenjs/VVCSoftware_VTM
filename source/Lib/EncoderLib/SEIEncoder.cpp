@@ -587,20 +587,19 @@ void SEIEncoder::initSEISourcePictureTimingInfo(SEISourcePictureTimingInfo* SEIS
   SEISourcePictureTimingInfo->m_sptiSourceType                  = m_pcCfg->getmSptiSEISourceType();
   SEISourcePictureTimingInfo->m_sptiTimeScale                   = m_pcCfg->getmSptiSEITimeScale();
   SEISourcePictureTimingInfo->m_sptiNumUnitsInElementalInterval = m_pcCfg->getmSptiSEINumUnitsInElementalInterval();
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
   SEISourcePictureTimingInfo->m_sptiDirectionFlag               = m_pcCfg->getmSptiSEIDirectionFlag();
-#endif
   SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1          = m_pcCfg->getMaxTempLayer() - 1;
   SEISourcePictureTimingInfo->m_sptiCancelFlag                  = 0;
   SEISourcePictureTimingInfo->m_sptiPersistenceFlag             = 1;
   SEISourcePictureTimingInfo->m_sptiSourceTypePresentFlag = (SEISourcePictureTimingInfo->m_sptiSourceType == 0 ? 0 : 1);
-  SEISourcePictureTimingInfo->m_sptiSublayerSynthesizedPictureFlag =
-    std::vector<bool>(SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 + 1, 0);
+  int sptiMinTemporalSublayer =
+    (SEISourcePictureTimingInfo->m_sptiPersistenceFlag ? 0 : SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1);
 
-  for (int i = 0; i <= SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1; i++)
+  for (int i = sptiMinTemporalSublayer; i <= SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1; i++)
   {
-    SEISourcePictureTimingInfo->m_sptiSublayerIntervalScaleFactor.push_back(
-      1 << (SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 - i));
+    SEISourcePictureTimingInfo->m_sptiSublayerIntervalScaleFactor[i] =
+      1 << (SEISourcePictureTimingInfo->m_sptiMaxSublayersMinus1 - i);
+    SEISourcePictureTimingInfo->m_sptiSublayerSynthesizedPictureFlag[i] = false;
   }
 }
 void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessingOrderInfo, SEIProcessingOrderNesting *seiProcessingOrderNesting)
@@ -779,7 +778,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
         break;
       }
-#if JVET_AJ0048_SPO_SEI_LIST
       case SEI::PayloadType::OBJECT_MASK_INFO:
       {
         SEIObjectMaskInfos* sei = new SEIObjectMaskInfos;
@@ -794,7 +792,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
         break;
       }
-#endif
       default:
       {
         msg(ERROR, "not support in sei processing order SEI\n");
@@ -1102,60 +1099,52 @@ void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* se
 
     uint32_t objMaskInfoCnt = 0;
     seiObjMask->m_maskPicUpdateFlag.resize(seiObjMask->m_hdr.m_numAuxPicLayerMinus1 + 1);
-    seiObjMask->m_numMaskInPicUpdate.resize(seiObjMask->m_hdr.m_numAuxPicLayerMinus1 + 1);
+    seiObjMask->m_numMaskInPic.resize(seiObjMask->m_hdr.m_numAuxPicLayerMinus1 + 1);
     for (uint32_t i = 0; i <= seiObjMask->m_hdr.m_numAuxPicLayerMinus1; i++)
     {
       std::string cfgMaskPicUpdateFlagStr = "SEIOmiMaskPicUpdateFlag[" + std::to_string(i) + "]";
       readTokenValue(seiObjMask->m_maskPicUpdateFlag[i], failed, fic, cfgMaskPicUpdateFlagStr.c_str());
       if (seiObjMask->m_maskPicUpdateFlag[i])
       {
-        std::string cfgNumMaskInPicUpdataStr = "SEIOmiNumMaskInPicUpdate[" + std::to_string(i) + "]";
-        readTokenValueAndValidate<uint32_t>(seiObjMask->m_numMaskInPicUpdate[i], failed, fic, cfgNumMaskInPicUpdataStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskIdLengthMinus1 + 1)) - 1));
-        seiObjMask->m_objectMaskInfos.resize(objMaskInfoCnt + seiObjMask->m_numMaskInPicUpdate[i]);
-        for (uint32_t j = 0; j < seiObjMask->m_numMaskInPicUpdate[i]; j++)
+        std::string cfgNumMaskInPicStr = "SEIOmiNumMaskInPic[" + std::to_string(i) + "]";
+        readTokenValueAndValidate<uint32_t>(seiObjMask->m_numMaskInPic[i], failed, fic, cfgNumMaskInPicStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskIdLengthMinus1 + 1)) - 1));
+        seiObjMask->m_objectMaskInfos.resize(objMaskInfoCnt + seiObjMask->m_numMaskInPic[i]);
+        for (uint32_t j = 0; j < seiObjMask->m_numMaskInPic[i]; j++)
         {
           SEIObjectMaskInfos::ObjectMaskInfo& omi = seiObjMask->m_objectMaskInfos[objMaskInfoCnt];
-
           std::string cfgMaskIdStr = "SEIOmiMaskId[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+          std::string cfgMaskNewStr = "SEIOmiMaskNew[" + std::to_string(i) + "][" + std::to_string(j) + "]";
           std::string cfgAuxSampleValueStr = "SEIOmiAuxSampleValue[" + std::to_string(i) + "][" + std::to_string(j) + "]";
-          std::string cfgMaskCancelStr = "SEIOmiMaskCancel[" + std::to_string(i) + "][" + std::to_string(j) + "]";
           readTokenValueAndValidate<uint32_t>(omi.maskId, failed, fic, cfgMaskIdStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskIdLengthMinus1 + 1)) - 1));
+          readTokenValue(omi.maskNew, failed, fic, cfgMaskNewStr.c_str());
           readTokenValueAndValidate<uint32_t>(omi.auxSampleValue, failed, fic, cfgAuxSampleValueStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskSampleValueLengthMinus8 + 8)) - 1));
-          readTokenValue(omi.maskCancel, failed, fic, cfgMaskCancelStr.c_str());
-          if (!omi.maskCancel)
+          std::string cfgMaskBoundingBoxPresentFlagStr = "SEIOmiBoundingBoxPresentFlag[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+          readTokenValue(omi.maskBoundingBoxPresentFlag, failed, fic, cfgMaskBoundingBoxPresentFlagStr.c_str());
+          if (omi.maskBoundingBoxPresentFlag)
           {
-            std::string cfgMaskBoundingBoxPresentFlagStr = "SEIOmiBoundingBoxPresentFlag[" + std::to_string(i) + "][" + std::to_string(j) + "]";
-            readTokenValue(omi.maskBoundingBoxPresentFlag, failed, fic, cfgMaskBoundingBoxPresentFlagStr.c_str());
-
-            if (omi.maskBoundingBoxPresentFlag)
-            {
-              std::string cfgMaskTopStr    = "SEIOmiMaskTop[" + std::to_string(i) + "][" + std::to_string(j) + "]";
-              std::string cfgMaskLeftStr   = "SEIOmiMaskLeft[" + std::to_string(i) + "][" + std::to_string(j) + "]";
-              std::string cfgMaskWidthStr  = "SEIOmiMaskWidth[" + std::to_string(i) + "][" + std::to_string(j) + "]";
-              std::string cfgMaskHeightStr = "SEIOmiMaskHeight[" + std::to_string(i) + "][" + std::to_string(j) + "]";
-              readTokenValueAndValidate(omi.maskTop, failed, fic, cfgMaskTopStr.c_str(), uint32_t(0), uint32_t(0xffff));
-              readTokenValueAndValidate(omi.maskLeft, failed, fic, cfgMaskLeftStr.c_str(), uint32_t(0), uint32_t(0xffff));
-              readTokenValueAndValidate(omi.maskWidth, failed, fic, cfgMaskWidthStr.c_str(), uint32_t(0),uint32_t(0xffff));
-              readTokenValueAndValidate(omi.maskHeight, failed, fic, cfgMaskHeightStr.c_str(), uint32_t(0),uint32_t(0xffff));
-            }
-
-            if (seiObjMask->m_hdr.m_maskConfidenceInfoPresentFlag)
-            {
-              std::string cfgMaskConfidenceStr = "SEIOmiMaskConfidence[" + std::to_string(i) + "][" + std::to_string(j) + "]";
-              readTokenValueAndValidate(omi.maskConfidence, failed, fic, cfgMaskConfidenceStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskConfidenceLengthMinus1 + 1)) - 1));
-            }
-
-            if (seiObjMask->m_hdr.m_maskDepthInfoPresentFlag)
-            {
-              std::string cfgMaskDepthStr = "SEIOmiMaskDepth[" + std::to_string(i) + "][" + std::to_string(j) + "]";
-              readTokenValueAndValidate(omi.maskDepth, failed, fic, cfgMaskDepthStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskDepthLengthMinus1 + 1)) - 1));
-            }
-
-            if (seiObjMask->m_hdr.m_maskLabelInfoPresentFlag)
-            {
-              std::string cfgMaskLabelStr = "SEIOmiMaskLabel[" + std::to_string(i) + "][" + std::to_string(j) + "]";
-              readTokenValue(omi.maskLabel, failed, fic, cfgMaskLabelStr.c_str());
-            }
+            std::string cfgMaskTopStr    = "SEIOmiMaskTop[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+            std::string cfgMaskLeftStr   = "SEIOmiMaskLeft[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+            std::string cfgMaskWidthStr  = "SEIOmiMaskWidth[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+            std::string cfgMaskHeightStr = "SEIOmiMaskHeight[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+            readTokenValueAndValidate(omi.maskTop, failed, fic, cfgMaskTopStr.c_str(), uint32_t(0), uint32_t(0xffff));
+            readTokenValueAndValidate(omi.maskLeft, failed, fic, cfgMaskLeftStr.c_str(), uint32_t(0), uint32_t(0xffff));
+            readTokenValueAndValidate(omi.maskWidth, failed, fic, cfgMaskWidthStr.c_str(), uint32_t(0),uint32_t(0xffff));
+            readTokenValueAndValidate(omi.maskHeight, failed, fic, cfgMaskHeightStr.c_str(), uint32_t(0),uint32_t(0xffff));
+          }
+          if (seiObjMask->m_hdr.m_maskConfidenceInfoPresentFlag)
+          {
+            std::string cfgMaskConfidenceStr = "SEIOmiMaskConfidence[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+            readTokenValueAndValidate(omi.maskConfidence, failed, fic, cfgMaskConfidenceStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskConfidenceLengthMinus1 + 1)) - 1));
+          }
+          if (seiObjMask->m_hdr.m_maskDepthInfoPresentFlag)
+          {
+            std::string cfgMaskDepthStr = "SEIOmiMaskDepth[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+            readTokenValueAndValidate(omi.maskDepth, failed, fic, cfgMaskDepthStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskDepthLengthMinus1 + 1)) - 1));
+          }
+          if (seiObjMask->m_hdr.m_maskLabelInfoPresentFlag)
+          {
+            std::string cfgMaskLabelStr = "SEIOmiMaskLabel[" + std::to_string(i) + "][" + std::to_string(j) + "]";
+            readTokenValue(omi.maskLabel, failed, fic, cfgMaskLabelStr.c_str());
           }
           objMaskInfoCnt++;
         }
@@ -1213,8 +1202,7 @@ bool SEIEncoder::initSEIObjectMaskInfos(SEIObjectMaskInfos* SEIObjMask, int curr
     std::ifstream fic(ObjMaskSEIFileWithPoc.c_str());
     if (!fic.good() || !fic.is_open())
     {
-      std::cerr << "No Object Mask Informations SEI parameters file " << ObjMaskSEIFileWithPoc << " for POC " << currPOC
-                << std::endl;
+      std::cerr << "No Object Mask Informations SEI parameters file " << ObjMaskSEIFileWithPoc << " for POC " << currPOC << std::endl;
       return false;
     }
 
@@ -1845,6 +1833,12 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_applicationPurposeTagUri = m_pcCfg->getNNPostFilterSEICharacteristicsApplicationPurposeTagUri(filterIdx);
       }
     }
+#if NNPFC_SCAN_TYPE_IDC
+    if((sei->m_purpose & NNPC_PurposeType::SPATIAL_EXTRAPOLATION) != 0 || (sei->m_purpose & NNPC_PurposeType::RESOLUTION_UPSAMPLING) != 0)
+    {
+      sei->m_scanTypeIdc = m_pcCfg->getNNPostFilterSEICharacteristicsScanTypeIdc(filterIdx);
+    }
+#endif
     sei->m_forHumanViewingIdc = m_pcCfg->getNNPostFilterSEICharacteristicsForHumanViewingIdc(filterIdx);
     sei->m_forMachineAnalysisIdc = m_pcCfg->getNNPostFilterSEICharacteristicsForMachineAnalysisIdc(filterIdx);
   }
@@ -1908,7 +1902,6 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
     if ((sei->m_type & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) != 0)
     {
       sei->m_objectBasedIdc = m_pcCfg->getEOISEIObjectBasedIdc();
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
       if (sei->m_objectBasedIdc & EOI_OBJECT_BASED::COARSER_QUANTIZATION)
       {
         sei->m_quantThresholdDelta = m_pcCfg->getEOISEIQuantThresholdDelta();
@@ -1917,7 +1910,6 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
           sei->m_picQuantObjectFlag = m_pcCfg->getEOISEIPicQuantObjectFlag();
         }
       }
-#endif
     }
     if ((sei->m_type & EOI_OptimizationType::TEMPORAL_RESAMPLING) != 0)
     {
@@ -2027,7 +2019,7 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
     }
     if (sei->m_3DCoordinateFlag == 1)
     {
-      sei->m_coordinateZMaxValue.push_back(m_pcCfg->getGenerativeFaceVideoSEIZCoordinateMaxValue(sei->m_currentid, 0));
+      sei->m_coordinateZMaxValue = m_pcCfg->getGenerativeFaceVideoSEIZCoordinateMaxValue(sei->m_currentid, 0);
       for (uint32_t coordinateId = 0; coordinateId < sei->m_coordinatePointNum; coordinateId++)
       {
         sei->m_coordinateZ.push_back(m_pcCfg->getGenerativeFaceVideoSEICoordinateZTesonr(sei->m_currentid, coordinateId));
@@ -2056,16 +2048,27 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
       sei->m_numMatricesInfo.push_back(m_pcCfg->getGenerativeFaceVideoSEINumMatricesInfo(sei->m_currentid, matrixId));
       if (sei->m_matrixTypeIdx[matrixId] == 0 || sei->m_matrixTypeIdx[matrixId] == 1)
       {
-        if (sei->m_3DCoordinateFlag == 1 || sei->m_matrix3DSpaceFlag[matrixId] == 1)
-        {
-          matrixWidth = 3;
-          matrixHeight = 3;
-        }
-        else
-        {
-          matrixWidth = 2;
-          matrixHeight = 2;
-        }
+        matrixHeight = sei->m_3DCoordinateFlag + 2;
+        matrixWidth = sei->m_3DCoordinateFlag + 2;
+      }
+      else if (sei->m_matrixTypeIdx[matrixId] == 4)
+      {
+        matrixWidth = (sei->m_coordinatePresentFlag ? sei->m_3DCoordinateFlag : sei->m_matrix3DSpaceFlag[matrixId]) + 2;
+        matrixHeight = (sei->m_coordinatePresentFlag ? sei->m_3DCoordinateFlag :  sei->m_matrix3DSpaceFlag[matrixId]) + 2;
+      }
+      else if (sei->m_matrixTypeIdx[matrixId] == 5 || sei->m_matrixTypeIdx[matrixId] == 6)
+      {
+        matrixWidth = 1;
+        matrixHeight = (sei->m_coordinatePresentFlag ? sei->m_3DCoordinateFlag : sei->m_matrix3DSpaceFlag[matrixId]) + 2;
+      }
+      else
+      {
+        matrixHeight = sei->m_matrixHeight[matrixId];
+        matrixWidth = sei->m_matrixWidth[matrixId];
+      }
+
+      if (sei->m_matrixTypeIdx[matrixId] == 0 || sei->m_matrixTypeIdx[matrixId] == 1)
+      {
         if (sei->m_coordinatePresentFlag)
         {
           numMatrices = sei->m_numMatricestonumKpsFlag[matrixId] ? sei->m_coordinatePointNum : (sei->m_numMatricesInfo[matrixId] < (sei->m_coordinatePointNum - 1) ? (sei->m_numMatricesInfo[matrixId] + 1) : (sei->m_numMatricesInfo[matrixId] + 2));
@@ -2075,45 +2078,13 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
           numMatrices = sei->m_numMatricesInfo[matrixId] + 1;
         }
       }
-      else if (sei->m_matrixTypeIdx[matrixId] == 2 || sei->m_matrixTypeIdx[matrixId] == 3 || sei->m_matrixTypeIdx[matrixId] >= 7)
+      else if (sei->m_matrixTypeIdx[matrixId] >= 2 && sei->m_matrixTypeIdx[matrixId] < 7)
       {
-        if (sei->m_matrixTypeIdx[matrixId] >= 7)
-        {
-          numMatrices = sei->m_numMatrices[matrixId];
-        }
-        else
-        {
-          numMatrices = 1;
-        }
-        matrixHeight = sei->m_matrixHeight[matrixId];
-        matrixWidth = sei->m_matrixWidth[matrixId];
-      }
-      else if (sei->m_matrixTypeIdx[matrixId] >= 4 && sei->m_matrixTypeIdx[matrixId] <= 6)
-      {
-        if (sei->m_matrixTypeIdx[matrixId] == 4)
-        {
-          if (sei->m_3DCoordinateFlag == 1 || sei->m_matrix3DSpaceFlag[matrixId] == 1)
-          {
-            matrixWidth = 3;
-          }
-          else
-          {
-            matrixWidth = 2;
-          }
-        }
-        if (sei->m_matrixTypeIdx[matrixId] == 5 || sei->m_matrixTypeIdx[matrixId] == 6)
-        {
-          matrixWidth = 1;
-        }
-        if (sei->m_3DCoordinateFlag == 1 || sei->m_matrix3DSpaceFlag[matrixId] == 1)
-        {
-          matrixHeight = 3;
-        }
-        else
-        {
-          matrixHeight = 2;
-        }
         numMatrices = 1;
+      }
+      else
+      {
+        numMatrices = sei->m_numMatrices[matrixId];
       }
       sei->m_numMatricesstore.push_back(numMatrices);
       sei->m_matrixWidthstore.push_back(matrixWidth);
@@ -2150,7 +2121,67 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
     }
   }
 }
+void SEIEncoder::initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement *sei, int currframeindex)
+{
+  CHECK(!m_isInitialized, "Unspecified error");
+  CHECK(sei == nullptr, "Unspecified error");
+  sei->m_number = m_pcCfg->getGenerativeFaceVideoEnhancementSEINumber();
+  sei->m_basePicFlag = m_pcCfg->getGenerativeFaceVideoEnhancementSEIBasePicFlag();
+  sei->m_nnPresentFlag = m_pcCfg->getGenerativeFaceVideoEnhancementSEINNPresentFlag();
+  sei->m_nnModeIdc = m_pcCfg->getGenerativeFaceVideoEnhancementSEINNModeIdc();
+  sei->m_nnTagURI = m_pcCfg->getGenerativeFaceVideoEnhancementSEINNTagURI();
+  sei->m_nnURI = m_pcCfg->getGenerativeFaceVideoEnhancementSEINNURI();  
+  sei->m_payloadFilename = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPayloadFilename();
+  sei->m_currentid = currframeindex;
+  sei->m_id = m_pcCfg->getGenerativeFaceVideoEnhancementSEIId(sei->m_currentid);
+  sei->m_gfvcnt = m_pcCfg->getGenerativeFaceVideoEnhancementSEIGFVCnt(sei->m_currentid);
+  sei->m_gfvid = m_pcCfg->getGenerativeFaceVideoEnhancementSEIGFVId(sei->m_currentid);  
+  sei->m_pupilPresentIdx = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPupilPresentIdx(sei->m_currentid);
+  sei->m_pupilCoordinatePrecisionFactor = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPupilCoordinatePrecisionFactor(sei->m_currentid);
+  sei->m_pupilLeftEyeCoordinateX = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateX(sei->m_currentid);
+  sei->m_pupilLeftEyeCoordinateY = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY(sei->m_currentid);
+  sei->m_pupilRightEyeCoordinateX = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX(sei->m_currentid);
+  sei->m_pupilRightEyeCoordinateY = m_pcCfg->getGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY(sei->m_currentid);
+  sei->m_matrixElementPrecisionFactor = m_pcCfg->getGenerativeFaceVideoEnhancementSEIMatrixElementPrecisionFactor(sei->m_currentid);
+  sei->m_numMatrices = m_pcCfg->getGenerativeFaceVideoEnhancementSEINumMatrices(sei->m_currentid);
+  sei->m_matrixPresentFlag = m_pcCfg->getGenerativeFaceVideoEnhancementSEIMatrixPresentFlag(sei->m_currentid);
+  sei->m_matrixPredFlag = m_pcCfg->getGenerativeFaceVideoEnhancementSEIMatrixPredFlag(sei->m_currentid);
+  if (sei->m_matrixPresentFlag == 1)
+  {
+    for (uint32_t j = 0; j <  sei->m_numMatrices; j++)
+    {
+      sei->m_matrixElement.push_back(std::vector< std::vector<double>>());
 
+      sei->m_matrixWidth.push_back(m_pcCfg->getGenerativeFaceVideoEnhancementSEIMatrixWidth(sei->m_currentid, j));
+      sei->m_matrixHeight.push_back(m_pcCfg->getGenerativeFaceVideoEnhancementSEIMatrixHeight(sei->m_currentid, j));
+      for (uint32_t k = 0; k < sei->m_matrixWidth[j]; k++)
+      {
+        sei->m_matrixElement[j].push_back(std::vector<double>());
+        for (uint32_t l = 0; l < sei->m_matrixHeight[j]; l++)
+        {
+          sei->m_matrixElement[j][k].push_back(m_pcCfg->getGenerativeFaceVideoEnhancementSEIMatrixElement(sei->m_currentid, j, k, l));
+        }
+      }
+    }
+  }
+  if (sei->m_nnPresentFlag)
+  {
+    if (sei->m_nnModeIdc == 0)
+    {
+      std::ifstream     bitstreamFile(sei->m_payloadFilename.c_str(), std::ifstream::in | std::ifstream::binary);
+      if (!bitstreamFile)
+      {
+        EXIT("Failed to open bitstream file " << sei->m_payloadFilename.c_str() << " for reading");
+      }
+      bitstreamFile.seekg(0, std::ifstream::end);
+      sei->m_payloadLength = bitstreamFile.tellg();
+      bitstreamFile.seekg(0, std::ifstream::beg);
+      sei->m_payloadByte = new char[sei->m_payloadLength];
+      bitstreamFile.read(sei->m_payloadByte, sei->m_payloadLength);
+      bitstreamFile.close();
+    }
+  }
+}
 #if JVET_AJ0151_DSC_SEI
 void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei)
 {

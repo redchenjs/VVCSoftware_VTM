@@ -91,6 +91,7 @@ private:
   std::map<uint32_t, std::string>                                m_arLabels; ///< AR label pool
 
   SEIObjectMaskInfos::ObjectMaskInfoHeader m_omiHeader;   ///< OMI header
+  std::vector<std::vector<std::pair<uint32_t, SEIObjectMaskInfos::ObjectMaskInfo>>> m_omiMasks;
 
 private:
   bool  xIsNaluWithinTargetDecLayerIdSet( const InputNALUnit* nalu ) const; ///< check whether given Nalu is within targetDecLayerIdSet

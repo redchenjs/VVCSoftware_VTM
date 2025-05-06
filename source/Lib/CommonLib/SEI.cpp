@@ -488,7 +488,8 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION, "Digitally Signed Content Initialization" },
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION, "Digitally Signed Content Selection" },
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION, "Digitally Signed Content Verification" },
-  { SEI::PayloadType::GENERATIVE_FACE_VIDEO, "Generative face video" }
+  { SEI::PayloadType::GENERATIVE_FACE_VIDEO, "Generative face video" },
+  { SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT, "Generative face video enhancement" }
 };
 
 const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
@@ -520,9 +521,7 @@ SEISourcePictureTimingInfo::SEISourcePictureTimingInfo(const SEISourcePictureTim
   m_sptiSourceType                         = sei.m_sptiSourceType;
   m_sptiTimeScale                          = sei.m_sptiTimeScale;
   m_sptiNumUnitsInElementalInterval        = sei.m_sptiNumUnitsInElementalInterval;
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
   m_sptiDirectionFlag                      = sei.m_sptiDirectionFlag;
-#endif
 }
 
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
@@ -995,6 +994,9 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_complexityInfoPresentFlag = sei.m_complexityInfoPresentFlag;
   m_applicationPurposeTagUriPresentFlag = sei.m_applicationPurposeTagUriPresentFlag;
   m_applicationPurposeTagUri = sei.m_applicationPurposeTagUri;
+#if NNPFC_SCAN_TYPE_IDC
+  m_scanTypeIdc = sei.m_scanTypeIdc;
+#endif 
   m_forHumanViewingIdc = sei.m_forHumanViewingIdc;
   m_forMachineAnalysisIdc = sei.m_forMachineAnalysisIdc;
   m_uriTag = sei.m_uriTag;
@@ -1075,6 +1077,9 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_spatialExtrapolationRightOffset == sei.m_spatialExtrapolationRightOffset &&
   m_spatialExtrapolationTopOffset == sei.m_spatialExtrapolationTopOffset &&
   m_spatialExtrapolationBottomOffset == sei.m_spatialExtrapolationBottomOffset &&
+#if NNPFC_SCAN_TYPE_IDC
+  m_scanTypeIdc == sei.m_scanTypeIdc &&
+#endif
   m_inbandPromptFlag == sei.m_inbandPromptFlag  &&
   m_prompt ==  sei.m_prompt  &&
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
@@ -1174,10 +1179,8 @@ SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
   m_forMachineAnalysisIdc = sei.m_forMachineAnalysisIdc;
   m_type = sei.m_type;
   m_objectBasedIdc = sei.m_objectBasedIdc;
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
   m_quantThresholdDelta = sei.m_quantThresholdDelta;
   m_picQuantObjectFlag = sei.m_picQuantObjectFlag;
-#endif
   m_temporalResamplingTypeFlag = sei.m_temporalResamplingTypeFlag;
 #if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
   m_srcPicFlag = sei.m_srcPicFlag;
@@ -1249,4 +1252,33 @@ SEIGenerativeFaceVideo::SEIGenerativeFaceVideo(const SEIGenerativeFaceVideo & se
   m_numMatricesstore = sei.m_numMatricesstore;
   m_matrixWidthstore = sei.m_matrixWidthstore;
   m_matrixHeightstore = sei.m_matrixHeightstore;
+}
+SEIGenerativeFaceVideoEnhancement::SEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement & sei)
+{
+  m_number = sei.m_number;
+  m_currentid = sei.m_currentid;
+  m_id = sei.m_id;
+  m_gfvcnt = sei.m_gfvcnt;
+  m_gfvid = sei.m_gfvid;
+  m_basePicFlag = sei.m_basePicFlag;
+  m_nnPresentFlag = sei.m_nnPresentFlag;
+  m_nnModeIdc = sei.m_nnModeIdc;
+  m_nnTagURI = sei.m_nnTagURI;
+  m_nnURI = sei.m_nnURI;
+  m_matrixElementPrecisionFactor = sei.m_matrixElementPrecisionFactor;   
+  m_matrixPresentFlag = sei.m_matrixPresentFlag;
+  m_matrixPredFlag = sei.m_matrixPredFlag;
+  m_numMatrices = sei.m_numMatrices;
+  m_matrixWidth = sei.m_matrixWidth;
+  m_matrixHeight = sei.m_matrixHeight;
+  m_matrixElement = sei.m_matrixElement;
+  m_payloadFilename = sei.m_payloadFilename;
+  m_payloadLength = sei.m_payloadLength;
+  m_payloadByte = sei.m_payloadByte ? new char(*sei.m_payloadByte) : nullptr;
+  m_pupilPresentIdx = sei.m_pupilPresentIdx;
+  m_pupilCoordinatePrecisionFactor = sei.m_pupilCoordinatePrecisionFactor;
+  m_pupilLeftEyeCoordinateX = sei.m_pupilLeftEyeCoordinateX;
+  m_pupilLeftEyeCoordinateY = sei.m_pupilLeftEyeCoordinateY;
+  m_pupilRightEyeCoordinateX = sei.m_pupilRightEyeCoordinateX;
+  m_pupilRightEyeCoordinateY = sei.m_pupilRightEyeCoordinateY;
 }

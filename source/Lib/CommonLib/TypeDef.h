@@ -54,21 +54,7 @@
 
 // clang-format off
 
-
 //########### place macros to be removed in next cycle below this line ###############
-
-
-
-
-
-
-#define JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG               1 // JVET-AJ0308: Add direction flag to SPTI SEI MESSAGE
-
-#define JVET_AK0072_NNPF_TEMP_EXTR_UPDATES                1 // JVET-AK0072 items 1 and 2: nnpfc_input_pic_filering flag inference and constraint
-
-#define JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD              1 // QP threshold for object-based optimization in EOI SEI
-
-#define JVET_AJ0048_SPO_SEI_LIST                          1 // Update SeiProcessingOrderSeiList
 
 #define JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG                  1 // JVET-AJ0183: Add source picture flag to EOI SEI message
 
@@ -90,6 +76,8 @@
 #endif
 
 #define JVET_S0257_DUMP_360SEI_MESSAGE                    1 // Software support of 360 SEI messages
+
+#define NNPFC_SCAN_TYPE_IDC                               1 // nnpfc_scan_type_idc from JVET-AH0174 and KVET-AJ0073
 
 #define JVET_R0164_MEAN_SCALED_SATD                       1 // JVET-R0164: Use a mean scaled version of SATD in encoder decisions
 

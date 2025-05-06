@@ -781,33 +781,22 @@ void FGAnalyser::estimate_grain_parameters()
   tmpBuff->subtract(*m_originalBuf);   // find difference between original and filtered/reconstructed frame => film grain estimate
 
   int blockSize = BLK_8;
-  uint32_t picSizeInLumaSamples = m_workingBuf->Y().height * m_workingBuf->Y().width;
-  if (picSizeInLumaSamples <= (1920 * 1080))
-  {
-    blockSize = BLK_8;
-  }
-  else if (picSizeInLumaSamples <= (3840 * 2160))
-  {
-    blockSize = BLK_16;
-  }
-  else
-  {
-    blockSize = BLK_32;
-  }
 
   for (int compIdx = 0; compIdx < getNumberValidComponents(m_chromaFormatIdc); compIdx++)
   {   // loop over components
     ComponentID compID    = ComponentID(compIdx);
     ChannelType channelId = toChannelType(compID);
 
-    if (!m_doAnalysis[compID])
+    if (!m_doAnalysis[compID] || (compID>0 && m_compModel[COMPONENT_Y].presentFlag==false))
     {
+      m_compModel[compID].presentFlag = false;
       continue;
     }
 
     unsigned int width       = m_workingBuf->getBuf(compID).width;   // Width of current frame
     unsigned int height      = m_workingBuf->getBuf(compID).height;   // Height of current frame
-    unsigned int windowSize  = DATA_BASE_SIZE;                      // Size for Film Grain block
+    unsigned int windowSize  = BLK_16;                              // Size for film grain block
+    unsigned int step        = windowSize / blockSize;
     int          bitDepth     = m_bitDepths[channelId];
     int          detect_edges = 0;
     int          mean         = 0;
@@ -816,6 +805,7 @@ void FGAnalyser::estimate_grain_parameters()
     std::vector<int>       vec_mean;
     std::vector<int>       vec_var;
     std::vector<PelMatrix> squared_dct_grain_block_list;
+    std::vector<int>       vec_mean_cutOff;
 
     for (int i = 0; i <= width - windowSize; i += windowSize)
     {   // loop over windowSize x windowSize blocks
@@ -823,31 +813,40 @@ void FGAnalyser::estimate_grain_parameters()
       {
         detect_edges = count_edges(*m_maskBuf, windowSize, compID, i, j);   // for flat region without edges
 
-        if (detect_edges)   // selection of uniform, flat and low-complexity area; extend to other features, e.g., variance.
+        if (detect_edges)   // selection of uniform, flat and low-complexity area
         {
-          // find transformed blocks; cut-off frequency estimation is done on 64 x 64 blocks as low-pass filtering on synthesis side is done on 64 x 64 blocks.
-          block_transform(*tmpBuff, squared_dct_grain_block_list, i, j, bitDepth, compID);
-        }
+          // find transformed blocks; cut-off frequency estimation is done on windowSize x windowSize blocks
+          mean = meanVar(*m_workingBuf, windowSize, compID, i, j, false);
+          var  = meanVar(*m_workingBuf, windowSize, compID, i, j, true);
+          double tmp = 3.0 * pow((double)(var), .5) + .5;
+          var = (int)tmp;
 
-        int step = windowSize / blockSize;
+          // add aditional check for outliers (e.g. flat region is not correctly detected)
+          if (var < ((MAX_REAL_SCALE << (bitDepth - BIT_DEPTH_8)))>>1) // higher standard deviation can be result of not perfect mask estimation (non-flat regions fall in estimation process)
+          {
+            block_transform(*tmpBuff, squared_dct_grain_block_list, i, j, bitDepth, compID, windowSize);
+            vec_mean_cutOff.push_back(mean);
+          }
+        }
+        
         for (int k = 0; k < step; k++)
         {
           for (int m = 0; m < step; m++)
           {
             detect_edges = count_edges(*m_maskBuf, blockSize, compID, i + k * blockSize, j + m * blockSize);   // for flat region without edges
 
-            if (detect_edges)   // selection of uniform, flat and low-complexity area; extend to other features, e.g., variance.
+            if (detect_edges)   // selection of uniform, flat and low-complexity area
             {
               // collect all data for parameter estimation; mean and variance are caluclated on blockSize x blockSize blocks
               mean = meanVar(*m_workingBuf, blockSize, compID, i + k * blockSize, j + m * blockSize, false);
               var  = meanVar(*tmpBuff, blockSize, compID, i + k * blockSize, j + m * blockSize, true);
               // regularize high variations; controls excessively fluctuating points
-              double tmp = 3.0 * pow((double)(var), .5) + .5;
+              double tmp = 3.0 * pow((double)(var), .5) + .5; // grain strength
               var = (int)tmp;
-              if (var < (MAX_REAL_SCALE << (bitDepth - BIT_DEPTH_8))) // limit data points to meaningful values. higher variance can be result of not perfect mask estimation (non-flat regions fall in estimation process)
+              if (var < (MAX_REAL_SCALE << (bitDepth - BIT_DEPTH_8))) // higher grain strength can be result of not perfect mask estimation (non-flat regions fall in estimation process)
               {
                 vec_mean.push_back(mean);   // mean of the filtered frame
-                vec_var.push_back(var);     // variance of the film grain estimate
+                vec_var.push_back(var);     // grain strength of the film grain estimate
               }
             }
           }
@@ -856,8 +855,8 @@ void FGAnalyser::estimate_grain_parameters()
     }
 
     // calculate film grain parameters
-    estimate_cutoff_freq(squared_dct_grain_block_list, compID);
     estimate_scaling_factors(vec_mean, vec_var, bitDepth, compID);
+    estimate_cutoff_freq(squared_dct_grain_block_list, vec_mean_cutOff, bitDepth, compID, windowSize);
   }
 
   tmpBuff->destroy();
@@ -868,10 +867,9 @@ void FGAnalyser::estimate_grain_parameters()
 // find compModelValue[0] - different scaling based on the pixel intensity
 void FGAnalyser::estimate_scaling_factors(std::vector<int> &data_x, std::vector<int> &data_y, unsigned int bitDepth, ComponentID compID)
 {
-  if (!m_compModel[compID].presentFlag || data_x.size() < MIN_POINTS_FOR_INTENSITY_ESTIMATION)   // if cutoff frequencies are not estimated previously, do not proceed since presentFlag is set to false in a previous step
+  if (data_x.size() < MIN_POINTS_FOR_INTENSITY_ESTIMATION)
   {
-    return;   // also if there is no enough points to estimate film grain intensities, default or previously estimated
-              // parameters are used
+    return;   // also if there is no enough points to estimate film grain intensities, default or previously estimated parameters are used
   }
 
   // estimate intensity regions
@@ -884,7 +882,7 @@ void FGAnalyser::estimate_scaling_factors(std::vector<int> &data_x, std::vector<
   bool valid;
   for (int i = 0; i < NUM_PASSES; i++)   // if num_passes = 2, filtering of the dataset points is performed
   {
-    valid = fit_function(data_x, data_y, coeffs, scalingVec, ORDER, bitDepth, i);   // n-th order polynomial regression for scaling function estimation
+    valid = fit_function(data_x, data_y, coeffs, scalingVec, ORDER, bitDepth, i, compID);   // n-th order polynomial regression for scaling function estimation
     if (!valid)
     {
       break;
@@ -892,7 +890,6 @@ void FGAnalyser::estimate_scaling_factors(std::vector<int> &data_x, std::vector<
   }
   if (valid)
   {
-    avg_scaling_vec(scalingVec, compID, bitDepth);   // scale with previously fitted function to smooth the intensity
     valid = lloyd_max(scalingVec, quantVec, distortion, QUANT_LEVELS, bitDepth);   // train quantizer and quantize curve using Lloyd Max
   }
 
@@ -903,109 +900,117 @@ void FGAnalyser::estimate_scaling_factors(std::vector<int> &data_x, std::vector<
   }
 }
 
-// Horizontal and Vertical cutoff frequencies estimation. Assumption is that for complete sequence there is only one set of the cut-off frequencies (implementation decision)
-void FGAnalyser::estimate_cutoff_freq(const std::vector<PelMatrix> &blocks, ComponentID compID)
+// Horizontal and Vertical cutoff frequencies estimation
+void FGAnalyser::estimate_cutoff_freq(const std::vector<PelMatrix>& blocks, const std::vector<int>& vec_mean, unsigned int bitDepth, ComponentID compID, unsigned int windowSize)
 {
-  PelMatrixDouble mean_squared_dct_grain(DATA_BASE_SIZE, std::vector<double>(DATA_BASE_SIZE));
-  std::vector<double> vec_mean_dct_grain_row(DATA_BASE_SIZE, 0.0);
-  std::vector<double> vec_mean_dct_grain_col(DATA_BASE_SIZE, 0.0);
-  static bool     isFirstCutoffEst[MAX_NUM_COMPONENT] = {true, true, true };
 
-  int num_blocks = (int) blocks.size();
-  if (num_blocks < MIN_BLOCKS_FOR_CUTOFF_ESTIMATION)   // if there is no enough 64 x 64 blocks to estimate cut-off freq, skip cut-off freq estimation and use previous parameters
+  int num_blocks = (int)blocks.size();
+  if (num_blocks <= MIN_BLOCKS_FOR_CUTOFF_ESTIMATION || m_compModel[compID].presentFlag == false)   // if there is no enough windowSize x windowSize blocks to estimate cut-off freq, skip cut-off freq estimation and use previous parameters
   {
     return;
   }
 
+  int intervals = m_compModel[compID].numIntensityIntervals;
+  std::vector<PelMatrixDouble>     mean_squared_dct_grain(intervals, PelMatrixDouble(windowSize, std::vector<double>(windowSize, 0.0)));
+  std::vector<std::vector<double>> vec_mean_dct_grain_row(intervals, std::vector<double>(windowSize, 0.0));
+  std::vector<std::vector<double>> vec_mean_dct_grain_col(intervals, std::vector<double>(windowSize, 0.0));
+
+  /* defining intensity intervals indexes */
+  int16_t intensityInterval[MAX_NUM_INTENSITIES];
+  memset(intensityInterval, -1, sizeof(intensityInterval));
+  for (int intensityCtr = 0; intensityCtr < intervals; intensityCtr++)
+  {
+    for (int multiGrainCtr = m_compModel[compID].intensityValues[intensityCtr].intensityIntervalLowerBound;
+      multiGrainCtr <= m_compModel[compID].intensityValues[intensityCtr].intensityIntervalUpperBound; multiGrainCtr++)
+    {
+      intensityInterval[multiGrainCtr] = intensityCtr;
+    }
+  }
+
   // iterate over the block and find avarage block
-  for (int x = 0; x < DATA_BASE_SIZE; x++)
+  int intervalIdx;
+  std::vector<int> num_blocks_per_interval(intervals, 0);
+  for (int i = 0; i < blocks.size(); i++)
   {
-    for (int y = 0; y < DATA_BASE_SIZE; y++)
+    intervalIdx = intensityInterval[vec_mean[i] >> (bitDepth - BIT_DEPTH_8)];
+    if (intervalIdx != -1)
     {
-      for (const auto &dct_grain_block: blocks)
+      num_blocks_per_interval[intervalIdx]++;
+    }
+  }
+
+  for (int x = 0; x < windowSize; x++)
+  {
+    for (int y = 0; y < windowSize; y++)
+    {
+      for (int i = 0; i < blocks.size(); i++)
       {
-        mean_squared_dct_grain[x][y] += dct_grain_block[x][y];
+        intervalIdx = intensityInterval[vec_mean[i]>>(bitDepth-BIT_DEPTH_8)];
+        if (intervalIdx != -1)
+        {
+          mean_squared_dct_grain[intervalIdx][x][y] += blocks[i][x][y];
+        }
       }
-      mean_squared_dct_grain[x][y] /= num_blocks;
 
-      // Computation of horizontal and vertical mean vector (DC component is skipped)
-      vec_mean_dct_grain_row[x] += ((x != 0) && (y != 0)) ? mean_squared_dct_grain[x][y] : 0.0;
-      vec_mean_dct_grain_col[y] += ((x != 0) && (y != 0)) ? mean_squared_dct_grain[x][y] : 0.0;
+      for (int i = 0; i < intervals; i++)
+      {
+        if (num_blocks_per_interval[i] != 0)
+          mean_squared_dct_grain[i][x][y] /= num_blocks_per_interval[i];
+
+        // Computation of horizontal and vertical mean vector (DC component is skipped)
+        vec_mean_dct_grain_row[i][x] += ((x != 0) || (y != 0)) ? mean_squared_dct_grain[i][x][y] : 0.0;
+        vec_mean_dct_grain_col[i][y] += ((x != 0) || (y != 0)) ? mean_squared_dct_grain[i][x][y] : 0.0;
+      }
     }
   }
 
-  for (int x = 0; x < DATA_BASE_SIZE; x++)
+  for (int i = 0; i < intervals; i++)
   {
-    vec_mean_dct_grain_row[x] /= (x == 0) ? DATA_BASE_SIZE - 1 : DATA_BASE_SIZE;
-    vec_mean_dct_grain_col[x] /= (x == 0) ? DATA_BASE_SIZE - 1 : DATA_BASE_SIZE;
-  }
-
-  int cutoff_vertical   = cutoff_frequency(vec_mean_dct_grain_row);
-  int cutoff_horizontal = cutoff_frequency(vec_mean_dct_grain_col);
-
-  if (cutoff_vertical && cutoff_horizontal)
-  {
-    m_compModel[compID].presentFlag    = true;
-    m_compModel[compID].numModelValues = 1;
-  }
-  else
-  {
-    m_compModel[compID].presentFlag = false;
-  }
-
-  if (m_compModel[compID].presentFlag)
-  {
-    if (isFirstCutoffEst[compID])   // to avoid averaging with default
+    for (int x = 0; x < windowSize; x++)
     {
-      m_compModel[compID].intensityValues[0].compModelValue[1] = cutoff_horizontal;
-      m_compModel[compID].intensityValues[0].compModelValue[2] = cutoff_vertical;
-      isFirstCutoffEst[compID]                                 = false;
-    }
-    else
-    {
-      m_compModel[compID].intensityValues[0].compModelValue[1] = (m_compModel[compID].intensityValues[0].compModelValue[1] + cutoff_horizontal + 1) / 2;
-      m_compModel[compID].intensityValues[0].compModelValue[2] = (m_compModel[compID].intensityValues[0].compModelValue[2] + cutoff_vertical + 1) / 2;
+      vec_mean_dct_grain_row[i][x] /= (x == 0) ? windowSize - 1 : windowSize;
+      vec_mean_dct_grain_col[i][x] /= (x == 0) ? windowSize - 1 : windowSize;
     }
 
-    if (m_compModel[compID].intensityValues[0].compModelValue[1] != 8 || m_compModel[compID].intensityValues[0].compModelValue[2] != 8)   // default is 8
-    {
-      m_compModel[compID].numModelValues++;
-    }
+    int cutoff_vertical   = cutoff_frequency(vec_mean_dct_grain_row[i], windowSize);
+    int cutoff_horizontal = cutoff_frequency(vec_mean_dct_grain_col[i], windowSize);
 
-    if (m_compModel[compID].intensityValues[0].compModelValue[1] != m_compModel[compID].intensityValues[0].compModelValue[2])
-    {
-      m_compModel[compID].numModelValues++;
-    }
+    m_compModel[compID].numModelValues = 3; // we always write all 3 parameters. overhead is anyway small
+    if (cutoff_horizontal != -1)
+      m_compModel[compID].intensityValues[i].compModelValue[1] = cutoff_horizontal;
+    if (cutoff_vertical != -1)
+      m_compModel[compID].intensityValues[i].compModelValue[2] = cutoff_vertical;
+
   }
 }
 
-int FGAnalyser::cutoff_frequency(std::vector<double> &mean)
+int FGAnalyser::cutoff_frequency(std::vector<double>& mean, unsigned int windowSize)
 {
-  std::vector<double> sum(DATA_BASE_SIZE, 0.0);
+  std::vector<double> sum(windowSize, 0.0);
 
   // Regularize the curve to suppress peaks
   mean.push_back(mean.back());
   mean.insert(mean.begin(), mean.front());
-  for (int j = 1; j < DATA_BASE_SIZE + 1; j++)
+  for (int j = 1; j < windowSize + 1; j++)
   {
     sum[j - 1] = (m_tapFilter[0] * mean[j - 1] + m_tapFilter[1] * mean[j] + m_tapFilter[2] * mean[j + 1]) / m_normTap;
   }
 
   double target = 0;
-  for (int j = 0; j < DATA_BASE_SIZE; j++)
+  for (int j = 0; j < windowSize; j++)
   {
     target += sum[j];
   }
-  target /= DATA_BASE_SIZE;
+  target /= windowSize;
 
   // find final cut-off frequency
   std::vector<int> intersectionPointList;
 
-  for (int x = 0; x < DATA_BASE_SIZE - 1; x++)
+  for (int x = 0; x < windowSize - 1; x++)
   {
     if ((target < sum[x] && target >= sum[x + 1]) || (target > sum[x] && target <= sum[x + 1]))
     {   // there is intersection
-      double first_point  = fabs(target - sum[x]);
+      double first_point = fabs(target - sum[x]);
       double second_point = fabs(target - sum[x + 1]);
       if (first_point < second_point)
       {
@@ -1018,39 +1023,43 @@ int FGAnalyser::cutoff_frequency(std::vector<double> &mean)
     }
   }
 
-  int size = (int) intersectionPointList.size();
+  int size = (int)intersectionPointList.size();
 
   if (size > 0)
   {
-    return Clip3<int>(2, 14, (intersectionPointList[size - 1] - 1) >> 2);   // clip to RDD5 range, (h-3)/4 + 0.5
+    return Clip3<int>(2, 14, (intersectionPointList[size - 1] - 1));   // clip to RDD5 range
   }
   else
   {
-    return 0;
+    return -1;
   }
 }
 
-// DCT-2 64x64 as defined in VVC
+// DCT-2 as defined in VVC
 void FGAnalyser::block_transform(const PelStorage &buff, std::vector<PelMatrix> &squared_dct_grain_block_list,
-                                 int offsetX, int offsetY, unsigned int bitDepth, ComponentID compID)
+                                 int offsetX, int offsetY, unsigned int bitDepth, ComponentID compID
+                                 , unsigned int windowSize
+)
 {
-  unsigned int     windowSize       = DATA_BASE_SIZE;               // Size for Film Grain block
-  Intermediate_Int max_dynamic_range = (1 << (bitDepth + 6)) - 1;   // Dynamic range after DCT transform for 64x64 block
-  Intermediate_Int min_dynamic_range = -((1 << (bitDepth + 6)) - 1);
-  Intermediate_Int sum;
+  unsigned int log2WindowSize         = 4; // estimation is done on 16x16 blocks
+  Intermediate_Int max_dynamic_range  = (1 << (bitDepth + log2WindowSize)) - 1;   // Dynamic range after DCT transform for windowSize x windowSize block
+  Intermediate_Int min_dynamic_range  = -((1 << (bitDepth + log2WindowSize)) - 1);
 
-  const TMatrixCoeff *tmp            = g_trCoreDCT2P64[TRANSFORM_FORWARD][0];
-  const int           transform_scale = 9;   // upscaling of original transform as specified in VVC (for 64x64 block)
-  const int add_1st = 1 << (transform_scale - 1);
+  const TMatrixCoeff* tmp             = g_trCoreDCT2P16[TRANSFORM_FORWARD][0];
+  const int           transform_scale_1st = 8;  // upscaling of original transform as specified in VVC (for windowSize x windowSize block)
+  const int           add_1st         = 1 << (transform_scale_1st - 1);
+  const int           transform_scale_2nd = 8; // upscaling of original transform as specified in VVC (for windowSize x windowSize block)
+  const int           add_2nd = 1 << (transform_scale_2nd - 1);
+  Intermediate_Int    sum=0;
 
-  TMatrixCoeff tr[DATA_BASE_SIZE][DATA_BASE_SIZE];    // Original
-  TMatrixCoeff trt[DATA_BASE_SIZE][DATA_BASE_SIZE];   // Transpose
-  for (int x = 0; x < DATA_BASE_SIZE; x++)
+  std::vector<std::vector<TMatrixCoeff>> tr(windowSize, std::vector<TMatrixCoeff>(windowSize));  // Original
+  std::vector<std::vector<TMatrixCoeff>> trt(windowSize, std::vector<TMatrixCoeff>(windowSize)); // Transpose
+  for (int x = 0; x < windowSize; x++)
   {
-    for (int y = 0; y < DATA_BASE_SIZE; y++)
+    for (int y = 0; y < windowSize; y++)
     {
-      tr[x][y]  = tmp[x * 64 + y]; /* Matrix Original */
-      trt[y][x] = tmp[x * 64 + y]; /* Matrix Transpose */
+      tr[x][y]  = tmp[x * windowSize + y]; /* Matrix Original */
+      trt[y][x] = tmp[x * windowSize + y]; /* Matrix Transpose */
     }
   }
 
@@ -1067,7 +1076,7 @@ void FGAnalyser::block_transform(const PelStorage &buff, std::vector<PelMatrix> 
       {
         sum += tr[x][k] * buff.get(compID).at(offsetX + k, offsetY + y);
       }
-      blockTmp[x][y] = (sum + add_1st) >> transform_scale;
+      blockTmp[x][y] = (sum + add_1st) >> transform_scale_1st;
     }
   }
 
@@ -1080,7 +1089,7 @@ void FGAnalyser::block_transform(const PelStorage &buff, std::vector<PelMatrix> 
       {
         sum += blockTmp[x][k] * trt[k][y];
       }
-      blockDCT[x][y] = Clip3(min_dynamic_range, max_dynamic_range, (sum + add_1st) >> transform_scale);
+      blockDCT[x][y] = Clip3(min_dynamic_range, max_dynamic_range, (sum + add_2nd) >> transform_scale_2nd);
     }
   }
 
@@ -1137,8 +1146,8 @@ int FGAnalyser::meanVar(PelStorage &buffer, int windowSize, ComponentID compID, 
 }
 
 // Fit data to a function using n-th order polynomial interpolation
-bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y, std::vector<double> &coeffs,
-                              std::vector<double> &scalingVec, int order, int bitDepth, bool second_pass)
+bool FGAnalyser::fit_function(std::vector<int>& data_x, std::vector<int>& data_y, std::vector<double>& coeffs,
+                              std::vector<double>& scalingVec, int order, int bitDepth, bool second_pass, ComponentID compID)
 {
   PelMatrixLongDouble a(MAXPAIRS + 1, std::vector<long double>(MAXPAIRS + 1));
   PelVectorLongDouble B(MAXPAIRS + 1), C(MAXPAIRS + 1), S(MAXPAIRS + 1);
@@ -1202,6 +1211,16 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
     }
   }
 
+  if (!m_storedVecMeanIntensity[compID].empty() && !m_storedVecVarianceIntensity[compID].empty())
+  {
+    for (int block_idx = 0; block_idx < INTENSITY_INTERVAL_NUMBER; block_idx++)
+    {
+      element_number_per_interval[block_idx] += m_storedElementNumberPerInterval[compID][block_idx];
+      vec_mean_intensity[block_idx] += m_storedVecMeanIntensity[compID][block_idx];
+      vec_variance_intensity[block_idx] += m_storedVecVarianceIntensity[compID][block_idx];
+    }
+  }
+
   // create a points per intensity interval
   for (int block_idx = 0; block_idx < INTENSITY_INTERVAL_NUMBER; block_idx++)
   {
@@ -1210,6 +1229,17 @@ bool FGAnalyser::fit_function(std::vector<int> &data_x, std::vector<int> &data_y
       tmp_data_x.push_back(vec_mean_intensity[block_idx] / element_number_per_interval[block_idx]);
       tmp_data_y.push_back(vec_variance_intensity[block_idx] / element_number_per_interval[block_idx]);
     }
+  }
+
+  if (second_pass)
+  {
+    // save data for fitting function in the next frames (to get better estimation by agregating estimation over different frames)
+    m_storedVecMeanIntensity[compID].resize(0);
+    m_storedVecVarianceIntensity[compID].resize(0);
+    m_storedElementNumberPerInterval[compID].resize(0);
+    m_storedVecMeanIntensity[compID] = vec_mean_intensity;
+    m_storedVecVarianceIntensity[compID] = vec_variance_intensity;
+    m_storedElementNumberPerInterval[compID] = element_number_per_interval;
   }
 
   // There needs to be at least ORDER+1 points to fit the function
@@ -1582,7 +1612,7 @@ bool FGAnalyser::lloyd_max(std::vector<double> &scalingVec, std::vector<int> &qu
 
   int xmin = (int) scalingVec.back();
   scalingVec.pop_back();
-  scalingVec.pop_back();   // dummy pop_pack ==> int xmax = (int)scalingVec.back();
+  scalingVec.pop_back();   // dummy pop_back ==> int xmax = (int)scalingVec.back();
 
   double ymin          = 0.0;
   double ymax          = 0.0;
@@ -1794,8 +1824,8 @@ void FGAnalyser::setEstimatedParameters(std::vector<int> &quantizedVec, unsigned
 {
   std::vector<std::vector<int>> finalIntervalsandScalingFactors(3);   // lower_bound, upper_bound, scaling_factor
 
-  int cutoff_horizontal = m_compModel[compID].intensityValues[0].compModelValue[1];
-  int cutoff_vertical   = m_compModel[compID].intensityValues[0].compModelValue[2];
+  int cutoff_horizontal = 8; // for now initialize with default values. it is changed later after estimating cut-off frequencies.
+  int cutoff_vertical   = 8;
 
   // calculate intervals and scaling factors
   define_intervals_and_scalings(finalIntervalsandScalingFactors, quantizedVec, bitDepth);
@@ -1877,7 +1907,7 @@ void FGAnalyser::setEstimatedParameters(std::vector<int> &quantizedVec, unsigned
       j++;
     }
   }
-  CHECK(j != m_compModel[compID].numIntensityIntervals, "Check film grain intensity levels");
+  CHECKD(j != m_compModel[compID].numIntensityIntervals, "Check film grain intensity levels");
 }
 
 long double FGAnalyser::ldpow(long double n, unsigned p)
@@ -1948,6 +1978,9 @@ void FGAnalyser::confirm_intervals(std::vector<std::vector<int>> &parameters)
 
 void FGAnalyser::extend_points(std::vector<int> &data_x, std::vector<int> &data_y, int bitDepth)
 {
+  int minInt = (bitDepth < 10) ? (MIN_INTENSITY >> (10 - bitDepth)) : (MIN_INTENSITY << (bitDepth - 10));
+  int maxInt = (bitDepth < 10) ? (MAX_INTENSITY >> (10 - bitDepth)) : (MAX_INTENSITY << (bitDepth - 10));
+
   int xmin = data_x[0];
   int xmax = data_x[0];
   int ymin = data_y[0];
@@ -1991,7 +2024,7 @@ void FGAnalyser::extend_points(std::vector<int> &data_x, std::vector<int> &data_
   }
   for (int i = 0; i < data_x.size(); i++)
   {
-    if (data_x[i] < MIN_INTENSITY || data_x[i] > MAX_INTENSITY)
+    if (data_x[i] < minInt || data_x[i] > maxInt)
     {
       data_x.erase(data_x.begin() + i);
       data_y.erase(data_y.begin() + i);

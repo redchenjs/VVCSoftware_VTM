@@ -270,6 +270,7 @@ protected:
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
   int       m_intraQPOffset;                                  ///< QP offset for intra slice (integer)
   bool      m_lambdaFromQPEnable;                             ///< enable flag for QP:lambda fix
+  double    m_lambdaScaleTowardsNextQP;                       ///< scale lambda towards lambda of next QP
   std::string m_dQPFileName;                                  ///< QP offset for each slice (initialized from external file)
 
   FrameDeltaQps m_frameDeltaQps;   // array of frame delta QP values
@@ -547,10 +548,8 @@ protected:
   uint32_t m_eoiSEIForMachineAnalysisIdc;
   uint32_t m_eoiSEIType;
   uint32_t m_eoiSEIObjectBasedIdc;
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
   uint32_t m_eoiSEIQuantThresholdDelta;
   bool     m_eoiSEIPicQuantObjectFlag;
-#endif
   bool m_eoiSEITemporalResamplingTypeFlag;
   uint32_t m_eoiSEINumIntPics;
 #if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
@@ -721,7 +720,7 @@ protected:
   std::vector<uint32_t> m_omniViewportSEIHorRange;
   std::vector<uint32_t> m_omniViewportSEIVerRange;
   std::string           m_arSEIFileRoot;  // Annotated region SEI - initialized from external file
-  std::string           m_omiSEIFileRoot;   // Object mask information SEI - initialized from external file
+  std::string           m_omiSEIFileRoot;  // Object mask information SEI - initialized from external file
   bool                  m_rwpSEIEnabled;
   bool                  m_rwpSEIRwpCancelFlag;
   bool                  m_rwpSEIRwpPersistenceFlag;
@@ -814,6 +813,9 @@ protected:
   bool                  m_nnPostFilterSEICharacteristicsComplexityInfoPresentFlag[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsApplicationPurposeTagUriPresentFlag[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsApplicationPurposeTagUri[MAX_NUM_NN_POST_FILTERS];
+#if NNPFC_SCAN_TYPE_IDC
+  uint32_t              m_nnPostFilterSEICharacteristicsScanTypeIdc[MAX_NUM_NN_POST_FILTERS];
+#endif
   uint32_t              m_nnPostFilterSEICharacteristicsForHumanViewingIdc[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[MAX_NUM_NN_POST_FILTERS];
   std::string           m_nnPostFilterSEICharacteristicsUriTag[MAX_NUM_NN_POST_FILTERS];
@@ -992,9 +994,7 @@ protected:
   uint32_t m_sptiSourceType;
   uint32_t m_sptiTimeScale;
   uint32_t m_sptiNumUnitsInElementalInterval;
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
   bool     m_sptiDirectionFlag;
-#endif
 #if GREEN_METADATA_SEI_ENABLED
 public:
   std::string getGMFAFile ();
@@ -1159,6 +1159,30 @@ protected:
   std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixHeight;
   std::vector < std::vector<std::vector<std::vector<std::vector<double>>>>>   m_generativeFaceVideoSEIMatrixElement;
   std::string                          m_generativeFaceVideoSEIPayloadFilename;
+  bool                                 m_generativeFaceVideoEnhancementEnabled;
+  uint32_t                             m_generativeFaceVideoEnhancementSEINumber;
+  bool                                 m_generativeFaceVideoEnhancementSEIBasePicFlag;
+  bool                                 m_generativeFaceVideoEnhancementSEINNPresentFlag;
+  uint32_t                             m_generativeFaceVideoEnhancementSEINNModeIdc;
+  std::string                          m_generativeFaceVideoEnhancementSEINNTagURI;
+  std::string                          m_generativeFaceVideoEnhancementSEINNURI;
+  std::vector<uint32_t>                m_generativeFaceVideoEnhancementSEIId;
+  std::vector<uint32_t>                m_generativeFaceVideoEnhancementSEIGFVId;
+  std::vector<uint32_t>                m_generativeFaceVideoEnhancementSEIGFVCnt;
+  std::vector<bool>                    m_generativeFaceVideoEnhancementSEIMatrixPresentFlag;
+  std::vector<bool>                    m_generativeFaceVideoEnhancementSEIMatrixPredFlag;
+  std::vector<uint32_t>                m_generativeFaceVideoEnhancementSEIMatrixElementPrecisionFactor;
+  std::vector<uint32_t>                m_generativeFaceVideoEnhancementSEINumMatrices;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoEnhancementSEIMatrixWidth;
+  std::vector<std::vector<uint32_t>>   m_generativeFaceVideoEnhancementSEIMatrixHeight;
+  std::vector<std::vector<std::vector<std::vector<double>>>>   m_generativeFaceVideoEnhancementSEIMatrixElement;
+  std::vector<uint32_t>                m_generativeFaceVideoEnhancementSEIPupilPresentIdx;
+  std::vector<uint32_t>                m_generativeFaceVideoEnhancementSEIPupilCoordinatePrecisionFactor;
+  std::vector<double>                  m_generativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateX;
+  std::vector<double>                  m_generativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY;
+  std::vector<double>                  m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX;
+  std::vector<double>                  m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY;
+  std::string                          m_generativeFaceVideoEnhancementSEIPayloadFilename;
 
 #if EXTENSION_360_VIDEO
   TExt360AppEncCfg m_ext360;

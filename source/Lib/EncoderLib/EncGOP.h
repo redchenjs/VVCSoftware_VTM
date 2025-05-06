@@ -365,6 +365,7 @@ protected:
   void xCreatePictureTimingSEI(int irapGopId, SEIMessages &seiMessages, SEIMessages &nestedSeiMessages,
                                SEIMessages &duInfoSeiMessages, Slice *slice, bool isField, std::deque<DUData> &duData);
   void xCreateGenerativeFaceVideoSEIMessages(SEIMessages& seiMessage);
+  void xCreateGenerativeFaceVideoEnhancementSEIMessages(SEIMessages& seiMessage);
   void xUpdateDuData(AccessUnit &testAU, std::deque<DUData> &duData);
   void xUpdateTimingSEI(SEIPictureTiming* pt, std::deque<DUData>& duData, const SPS* sps);
   void xUpdateDuInfoSEI(SEIMessages& duInfoSeiMessages, SEIPictureTiming* pt);
