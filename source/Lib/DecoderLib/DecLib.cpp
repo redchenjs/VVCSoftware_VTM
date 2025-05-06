@@ -2173,6 +2173,19 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     m_pcPic->createColourTransfProcessor(m_firstPictureInSequence, &m_colourTranfParams, &m_invColourTransfBuf,
                                          pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(),
                                          sps->getChromaFormatIdc(), sps->getBitDepth(ChannelType::LUMA));
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+    SEIMessages packedRegionsInfoSEIs = getSeisByType(m_SEIs, SEI::PayloadType::PACKED_REGIONS_INFO);
+    if (!packedRegionsInfoSEIs.empty())
+    {
+      SEIPackedRegionsInfo* sei = (SEIPackedRegionsInfo*)packedRegionsInfoSEIs.front();
+      m_priProcess.init(*sei, *sps, pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples());
+      m_pcPic->m_priProcess = m_priProcess;
+    }
+    else if (m_priProcess.m_enabled)
+    {
+      m_pcPic->m_priProcess = m_priProcess;
+    }
+#endif
     m_firstPictureInSequence = false;
     m_pcPic->createTempBuffers( m_pcPic->cs->pps->pcv->maxCUWidth, false, false, true, false );
     m_pcPic->cs->createTemporaryCsData((bool)m_pcPic->cs->sps->getPLTMode());

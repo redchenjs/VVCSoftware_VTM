@@ -4060,6 +4060,7 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
   216 & Source Picture Timing Information        & Table \ref{tab:sei-source-picture-timing-info}\\
   218 & Modality Information SEI messages        & Table \ref{tab:sei-modality-info}\\
   220/221/222 & Digitally Signed Content SEI messages        & Table \ref{tab:sei-dsc}\\
+  226 & Packed Regions Info                      & Table \ref{tab:sei-pri}\\
 \end{SEIListTable}
 %%
 %% SEI messages
@@ -6716,6 +6717,113 @@ An example file can be found in cfg/sei_vui/object_mask_infos/intra/mask_info_0.
   \\  
 \end{OptionTableNoShorthand}
 
+\begin{OptionTableNoShorthand}{Packed Regions Info SEI message encoder parameters}{tab:sei-pri}
+  \Option{SEIPRIEnabled} &
+  \Default{false} &
+  Specifies whether packet regions info SEI is enabled.
+  When packed regions info SEI (PRI SEI) is enabled, encoder creates a modified
+  picture to be coded that consists of regions extracted from the original
+  picture. The regions can be independently scaled and are placed in the picture
+  to be coded as instructed by the PRI SEI config parameters. The resulting
+  modified picture is encoded and decoded as usual by VTM. Encoder calculates
+  the resolution of the coded pictures based on the placement of the regions in
+  the coded picture. Encoder or decoder then takes the regions from the decoded
+  picture and scales and places regions back at the correct locations in the
+  final reconstructed picture. This final reconstruction step is non-normative.
+  \\
+  \Option{SEIPRICancelFlag} &
+  \Default{false} &
+  Specifies the persistence of any previous packed regions info SEI message in output order.
+  \\
+  \Option{SEIPRIPersistenceFlag} &
+  \Default{false} &
+  Specifies the persistence of the packed regions info SEI message for the current layer.
+  \\
+  \Option{SEIPRINumRegionsMinus1} &
+  \Default{0} &
+  Specifies the number of regions minus 1 for which information is signalled.
+  \\
+  \Option{SEIPRIUseMaxDimensionsFlag} &
+  \Default{0} &
+  Specifies that max pic dimensions are used in variable calculations.
+  \\
+  \Option{SEIPRILog2UnitSize} &
+  \Default{0} &
+  Specifies a unit size used in variable calculations for the region parameters.
+  \\
+  \Option{SEIPRIRegionSizeLenMinus1} &
+  \Default{0} &
+  Specifies the number of bits minus 1 used to signal region top-left offsets and region dimensions.
+  \\
+  \Option{SEIPRIRegionIdPresentFlag} &
+  \Default{0} &
+  Specifies whether region IDs are signalled.
+  \\
+  \Option{SEIPRITargetPicParamsPresentFlag} &
+  \Default{0} &
+  pecifies whether pri_target_region_top_left_x[ i ], pri_target_region_top_left_y[ i ], pri_target_pic_width_minus1, and pri_target_pic_height_minus1 are signalled.
+  \\
+  \Option{SEIPRITargetPicWidthMinus1} &
+  \Default{0} &
+  Target output picture width minus 1.
+  \\
+  \Option{SEIPRITargetPicHeightMinus1} &
+  \Default{0} &
+  Target output picture height minus 1.
+  \\
+  \Option{SEIPRINumResamplingRatiosMinus1} &
+  \Default{0} &
+  Specifies the number resampling ratios minus 1 that are signalled.
+  \\
+  \Option{SEIPRIResamplingWidthNumMinus1} &
+  \Default{""} &
+  Specifies a list of numerators minus 1 values for width resampling of the resampling ratio.
+  \\
+  \Option{SEIPRIResamplingWidthDenomMinus1} &
+  \Default{""} &
+  Specifies a list of denominators minus 1 values for width resampling of the resampling ratio.
+  \\
+  \Option{SEIPRIResamplingHeightNumMinus1} &
+  \Default{""} &
+  Specifies a list of numerators minus 1 values for height resampling of the resampling ratio.
+  \\
+  \Option{SEIPRIResamplingHeightDenomMinus1} &
+  \Default{""} &
+  Specifies a list of denominators minus 1 values for height resampling of the resampling ratio.
+  \\
+  \Option{SEIPRIRegionId} &
+  \Default{""} &
+  Specifies a list of IDs for the regions.
+  \\
+  \Option{SEIPRIRegionTopLeftInUnitsX} &
+  \Default{""} &
+  Specifies a list of horizontal top left positions for the regions.
+  \\
+  \Option{SEIPRIRegionTopLeftInUnitsY} &
+  \Default{""} &
+  Specifies a list of vertical top left positions for the regions.
+  \\
+  \Option{SEIPRIRegionWidthInUnitsMinus1} &
+  \Default{""} &
+  Specifies a list of widths minus 1 in units for the regions.
+  \\
+  \Option{SEIPRIRegionHeightInUnitsMinus1} &
+  \Default{""} &
+  Specifies a list of heights minus 1 in units for the regions.
+  \\
+  \Option{SEIPRIResamplingRatioIdx} &
+  \Default{""} &
+  Specifies a list of resampling ration indices for the regions.
+  \\
+  \Option{SEIPRITargetRegionTopLeftX} &
+  \Default{""} &
+  Specifies a list of horizontal top left postions in units of luma samples for the regions in reconstructed target picture.
+  \\
+  \Option{SEIPRITargetRegionTopLeftY} &
+  \Default{""} &
+  Specifies a list of vertical top left postions in units of luma samples for the regions in reconstructed target picture.
+  \\
+\end{OptionTableNoShorthand}
 
 %%
 %%
@@ -6945,6 +7053,12 @@ If no value is specified, the SEI message will not be output.
 \Default{\NotSet} &
 When a non-empty file name is specified, object mask information using the decoded SEI messages will be output to the indicated file.
 If no value is specified, the SEI message will not be output.
+\\
+
+\Option{SEIPackedRegionsInfoFilename} &
+%\ShortOption{\None} &
+\Default{\NotSet} &
+Packed regions info SEI output file name. If empty, no object information will be saved
 \\
 
 \Option{OutputColourSpaceConvert} &

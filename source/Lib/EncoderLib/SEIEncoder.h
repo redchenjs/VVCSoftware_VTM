@@ -116,6 +116,10 @@ public:
 #endif
   void initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int currframeindex);
   void initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement *sei, int currframeindex);
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  void initSEIPackedRegionsInfo(SEIPackedRegionsInfo *sei);
+#endif
+
 private:
   EncCfg* m_pcCfg;
   EncLib* m_pcEncLib;

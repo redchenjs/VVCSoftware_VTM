@@ -573,6 +573,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIDigitallySignedContentSelection;
       xParseSEIDigitallySignedContentSelection((SEIDigitallySignedContentSelection &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+    case SEI::PayloadType::PACKED_REGIONS_INFO:
+      sei = new SEIPackedRegionsInfo;
+      xParsePackedRegionsInfo((SEIPackedRegionsInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -4969,4 +4975,126 @@ void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedCo
     sei.dscvSignature[i] = val;
   }
 }
+
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, uint32_t payLoadSize, std::ostream* pDecodedMessageOutputStream)
+{
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payLoadSize);
+  uint32_t val;
+
+  sei_read_flag(pDecodedMessageOutputStream, val, "pri_cancel_flag");
+  sei.m_cancelFlag = val != 0;
+  if (!sei.m_cancelFlag)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "pri_persistence_flag");
+    sei.m_persistenceFlag = val != 0;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_num_regions_minus1");
+    sei.m_numRegionsMinus1 = val;
+    sei_read_flag(pDecodedMessageOutputStream, val, "pri_use_max_dimensions_flag");
+    sei.m_useMaxDimensionsFlag = val != 0;
+    sei_read_code(pDecodedMessageOutputStream, 4, val, "pri_log2_unit_size");
+    sei.m_log2UnitSize = val;
+    sei_read_code(pDecodedMessageOutputStream, 4, val, "pri_region_size_len_minus1");
+    sei.m_regionSizeLenMinus1 = val;
+    sei_read_flag(pDecodedMessageOutputStream, val, "pri_region_id_present_flag");
+    sei.m_regionIdPresentFlag = val != 0;
+    sei_read_flag(pDecodedMessageOutputStream, val, "pri_target_pic_params_present_flag");
+    sei.m_targetPicParamsPresentFlag = val != 0;
+    if (sei.m_targetPicParamsPresentFlag)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 16, val, "pri_target_pic_width_minus1");
+      sei.m_targetPicWidthMinus1 = val;
+      sei_read_code(pDecodedMessageOutputStream, 16, val, "pri_target_pic_height_minus1");
+      sei.m_targetPicHeightMinus1 = val;
+    }
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_num_resampling_ratios_minus1");
+    sei.m_numResamplingRatiosMinus1 = val;
+
+    sei.m_resamplingWidthNumMinus1.resize(sei.m_numResamplingRatiosMinus1 + 1);
+    sei.m_resamplingWidthDenomMinus1.resize(sei.m_numResamplingRatiosMinus1 + 1);
+    sei.m_fixedAspectRatioFlag.resize(sei.m_numResamplingRatiosMinus1 + 1);
+    sei.m_resamplingHeightNumMinus1.resize(sei.m_numResamplingRatiosMinus1 + 1);
+    sei.m_resamplingHeightDenomMinus1.resize(sei.m_numResamplingRatiosMinus1 + 1);
+    sei.m_resamplingWidthNumMinus1[0] = 0;
+    sei.m_resamplingWidthDenomMinus1[0] = 0;
+    sei.m_fixedAspectRatioFlag[0] = true;
+    sei.m_resamplingHeightNumMinus1[0] = 0;
+    sei.m_resamplingHeightDenomMinus1[0] = 0;
+    for (uint32_t i = 1; i <= sei.m_numResamplingRatiosMinus1; i++)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_resampling_width_num_minus1[i]");
+      sei.m_resamplingWidthNumMinus1[i] = val;
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_resampling_width_denom_minus1[i]");
+      sei.m_resamplingWidthDenomMinus1[i] = val;
+      sei_read_flag(pDecodedMessageOutputStream, val, "pri_fixed_aspect_ratio_flag[i]");
+      sei.m_fixedAspectRatioFlag[i] = val != 0;
+      if (!sei.m_fixedAspectRatioFlag[i])
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_resampling_height_num_minus1[i]");
+        sei.m_resamplingHeightNumMinus1[i] = val;
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_resampling_height_denom_minus1[i]");
+        sei.m_resamplingHeightDenomMinus1[i] = val;
+      }
+      else
+      {
+        sei.m_resamplingHeightNumMinus1[i] = sei.m_resamplingWidthNumMinus1[i];
+        sei.m_resamplingHeightDenomMinus1[i] = sei.m_resamplingWidthDenomMinus1[i];
+      }
+    }
+
+    sei.m_regionId.resize(sei.m_numRegionsMinus1 + 1);
+    sei.m_regionTopLeftInUnitsX.resize(sei.m_numRegionsMinus1 + 1);
+    sei.m_regionTopLeftInUnitsY.resize(sei.m_numRegionsMinus1 + 1);
+    sei.m_regionWidthInUnitsMinus1.resize(sei.m_numRegionsMinus1 + 1);
+    sei.m_regionHeightInUnitsMinus1.resize(sei.m_numRegionsMinus1 + 1);
+    sei.m_resamplingRatioIdx.resize(sei.m_numRegionsMinus1 + 1);
+    sei.m_targetRegionTopLeftX.resize(sei.m_numRegionsMinus1 + 1);
+    sei.m_targetRegionTopLeftY.resize(sei.m_numRegionsMinus1 + 1);
+    for (uint32_t i = 0; i <= sei.m_numRegionsMinus1; i++)
+    {
+      if (sei.m_regionIdPresentFlag)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_region_id[i]");
+        sei.m_regionId[i] = val;
+      }
+      else
+      {
+        sei.m_regionId[i] = i;
+      }
+      sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_top_left_in_units_x[i]");
+      sei.m_regionTopLeftInUnitsX[i] = val;
+      sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_top_left_in_units_y[i]");
+      sei.m_regionTopLeftInUnitsY[i] = val;
+      sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_width_in_units_minus1[i]");
+      sei.m_regionWidthInUnitsMinus1[i] = val;
+      sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_height_in_units_minus1[i]");
+      sei.m_regionHeightInUnitsMinus1[i] = val;
+      if (sei.m_numResamplingRatiosMinus1 > 0)
+      {
+        sei_read_code(pDecodedMessageOutputStream, ceilLog2(sei.m_numResamplingRatiosMinus1 + 1), val, "pri_resampling_ratio_idx[i]");
+        sei.m_resamplingRatioIdx[i] = val;
+      }
+      else
+      {
+        sei.m_resamplingRatioIdx[i] = 0;
+      }
+      if (sei.m_targetPicParamsPresentFlag)
+      {
+        sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_target_region_top_left_x[i]");
+        sei.m_targetRegionTopLeftX[i] = val;
+        sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_target_region_top_left_y[i]");
+        sei.m_targetRegionTopLeftY[i] = val;
+      }
+    }
+    if (sei.m_regionIdPresentFlag)
+    {
+      std::vector<uint32_t> tmpVec = sei.m_regionId;
+      std::sort(tmpVec.begin(), tmpVec.end());
+      auto it = std::unique(tmpVec.begin(), tmpVec.end());
+      CHECK(it != tmpVec.end(), "pri_region_id values must be unique");
+    }
+  }
+}
+#endif
+
 //! \}

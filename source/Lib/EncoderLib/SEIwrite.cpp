@@ -224,6 +224,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIDigitallySignedContentVerification(*static_cast<const SEIDigitallySignedContentVerification *>(&sei));
     break;
 #endif
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  case SEI::PayloadType::PACKED_REGIONS_INFO:
+    xWriteSEIPackedRegionsInfo(*static_cast<const SEIPackedRegionsInfo*>(&sei));
+    break;
+#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -2948,6 +2953,60 @@ void SEIWriter::xWriteSEIDigitallySignedContentVerification(const SEIDigitallySi
   for (int i=0; i< sei.dscvSignature.size(); i++)
   {
     xWriteCode(sei.dscvSignature[i], 8, "dscv_signature");
+  }
+}
+#endif
+
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+void SEIWriter::xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei)
+{
+  xWriteFlag(sei.m_cancelFlag, "pri_cancel_flag");
+  if (!sei.m_cancelFlag)
+  {
+    xWriteFlag(sei.m_persistenceFlag, "pri_persistence_flag");
+    xWriteUvlc(sei.m_numRegionsMinus1, "pri_num_regions_minus1");
+    xWriteFlag(sei.m_useMaxDimensionsFlag, "pri_use_max_dimensions_flag");
+    xWriteCode(sei.m_log2UnitSize, 4, "pri_log2_unit_size");
+    xWriteCode(sei.m_regionSizeLenMinus1, 4, "pri_region_size_len_minus1");
+    xWriteFlag(sei.m_regionIdPresentFlag, "pri_region_id_present_flag");
+    xWriteFlag(sei.m_targetPicParamsPresentFlag, "pri_target_pic_params_present_flag");
+    if (sei.m_targetPicParamsPresentFlag)
+    {
+      xWriteCode(sei.m_targetPicWidthMinus1, 16, "pri_target_pic_width_minus1");
+      xWriteCode(sei.m_targetPicHeightMinus1, 16, "pri_target_pic_height_minus1");
+    }
+    xWriteUvlc(sei.m_numResamplingRatiosMinus1, "pri_num_resampling_ratios_minus1");
+    for (uint32_t i = 1; i <= sei.m_numResamplingRatiosMinus1; i++)
+    {
+      xWriteUvlc(sei.m_resamplingWidthNumMinus1[i], "pri_resampling_width_num_minus1[i]");
+      xWriteUvlc(sei.m_resamplingWidthDenomMinus1[i], "pri_resampling_width_denom_minus1[i]");
+      xWriteFlag(sei.m_fixedAspectRatioFlag[i], "pri_fixed_aspect_ratio_flag[i]");
+      if (!sei.m_fixedAspectRatioFlag[i])
+      {
+        xWriteUvlc(sei.m_resamplingHeightNumMinus1[i], "pri_resampling_height_num_minus1[i]");
+        xWriteUvlc(sei.m_resamplingHeightDenomMinus1[i], "pri_resampling_height_denom_minus1[i]");
+      }
+    }
+    for (uint32_t i = 0; i <= sei.m_numRegionsMinus1; i++)
+    {
+      if (sei.m_regionIdPresentFlag)
+      {
+        xWriteUvlc(sei.m_regionId[i], "pri_region_id[i]");
+      }
+      xWriteCode(sei.m_regionTopLeftInUnitsX[i], sei.m_regionSizeLenMinus1 + 1, "pri_region_top_left_in_units_x[i]");
+      xWriteCode(sei.m_regionTopLeftInUnitsY[i], sei.m_regionSizeLenMinus1 + 1, "pri_region_top_left_in_units_y[i]");
+      xWriteCode(sei.m_regionWidthInUnitsMinus1[i], sei.m_regionSizeLenMinus1 + 1, "pri_region_width_in_units_minus1[i]");
+      xWriteCode(sei.m_regionHeightInUnitsMinus1[i], sei.m_regionSizeLenMinus1 + 1, "pri_region_height_in_units_minus1[i]");
+      if (sei.m_numResamplingRatiosMinus1 > 0)
+      {
+        xWriteCode(sei.m_resamplingRatioIdx[i], ceilLog2(sei.m_numResamplingRatiosMinus1 + 1), "pri_resampling_ratio_idx[i]");
+      }
+      if (sei.m_targetPicParamsPresentFlag)
+      {
+        xWriteCode(sei.m_targetRegionTopLeftX[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_x[i]");
+        xWriteCode(sei.m_targetRegionTopLeftY[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_y[i]");
+      }
+    }
   }
 }
 #endif

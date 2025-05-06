@@ -44,6 +44,9 @@
 #include "Analyze.h"
 #include "libmd5/MD5.h"
 #include "CommonLib/SEI.h"
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+#include "CommonLib/SEIPackedRegionsInfoProcess.h"
+#endif
 #include "CommonLib/NAL.h"
 #include "NALwrite.h"
 
@@ -1032,6 +1035,14 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     SEIDigitallySignedContentInitialization *sei = new SEIDigitallySignedContentInitialization;
     m_seiEncoder.initSEIDigitallySignedContentInitialization(sei);
     seiMessages.push_back(sei);
+  }
+#endif
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  if (m_pcCfg->getPriSEIEnabled())
+  {
+    SEIPackedRegionsInfo *seiPackedRegionsInfo = new SEIPackedRegionsInfo;
+    m_seiEncoder.initSEIPackedRegionsInfo(seiPackedRegionsInfo);
+    seiMessages.push_back(seiPackedRegionsInfo);
   }
 #endif
 }
@@ -2664,9 +2675,17 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
     const bool isCurrentFrameFiltered = m_pcCfg->getGopBasedTemporalFilterEnabled() || m_pcCfg->getBIM();
     const bool isFgFiltered = m_pcCfg->getFilmGrainAnalysisEnabled() && m_pcCfg->getFilmGrainExternalDenoised().empty();
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+    pcPic->createTempBuffers(pcPic->cs->pps->pcv->maxCUWidth, isCurrentFrameFiltered, m_pcEncLib->isResChangeInClvsEnabled() || m_pcEncLib->getPriSEIEnabled(), false, isFgFiltered);
+#else
     pcPic->createTempBuffers(pcPic->cs->pps->pcv->maxCUWidth, isCurrentFrameFiltered, m_pcEncLib->isResChangeInClvsEnabled(), false, isFgFiltered);
+#endif
     pcPic->getTrueOrigBuf().copyFrom(pcPic->getOrigBuf());
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+    if (m_pcEncLib->isResChangeInClvsEnabled() || m_pcEncLib->getPriSEIEnabled())
+#else
     if (m_pcEncLib->isResChangeInClvsEnabled())
+#endif
     {
       pcPic->M_BUFS(0, PIC_TRUE_ORIGINAL_INPUT).copyFrom(pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT));
     }
@@ -2695,6 +2714,13 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         Picture::rescalePicture(scalingRatio, pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT), curScalingWindow, pcPic->M_BUFS(0, PIC_ORIGINAL), pps->getScalingWindow(), chromaFormatIdc, sps.getBitDepths(), true, true,
           sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag());
       }
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+      else if (m_pcEncLib->getPriSEIEnabled())
+      {
+        m_pcEncLib->getTemporalFilter().filter(&pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT), pocCurr);
+        m_pcEncLib->getPriProcess().packRegions(pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT), pcPic->M_BUFS(0, PIC_ORIGINAL), *pcPic->cs->sps);
+      }
+#endif
       else
       {
         m_pcEncLib->getTemporalFilter().filter(&pcPic->M_BUFS(0, PIC_ORIGINAL), pocCurr);
