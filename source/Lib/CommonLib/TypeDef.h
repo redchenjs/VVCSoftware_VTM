@@ -54,8 +54,6 @@
 
 // clang-format off
 
-
-
 //########### place macros to be removed in next cycle below this line ###############
 
 #define JVET_AL0282                                       1 // film grain analysis improvements
@@ -83,6 +81,8 @@
 #define JVET_AK0330_OMI_SEI                               1 // JVET-AK0330: OMI-SEI modification
 
 #define JVET_AK0238_GFV_FIX_CLEANUP                       1// bug fixes and codes cleanup for GFV SEI
+
+#define JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG                  1 // JVET-AJ0183: Add source picture flag to EOI SEI message
 
 //########### place macros to be be kept below this line ###############
 

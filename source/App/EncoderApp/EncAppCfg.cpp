@@ -806,7 +806,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag             (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyThrValue                   (0, 2550, 0, 102400);  
 
-#if JVET_AK0239_GFVE
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoEnhancementSEIId                                  (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoEnhancementSEIGFVId                               (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoEnhancementSEIGFVCnt                              (0, 2550, 0, 102400);
@@ -823,7 +822,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<double>     cfg_generativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY             (-50960.0, 50960.0, 0, 5095000);
   SMultiValueInput<double>     cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX            (-50960.0, 50960.0, 0, 5095000);
   SMultiValueInput<double>     cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY            (-50960.0, 50960.0, 0, 5095000);
-#endif
 
 #if ENABLE_TRACING
   std::string sTracingRule;
@@ -1222,9 +1220,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("LambdaModifier6,-LM6",                            m_adLambdaModifier[ 6 ],                  ( double )1.0, "Lambda modifier for temporal layer 6. If LambdaModifierI is used, this will not affect intra pictures")
   ("LambdaModifierI,-LMI",                            cfg_adIntraLambdaModifier,    cfg_adIntraLambdaModifier, "Lambda modifiers for Intra pictures, comma separated, up to one the number of temporal layer. If entry for temporalLayer exists, then use it, else if some are specified, use the last, else use the standard LambdaModifiers.")
   ("IQPFactor,-IQF",                                  m_dIntraQpFactor,                                  -1.0, "Intra QP Factor for Lambda Computation. If negative, the default will scale lambda based on GOP size (unless LambdaFromQpEnable then IntraQPOffset is used instead)")
-#if JVET_AL0207
   ("LambdaScaleTowardsNextQP",                        m_lambdaScaleTowardsNextQP,                         0.0, "Scale lambda towards lambda for next integer QP. A negative number increase bitrate and a positive number decrease bitrate.")
-#endif
   /* Quantization parameters */
   ("QP,q",                                            m_iQP,                                               30, "Qp value")
   ("QPIncrementFrame,-qpif",                          m_qpIncrementAtSourceFrame,   std::optional<uint32_t>(), "If a source file frame number is specified, the internal QP will be incremented for all POCs associated with source frames >= frame number. If empty, do not increment.")
@@ -1548,9 +1544,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEISPTISourceType", m_sptiSourceType, 0u, "Indicates the timing relationship between source pictures and corresponding decoded output pictures.")
 ("SEISPTITimeScale", m_sptiTimeScale, 27000000u, "Specifies the number of time units that pass in one second.")
 ("SEISPTINumUnitsInElementalInterval", m_sptiNumUnitsInElementalInterval, 1080000u, "Specifies the number of time units of a clock operating at the frequency spti_time_scale Hz that corresponds to the indicated elemental source picture interval of consecutive pictures in output order in the CLVS.")
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
 ("SEISPTIDirectionFlag", m_sptiDirectionFlag, false, "Indicates the direction of the signalled source picture intervals.")
-#endif
 #if JVET_AJ0151_DSC_SEI
 ("SEIDSCEnabled", m_cfgDigitallySignedContentSEI.enabled, false, "Control generation of Digitally Signed Content SEI messages")
 ("SEIDSCHashMethod", m_cfgDigitallySignedContentSEI.hashMethod, 0 , "Hash type to be used:\n"
@@ -1579,12 +1573,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEIEOIForMachineAnalysisIdc", m_eoiSEIForMachineAnalysisIdc, 0u, "Indicates the level of optimization for  machine analsysis")
 ("SEIEOIType", m_eoiSEIType, 0u, "Indicates the types of optimization method")
 ("SEIEOIObjectBasedIdc", m_eoiSEIObjectBasedIdc, 0u, "Indicates the type of object-based optimization")
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
 ("SEIEOIQuantThresholdDelta", m_eoiSEIQuantThresholdDelta, 0u, "Indicates the quantization parameter threshold determining areas classified to be outside the detected objects or to include one or more detected objects (0 = unknown or unspecified)")
 ("SEIEOIPicQuantObjectFlag", m_eoiSEIPicQuantObjectFlag, false, "Value of 1 indicates that areas with QP >= PicQuant + SEIEOIQuantThresholdDelta represent areas outside the detected objects. Value of 0 indicates that areas with QP <= PicQuant - SEIEOIQuantThresholdDelta represent areas that include objects")
-#endif
 ("SEIEOITemporalResamplingTypeFlag", m_eoiSEITemporalResamplingTypeFlag, false, "specifies the type of the temporal resampling optimization.")
 ("SEIEOINumIntPics", m_eoiSEINumIntPics, 0u, "indicates that the count of pictures that the encoding system excluded or added between each pair of coded pictures in output order within the persistence of this SEI message is constant")
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+("SEIEOISrcPicFlag", m_eoiSEISrcPicFlag, false, "Value of 1 specifies that the picture in the same access unit that contains the EOI SEI message is a source picture. Value of 0 provides no such indication.")
+#endif
 ("SEIEOIOrigPicDimensionsFlag",m_eoiSEIOrigPicDimensionsFlag, false, "specifies if original source picture dimensions are present.")
 ("SEIEOIOrigPicWidth", m_eoiSEIOrigPicWidth, 0u, "indicates the width of the original source picture.")
 ("SEIEOIOrigPicHeight", m_eoiSEIOrigPicHeight, 0u, "indicates the height of the original source picture.")
@@ -1909,7 +1904,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("SEIGenerativeFaceVideoChromaKeyValue",                  cfg_generativeFaceVideoSEIChromaKeyValue,                 cfg_generativeFaceVideoSEIChromaKeyValue,                      "specifies the chroma key value corresponding to the c-th colour component")
     ("SEIGenerativeFaceVideoChromaKeyThrPresentFlag",         cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag,        cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag,             "indicates that the syntax element gfv_chroma_thr_value[ i ] is present")
     ("SEIGenerativeFaceVideoChromaKeyThrValue",               cfg_generativeFaceVideoSEIChromaKeyThrValue,              cfg_generativeFaceVideoSEIChromaKeyThrValue,                   "specifies the i-th chroma key threshold value");
-#if JVET_AK0239_GFVE
   opts.addOptions()
     ("SEIGenerativeFaceVideoEnhancementEnabled",                         m_generativeFaceVideoEnhancementEnabled,                             false,                                                               "Control use of the Generative Face Video Enhancement SEI on current picture")
     ("SEIGenerativeFaceVideoEnhancementNumber",                          m_generativeFaceVideoEnhancementSEINumber,                           0u,                                                                  "Total number of Generative Face Video Enhancement SEI to be carried")  
@@ -1935,7 +1929,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("SEIGenerativeFaceVideoEnhancementPupilRightEyeCoordinateX",        cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX,       cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX,       "the X coordinate of the right eye pupil")
     ("SEIGenerativeFaceVideoEnhancementPupilRightEyeCoordinateY",        cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY,       cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY,       "the Y coordinate of the right eye pupil")
     ("SEIGenerativeFaceVideoEnhancementPayloadFilename",                 m_generativeFaceVideoEnhancementSEIPayloadFilename,                  std::string(""),                                                     "specify path to payloadfile") ;
-#endif    
   
   // clang-format on
 
@@ -2832,7 +2825,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = cfg_nnPostFilterSEICharacteristicsInputPicOutputFlagList[i].values;
     if (m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] == 0)
     {
-#if JVET_AK0072_NNPF_TEMP_EXTR_UPDATES
       if ((m_nnPostFilterSEICharacteristicsPurpose[i] & 0xff) != NNPC_PurposeType::TEMPORAL_EXTRAPOLATION)
       {
         m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = {1};
@@ -2841,9 +2833,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       {
         m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = {0};
       }
-#else
-      m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i] = {1};
-#endif
     }
     else
     {
@@ -3446,15 +3435,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   CHECK(!m_fgcSEIEnabled && m_fgcSEIAnalysisEnabled, "FGC SEI must be enabled in order to perform film grain analysis!");
   if (m_fgcSEIEnabled)
   {
-#if !JVET_AL0282 // no reason not to do analysis for qp<17 if user requires that.
-    if (m_iQP < 17 && m_fgcSEIAnalysisEnabled == true)
-    {   // TODO: JVET_Z0047_FG_IMPROVEMENT: check this; the constraint may have gone
-      msg(WARNING, "*************************************************************************\n");
-      msg(WARNING, "* WARNING: Film Grain Estimation is disabled for Qp<17! FGC SEI will use default parameters for film grain! *\n");
-      msg(WARNING, "*************************************************************************\n");
-      m_fgcSEIAnalysisEnabled = false;
-    }
-#endif
     if (m_intraPeriod < 1)
     {   // low delay configuration
       msg(WARNING, "*************************************************************************\n");
@@ -3990,7 +3970,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
     CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
-#if JVET_AK0333_SPO_SEI_NESTED_SUBCHAINS
     // The following code generares sub-chain indices for conformance checking.
     uint32_t numProcStgs = m_poSEINumMinus2 + 2;
     std::vector<uint32_t> seiTypeIdx;
@@ -4032,7 +4011,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         subChainIdx[j] = subChainFlag * subChainPrevIdx;
       }
     }
-#endif
   }
 
   if (m_postFilterHintSEIEnabled)
@@ -4285,7 +4263,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
-#if JVET_AK0239_GFVE
   if (m_generativeFaceVideoEnhancementEnabled)
   {
     CHECK(cfg_generativeFaceVideoEnhancementSEIId.values.size() != m_generativeFaceVideoEnhancementSEINumber, "Number of GFVE ID must be equal to SEINumber");
@@ -4357,7 +4334,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       matrixNumBeforeSum=matrixNumBeforeSum+numMatrices;
     }
   }
-#endif
 
   if( m_costMode == COST_LOSSLESS_CODING )
   {
@@ -5925,7 +5901,7 @@ bool EncAppCfg::xCheckParameter()
   if (m_nnPostFilterSEIActivationEnabled)
   {
     xConfirmPara(m_nnPostFilterSEIActivationTargetId > MAX_NNPFA_ID, "SEINNPostFilterActivationTargetId must be in the range of 0 to 2^32-2");
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE && JVET_AK0072_NNPF_NULL_PROMPT_CONTRAINT
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
     if (m_nnPostFilterSEIActivationPromptUpdateFlag)
     {
       xConfirmPara(m_nnPostFilterSEIActivationPrompt.empty(), "When present in the bitstream, SEINNPostFilterActivationPrompt shall not be a null string");
