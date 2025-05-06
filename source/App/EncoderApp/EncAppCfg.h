@@ -552,6 +552,9 @@ protected:
   bool     m_eoiSEIPicQuantObjectFlag;
   bool m_eoiSEITemporalResamplingTypeFlag;
   uint32_t m_eoiSEINumIntPics;
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+  bool     m_eoiSEISrcPicFlag;;
+#endif
   bool     m_eoiSEIOrigPicDimensionsFlag;
   uint32_t m_eoiSEIOrigPicWidth;
   uint32_t m_eoiSEIOrigPicHeight;

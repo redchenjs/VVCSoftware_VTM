@@ -1130,6 +1130,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setEOISEIPicQuantObjectFlag(m_eoiSEIPicQuantObjectFlag);
   m_cEncLib.setEOISEITemporalResamplingTypeFlag(m_eoiSEITemporalResamplingTypeFlag);
   m_cEncLib.setEOISEINumIntPics(m_eoiSEINumIntPics);
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+  m_cEncLib.setEOISEISrcPicFlag(m_eoiSEISrcPicFlag);
+#endif
   m_cEncLib.setEOISEIOrigPicDimensionsFlag(m_eoiSEIOrigPicDimensionsFlag);
   m_cEncLib.setEOISEIOrigPicWidth(m_eoiSEIOrigPicWidth);
   m_cEncLib.setEOISEIOrigPicHeight(m_eoiSEIOrigPicHeight);

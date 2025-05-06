@@ -2104,6 +2104,13 @@ void SEIReader::xParseSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo& sei
       sei.m_temporalResamplingTypeFlag = val;
       sei_read_uvlc(pDecodedMessageOutputStream, val, "eoi_num_int_pics");
       sei.m_numIntPics = val;
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+      if (sei.m_temporalResamplingTypeFlag && sei.m_numIntPics > 0)
+      {
+        sei_read_flag(pDecodedMessageOutputStream, val, "eoi_src_pic_flag");
+        sei.m_srcPicFlag = val;
+      }
+#endif
     }
 
     if ((sei.m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)

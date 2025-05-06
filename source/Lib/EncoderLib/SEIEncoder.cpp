@@ -1915,6 +1915,12 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
     {
       sei->m_temporalResamplingTypeFlag = m_pcCfg->getEOISEITemporalResamplingTypeFlag();
       sei->m_numIntPics = m_pcCfg->getEOISEINumIntPics();
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+      if (sei->m_temporalResamplingTypeFlag && sei->m_numIntPics > 0)
+      {
+        sei->m_srcPicFlag = m_pcCfg->getEOISEISrcPicFlag();
+      }
+#endif
     }
     if ((sei->m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)
     {

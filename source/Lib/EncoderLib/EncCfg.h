@@ -808,6 +808,9 @@ protected:
   bool     m_eoiSEIPicQuantObjectFlag;
   bool m_eoiSEITemporalResamplingTypeFlag;
   uint32_t m_eoiSEINumIntPics;
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+  bool     m_eoiSEISrcPicFlag; ;
+#endif
   bool     m_eoiSEIOrigPicDimensionsFlag;
   uint32_t m_eoiSEIOrigPicWidth;
   uint32_t m_eoiSEIOrigPicHeight;
@@ -2559,6 +2562,10 @@ public:
   bool getEOISEIPicQuantObjectFlag() const { return m_eoiSEIPicQuantObjectFlag; }
   void setEOISEITemporalResamplingTypeFlag(bool temporalResamplingTypeFlag) { m_eoiSEITemporalResamplingTypeFlag = temporalResamplingTypeFlag; }
   bool getEOISEITemporalResamplingTypeFlag() const { return m_eoiSEITemporalResamplingTypeFlag; }
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+  void setEOISEISrcPicFlag(bool srcPicFlag) { m_eoiSEISrcPicFlag = srcPicFlag; }
+  bool getEOISEISrcPicFlag() const { return m_eoiSEISrcPicFlag; }
+#endif
   void setEOISEINumIntPics(uint32_t numIntPics) { m_eoiSEINumIntPics = numIntPics; }
   uint32_t getEOISEINumIntPics() const { return m_eoiSEINumIntPics; }
   void setEOISEIOrigPicDimensionsFlag(bool origPicDimensionsFlag) { m_eoiSEIOrigPicDimensionsFlag = origPicDimensionsFlag; }
