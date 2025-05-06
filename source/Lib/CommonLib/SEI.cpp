@@ -489,9 +489,7 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION, "Digitally Signed Content Selection" },
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION, "Digitally Signed Content Verification" },
   { SEI::PayloadType::GENERATIVE_FACE_VIDEO, "Generative face video" },
-#if JVET_AK0239_GFVE
   { SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT, "Generative face video enhancement" }
-#endif
 };
 
 const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
@@ -523,9 +521,7 @@ SEISourcePictureTimingInfo::SEISourcePictureTimingInfo(const SEISourcePictureTim
   m_sptiSourceType                         = sei.m_sptiSourceType;
   m_sptiTimeScale                          = sei.m_sptiTimeScale;
   m_sptiNumUnitsInElementalInterval        = sei.m_sptiNumUnitsInElementalInterval;
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
   m_sptiDirectionFlag                      = sei.m_sptiDirectionFlag;
-#endif
 }
 
 SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei)
@@ -1183,11 +1179,12 @@ SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
   m_forMachineAnalysisIdc = sei.m_forMachineAnalysisIdc;
   m_type = sei.m_type;
   m_objectBasedIdc = sei.m_objectBasedIdc;
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
   m_quantThresholdDelta = sei.m_quantThresholdDelta;
   m_picQuantObjectFlag = sei.m_picQuantObjectFlag;
-#endif
   m_temporalResamplingTypeFlag = sei.m_temporalResamplingTypeFlag;
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+  m_srcPicFlag = sei.m_srcPicFlag;
+#endif
   m_numIntPics = sei.m_numIntPics;
   m_origPicDimensionsFlag = sei.m_origPicDimensionsFlag;
 #if JVET_AL0123_AL0310_EOI
@@ -1263,7 +1260,6 @@ SEIGenerativeFaceVideo::SEIGenerativeFaceVideo(const SEIGenerativeFaceVideo & se
   m_matrixWidthstore = sei.m_matrixWidthstore;
   m_matrixHeightstore = sei.m_matrixHeightstore;
 }
-#if JVET_AK0239_GFVE
 SEIGenerativeFaceVideoEnhancement::SEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement & sei)
 {
   m_number = sei.m_number;
@@ -1293,4 +1289,3 @@ SEIGenerativeFaceVideoEnhancement::SEIGenerativeFaceVideoEnhancement(const SEIGe
   m_pupilRightEyeCoordinateX = sei.m_pupilRightEyeCoordinateX;
   m_pupilRightEyeCoordinateY = sei.m_pupilRightEyeCoordinateY;
 }
-#endif
