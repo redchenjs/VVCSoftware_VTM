@@ -812,9 +812,16 @@ protected:
   bool     m_eoiSEISrcPicFlag; ;
 #endif
   bool     m_eoiSEIOrigPicDimensionsFlag;
+#if JVET_AL0123_AL0310_EOI
+  uint32_t m_eoiSEIOrigPicWidthMinus1;
+  uint32_t m_eoiSEIOrigPicHeightMinus1;
+  uint32_t m_eoiSEISpatialHorResamplingTypeIdc;
+  uint32_t m_eoiSEISpatialVerResamplingTypeIdc;
+#else
   uint32_t m_eoiSEIOrigPicWidth;
   uint32_t m_eoiSEIOrigPicHeight;
   bool m_eoiSEISpatialResamplingTypeFlag;
+#endif
   uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
 
@@ -2598,12 +2605,23 @@ public:
   uint32_t getEOISEINumIntPics() const { return m_eoiSEINumIntPics; }
   void setEOISEIOrigPicDimensionsFlag(bool origPicDimensionsFlag) { m_eoiSEIOrigPicDimensionsFlag = origPicDimensionsFlag; }
   bool getEOISEIOrigPicDimensionsFlag() { return m_eoiSEIOrigPicDimensionsFlag; }
+#if JVET_AL0123_AL0310_EOI
+  void setEOISEIOrigPicWidthMinus1(uint32_t origPicWidthMinus1) { m_eoiSEIOrigPicWidthMinus1 = origPicWidthMinus1; }
+  uint32_t getEOISEIOrigPicWidthMinus1() { return m_eoiSEIOrigPicWidthMinus1; }
+  void     setEOISEIOrigPicHeightMinus1(uint32_t origPicHeightMinus1) { m_eoiSEIOrigPicHeightMinus1 = origPicHeightMinus1; }
+  uint32_t getEOISEIOrigPicHeightMinus1() { return m_eoiSEIOrigPicHeightMinus1; }
+  void setEOISEISpatialHorResamplingTypeIdc(uint32_t spatialHorResamplingTypeIdc) { m_eoiSEISpatialHorResamplingTypeIdc = spatialHorResamplingTypeIdc; }
+  uint32_t getEOISEISpatialHorResamplingTypeIdc() const { return m_eoiSEISpatialHorResamplingTypeIdc; }
+  void setEOISEISpatialVerResamplingTypeIdc(uint32_t spatialVerResamplingTypeIdc) { m_eoiSEISpatialVerResamplingTypeIdc = spatialVerResamplingTypeIdc; }
+  uint32_t getEOISEISpatialVerResamplingTypeIdc() const { return m_eoiSEISpatialVerResamplingTypeIdc; }
+#else
   void setEOISEIOrigPicWidth(uint32_t origPicWidth) { m_eoiSEIOrigPicWidth = origPicWidth; }
   uint32_t getEOISEIOrigPicWidth() { return m_eoiSEIOrigPicWidth; }
   void     setEOISEIOrigPicHeight(uint32_t origPicHeight) { m_eoiSEIOrigPicHeight = origPicHeight; }
   uint32_t getEOISEIOrigPicHeight() { return m_eoiSEIOrigPicHeight; }
   void setEOISEISpatialResamplingTypeFlag(bool spatialResamplingTypeFlag) { m_eoiSEISpatialResamplingTypeFlag = spatialResamplingTypeFlag; }
   bool getEOISEISpatialResamplingTypeFlag() const { return m_eoiSEISpatialResamplingTypeFlag; }
+#endif
   void setEOISEIPrivacyProtectionTypeIdc(uint32_t privacyProtectionTypeIdc) { m_eoiSEIPrivacyProtectionTypeIdc = privacyProtectionTypeIdc; }
   uint32_t getEOISEIPrivacyProtectionTypeIdc() const { return m_eoiSEIPrivacyProtectionTypeIdc; }
   void setEOISEIPrivacyProtectedInfoType(uint32_t privacyProtectedInfoType) { m_eoiSEIPrivacyProtectedInfoType = privacyProtectedInfoType; }

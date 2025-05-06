@@ -3223,7 +3223,11 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     }
     SEIDigitallySignedContentInitialization* dsci = (SEIDigitallySignedContentInitialization*) dscInitSEIs.front();
     m_dscSubstreamManager.initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
+#else
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid);
+#endif
     if (!m_dscSubstreamManager.initVerificator(m_keyStoreDir, m_trustStoreDir))
     {
       printf("Error: Cannot initialize Digitally Signed Content verification\n");

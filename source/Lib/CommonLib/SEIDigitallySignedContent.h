@@ -68,6 +68,9 @@ public:
   int8_t       dsciHashMethodType            = 0;
   std::string  dsciKeySourceUri;
   int8_t       dsciNumVerificationSubstreams = 0;
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  std::vector<std::vector<bool>> dsciRefSubstreamFlag;
+#endif
   int8_t       dsciKeyRetrievalModeIdc       = 0;
   bool         dsciUseKeyRegisterIdxFlag     = false;
   int32_t      dsciKeyRegisterIdx            = 0;
@@ -199,8 +202,16 @@ private:
 
   bool    m_sigInitialized = false;
 
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  std::vector<std::vector<bool>> m_refSubstreamFlag;
+#endif
+
 public:
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  void initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid, const std::vector<std::vector<bool>> &refFlags);
+#else
   void initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid);
+#endif
 
   void initSignature   (const std::string &privKeyFile);
   bool initVerificator (const std::string &keyStoreDir, const std::string &trustStoreDir);

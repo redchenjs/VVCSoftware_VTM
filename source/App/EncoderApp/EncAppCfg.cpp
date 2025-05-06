@@ -1596,9 +1596,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEIEOISrcPicFlag", m_eoiSEISrcPicFlag, false, "Value of 1 specifies that the picture in the same access unit that contains the EOI SEI message is a source picture. Value of 0 provides no such indication.")
 #endif
 ("SEIEOIOrigPicDimensionsFlag",m_eoiSEIOrigPicDimensionsFlag, false, "specifies if original source picture dimensions are present.")
+#if JVET_AL0123_AL0310_EOI
+("SEIEOIOrigPicWidthMinus1", m_eoiSEIOrigPicWidthMinus1, 0u, "indicates the width of the original source picture minus 1.")
+("SEIEOIOrigPicHeightMinus1", m_eoiSEIOrigPicHeightMinus1, 0u, "indicates the height of the original source picture minus 1.")
+("SEIEOISpatialHorResamplingTypeIdc", m_eoiSEISpatialHorResamplingTypeIdc, 0u, "specifies the type of the spatial horizontal resampling optimization.")
+("SEIEOISpatialVerResamplingTypeIdc", m_eoiSEISpatialVerResamplingTypeIdc, 0u, "specifies the type of the spatial vertical resampling optimization.")
+#else
 ("SEIEOIOrigPicWidth", m_eoiSEIOrigPicWidth, 0u, "indicates the width of the original source picture.")
 ("SEIEOIOrigPicHeight", m_eoiSEIOrigPicHeight, 0u, "indicates the height of the original source picture.")
 ("SEIEOISpatialResamplingTypeFlag", m_eoiSEISpatialResamplingTypeFlag, false, "specifies the type of the spatial resampling optimization.")
+#endif
 ("SEIEOIPrivacyProtectionTypeIdc", m_eoiSEIPrivacyProtectionTypeIdc, 0u, "indicates the type of privacy protection optimization")
 ("SEIEOIPrivacyProtectedInfoType", m_eoiSEIPrivacyProtectedInfoType, 0u, "indicates the types of protected information")
 
