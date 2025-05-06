@@ -616,9 +616,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   }
   m_cEncLib.setIntraLambdaModifier                               ( m_adIntraLambdaModifier );
   m_cEncLib.setIntraQpFactor                                     ( m_dIntraQpFactor );
-#if JVET_AL0207
   m_cEncLib.setLambdaScaleTowardsNextQP                          ( m_lambdaScaleTowardsNextQP );
-#endif
   m_cEncLib.setBaseQP                                            ( m_iQP );
 
   m_cEncLib.setIntraQPOffset                                     ( m_intraQPOffset );
@@ -1131,12 +1129,13 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setEOISEIForMachineAnalysisIdc(m_eoiSEIForMachineAnalysisIdc);
   m_cEncLib.setEOISEIType(m_eoiSEIType);
   m_cEncLib.setEOISEIObjectBasedIdc(m_eoiSEIObjectBasedIdc);
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
   m_cEncLib.setEOISEIQuantThresholdDelta(m_eoiSEIQuantThresholdDelta);
   m_cEncLib.setEOISEIPicQuantObjectFlag(m_eoiSEIPicQuantObjectFlag);
-#endif
   m_cEncLib.setEOISEITemporalResamplingTypeFlag(m_eoiSEITemporalResamplingTypeFlag);
   m_cEncLib.setEOISEINumIntPics(m_eoiSEINumIntPics);
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+  m_cEncLib.setEOISEISrcPicFlag(m_eoiSEISrcPicFlag);
+#endif
   m_cEncLib.setEOISEIOrigPicDimensionsFlag(m_eoiSEIOrigPicDimensionsFlag);
   m_cEncLib.setEOISEIOrigPicWidth(m_eoiSEIOrigPicWidth);
   m_cEncLib.setEOISEIOrigPicHeight(m_eoiSEIOrigPicHeight);
@@ -1278,14 +1277,7 @@ void EncApp::xInitLibCfg( int layerIdx )
         m_cEncLib.setNNPostFilterSEICharacteristicsPicHeightDenominatorMinus1   (m_nnPostFilterSEICharacteristicsPicHeightDenominator[i] - 1, i);
       }
       m_cEncLib.setNNPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1(m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i], i);
-#if JVET_AK0072_NNPF_TEMP_EXTR_UPDATES
       m_cEncLib.setNNPostFilterSEICharacteristicsInputPicOutputFlag( m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i], i);
-#else
-      if (m_nnPostFilterSEICharacteristicsNumberInputDecodedPicturesMinus1[i] > 0)
-      {
-        m_cEncLib.setNNPostFilterSEICharacteristicsInputPicOutputFlag( m_nnPostFilterSEICharacteristicsInputPicOutputFlag[i], i);
-      }
-#endif
       if ((m_cEncLib.getNNPostFilterSEICharacteristicsPurpose(i) & NNPC_PurposeType::FRAME_RATE_UPSAMPLING) != 0)
       {
         m_cEncLib.setNNPostFilterSEICharacteristicsNumberInterpolatedPictures( m_nnPostFilterSEICharacteristicsNumberInterpolatedPictures[i], i);
@@ -1462,9 +1454,7 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setmSptiSEISourceType(m_sptiSourceType);
     m_cEncLib.setmSptiSEITimeScale(m_sptiTimeScale);
     m_cEncLib.setmSptiSEINumUnitsInElementalInterval(m_sptiNumUnitsInElementalInterval);
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
     m_cEncLib.setmSptiSEIDirectionFlag(m_sptiDirectionFlag);
-#endif
   }
 
   m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
@@ -1666,7 +1656,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setGenerativeFaceVideoSEIMatrixHeight                       ( m_generativeFaceVideoSEIMatrixHeight );
   m_cEncLib.setGenerativeFaceVideoSEIMatrixElement                      ( m_generativeFaceVideoSEIMatrixElement );
   m_cEncLib.setGenerativeFaceVideoSEIPayloadFilename                    ( m_generativeFaceVideoSEIPayloadFilename );
-#if JVET_AK0239_GFVE
   m_cEncLib.setGenerativeFaceVideoEnhancementSEIEnabled                            ( m_generativeFaceVideoEnhancementEnabled );
   m_cEncLib.setGenerativeFaceVideoEnhancementSEINumber                             ( m_generativeFaceVideoEnhancementSEINumber );
   m_cEncLib.setGenerativeFaceVideoEnhancementSEIId                                 ( m_generativeFaceVideoEnhancementSEIId );
@@ -1691,7 +1680,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY            ( m_generativeFaceVideoEnhancementSEIPupilLeftEyeCoordinateY );
   m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX           ( m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX );
   m_cEncLib.setGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY           ( m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY );
-#endif
 
 }
 

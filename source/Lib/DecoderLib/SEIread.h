@@ -150,36 +150,21 @@ protected:
   uint32_t                         baseCoordinateQuantizationFactor;
   uint32_t                                                   basdCoordinatePointNum;
   bool                                                       base3DCoordinateFlag;
-#if JVET_AK0238_GFV_FIX_CLEANUP
   uint32_t                                                   baseCoordinateZMaxValue;
-#else
-  std::vector<uint32_t>                                      baseCoordinateZMaxValue;
-#endif
   std::vector<double>                                        prevCoordinateX;
   std::vector<double>                                        prevCoordinateY;
   std::vector<double>                                        prevCoordinateZ;
-#if JVET_AK0238_GFV_FIX_CLEANUP
   std::vector<double>                                        baseCoordinateX;
   std::vector<double>                                        baseCoordinateY;
   std::vector<double>                                        baseCoordinateZ;
-#endif
   uint32_t                                                   baseMatrixElementPrecisionFactor;
   uint32_t                                                   baseNumMatrixType;
-#if !JVET_AK0238_GFV_FIX_CLEANUP
-  std::vector<uint32_t>                                      baseMatrixTypeIdx;
-  std::vector<uint32_t>                                      baseNumMatricestoNumKpsFlag;                                    
-  std::vector<uint32_t>                                      baseNumMatricesInfo;
-  std::vector<uint32_t>                                      baseMatrix3DSpaceFlag;
-#endif
   std::vector<uint32_t>                                      baseNumMatrices;
   std::vector<uint32_t>                                      baseMatrixWidth;
   std::vector<uint32_t>                                      baseMatrixHeight;
-#if JVET_AK0238_GFV_FIX_CLEANUP
   std::vector<std::vector<std::vector<std::vector<double>>>> baseMatrix;
-#endif
   std::vector<std::vector<std::vector<std::vector<double>>>> prevMatrix;
 
-#if JVET_AK0239_GFVE
   void xParseSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement & sei, uint32_t payloadSize,std::ostream* pDecodedMessageOutputStream);
   double xParseSEIPupilCoordinate(std::ostream *pOS, double refCoordinate, int precisionFactor, const char* eye, const char* axis);
   uint32_t                                                   gfveBaseMatrixElementPrecisionFactor;
@@ -198,7 +183,6 @@ protected:
   double                                                     baseGfveRightPupilCoordinateX;
   double                                                     baseGfveRightPupilCoordinateY;
   bool                                                       checkBasePicPupilPresentIdx = false;
-#endif
 };
 
 #if JVET_S0257_DUMP_360SEI_MESSAGE

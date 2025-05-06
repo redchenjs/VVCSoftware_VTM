@@ -1752,9 +1752,7 @@ void DecLib::checkSeiContentInAccessUnit()
       }
       else
       if(payloadType1 != SEI::PayloadType::GENERATIVE_FACE_VIDEO
-#if JVET_AK0239_GFVE
           && payloadType1 != SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT
-#endif
           )
       {
         bool sameLayer = false;
