@@ -556,9 +556,16 @@ protected:
   bool     m_eoiSEISrcPicFlag;;
 #endif
   bool     m_eoiSEIOrigPicDimensionsFlag;
+#if JVET_AL0123_AL0310_EOI
+  uint32_t m_eoiSEIOrigPicWidthMinus1;
+  uint32_t m_eoiSEIOrigPicHeightMinus1;
+  uint32_t m_eoiSEISpatialHorResamplingTypeIdc;
+  uint32_t m_eoiSEISpatialVerResamplingTypeIdc;
+#else
   uint32_t m_eoiSEIOrigPicWidth;
   uint32_t m_eoiSEIOrigPicHeight;
   bool m_eoiSEISpatialResamplingTypeFlag;
+#endif
   uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
 

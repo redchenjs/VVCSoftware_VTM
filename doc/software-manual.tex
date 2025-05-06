@@ -6230,17 +6230,21 @@ Value of 1 specifies that the picture in the same access unit that contains the 
 \Default{0} &
 Specifies if original source picture dimensions are present.
 \\
-\Option{SEIEOIOrigPicWidth} &
+\Option{SEIEOIOrigPicWidthMinus1} &
 \Default{0} &
-Specifies the width of the original source picture.
+Specifies the width of the original source picture minus 1.
 \\
-\Option{SEIEOIOrigPicHeight} &
+\Option{SEIEOIOrigPicHeightMinus1} &
 \Default{0} &
-Specifies the height of the original source picture.
+Specifies the height of the original source picture minus 1.
 \\
-\Option{SEIEOISpatialResamplingTypeFlag} &
+\Option{SEIEOISpatialHorResamplingTypeIdc} &
 \Default{0} &
-Specifies whether spatial resampling type optimization is enabled.
+Specifies spatial horizontal resampling type, 0: no spatial resampling; 1: spatial subsampling; 2: spatial upsampling.
+\\
+\Option{SEIEOISpatialVerResamplingTypeIdc} &
+\Default{0} &
+Specifies spatial vertical resampling type, 0: no spatial resampling; 1: spatial subsampling; 2: spatial upsampling.
 \\
 \Option{SEIEOIPrivacyProtectionTypeIdc} &
 \Default{0} &
