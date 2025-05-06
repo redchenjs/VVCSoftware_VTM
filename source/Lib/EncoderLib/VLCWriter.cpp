@@ -720,6 +720,10 @@ void HLSWriter::codeVUI( const VUI *pcVUI, const SPS* pcSPS )
   {
     xWriteCode(pcVUI->getColourPrimaries(), 8,                "vui_colour_primaries");
     xWriteCode(pcVUI->getTransferCharacteristics(), 8,        "vui_transfer_characteristics");
+#if JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS
+    CHECK((pcVUI->getMatrixCoefficients() == 0 || pcVUI->getMatrixCoefficients() == 16 || pcVUI->getMatrixCoefficients() == 17) && pcSPS->getChromaFormatIdc() == ChromaFormat::_444,
+    "vui_matrix_coeffs shall not be equal to 0, 16, or 17 when sps_chroma_format_idc is equal to 3"); 
+#endif
     xWriteCode(pcVUI->getMatrixCoefficients(), 8,             "vui_matrix_coeffs");
     xWriteFlag(pcVUI->getVideoFullRangeFlag(),                "vui_full_range_flag");
   }
