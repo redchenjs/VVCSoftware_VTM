@@ -270,9 +270,7 @@ protected:
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
   int       m_intraQPOffset;                                  ///< QP offset for intra slice (integer)
   bool      m_lambdaFromQPEnable;                             ///< enable flag for QP:lambda fix
-#if JVET_AL0207
   double    m_lambdaScaleTowardsNextQP;                       ///< scale lambda towards lambda of next QP
-#endif
   std::string m_dQPFileName;                                  ///< QP offset for each slice (initialized from external file)
 
   FrameDeltaQps m_frameDeltaQps;   // array of frame delta QP values
@@ -550,10 +548,8 @@ protected:
   uint32_t m_eoiSEIForMachineAnalysisIdc;
   uint32_t m_eoiSEIType;
   uint32_t m_eoiSEIObjectBasedIdc;
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
   uint32_t m_eoiSEIQuantThresholdDelta;
   bool     m_eoiSEIPicQuantObjectFlag;
-#endif
   bool m_eoiSEITemporalResamplingTypeFlag;
   uint32_t m_eoiSEINumIntPics;
   bool     m_eoiSEIOrigPicDimensionsFlag;
@@ -995,9 +991,7 @@ protected:
   uint32_t m_sptiSourceType;
   uint32_t m_sptiTimeScale;
   uint32_t m_sptiNumUnitsInElementalInterval;
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
   bool     m_sptiDirectionFlag;
-#endif
 #if GREEN_METADATA_SEI_ENABLED
 public:
   std::string getGMFAFile ();
@@ -1162,7 +1156,6 @@ protected:
   std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixHeight;
   std::vector < std::vector<std::vector<std::vector<std::vector<double>>>>>   m_generativeFaceVideoSEIMatrixElement;
   std::string                          m_generativeFaceVideoSEIPayloadFilename;
-#if JVET_AK0239_GFVE
   bool                                 m_generativeFaceVideoEnhancementEnabled;
   uint32_t                             m_generativeFaceVideoEnhancementSEINumber;
   bool                                 m_generativeFaceVideoEnhancementSEIBasePicFlag;
@@ -1187,7 +1180,6 @@ protected:
   std::vector<double>                  m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX;
   std::vector<double>                  m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY;
   std::string                          m_generativeFaceVideoEnhancementSEIPayloadFilename;
-#endif
 
 #if EXTENSION_360_VIDEO
   TExt360AppEncCfg m_ext360;

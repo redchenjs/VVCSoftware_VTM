@@ -294,9 +294,7 @@ protected:
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
   int       m_intraQPOffset;                    ///< QP offset for intra slice (integer)
   int       m_lambdaFromQPEnable;               ///< enable lambda derivation from QP
-#if JVET_AL0207
   double    m_lambdaScaleTowardsNextQP;         ///< scale lambda towards lambda of next QP
-#endif
   bool      m_AccessUnitDelimiter;               ///< add Access Unit Delimiter NAL units
   bool      m_enablePictureHeaderInSliceHeader;  ///< Enable Picture Header in Slice Header
 
@@ -710,9 +708,7 @@ protected:
   uint32_t m_sptiSourceType;
   uint32_t m_sptiTimeScale;
   uint32_t m_sptiNumUnitsInElementalInterval;
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
   bool     m_sptiDirectionFlag;
-#endif
 
   bool                    m_nnPostFilterSEICharacteristicsEnabled;
   bool                    m_nnPostFilterSEICharacteristicsUseSuffixSEI;
@@ -808,10 +804,8 @@ protected:
   uint32_t  m_eoiSEIForMachineAnalysisIdc;
   uint32_t m_eoiSEIType;
   uint32_t m_eoiSEIObjectBasedIdc;
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
   uint32_t m_eoiSEIQuantThresholdDelta;
   bool     m_eoiSEIPicQuantObjectFlag;
-#endif
   bool m_eoiSEITemporalResamplingTypeFlag;
   uint32_t m_eoiSEINumIntPics;
   bool     m_eoiSEIOrigPicDimensionsFlag;
@@ -1189,7 +1183,6 @@ protected:
   std::vector<std::vector<uint32_t>>   m_generativeFaceVideoSEIMatrixHeight;
   std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>   m_generativeFaceVideoSEIMatrixElement;
   std::string                          m_generativeFaceVideoSEIPayloadFilename;
-#if JVET_AK0239_GFVE
   bool                                 m_generativeFaceVideoEnhancementEnabled;
   uint32_t                             m_generativeFaceVideoEnhancementSEINumber;
   bool                                 m_generativeFaceVideoEnhancementSEIBasePicFlag;
@@ -1214,7 +1207,6 @@ protected:
   std::vector<double>                  m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX;
   std::vector<double>                  m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY;
   std::string                          m_generativeFaceVideoEnhancementSEIPayloadFilename;
-#endif
 
 public:
   EncCfg()
@@ -1889,10 +1881,8 @@ public:
   const std::vector<double>& getIntraLambdaModifier()                        const { return m_adIntraLambdaModifier;         }
   void      setIntraQpFactor                ( double dValue )               { m_dIntraQpFactor = dValue;              }
   double    getIntraQpFactor                ()                        const { return m_dIntraQpFactor;                }
-#if JVET_AL0207
   void      setLambdaScaleTowardsNextQP     (double  scale) { m_lambdaScaleTowardsNextQP = scale; }
   double    getLambdaScaleTowardsNextQP     () const        { return m_lambdaScaleTowardsNextQP; }
-#endif
 
   //==== Coding Structure ========
   int       getIntraPeriod                  () const     { return  m_intraPeriod; }
@@ -2106,10 +2096,8 @@ public:
   uint32_t getmSptiSEITimeScale() { return m_sptiTimeScale; }
   void     setmSptiSEINumUnitsInElementalInterval(uint32_t b) { m_sptiNumUnitsInElementalInterval = b; }
   uint32_t getmSptiSEINumUnitsInElementalInterval() { return m_sptiNumUnitsInElementalInterval; }
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
   void     setmSptiSEIDirectionFlag(bool b) { m_sptiDirectionFlag = b; }
   uint32_t getmSptiSEIDirectionFlag() { return m_sptiDirectionFlag; }
-#endif
 
   void        setNNPostFilterSEICharacteristicsEnabled(bool enabledFlag)                                                { m_nnPostFilterSEICharacteristicsEnabled = enabledFlag; }
   bool        getNNPostFilterSEICharacteristicsEnabled() const                                                          { return m_nnPostFilterSEICharacteristicsEnabled; }
@@ -2565,12 +2553,10 @@ public:
   uint32_t getEOISEIType() const { return m_eoiSEIType; }
   void setEOISEIObjectBasedIdc(uint32_t objectBasedIdc) { m_eoiSEIObjectBasedIdc = objectBasedIdc; }
   uint32_t getEOISEIObjectBasedIdc() const { return m_eoiSEIObjectBasedIdc; }
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
   void setEOISEIQuantThresholdDelta(uint32_t quantThresholdDelta) { m_eoiSEIQuantThresholdDelta = quantThresholdDelta; }
   uint32_t getEOISEIQuantThresholdDelta() const { return m_eoiSEIQuantThresholdDelta; }
   void setEOISEIPicQuantObjectFlag(bool picQuantObjectFlag) { m_eoiSEIPicQuantObjectFlag = picQuantObjectFlag; }
   bool getEOISEIPicQuantObjectFlag() const { return m_eoiSEIPicQuantObjectFlag; }
-#endif
   void setEOISEITemporalResamplingTypeFlag(bool temporalResamplingTypeFlag) { m_eoiSEITemporalResamplingTypeFlag = temporalResamplingTypeFlag; }
   bool getEOISEITemporalResamplingTypeFlag() const { return m_eoiSEITemporalResamplingTypeFlag; }
   void setEOISEINumIntPics(uint32_t numIntPics) { m_eoiSEINumIntPics = numIntPics; }
@@ -3317,7 +3303,6 @@ public:
   uint32_t          getGenerativeFaceVideoSEINumMatricesInfo(int idx,int idy)                                                                       const { return m_generativeFaceVideoSEINumMatricesInfo[idx][idy]; }
   void              setGenerativeFaceVideoSEIPayloadFilename(const std::string &payloadFilename)                                                          { m_generativeFaceVideoSEIPayloadFilename = payloadFilename; }
   const std::string getGenerativeFaceVideoSEIPayloadFilename()                                                                                      const { return m_generativeFaceVideoSEIPayloadFilename; }
-#if JVET_AK0239_GFVE
   void              setGenerativeFaceVideoEnhancementSEIEnabled(bool enabledFlag)                          { m_generativeFaceVideoEnhancementEnabled = enabledFlag; }
   bool              getGenerativeFaceVideoEnhancementSEIEnabled()                                    const { return m_generativeFaceVideoEnhancementEnabled; }
   void              setGenerativeFaceVideoEnhancementSEINumber(uint32_t number)                            { m_generativeFaceVideoEnhancementSEINumber = number; }
@@ -3366,7 +3351,6 @@ public:
   double            getGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX(int idx)                                                                     const { return m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX[idx]; }
   void              setGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY(const std::vector<double>& pupilRightEyeCoordinateY)                               { m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY = pupilRightEyeCoordinateY; }
   double            getGenerativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY(int idx)                                                                     const { return m_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY[idx]; }
-#endif
 
   const EncCfgParam::CfgVPSParameters &getVPSParameters() const
   {
