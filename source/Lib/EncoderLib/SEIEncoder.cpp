@@ -1931,12 +1931,22 @@ void SEIEncoder::initSEIEncoderOptimizationInfo(SEIEncoderOptimizationInfo *sei)
       sei->m_origPicDimensionsFlag = m_pcCfg->getEOISEIOrigPicDimensionsFlag();
       if (sei->m_origPicDimensionsFlag)
       {
+#if JVET_AL0123_AL0310_EOI
+        sei->m_origPicWidthMinus1  = m_pcCfg->getEOISEIOrigPicWidthMinus1();
+        sei->m_origPicHeightMinus1 = m_pcCfg->getEOISEIOrigPicHeightMinus1();
+#else
         sei->m_origPicWidth  = m_pcCfg->getEOISEIOrigPicWidth();
         sei->m_origPicHeight = m_pcCfg->getEOISEIOrigPicHeight();
+#endif
       }
       else
       {
+#if JVET_AL0123_AL0310_EOI
+        sei->m_spatialHorResamplingTypeIdc = m_pcCfg->getEOISEISpatialHorResamplingTypeIdc();
+        sei->m_spatialVerResamplingTypeIdc = m_pcCfg->getEOISEISpatialVerResamplingTypeIdc();
+#else
         sei->m_spatialResamplingTypeFlag = m_pcCfg->getEOISEISpatialResamplingTypeFlag();
+#endif
       }
     }
     if ((sei->m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
@@ -2189,7 +2199,12 @@ void SEIEncoder::initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnh
 #if JVET_AJ0151_DSC_SEI
 void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei)
 {
+#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  sei->dsciNumVerificationSubstreams = m_pcCfg->getDigitallySignedContentSEICfg().numVerificationSubstreams;
+  sei->dsciRefSubstreamFlag = m_pcCfg->getDigitallySignedContentSEICfg().refSubstreamFlag;
+#else
   sei->dsciNumVerificationSubstreams = 1; //m_pcCfg->getMaxTempLayer();
+#endif
   sei->dsciHashMethodType = m_pcCfg->getDigitallySignedContentSEICfg().hashMethod;
   sei->dsciKeySourceUri = m_pcCfg->getDigitallySignedContentSEICfg().publicKeyUri;
   sei->dsciUseKeyRegisterIdxFlag = m_pcCfg->getDigitallySignedContentSEICfg().keyIdEnabled;
