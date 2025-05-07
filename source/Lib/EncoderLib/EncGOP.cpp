@@ -4345,7 +4345,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
           if (!m_pcCfg->getSliceLevelDeltaQp())
           {
-            picHeader->setQpDelta(pcSlice->getSliceQp() - (pcSlice->getPPS()->getPicInitQPMinus26() + 26));
+            picHeader->setQpDelta(pcSlice->getSliceQp() - (pcSlice->getPPS()->getPicInitQPMinus26() + QP26));
           }
 
           // code SAO parameters in picture header or slice headers

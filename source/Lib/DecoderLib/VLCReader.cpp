@@ -1719,7 +1719,7 @@ void HLSyntaxReader::parseSPS(SPS* pcSPS)
       int32_t qpTableStart = 0;
       xReadSvlc(qpTableStart, "sps_qp_table_starts_minus26");
       chromaQpMappingTableParams.setQpTableStartMinus26(i, qpTableStart);
-      CHECK(qpTableStart < -26 - pcSPS->getQpBDOffset(ChannelType::LUMA) || qpTableStart > 36,
+      CHECK(qpTableStart < -QP26 - pcSPS->getQpBDOffset(ChannelType::LUMA) || qpTableStart > 36,
             "The value of sps_qp_table_start_minus26[ i ] shall be in the range of -26 - QpBdOffset to 36 inclusive");
       xReadUvlc(uiCode, "sps_num_points_in_qp_table_minus1");
       chromaQpMappingTableParams.setNumPtsInCQPTableMinus1(i, uiCode);
@@ -4162,7 +4162,7 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
     xReadSvlc(iCode, "sh_qp_delta");
     qpDelta = iCode;
   }
-  pcSlice->setSliceQp(26 + pps->getPicInitQPMinus26() + qpDelta);
+  pcSlice->setSliceQp(QP26 + pps->getPicInitQPMinus26() + qpDelta);
   pcSlice->setSliceQpBase(pcSlice->getSliceQp());
 
   CHECK(pcSlice->getSliceQp() < -sps->getQpBDOffset(ChannelType::LUMA), "Invalid slice QP delta");

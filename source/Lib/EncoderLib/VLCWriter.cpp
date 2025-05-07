@@ -2526,7 +2526,7 @@ void HLSWriter::codeSliceHeader         ( Slice* pcSlice, PicHeader *picHeader )
 
   if (!pcSlice->getPPS()->getQpDeltaInfoInPhFlag())
   {
-    xWriteSvlc(pcSlice->getSliceQp() - (pcSlice->getPPS()->getPicInitQPMinus26() + 26), "sh_qp_delta");
+    xWriteSvlc(pcSlice->getSliceQp() - (pcSlice->getPPS()->getPicInitQPMinus26() + QP26), "sh_qp_delta");
   }
   if (pcSlice->getPPS()->getSliceChromaQpFlag())
   {

@@ -2403,6 +2403,13 @@ Specifies the quota of GPM merge candidates in full RD checking.
 Specifies the base value of the quantization parameter (QP).
 \\
 
+\Option{PPSInitialQPOffset} &
+%\ShortOption{\None} &
+\Default{0} &
+Specifies a QP offset added when coding the initial QP value in the PPS.
+This parameter may be set to a value different from 0 to minimize the amount of bits used for coding the initial QP value in the slice or picture header.
+\\
+
 \Option{QPIncrementFrame (-qpif)} &
 %\ShortOption{\None} &
 \Default{Undefined} &

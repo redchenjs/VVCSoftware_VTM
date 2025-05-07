@@ -617,6 +617,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setLambdaScaleTowardsNextQP                          ( m_lambdaScaleTowardsNextQP );
 #endif
   m_cEncLib.setBaseQP                                            ( m_iQP );
+  m_cEncLib.setQpRefAdj(m_qpRefAdj);
 
   m_cEncLib.setIntraQPOffset                                     ( m_intraQPOffset );
   m_cEncLib.setLambdaFromQPEnable                                ( m_lambdaFromQPEnable );
