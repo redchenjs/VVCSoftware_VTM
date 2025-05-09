@@ -1020,6 +1020,9 @@ protected:
   std::vector<uint32_t> m_priSEIResamplingRatioIdx;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftX;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftY;
+  bool                  m_priSEIMultilayerFlag;
+  std::vector<uint32_t> m_priSEIRegionLayerId;
+  std::vector<bool>     m_priSEIRegionIsALayerFlag;
 #endif
 
   bool      m_constrainedRaslEncoding;
@@ -3009,6 +3012,12 @@ public:
   uint32_t getPriSEITargetRegionTopLeftX(int i)                           { return m_priSEITargetRegionTopLeftX[i]; }
   void     setPriSEITargetRegionTopLeftY(std::vector<uint32_t>& b)        { m_priSEITargetRegionTopLeftY = b; }
   uint32_t getPriSEITargetRegionTopLeftY(int i)                           { return m_priSEITargetRegionTopLeftY[i]; }
+  void     setPriSEIMultilayerFlag(bool b)                                { m_priSEIMultilayerFlag = b; }
+  bool     getPriSEIMultilayerFlag()                                      { return m_priSEIMultilayerFlag; }
+  void     setPriSEIRegionLayerId(std::vector<uint32_t>& b)               { m_priSEIRegionLayerId = b; }
+  uint32_t getPriSEIRegionLayerId(int i)                                  { return m_priSEIRegionLayerId[i]; }
+  void     setPriSEIRegionIsALayerFlag(std::vector<bool>& b)              { m_priSEIRegionIsALayerFlag = b; }
+  bool     getPriSEIRegionIsALayerFlag(int i)                             { return m_priSEIRegionIsALayerFlag[i]; }
 #endif
 
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }

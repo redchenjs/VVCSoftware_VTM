@@ -576,7 +576,7 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     case SEI::PayloadType::PACKED_REGIONS_INFO:
       sei = new SEIPackedRegionsInfo;
-      xParsePackedRegionsInfo((SEIPackedRegionsInfo &) *sei, payloadSize, pDecodedMessageOutputStream);
+      xParsePackedRegionsInfo((SEIPackedRegionsInfo &) *sei, nuh_layer_id, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
     default:
@@ -4987,19 +4987,22 @@ void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedCo
 }
 
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
-void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, uint32_t payLoadSize, std::ostream* pDecodedMessageOutputStream)
+void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_t nuhLayerId, uint32_t payLoadSize, std::ostream* pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payLoadSize);
   uint32_t val;
 
   sei_read_flag(pDecodedMessageOutputStream, val, "pri_cancel_flag");
   sei.m_cancelFlag = val != 0;
+  sei.m_layerId = nuhLayerId;
   if (!sei.m_cancelFlag)
   {
     sei_read_flag(pDecodedMessageOutputStream, val, "pri_persistence_flag");
     sei.m_persistenceFlag = val != 0;
     sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_num_regions_minus1");
     sei.m_numRegionsMinus1 = val;
+    sei_read_flag(pDecodedMessageOutputStream, val, "pri_multilayer_flag");
+    sei.m_multilayerFlag = val != 0;
     sei_read_flag(pDecodedMessageOutputStream, val, "pri_use_max_dimensions_flag");
     sei.m_useMaxDimensionsFlag = val != 0;
     sei_read_code(pDecodedMessageOutputStream, 4, val, "pri_log2_unit_size");
@@ -5053,6 +5056,8 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, uint32_t payL
     }
 
     sei.m_regionId.resize(sei.m_numRegionsMinus1 + 1);
+    sei.m_regionLayerId.resize(sei.m_numRegionsMinus1 + 1);
+    sei.m_regionIsALayerFlag.resize(sei.m_numRegionsMinus1 + 1);
     sei.m_regionTopLeftInUnitsX.resize(sei.m_numRegionsMinus1 + 1);
     sei.m_regionTopLeftInUnitsY.resize(sei.m_numRegionsMinus1 + 1);
     sei.m_regionWidthInUnitsMinus1.resize(sei.m_numRegionsMinus1 + 1);
@@ -5071,14 +5076,36 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, uint32_t payL
       {
         sei.m_regionId[i] = i;
       }
-      sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_top_left_in_units_x[i]");
-      sei.m_regionTopLeftInUnitsX[i] = val;
-      sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_top_left_in_units_y[i]");
-      sei.m_regionTopLeftInUnitsY[i] = val;
-      sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_width_in_units_minus1[i]");
-      sei.m_regionWidthInUnitsMinus1[i] = val;
-      sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_height_in_units_minus1[i]");
-      sei.m_regionHeightInUnitsMinus1[i] = val;
+      if (sei.m_multilayerFlag)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_region_layer_id[i]");
+        sei.m_regionLayerId[i] = val;
+        sei_read_flag(pDecodedMessageOutputStream, val, "pri_region_is_a_layer_flag[i]");
+        sei.m_regionIsALayerFlag[i] = val != 0;
+      }
+      else
+      {
+        sei.m_regionLayerId[i] = 0;
+        sei.m_regionIsALayerFlag[i] = 0;
+      }
+      if (!sei.m_regionIsALayerFlag[i])
+      {
+        sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_top_left_in_units_x[i]");
+        sei.m_regionTopLeftInUnitsX[i] = val;
+        sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_top_left_in_units_y[i]");
+        sei.m_regionTopLeftInUnitsY[i] = val;
+        sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_width_in_units_minus1[i]");
+        sei.m_regionWidthInUnitsMinus1[i] = val;
+        sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_height_in_units_minus1[i]");
+        sei.m_regionHeightInUnitsMinus1[i] = val;
+      }
+      else
+      {
+        sei.m_regionTopLeftInUnitsX[i] = 0;
+        sei.m_regionTopLeftInUnitsY[i] = 0;
+        sei.m_regionWidthInUnitsMinus1[i] = 0;
+        sei.m_regionHeightInUnitsMinus1[i] = 0;
+      }
       if (sei.m_numResamplingRatiosMinus1 > 0)
       {
         sei_read_code(pDecodedMessageOutputStream, ceilLog2(sei.m_numResamplingRatiosMinus1 + 1), val, "pri_resampling_ratio_idx[i]");

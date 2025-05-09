@@ -1812,13 +1812,15 @@ class SEIPackedRegionsInfo : public SEI
 public:
   PayloadType payloadType() const { return PayloadType::PACKED_REGIONS_INFO; }
   SEIPackedRegionsInfo()
-    : m_cancelFlag(false)
+    : m_layerId(0)
+    , m_cancelFlag(false)
     , m_persistenceFlag(false)
     , m_numRegionsMinus1(0)
     , m_useMaxDimensionsFlag(false)
     , m_log2UnitSize(0)
     , m_regionSizeLenMinus1(0)
     , m_regionIdPresentFlag(false)
+    , m_multilayerFlag(false)
     , m_targetPicParamsPresentFlag(false)
     , m_targetPicWidthMinus1(0)
     , m_targetPicHeightMinus1(0)
@@ -1827,6 +1829,7 @@ public:
   SEIPackedRegionsInfo(SEIPackedRegionsInfo& sei);
   virtual ~SEIPackedRegionsInfo() {}
 
+  int      m_layerId;
   bool     m_cancelFlag;
   bool     m_persistenceFlag;
   uint32_t m_numRegionsMinus1;
@@ -1834,6 +1837,7 @@ public:
   uint32_t m_log2UnitSize;
   uint32_t m_regionSizeLenMinus1;
   bool     m_regionIdPresentFlag;
+  bool     m_multilayerFlag;
   bool     m_targetPicParamsPresentFlag;
   uint32_t m_targetPicWidthMinus1;
   uint32_t m_targetPicHeightMinus1;
@@ -1851,6 +1855,8 @@ public:
   std::vector<uint32_t> m_resamplingRatioIdx;
   std::vector<uint32_t> m_targetRegionTopLeftX;
   std::vector<uint32_t> m_targetRegionTopLeftY;
+  std::vector<uint32_t> m_regionLayerId;
+  std::vector<uint8_t>  m_regionIsALayerFlag;
 };
 #endif
 

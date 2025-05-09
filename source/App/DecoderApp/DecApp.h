@@ -124,7 +124,16 @@ private:
   void xOutputObjectMaskInfos(Picture* pcPic);
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void xOutputPackedRegionsInfo(Picture* pcPic);
-  void xOutputPackedRegionsInfoVector(FILE* fp, const char* paramName, const std::vector<uint32_t>& v);
+  template <typename T>
+  void xOutputPackedRegionsInfoVector(FILE* fp, const char* paramName, const std::vector<T>& l)
+  {
+    fprintf(fp, "%s", paramName);
+    for (auto it : l)
+    {
+      fprintf(fp, " %d", (int)it);
+    }
+    fprintf(fp, "\n");
+  }
 #endif
 };
 

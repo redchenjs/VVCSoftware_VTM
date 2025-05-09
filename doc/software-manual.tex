@@ -6791,6 +6791,18 @@ An example file can be found in cfg/sei_vui/object_mask_infos/intra/mask_info_0.
   \Default{""} &
   Specifies a list of denominators minus 1 values for height resampling of the resampling ratio.
   \\
+  \Option{SEIPRIMultilayerFlag} &
+  \Default{false} &
+  Specifies whether layer IDs are signalled.
+  \\
+ \Option{SEIPRIRegionLayerId} &
+  \Default{""} &
+  Specifies a list of the layer id of the picture that the region information relate to.
+  \\
+ \Option{SEIPRIRegionIsALayerFlag} &
+  \Default{""} &
+  Specifies a list of flags indicating for each region if the picture width and height in the layer are the same as the region's.
+  \\
   \Option{SEIPRIRegionId} &
   \Default{""} &
   Specifies a list of IDs for the regions.
