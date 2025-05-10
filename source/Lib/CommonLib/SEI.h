@@ -110,8 +110,9 @@ public:
     DIGITALLY_SIGNED_CONTENT_SELECTION      = 221,
     DIGITALLY_SIGNED_CONTENT_VERIFICATION   = 222,
     GENERATIVE_FACE_VIDEO                   = 223,
-#if JVET_AK0239_GFVE
     GENERATIVE_FACE_VIDEO_ENHANCEMENT       = 224,
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+    PACKED_REGIONS_INFO                     = 226,
 #endif
   };
 
@@ -168,7 +169,6 @@ class SEISourcePictureTimingInfo : public SEI
 {
 public:
   PayloadType payloadType() const { return PayloadType::SOURCE_PICTURE_TIMING_INFO; }
-#if JVET_AK2006_SPTI_SEI_UPDATES
   SEISourcePictureTimingInfo(int temporalId)
     : m_sptiSourceTimingEqualsOutputTimingFlag(false)
     , m_sptiSourceType(0)
@@ -184,9 +184,6 @@ public:
     m_sptiSublayerIntervalScaleFactor.resize(MAX_TLAYER + 1, 0);
     m_sptiSublayerSynthesizedPictureFlag.fill(false);
   }
-#else
-  SEISourcePictureTimingInfo() {}
-#endif
 
   SEISourcePictureTimingInfo(const SEISourcePictureTimingInfo& sei);
   virtual ~SEISourcePictureTimingInfo() {}
@@ -196,9 +193,7 @@ public:
   uint32_t              m_sptiSourceType;
   uint32_t              m_sptiTimeScale;
   uint32_t              m_sptiNumUnitsInElementalInterval;
-#if JVET_AJ0308_SPTI_SEI_DIRECTION_FLAG
   bool                  m_sptiDirectionFlag;
-#endif
   bool                  m_sptiCancelFlag;
   bool                  m_sptiPersistenceFlag;
   bool                  m_sptiSourceTypePresentFlag;
@@ -255,10 +250,8 @@ public:
     case SEI::PayloadType::ANNOTATED_REGIONS:
     case SEI::PayloadType::SAMPLE_ASPECT_RATIO_INFO:
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
-#if JVET_AJ0048_SPO_SEI_LIST
     case SEI::PayloadType::OBJECT_MASK_INFO:
     case SEI::PayloadType::MODALITY_INFORMATION:
-#endif
      return true;
     default:
       return false;
@@ -1319,13 +1312,8 @@ public:
 
   struct ObjectMaskInfo
   {
-#if JVET_AK0330_OMI_SEI
     ObjectMaskInfo() : maskNew(false), maskBoundingBoxPresentFlag(false) {}
     bool        maskNew;
-#else
-    ObjectMaskInfo() : maskCancel(false), maskBoundingBoxPresentFlag(false) {}
-    bool        maskCancel;
-#endif
     uint32_t    maskId;
     uint32_t    auxSampleValue;
     bool        maskBoundingBoxPresentFlag;
@@ -1340,11 +1328,7 @@ public:
 
   struct ObjectMaskInfoHeader
   {
-#if JVET_AK0330_OMI_SEI
     ObjectMaskInfoHeader() : m_cancelFlag(true), m_receivedSettingsOnce(false), m_persistenceFlag(false) {}
-#else
-    ObjectMaskInfoHeader() : m_cancelFlag(true), m_receivedSettingsOnce(false) {}
-#endif
     bool m_cancelFlag;
     bool m_receivedSettingsOnce;   // used for decoder conformance checking. Other confidence flags must be unchanged once this flag is set.
     bool m_persistenceFlag;
@@ -1362,15 +1346,9 @@ public:
   };
 
   ObjectMaskInfoHeader        m_hdr;
-#if JVET_AK0330_OMI_SEI
   std::vector<uint32_t>       m_maskPicUpdateFlag; // No masks exist in the initial stage.
   std::vector<uint32_t>       m_numMaskInPic;
   std::vector<ObjectMaskInfo> m_objectMaskInfos;   // The ObjectMaskInfo objects have unique maskId in m_objectMaskInfos list.
-#else
-  std::vector<uint32_t>       m_maskPicUpdateFlag;
-  std::vector<uint32_t>       m_numMaskInPicUpdate;
-  std::vector<ObjectMaskInfo> m_objectMaskInfos;
-#endif
 };
 
 class SEIExtendedDrapIndication : public SEI
@@ -1675,11 +1653,7 @@ public:
   uint32_t   m_coordinatePointNum;
   std::vector<double>   m_coordinateX;
   std::vector<double>   m_coordinateY;
-#if JVET_AK0238_GFV_FIX_CLEANUP 
   uint32_t       m_coordinateZMaxValue;
-#else
-  std::vector<uint32_t>   m_coordinateZMaxValue;
-#endif
   std::vector<double>   m_coordinateZ;
   bool           m_matrixPresentFlag;
   uint32_t       m_matrixElementPrecisionFactor;
@@ -1701,7 +1675,6 @@ public:
   std::vector<uint32_t>    m_matrixHeightstore;
 };
 
-#if JVET_AK0239_GFVE
 class SEIGenerativeFaceVideoEnhancement : public SEI
 {
 public:
@@ -1736,7 +1709,6 @@ public:
   double                   m_pupilRightEyeCoordinateX;
   double                   m_pupilRightEyeCoordinateY;
 };
-#endif
 SEINeuralNetworkPostFilterCharacteristics* getNnpfcWithGivenId(const SEIMessages &seiList, uint32_t nnpfaTargetId);
 SEINeuralNetworkPostFilterCharacteristics* getSuperResolutionNnpfc(const SEIMessages &seiList);
 
@@ -1751,16 +1723,24 @@ public:
     , m_forMachineAnalysisIdc(0)
     , m_type(0)
     , m_objectBasedIdc(0)
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
     , m_quantThresholdDelta(0)
     , m_picQuantObjectFlag(false)
-#endif
     , m_temporalResamplingTypeFlag(false)
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+    , m_srcPicFlag(false)
+#endif
     , m_numIntPics(0)
     , m_origPicDimensionsFlag(false)
+#if JVET_AL0123_AL0310_EOI
+    , m_origPicWidthMinus1(0)
+    , m_origPicHeightMinus1(0)
+    , m_spatialHorResamplingTypeIdc(0)
+    , m_spatialVerResamplingTypeIdc(0)
+#else
     , m_origPicWidth(0)
     , m_origPicHeight(0)
     , m_spatialResamplingTypeFlag(false)
+#endif
     , m_privacyProtectionTypeIdc(0)
     , m_privacyProtectedInfoType(0)
   {}
@@ -1774,16 +1754,24 @@ public:
   uint32_t m_forMachineAnalysisIdc;
   uint32_t m_type;
   uint32_t m_objectBasedIdc;
-#if JVET_AK0075_EOI_SEI_OBJ_QP_THRESHOLD
   uint32_t m_quantThresholdDelta;
   bool     m_picQuantObjectFlag;
-#endif
   bool     m_temporalResamplingTypeFlag;
+#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
+  bool     m_srcPicFlag;
+#endif
   uint32_t m_numIntPics;
   bool     m_origPicDimensionsFlag;
+#if JVET_AL0123_AL0310_EOI
+  uint32_t m_origPicWidthMinus1;
+  uint32_t m_origPicHeightMinus1;
+  bool     m_spatialHorResamplingTypeIdc;
+  bool     m_spatialVerResamplingTypeIdc;
+#else
   uint32_t m_origPicWidth;
   uint32_t m_origPicHeight;
   bool     m_spatialResamplingTypeFlag;
+#endif
   uint32_t m_privacyProtectionTypeIdc;
   uint32_t m_privacyProtectedInfoType;
 
@@ -1817,6 +1805,60 @@ public:
   uint16_t         m_miMaxWavelengthMantissa;  
   uint8_t          m_miMaxWavelengthExponentPlus15;  
 };
+
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+class SEIPackedRegionsInfo : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::PACKED_REGIONS_INFO; }
+  SEIPackedRegionsInfo()
+    : m_layerId(0)
+    , m_cancelFlag(false)
+    , m_persistenceFlag(false)
+    , m_numRegionsMinus1(0)
+    , m_useMaxDimensionsFlag(false)
+    , m_log2UnitSize(0)
+    , m_regionSizeLenMinus1(0)
+    , m_regionIdPresentFlag(false)
+    , m_multilayerFlag(false)
+    , m_targetPicParamsPresentFlag(false)
+    , m_targetPicWidthMinus1(0)
+    , m_targetPicHeightMinus1(0)
+    , m_numResamplingRatiosMinus1(0)
+  {}
+  SEIPackedRegionsInfo(SEIPackedRegionsInfo& sei);
+  virtual ~SEIPackedRegionsInfo() {}
+
+  int      m_layerId;
+  bool     m_cancelFlag;
+  bool     m_persistenceFlag;
+  uint32_t m_numRegionsMinus1;
+  bool     m_useMaxDimensionsFlag;
+  uint32_t m_log2UnitSize;
+  uint32_t m_regionSizeLenMinus1;
+  bool     m_regionIdPresentFlag;
+  bool     m_multilayerFlag;
+  bool     m_targetPicParamsPresentFlag;
+  uint32_t m_targetPicWidthMinus1;
+  uint32_t m_targetPicHeightMinus1;
+  uint32_t m_numResamplingRatiosMinus1;
+  std::vector<uint32_t> m_resamplingWidthNumMinus1;
+  std::vector<uint32_t> m_resamplingWidthDenomMinus1;
+  std::vector<bool>     m_fixedAspectRatioFlag;
+  std::vector<uint32_t> m_resamplingHeightNumMinus1;
+  std::vector<uint32_t> m_resamplingHeightDenomMinus1;
+  std::vector<uint32_t> m_regionId;
+  std::vector<uint32_t> m_regionTopLeftInUnitsX;
+  std::vector<uint32_t> m_regionTopLeftInUnitsY;
+  std::vector<uint32_t> m_regionWidthInUnitsMinus1;
+  std::vector<uint32_t> m_regionHeightInUnitsMinus1;
+  std::vector<uint32_t> m_resamplingRatioIdx;
+  std::vector<uint32_t> m_targetRegionTopLeftX;
+  std::vector<uint32_t> m_targetRegionTopLeftY;
+  std::vector<uint32_t> m_regionLayerId;
+  std::vector<uint8_t>  m_regionIsALayerFlag;
+};
+#endif
 
 //! \}
 

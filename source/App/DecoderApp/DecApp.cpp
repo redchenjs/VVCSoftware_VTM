@@ -155,6 +155,18 @@ uint32_t DecApp::decode()
     }
   }
 
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  if (!m_packedRegionsInfoSEIFileName.empty())
+  {
+    std::ofstream ofile(m_packedRegionsInfoSEIFileName.c_str());
+    if (!ofile.good() || !ofile.is_open())
+    {
+      fprintf(stderr, "\nUnable to open file '%s' for writing packed regions info SEI\n", m_packedRegionsInfoSEIFileName.c_str());
+      exit(EXIT_FAILURE);
+    }
+  }
+#endif
+
   // main decoder loop
   bool loopFiltered[MAX_VPS_LAYERS] = { false };
 
@@ -1130,7 +1142,22 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         {
           const Window &conf = pcPic->getConformanceWindow();
           ChromaFormat  chromaFormatIdc = pcPic->m_chromaFormatIdc;
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+          if (m_cDecLib.getPriProcess().m_enabled && m_cDecLib.getPriProcess().m_layerId == pcPic->layerId
+            && m_cDecLib.getPriProcess().m_targetPicWidth > 0 && m_cDecLib.getPriProcess().m_targetPicHeight > 0)
+          {
+            PelStorage outPic;
+            const Area a = Area( Position(0, 0), Size(m_cDecLib.getPriProcess().m_targetPicWidth, m_cDecLib.getPriProcess().m_targetPicHeight) );
+            outPic.create( chromaFormatIdc, a, 0 );
+            m_cDecLib.getPriProcess().reconstruct(pcListPic, pcPic, outPic, *pcPic->cs->sps);
+            m_cVideoIOYuvReconFile[pcPic->layerId].write(
+              outPic.get(COMPONENT_Y).width, outPic.get(COMPONENT_Y).height, outPic, m_outputColourSpaceConvert,
+              m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
+          }
+          else if( m_upscaledOutput )
+#else
           if( m_upscaledOutput )
+#endif
           {
             const SPS* sps = pcPic->cs->sps;
             m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
@@ -1224,6 +1251,12 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         {
           xOutputObjectMaskInfos(pcPic);
         }
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+        if (!m_packedRegionsInfoSEIFileName.empty())
+        {
+          xOutputPackedRegionsInfo(pcPic);
+        }
+#endif
         // update POC of display order
         m_iPOCLastDisplay = pcPic->getPOC();
 
@@ -1349,7 +1382,23 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
           {
             const Window &conf = pcPic->getConformanceWindow();
             ChromaFormat  chromaFormatIdc = pcPic->m_chromaFormatIdc;
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+            if (m_cDecLib.getPriProcess().m_enabled && m_cDecLib.getPriProcess().m_layerId == pcPic->layerId
+              && m_cDecLib.getPriProcess().m_targetPicWidth > 0 && m_cDecLib.getPriProcess().m_targetPicHeight > 0)
+            {
+              PelStorage outPic;
+              const Area a = Area( Position(0, 0), Size(m_cDecLib.getPriProcess().m_targetPicWidth, m_cDecLib.getPriProcess().m_targetPicHeight) );
+              outPic.create( chromaFormatIdc, a, 0 );
+
+              m_cDecLib.getPriProcess().reconstruct(pcListPic, pcPic, outPic, *pcPic->cs->sps);
+              m_cVideoIOYuvReconFile[pcPic->layerId].write(
+                outPic.get(COMPONENT_Y).width, outPic.get(COMPONENT_Y).height, outPic, m_outputColourSpaceConvert,
+                m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
+            }
+            else if( m_upscaledOutput )
+#else
             if( m_upscaledOutput )
+#endif
             {
               const SPS* sps = pcPic->cs->sps;
               m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
@@ -1441,6 +1490,12 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
           {
             xOutputObjectMaskInfos(pcPic);
           }
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+          if (!m_packedRegionsInfoSEIFileName.empty())
+          {
+            xOutputPackedRegionsInfo(pcPic);
+          }
+#endif
         // update POC of display order
         m_iPOCLastDisplay = pcPic->getPOC();
 
@@ -1620,7 +1675,6 @@ void DecApp::xOutputAnnotatedRegions(PicList* pcListPic)
   }
 }
 
-#if JVET_AK0330_OMI_SEI
 void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
 {
   if (pcPic->getPictureType() == NAL_UNIT_CODED_SLICE_CRA || pcPic->getPictureType() == NAL_UNIT_CODED_SLICE_IDR_N_LP)
@@ -1779,120 +1833,57 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
     }
   }
 }
-#else
-void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
+
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+void DecApp::xOutputPackedRegionsInfo(Picture* pcPic)
 {
-  SEIMessages objectMaskInfoSEIs = getSeisByType(pcPic->SEIs, SEI::PayloadType::OBJECT_MASK_INFO);
-  for (auto it = objectMaskInfoSEIs.begin(); it != objectMaskInfoSEIs.end(); it++)
+  SEIMessages seis = getSeisByType(pcPic->SEIs, SEI::PayloadType::PACKED_REGIONS_INFO);
+  if (!seis.empty())
   {
-    const SEIObjectMaskInfos& seiObjectMaskInfo = *(SEIObjectMaskInfos*) (*it);
-
-    if (!seiObjectMaskInfo.m_hdr.m_cancelFlag)
+    const SEIPackedRegionsInfo& sei = *((SEIPackedRegionsInfo*)seis.front());
+    FILE* fp = fopen(m_packedRegionsInfoSEIFileName.c_str(), "a");
+    if (fp == nullptr)
     {
-      if (m_omiHeader.m_receivedSettingsOnce)
-      {
-        CHECK(m_omiHeader.m_numAuxPicLayerMinus1 != seiObjectMaskInfo.m_hdr.m_numAuxPicLayerMinus1, "omi_num_aux_pic_layer_minus1 should be consistent within the CLVS.")
-        CHECK(m_omiHeader.m_maskIdLengthMinus1 != seiObjectMaskInfo.m_hdr.m_maskIdLengthMinus1, "omi_mask_id_length_minus1 should be consistent within the CLVS.")
-        CHECK(m_omiHeader.m_maskSampleValueLengthMinus8 != seiObjectMaskInfo.m_hdr.m_maskSampleValueLengthMinus8,"omi_mask_sample_value_length_minus8 should be consistent within the CLVS.")
-        CHECK(m_omiHeader.m_maskConfidenceInfoPresentFlag != seiObjectMaskInfo.m_hdr.m_maskConfidenceInfoPresentFlag,"Confidence info present flag should be consistent within the CLVS.");
-        if (m_omiHeader.m_maskConfidenceInfoPresentFlag)
-        {
-          CHECK(m_omiHeader.m_maskConfidenceLengthMinus1 != seiObjectMaskInfo.m_hdr.m_maskConfidenceLengthMinus1, "Confidence length should be consistent within the CLVS.");
-        }
-        CHECK(m_omiHeader.m_maskDepthInfoPresentFlag != seiObjectMaskInfo.m_hdr.m_maskDepthInfoPresentFlag,"Depth info present flag should be consistent within the CLVS.");
-        if (m_omiHeader.m_maskDepthInfoPresentFlag)
-        {
-          CHECK(m_omiHeader.m_maskDepthLengthMinus1 != seiObjectMaskInfo.m_hdr.m_maskDepthLengthMinus1, "Depth length should be consistent within the CLVS.");
-        }
-      }
-      else
-      {
-        m_omiHeader                        = seiObjectMaskInfo.m_hdr;   // copy the settings.
-        m_omiHeader.m_receivedSettingsOnce = true;
-      }
-    }
-
-    FILE* fpPersist = fopen(m_objectMaskInfoSEIFileName.c_str(), "ab");
-    if (fpPersist == nullptr)
-    {
-      std::cout << "Not able to open file for writing persist SEI messages" << std::endl;
+      std::cout << "Not able to open file for writing packed regions info SEI messages" << std::endl;
     }
     else
     {
-      fprintf(fpPersist, "POC %d\n", (int) pcPic->getPOC());
-      // header
-      fprintf(fpPersist, "OMI Cancel Flag = %d\n", seiObjectMaskInfo.m_hdr.m_cancelFlag);
-      if (!seiObjectMaskInfo.m_hdr.m_cancelFlag)
+      fprintf(fp, "SEIPRICancelFlag : %d\n", sei.m_cancelFlag);
+      fprintf(fp, "SEIPRIPersistenceFlag : %d\n", sei.m_persistenceFlag);
+      fprintf(fp, "SEIPRINumRegionsMinus1 : %d\n", sei.m_numRegionsMinus1);
+      fprintf(fp, "SEIPRIMultilayerFlag : %d\n", sei.m_multilayerFlag);
+      fprintf(fp, "SEIPRIUseMaxDimensionsFlag : %d\n", sei.m_useMaxDimensionsFlag);
+      fprintf(fp, "SEIPRILog2UnitSize : %d\n", sei.m_log2UnitSize);
+      fprintf(fp, "SEIPRIRegionSizeLenMinus1 : %d\n", sei.m_regionSizeLenMinus1);
+      fprintf(fp, "SEIPRIRegionIdPresentFlag : %d\n", sei.m_regionIdPresentFlag);
+      fprintf(fp, "SEIPRITargetPicParamsPresentFlag : %d\n", sei.m_targetPicParamsPresentFlag);
+      if (sei.m_targetPicParamsPresentFlag)
       {
-        fprintf(fpPersist, "OMI Persistence Flag = %d\n", seiObjectMaskInfo.m_hdr.m_persistenceFlag);
-        fprintf(fpPersist, "OMI AuxPicLayer Num = %d\n", seiObjectMaskInfo.m_hdr.m_numAuxPicLayerMinus1 + 1);
-        fprintf(fpPersist, "OMI MaskId Length = %d\n", seiObjectMaskInfo.m_hdr.m_maskIdLengthMinus1 + 1);
-        fprintf(fpPersist, "OMI MaskSampleValue Length = %d\n",seiObjectMaskInfo.m_hdr.m_maskSampleValueLengthMinus8 + 8);
-        fprintf(fpPersist, "OMI MaskConf Present = %d\n", seiObjectMaskInfo.m_hdr.m_maskConfidenceInfoPresentFlag);
-        if (seiObjectMaskInfo.m_hdr.m_maskConfidenceInfoPresentFlag)
-        {
-          fprintf(fpPersist, "OMI MaskConf Length = %d\n", seiObjectMaskInfo.m_hdr.m_maskConfidenceLengthMinus1 + 1);
-        }
-        fprintf(fpPersist, "OMI MaskDepth Present = %d\n", seiObjectMaskInfo.m_hdr.m_maskDepthInfoPresentFlag);
-        if (seiObjectMaskInfo.m_hdr.m_maskDepthInfoPresentFlag)
-        {
-          fprintf(fpPersist, "OMI MaskDepth Length = %d\n", seiObjectMaskInfo.m_hdr.m_maskDepthLengthMinus1 + 1);
-        }
-        fprintf(fpPersist, "OMI MaskLabel Present = %d\n", seiObjectMaskInfo.m_hdr.m_maskLabelInfoPresentFlag);
-        if (seiObjectMaskInfo.m_hdr.m_maskLabelInfoPresentFlag)
-        {
-          fprintf(fpPersist, "OMI MaskLabelLang Present = %d\n",seiObjectMaskInfo.m_hdr.m_maskLabelLanguagePresentFlag);
-          if (seiObjectMaskInfo.m_hdr.m_maskLabelLanguagePresentFlag)
-          {
-            fprintf(fpPersist, "OMI MaskLabelLang = %s\n", seiObjectMaskInfo.m_hdr.m_maskLabelLanguage.c_str());
-          }
-        }
-        fprintf(fpPersist, "\n");
-
-        // infos
-        uint32_t maskIdx = 0;
-        for (uint32_t i = 0; i <= seiObjectMaskInfo.m_hdr.m_numAuxPicLayerMinus1; i++)
-        {
-          fprintf(fpPersist, "OMI MaskUpdateFlag[%d] = %d\n", i, seiObjectMaskInfo.m_maskPicUpdateFlag[i]);
-          if (seiObjectMaskInfo.m_maskPicUpdateFlag[i])
-          {
-            fprintf(fpPersist, "OMI MaskUpdateNum[%d] = %d\n", i, seiObjectMaskInfo.m_numMaskInPicUpdate[i]);
-            for (uint32_t j = 0; j < seiObjectMaskInfo.m_numMaskInPicUpdate[i]; j++)
-            {
-              fprintf(fpPersist, "MaskId[%d][%d] = %d\n", i, j, seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskId);
-              fprintf(fpPersist, "AuxSampleValue[%d][%d] = %d\n", i, j, seiObjectMaskInfo.m_objectMaskInfos[maskIdx].auxSampleValue);
-              fprintf(fpPersist, "MaskCancel[%d][%d] = %d\n", i, j,
-                      seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskCancel);
-              if (!seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskCancel)
-              {
-                fprintf(fpPersist, "MaskBBoxPresentFlag[%d][%d] = %d\n", i, j, seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskBoundingBoxPresentFlag);
-                if (seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskBoundingBoxPresentFlag)
-                {
-                  fprintf(fpPersist, "MaskTop[%d][%d] = %d\n", i, j,seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskTop);
-                  fprintf(fpPersist, "MaskLeft[%d][%d] = %d\n", i, j,seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskLeft);
-                  fprintf(fpPersist, "MaskWidth[%d][%d] = %d\n", i, j,seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskWidth);
-                  fprintf(fpPersist, "MaskHeight[%d][%d] = %d\n", i, j, seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskHeight);
-                }
-                if (seiObjectMaskInfo.m_hdr.m_maskConfidenceInfoPresentFlag)
-                {
-                  fprintf(fpPersist, "MaskConf[%d][%d] = %d\n", i, j,seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskConfidence);
-                }
-                if (seiObjectMaskInfo.m_hdr.m_maskDepthInfoPresentFlag)
-                {
-                  fprintf(fpPersist, "MaskDepth[%d][%d] = %d\n", i, j,seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskDepth);
-                }
-                if (m_omiHeader.m_maskLabelInfoPresentFlag)
-                {
-                  fprintf(fpPersist, "MaskLabel[%d][%d] = %s\n", i, j, seiObjectMaskInfo.m_objectMaskInfos[maskIdx].maskLabel.c_str());
-                }
-              }
-              maskIdx++;
-            }
-            fprintf(fpPersist, "\n");
-          }
-        }
+        fprintf(fp, "SEIPRITargetPicWidthMinus1 : %d\n", sei.m_targetPicWidthMinus1);
+        fprintf(fp, "SEIPRITargetPicHeightMinus1 : %d\n", sei.m_targetPicHeightMinus1);
       }
-      fclose(fpPersist);
+      fprintf(fp, "SEIPRINumResamplingRatiosMinus1 : %d\n", sei.m_numResamplingRatiosMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingWidthNumMinus1 :", sei.m_resamplingWidthNumMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingWidthDenomMinus1 :", sei.m_resamplingWidthDenomMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingHeightNumMinus1 :", sei.m_resamplingHeightNumMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingHeightDenomMinus1 :", sei.m_resamplingHeightDenomMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionId :", sei.m_regionId);
+      if (sei.m_multilayerFlag)
+      {
+        xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionLayerId :", sei.m_regionLayerId);
+        xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionIsALayerFlag :", sei.m_regionIsALayerFlag);
+      }
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionTopLeftInUnitsX :", sei.m_regionTopLeftInUnitsX);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionTopLeftInUnitsY :", sei.m_regionTopLeftInUnitsY);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionWidthInUnitsMinus1 :", sei.m_regionWidthInUnitsMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionHeightInUnitsMinus1 :", sei.m_regionHeightInUnitsMinus1);
+      xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingRatioIdx :", sei.m_resamplingRatioIdx);
+      if (sei.m_targetPicParamsPresentFlag)
+      {
+        xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftX :", sei.m_targetRegionTopLeftX);
+        xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftY :", sei.m_targetRegionTopLeftY);
+      }
+      fclose(fp);
     }
   }
 }

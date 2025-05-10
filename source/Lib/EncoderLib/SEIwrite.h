@@ -129,27 +129,17 @@ protected:
   std::vector<double>  prevcoordinateXRec;
   std::vector<double>  prevcoordinateYRec;
   std::vector<double>  prevcoordinateZRec;
-#if JVET_AK0238_GFV_FIX_CLEANUP
   std::vector<double>  baseCoordinateXRec;
   std::vector<double>  baseCoordinateYRec;
   std::vector<double>  baseCoordinateZRec;
-#endif
   std::vector<std::vector<std::vector<std::vector<double>>>> prevMatrixRec;
-#if !JVET_AK0238_GFV_FIX_CLEANUP
-  std::vector<uint32_t> prevmatrixWidthVec;
-  std::vector<uint32_t> prevmatrixHeightVec;
-  std::vector<uint32_t> prevnumMatricesVec;
-#endif
-#if JVET_AK0238_GFV_FIX_CLEANUP
   std::vector<std::vector<std::vector<std::vector<double>>>> baseMatrixRec;
   std::vector<uint32_t> baseMatrixWidthVec;
   std::vector<uint32_t> baseMatrixHeightVec;
   std::vector<uint32_t> baseNumMatricesVec;
-#endif
   bool doUpdateGFVcoordinate= false;
   bool doUpdateGFVmatrix= false;
 
-#if JVET_AK0239_GFVE
   void xWriteSEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement& sei);
   double xWriteSEIPupilCoordinate(double coordinate, double refCoordinate, int precisionFactor, const char* eye, const char* axis);
   std::vector<std::vector<std::vector<double>>> prevGfveMatrixRec;
@@ -169,12 +159,14 @@ protected:
   double basegfveRightPupilCoordinateY;
   bool checkBasePicPupilPresentIdx = false;
   bool doUpdateGFVPupilCoordinate  = false;
-#endif
 
 #if JVET_AJ0151_DSC_SEI
   void xWriteSEIDigitallySignedContentInitialization(const SEIDigitallySignedContentInitialization &sei);
   void xWriteSEIDigitallySignedContentSelection(const SEIDigitallySignedContentSelection &sei);
   void xWriteSEIDigitallySignedContentVerification(const SEIDigitallySignedContentVerification &sei);
+#endif
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  void xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei);
 #endif
 protected:
   HRD m_nestingHrd;

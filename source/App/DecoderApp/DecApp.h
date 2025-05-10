@@ -91,9 +91,7 @@ private:
   std::map<uint32_t, std::string>                                m_arLabels; ///< AR label pool
 
   SEIObjectMaskInfos::ObjectMaskInfoHeader m_omiHeader;   ///< OMI header
-#if JVET_AK0330_OMI_SEI
   std::vector<std::vector<std::pair<uint32_t, SEIObjectMaskInfos::ObjectMaskInfo>>> m_omiMasks;
-#endif
 
 private:
   bool  xIsNaluWithinTargetDecLayerIdSet( const InputNALUnit* nalu ) const; ///< check whether given Nalu is within targetDecLayerIdSet
@@ -124,6 +122,19 @@ private:
   void  writeLineToOutputLog(Picture * pcPic);
   void xOutputAnnotatedRegions(PicList* pcListPic);
   void xOutputObjectMaskInfos(Picture* pcPic);
+#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
+  void xOutputPackedRegionsInfo(Picture* pcPic);
+  template <typename T>
+  void xOutputPackedRegionsInfoVector(FILE* fp, const char* paramName, const std::vector<T>& l)
+  {
+    fprintf(fp, "%s", paramName);
+    for (auto it : l)
+    {
+      fprintf(fp, " %d", (int)it);
+    }
+    fprintf(fp, "\n");
+  }
+#endif
 };
 
 //! \}
