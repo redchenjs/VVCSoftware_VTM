@@ -2718,7 +2718,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       else if (m_pcEncLib->getPriSEIEnabled())
       {
         m_pcEncLib->getTemporalFilter().filter(&pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT), pocCurr);
-        m_pcEncLib->getPriProcess().packRegions(pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT), pcPic->M_BUFS(0, PIC_ORIGINAL), *pcPic->cs->sps);
+        m_pcEncLib->getPriProcess().packRegions(pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT),  m_pcEncLib->getLayerId(), pcPic->M_BUFS(0, PIC_ORIGINAL), *pcPic->cs->sps);
       }
 #endif
       else

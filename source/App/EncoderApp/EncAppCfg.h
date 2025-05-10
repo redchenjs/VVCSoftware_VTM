@@ -1253,6 +1253,9 @@ protected:
 #else
   std::vector<uint32_t> m_priSEITargetRegionTopLeftX;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftY;
+  bool     m_priSEIMultilayerFlag;
+  std::vector<uint32_t> m_priSEIRegionLayerId;
+  std::vector<bool>     m_priSEIRegionIsALayerFlag;
 #endif
 #endif
 

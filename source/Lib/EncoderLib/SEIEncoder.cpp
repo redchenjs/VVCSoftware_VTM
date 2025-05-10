@@ -2231,9 +2231,8 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
   sei->m_cancelFlag = m_pcCfg->getPriSEICancelFlag();
   sei->m_persistenceFlag = m_pcCfg->getPriSEIPersistenceFlag();
   sei->m_numRegionsMinus1 = m_pcCfg->getPriSEINumRegionsMinus1();
-#if JVET_AL0324_AL0070_PRI_SEI
+  sei->m_layerId = m_pcEncLib->getLayerId();
   sei->m_multilayerFlag = m_pcCfg->getPriSEIMultilayerFlag();
-#endif
   sei->m_useMaxDimensionsFlag = m_pcCfg->getPriSEIUseMaxDimensionsFlag();
   sei->m_log2UnitSize = m_pcCfg->getPriSEILog2UnitSize();
   sei->m_regionSizeLenMinus1 = m_pcCfg->getPriSEIRegionSizeLenMinus1();
@@ -2258,10 +2257,8 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
   }
 
   sei->m_regionId.resize(sei->m_numRegionsMinus1 + 1);
-#if JVET_AL0324_AL0070_PRI_SEI
   sei->m_regionLayerId.resize(sei->m_numRegionsMinus1 + 1);
   sei->m_regionIsALayerFlag.resize(sei->m_numRegionsMinus1 + 1);
-#endif
   sei->m_regionTopLeftInUnitsX.resize(sei->m_numRegionsMinus1 + 1);
   sei->m_regionTopLeftInUnitsY.resize(sei->m_numRegionsMinus1 + 1);
   sei->m_regionWidthInUnitsMinus1.resize(sei->m_numRegionsMinus1 + 1);
@@ -2277,14 +2274,30 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
   for (uint32_t i = 0; i <= sei->m_numRegionsMinus1; i++)
   {
     sei->m_regionId[i] = m_pcCfg->getPriSEIRegionId(i);
-#if JVET_AL0324_AL0070_PRI_SEI
-    sei->m_regionLayerId[i] = m_pcCfg->getPriSEIRegionLayerId(i);
-    sei->m_regionIsALayerFlag[i] = m_pcCfg->getPriSEIRegionIsALayerFlag(i);
-#endif
-    sei->m_regionTopLeftInUnitsX[i] = m_pcCfg->getPriSEIRegionTopLeftInUnitsX(i);
-    sei->m_regionTopLeftInUnitsY[i] = m_pcCfg->getPriSEIRegionTopLeftInUnitsY(i);
-    sei->m_regionWidthInUnitsMinus1[i] = m_pcCfg->getPriSEIRegionWidthInUnitsMinus1(i);
-    sei->m_regionHeightInUnitsMinus1[i] = m_pcCfg->getPriSEIRegionHeightInUnitsMinus1(i);
+    if (sei->m_multilayerFlag)
+    {
+      sei->m_regionLayerId[i] = m_pcCfg->getPriSEIRegionLayerId(i);
+      sei->m_regionIsALayerFlag[i] = m_pcCfg->getPriSEIRegionIsALayerFlag(i);
+    }
+    else
+    {
+      sei->m_regionLayerId[i] = 0;
+      sei->m_regionIsALayerFlag[i] = 0;
+    }
+    if (!sei->m_regionIsALayerFlag[i])
+    {
+      sei->m_regionTopLeftInUnitsX[i] = m_pcCfg->getPriSEIRegionTopLeftInUnitsX(i);
+      sei->m_regionTopLeftInUnitsY[i] = m_pcCfg->getPriSEIRegionTopLeftInUnitsY(i);
+      sei->m_regionWidthInUnitsMinus1[i] = m_pcCfg->getPriSEIRegionWidthInUnitsMinus1(i);
+      sei->m_regionHeightInUnitsMinus1[i] = m_pcCfg->getPriSEIRegionHeightInUnitsMinus1(i);
+    }
+    else
+    {
+      sei->m_regionTopLeftInUnitsX[i] = 0;
+      sei->m_regionTopLeftInUnitsY[i] = 0;
+      sei->m_regionWidthInUnitsMinus1[i] = 0;
+      sei->m_regionHeightInUnitsMinus1[i] = 0;
+    }
     sei->m_resamplingRatioIdx[i] = m_pcCfg->getPriSEIResamplingRatioIdx(i);
 #if JVET_AL0324_AL0070_PRI_SEI
     sei->m_targetRegionTopLeftInUnitsX[i] = m_pcCfg->getPriSEITargetRegionTopLeftInUnitsX(i);

@@ -134,7 +134,7 @@ protected:
   void xParseSEIDigitallySignedContentSelection     (SEIDigitallySignedContentSelection &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIDigitallySignedContentVerification  (SEIDigitallySignedContentVerification &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
-  void xParsePackedRegionsInfo(SEIPackedRegionsInfo &sei, uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream);
+  void xParsePackedRegionsInfo(SEIPackedRegionsInfo &sei, const uint32_t nuhLayerId, uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream);
 #endif
 
   void sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName);

@@ -829,10 +829,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t> cfg_priSEIResamplingHeightNumMinus1(0, std::numeric_limits<uint32_t>::max() - 1, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEIResamplingHeightDenomMinus1(0, std::numeric_limits<uint32_t>::max() - 1, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEIRegionId(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
-#if JVET_AL0324_AL0070_PRI_SEI
-  SMultiValueInput<uint32_t> cfg_priSEIRegionLayerId(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
-  SMultiValueInput<bool> cfg_priSEIRegionIsALayer(false, true, 0, std::numeric_limits<uint32_t>::max());
-#endif
   SMultiValueInput<uint32_t> cfg_priSEIRegionTopLeftInUnitsX(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEIRegionTopLeftInUnitsY(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEIRegionWidthInUnitsMinus1(0, std::numeric_limits<uint32_t>::max() - 1, 0, std::numeric_limits<uint32_t>::max());
@@ -845,6 +841,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t> cfg_priSEITargetRegionTopLeftX(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEITargetRegionTopLeftY(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
 #endif
+  SMultiValueInput<uint32_t> cfg_priSEIRegionLayerId(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<bool> cfg_priSEIRegionIsALayerFlag(0, 1, 0, std::numeric_limits<uint32_t>::max());
 #endif
 
 #if ENABLE_TRACING
@@ -1808,9 +1806,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPRICancelFlag",                                m_priSEICancelFlag,                                false, "Specifies the persistence of any previous packed regions info SEI message in output order")
   ("SEIPRIPersistenceFlag",                           m_priSEIPersistenceFlag,                            true, "Specifies the persistence of the packed regions info SEI message for the current layer")
   ("SEIPRINumRegionsMinus1",                          m_priSEINumRegionsMinus1,                             0u, "Specifies the number of regions minus 1 for which information is signalled")
-#if JVET_AL0324_AL0070_PRI_SEI
-  ("SEIPRIMultilayerFlag",                            m_priSEIMultilayerFlag,                            false, "Specifies whether the regions are present in multi layers")
-#endif
   ("SEIPRIUseMaxDimensionsFlag",                      m_priSEIUseMaxDimensionsFlag,                      false, "Specifies that max pic dimensions are used in variable calculations")
   ("SEIPRILog2UnitSize",                              m_priSEILog2UnitSize,                                 0u, "Specifies a unit size used in variable calculations for the region parameters")
   ("SEIPRIRegionSizeLenMinus1",                       m_priSEIRegionSizeLenMinus1,                         12u, "Specifies the number of bits minus 1 used to signal region top left offsets and region dimensions")
@@ -1824,10 +1819,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPRIResamplingHeightNumMinus1",                 cfg_priSEIResamplingHeightNumMinus1, cfg_priSEIResamplingHeightNumMinus1, "Specifies a list of numerators minus 1 values for height resampling of the resampling ratio")
   ("SEIPRIResamplingHeightDenomMinus1",               cfg_priSEIResamplingHeightDenomMinus1, cfg_priSEIResamplingHeightDenomMinus1, "Specifies a list of denominators minus 1 values for height resampling of the resampling ratio")
   ("SEIPRIRegionId",                                  cfg_priSEIRegionId, cfg_priSEIRegionId,                   "Specifies a list of IDs for the regions")
-#if JVET_AL0324_AL0070_PRI_SEI
-  ("SEIPRIRegionLayerId",                             cfg_priSEIRegionLayerId, cfg_priSEIRegionLayerId,         "Specifies a list of layer IDs for the regions")
-  ("SEIPRIRegionIsALayer",                            cfg_priSEIRegionIsALayer, cfg_priSEIRegionIsALayer,       "Specifies a list of flags indicating whether each region corresponds to a layer")
-#endif
   ("SEIPRIRegionTopLeftInUnitsX",                     cfg_priSEIRegionTopLeftInUnitsX, cfg_priSEIRegionTopLeftInUnitsX, "Specifies a list of horizontal top left positions for the regions")
   ("SEIPRIRegionTopLeftInUnitsY",                     cfg_priSEIRegionTopLeftInUnitsY, cfg_priSEIRegionTopLeftInUnitsY, "Specifies a list of vertical top left positions for the regions")
   ("SEIPRIRegionWidthInUnitsMinus1",                  cfg_priSEIRegionWidthInUnitsMinus1, cfg_priSEIRegionWidthInUnitsMinus1, "Specifies a list of widths minus 1 in units for the regions")
@@ -1840,6 +1831,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPRITargetRegionTopLeftX",                      cfg_priSEITargetRegionTopLeftX, cfg_priSEITargetRegionTopLeftX, "Specifies a list of horizontal top left postions in units of luma samples for the regions in reconstructed target picture")
   ("SEIPRITargetRegionTopLeftY",                      cfg_priSEITargetRegionTopLeftY, cfg_priSEITargetRegionTopLeftY, "Specifies a list of vertical top left postions in units of luma samples for the regions in reconstructed target picture")
 #endif
+  ("SEIPRIMultilayerFlag",                            m_priSEIMultilayerFlag,                            false, "Specifies whether layer IDs are signalled")
+  ("SEIPRIRegionLayerId",                             cfg_priSEIRegionLayerId,         cfg_priSEIRegionLayerId, "Specifies a list of the layer ids of the picture that the region information relate to")
+  ("SEIPRIRegionIsALayerFlag",                        cfg_priSEIRegionIsALayerFlag, cfg_priSEIRegionIsALayerFlag, "Specifies a list of flags indicating for each region if the picture width and height in the layer are the same as the region's")
 #endif
 
   ("DebugBitstream",                                  m_decodeBitstreams[0],             std::string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
@@ -4481,18 +4475,15 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       auto it = std::unique(tmpVec.begin(), tmpVec.end());
       CHECK(it != tmpVec.end(), "SEIRegionId values must be unique");
     }
-#if JVET_AL0324_AL0070_PRI_SEI
     if (m_priSEIMultilayerFlag)
     {
-      CHECK(cfg_priSEIRegionLayerId.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRIRegionLayerId must be equal to SEIPRINumRegionsMinus1 + 1");
-      CHECK(cfg_priSEIRegionIsALayer.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRIRegionIsALayer must be equal to SEIPRINumRegionsMinus1 + 1");
+      m_priSEIRegionLayerId = cfg_priSEIRegionLayerId.values;
+      m_priSEIRegionIsALayerFlag = cfg_priSEIRegionIsALayerFlag.values;
     }
-#else
     CHECK(cfg_priSEIRegionTopLeftInUnitsX.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRIRegionTopLeftInUnitsX must be equal to SEIPRINumRegionsMinus1 + 1");
     CHECK(cfg_priSEIRegionTopLeftInUnitsY.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRIRegionTopLeftInUnitsY must be equal to SEIPRINumRegionsMinus1 + 1");
     CHECK(cfg_priSEIRegionWidthInUnitsMinus1.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRIRegionWidthInUnitsMinus1 must be equal to SEIPRINumRegionsMinus1 + 1");
     CHECK(cfg_priSEIRegionHeightInUnitsMinus1.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRIRegionHeightInUnitsMinus1 must be equal to SEIPRINumRegionsMinus1 + 1");
-#endif
     if (m_priSEINumResamplingRatiosMinus1 > 0)
     {
       CHECK(cfg_priSEIResamplingRatioIdx.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRIResamplingRatioIdx must be equal to SEIPRINumRegionsMinus1 + 1");

@@ -1143,12 +1143,13 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
           const Window &conf = pcPic->getConformanceWindow();
           ChromaFormat  chromaFormatIdc = pcPic->m_chromaFormatIdc;
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
-          if (pcPic->m_priProcess.m_enabled && pcPic->m_priProcess.m_targetPicWidth > 0 && pcPic->m_priProcess.m_targetPicHeight > 0)
+          if (m_cDecLib.getPriProcess().m_enabled && m_cDecLib.getPriProcess().m_layerId == pcPic->layerId
+            && m_cDecLib.getPriProcess().m_targetPicWidth > 0 && m_cDecLib.getPriProcess().m_targetPicHeight > 0)
           {
             PelStorage outPic;
-            const Area a = Area( Position(0, 0), Size(pcPic->m_priProcess.m_targetPicWidth, pcPic->m_priProcess.m_targetPicHeight) );
+            const Area a = Area( Position(0, 0), Size(m_cDecLib.getPriProcess().m_targetPicWidth, m_cDecLib.getPriProcess().m_targetPicHeight) );
             outPic.create( chromaFormatIdc, a, 0 );
-            pcPic->m_priProcess.reconstruct(pcPic->getRecoBuf(), outPic, *pcPic->cs->sps, *pcPic->cs->pps);
+            m_cDecLib.getPriProcess().reconstruct(pcListPic, pcPic, outPic, *pcPic->cs->sps);
             m_cVideoIOYuvReconFile[pcPic->layerId].write(
               outPic.get(COMPONENT_Y).width, outPic.get(COMPONENT_Y).height, outPic, m_outputColourSpaceConvert,
               m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
@@ -1382,12 +1383,14 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
             const Window &conf = pcPic->getConformanceWindow();
             ChromaFormat  chromaFormatIdc = pcPic->m_chromaFormatIdc;
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
-            if (pcPic->m_priProcess.m_enabled && pcPic->m_priProcess.m_targetPicWidth > 0 && pcPic->m_priProcess.m_targetPicHeight > 0)
+            if (m_cDecLib.getPriProcess().m_enabled && m_cDecLib.getPriProcess().m_layerId == pcPic->layerId
+              && m_cDecLib.getPriProcess().m_targetPicWidth > 0 && m_cDecLib.getPriProcess().m_targetPicHeight > 0)
             {
               PelStorage outPic;
-              const Area a = Area( Position(0, 0), Size(pcPic->m_priProcess.m_targetPicWidth, pcPic->m_priProcess.m_targetPicHeight) );
+              const Area a = Area( Position(0, 0), Size(m_cDecLib.getPriProcess().m_targetPicWidth, m_cDecLib.getPriProcess().m_targetPicHeight) );
               outPic.create( chromaFormatIdc, a, 0 );
-              pcPic->m_priProcess.reconstruct(pcPic->getRecoBuf(), outPic, *pcPic->cs->sps, *pcPic->cs->pps);
+
+              m_cDecLib.getPriProcess().reconstruct(pcListPic, pcPic, outPic, *pcPic->cs->sps);
               m_cVideoIOYuvReconFile[pcPic->layerId].write(
                 outPic.get(COMPONENT_Y).width, outPic.get(COMPONENT_Y).height, outPic, m_outputColourSpaceConvert,
                 m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
@@ -1848,9 +1851,7 @@ void DecApp::xOutputPackedRegionsInfo(Picture* pcPic)
       fprintf(fp, "SEIPRICancelFlag : %d\n", sei.m_cancelFlag);
       fprintf(fp, "SEIPRIPersistenceFlag : %d\n", sei.m_persistenceFlag);
       fprintf(fp, "SEIPRINumRegionsMinus1 : %d\n", sei.m_numRegionsMinus1);
-#if JVET_AL0324_AL0070_PRI_SEI
       fprintf(fp, "SEIPRIMultilayerFlag : %d\n", sei.m_multilayerFlag);
-#endif
       fprintf(fp, "SEIPRIUseMaxDimensionsFlag : %d\n", sei.m_useMaxDimensionsFlag);
       fprintf(fp, "SEIPRILog2UnitSize : %d\n", sei.m_log2UnitSize);
       fprintf(fp, "SEIPRIRegionSizeLenMinus1 : %d\n", sei.m_regionSizeLenMinus1);
@@ -1867,22 +1868,15 @@ void DecApp::xOutputPackedRegionsInfo(Picture* pcPic)
       xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingHeightNumMinus1 :", sei.m_resamplingHeightNumMinus1);
       xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingHeightDenomMinus1 :", sei.m_resamplingHeightDenomMinus1);
       xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionId :", sei.m_regionId);
-#if JVET_AL0324_AL0070_PRI_SEI
       if (sei.m_multilayerFlag)
       {
         xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionLayerId :", sei.m_regionLayerId);
-        xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionId :", sei.m_regionIsALayerFlag);
+        xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionIsALayerFlag :", sei.m_regionIsALayerFlag);
       }
-      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionTopLeftInUnitsX :", sei.m_regionTopLeftInUnitsX, sei.m_regionIsALayerFlag);
-      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionTopLeftInUnitsY :", sei.m_regionTopLeftInUnitsY, sei.m_regionIsALayerFlag);
-      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionWidthInUnitsMinus1 :", sei.m_regionWidthInUnitsMinus1, sei.m_regionIsALayerFlag);
-      xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionHeightInUnitsMinus1 :", sei.m_regionHeightInUnitsMinus1, sei.m_regionIsALayerFlag);
-#else
       xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionTopLeftInUnitsX :", sei.m_regionTopLeftInUnitsX);
       xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionTopLeftInUnitsY :", sei.m_regionTopLeftInUnitsY);
       xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionWidthInUnitsMinus1 :", sei.m_regionWidthInUnitsMinus1);
       xOutputPackedRegionsInfoVector(fp, "SEIPRIRegionHeightInUnitsMinus1 :", sei.m_regionHeightInUnitsMinus1);
-#endif
       xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingRatioIdx :", sei.m_resamplingRatioIdx);
       if (sei.m_targetPicParamsPresentFlag)
       {
@@ -1898,41 +1892,6 @@ void DecApp::xOutputPackedRegionsInfo(Picture* pcPic)
     }
   }
 }
-
-void DecApp::xOutputPackedRegionsInfoVector(FILE* fp, const char* paramName, const std::vector<uint32_t>& l)
-{
-  fprintf(fp, "%s", paramName);
-  for (auto it : l)
-  {
-    fprintf(fp, " %d", it);
-  }
-  fprintf(fp, "\n");
-}
-
-#if JVET_AL0324_AL0070_PRI_SEI
-void DecApp::xOutputPackedRegionsInfoVector(FILE* fp, const char* paramName, const std::vector<bool>& l)
-{
-  fprintf(fp, "%s", paramName);
-  for (auto it: l)
-  {
-    fprintf(fp, " %d", it);
-  }
-  fprintf(fp, "\n");
-}
-
-void DecApp::xOutputPackedRegionsInfoVector(FILE* fp, const char* paramName, const std::vector<uint32_t>& l, const std::vector<bool>& b)
-{
-  fprintf(fp, "%s", paramName);
-  for (uint32_t i = 0; i < MIN(l.size(), b.size()); i++)
-  {
-    if (!b[i])
-    {
-      fprintf(fp, " %d", l[i]);
-    }
-  }
-  fprintf(fp, "\n");
-}
-#endif
 #endif
 
 /** \param nalu Input nalu to check whether its LayerId is within targetDecLayerIdSet
