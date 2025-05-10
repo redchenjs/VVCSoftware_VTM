@@ -56,6 +56,8 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
+#define JVET_AL0324_AL0070_PRI_SEI                        1 // JVET-AL0324 & JVET-AL0070 miscellaneous changes in PRI SEI message
+
 #define JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS              1 // JVET_AL0301: Add constraints to matrix_coeffs
 
 #define JVET_AL0123_AL0310_EOI                            1 // JVET-AL0123 & JVET-AL0310 EOI SEI signalling changes 

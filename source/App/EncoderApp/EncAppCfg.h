@@ -1221,6 +1221,9 @@ protected:
   bool     m_priSEICancelFlag;
   bool     m_priSEIPersistenceFlag;
   uint32_t m_priSEINumRegionsMinus1;
+#if JVET_AL0324_AL0070_PRI_SEI
+  bool     m_priSEIMultilayerFlag;
+#endif
   bool     m_priSEIUseMaxDimensionsFlag;
   uint32_t m_priSEILog2UnitSize;
   uint32_t m_priSEIRegionSizeLenMinus1;
@@ -1235,13 +1238,22 @@ protected:
   std::vector<uint32_t> m_priSEIResamplingHeightNumMinus1;
   std::vector<uint32_t> m_priSEIResamplingHeightDenomMinus1;
   std::vector<uint32_t> m_priSEIRegionId;
+#if JVET_AL0324_AL0070_PRI_SEI
+  std::vector<uint32_t> m_priSEIRegionLayerId;
+  std::vector<bool>     m_priSEIRegionIsALayerFlag;
+#endif
   std::vector<uint32_t> m_priSEIRegionTopLeftInUnitsX;
   std::vector<uint32_t> m_priSEIRegionTopLeftInUnitsY;
   std::vector<uint32_t> m_priSEIRegionWidthInUnitsMinus1;
   std::vector<uint32_t> m_priSEIRegionHeightInUnitsMinus1;
   std::vector<uint32_t> m_priSEIResamplingRatioIdx;
+#if JVET_AL0324_AL0070_PRI_SEI
+  std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsX;
+  std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsY;
+#else
   std::vector<uint32_t> m_priSEITargetRegionTopLeftX;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftY;
+#endif
 #endif
 
   // internal member functions

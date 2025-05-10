@@ -1815,6 +1815,9 @@ public:
     : m_cancelFlag(false)
     , m_persistenceFlag(false)
     , m_numRegionsMinus1(0)
+#if JVET_AL0324_AL0070_PRI_SEI
+    , m_multilayerFlag(false)
+#endif
     , m_useMaxDimensionsFlag(false)
     , m_log2UnitSize(0)
     , m_regionSizeLenMinus1(0)
@@ -1830,6 +1833,9 @@ public:
   bool     m_cancelFlag;
   bool     m_persistenceFlag;
   uint32_t m_numRegionsMinus1;
+#if JVET_AL0324_AL0070_PRI_SEI
+  bool     m_multilayerFlag;
+#endif
   bool     m_useMaxDimensionsFlag;
   uint32_t m_log2UnitSize;
   uint32_t m_regionSizeLenMinus1;
@@ -1844,13 +1850,22 @@ public:
   std::vector<uint32_t> m_resamplingHeightNumMinus1;
   std::vector<uint32_t> m_resamplingHeightDenomMinus1;
   std::vector<uint32_t> m_regionId;
+#if JVET_AL0324_AL0070_PRI_SEI
+  std::vector<uint32_t> m_regionLayerId;
+  std::vector<bool>     m_regionIsALayerFlag;
+#endif
   std::vector<uint32_t> m_regionTopLeftInUnitsX;
   std::vector<uint32_t> m_regionTopLeftInUnitsY;
   std::vector<uint32_t> m_regionWidthInUnitsMinus1;
   std::vector<uint32_t> m_regionHeightInUnitsMinus1;
   std::vector<uint32_t> m_resamplingRatioIdx;
+#if JVET_AL0324_AL0070_PRI_SEI
+  std::vector<uint32_t> m_targetRegionTopLeftInUnitsX;
+  std::vector<uint32_t> m_targetRegionTopLeftInUnitsY;
+#else
   std::vector<uint32_t> m_targetRegionTopLeftX;
   std::vector<uint32_t> m_targetRegionTopLeftY;
+#endif
 };
 #endif
 

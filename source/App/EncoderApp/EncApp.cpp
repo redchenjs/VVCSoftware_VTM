@@ -1507,6 +1507,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPriSEICancelFlag(m_priSEICancelFlag);
   m_cEncLib.setPriSEIPersistenceFlag(m_priSEIPersistenceFlag);
   m_cEncLib.setPriSEINumRegionsMinus1(m_priSEINumRegionsMinus1);
+#if JVET_AL0324_AL0070_PRI_SEI
+  m_cEncLib.setPriSEIMultilayerFlag(m_priSEIMultilayerFlag);
+#endif
   m_cEncLib.setPriSEIUseMaxDimensionsFlag(m_priSEIUseMaxDimensionsFlag);
   m_cEncLib.setPriSEILog2UnitSize(m_priSEILog2UnitSize);
   m_cEncLib.setPriSEIRegionSizeLenMinus1(m_priSEIRegionSizeLenMinus1);
@@ -1521,13 +1524,22 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPriSEIResamplingHeightNumMinus1(m_priSEIResamplingHeightNumMinus1);
   m_cEncLib.setPriSEIResamplingHeightDenomMinus1(m_priSEIResamplingHeightDenomMinus1);
   m_cEncLib.setPriSEIRegionId(m_priSEIRegionId);
+#if JVET_AL0324_AL0070_PRI_SEI
+  m_cEncLib.setPriSEIRegionLayerId(m_priSEIRegionLayerId);
+  m_cEncLib.setPriSEIRegionIsALayerFlag(m_priSEIRegionIsALayerFlag);
+#endif
   m_cEncLib.setPriSEIRegionTopLeftInUnitsX(m_priSEIRegionTopLeftInUnitsX);
   m_cEncLib.setPriSEIRegionTopLeftInUnitsY(m_priSEIRegionTopLeftInUnitsY);
   m_cEncLib.setPriSEIRegionWidthInUnitsMinus1(m_priSEIRegionWidthInUnitsMinus1);
   m_cEncLib.setPriSEIRegionHeightInUnitsMinus1(m_priSEIRegionHeightInUnitsMinus1);
   m_cEncLib.setPriSEIResamplingRatioIdx(m_priSEIResamplingRatioIdx);
+#if JVET_AL0324_AL0070_PRI_SEI
+  m_cEncLib.setPriSEITargetRegionTopLeftInUnitsX(m_priSEITargetRegionTopLeftInUnitsX);
+  m_cEncLib.setPriSEITargetRegionTopLeftInUnitsY(m_priSEITargetRegionTopLeftInUnitsY);
+#else
   m_cEncLib.setPriSEITargetRegionTopLeftX(m_priSEITargetRegionTopLeftX);
   m_cEncLib.setPriSEITargetRegionTopLeftY(m_priSEITargetRegionTopLeftY);
+#endif
 #endif
   m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
   m_cEncLib.setPostFilterHintSEICancelFlag(m_postFilterHintSEICancelFlag);

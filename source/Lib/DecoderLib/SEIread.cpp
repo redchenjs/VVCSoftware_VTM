@@ -4999,7 +4999,14 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, uint32_t payL
     sei_read_flag(pDecodedMessageOutputStream, val, "pri_persistence_flag");
     sei.m_persistenceFlag = val != 0;
     sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_num_regions_minus1");
+#if JVET_AL0324_AL0070_PRI_SEI
+    CHECK(val > 255, "The value of pri_num_regions_minus1 shall be in the range of 0 to 255, inclusive");
+#endif
     sei.m_numRegionsMinus1 = val;
+#if JVET_AL0324_AL0070_PRI_SEI
+    sei_read_flag(pDecodedMessageOutputStream, val, "pri_multilayer_flag");
+    sei.m_multilayerFlag = val != 0;
+#endif
     sei_read_flag(pDecodedMessageOutputStream, val, "pri_use_max_dimensions_flag");
     sei.m_useMaxDimensionsFlag = val != 0;
     sei_read_code(pDecodedMessageOutputStream, 4, val, "pri_log2_unit_size");
@@ -5018,6 +5025,9 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, uint32_t payL
       sei.m_targetPicHeightMinus1 = val;
     }
     sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_num_resampling_ratios_minus1");
+#if JVET_AL0324_AL0070_PRI_SEI
+    CHECK(val > sei.m_numRegionsMinus1, "The value of pri_num_resampling_ratios_minus1 shall be in the range of 0 to pri_num_regions_minus1, inclusive");
+#endif
     sei.m_numResamplingRatiosMinus1 = val;
 
     sei.m_resamplingWidthNumMinus1.resize(sei.m_numResamplingRatiosMinus1 + 1);
@@ -5036,6 +5046,16 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, uint32_t payL
       sei.m_resamplingWidthNumMinus1[i] = val;
       sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_resampling_width_denom_minus1[i]");
       sei.m_resamplingWidthDenomMinus1[i] = val;
+#if JVET_AL0324_AL0070_PRI_SEI
+      if (sei.m_targetPicParamsPresentFlag)
+      {
+        Fraction horRatio;
+        horRatio.num = sei.m_resamplingWidthNumMinus1[i] + 1;
+        horRatio.den = sei.m_resamplingWidthDenomMinus1[i] + 1;
+        double horRatioVal = horRatio.getFloatVal();
+        CHECK(horRatioVal < 1.0 / 16.0 || horRatioVal > 16.0, "(pri_resampling_width_num_minus1[i] + 1) / (pri_resampling_width_denom_minus1[i] + 1) shall be in the range of 1/16 to 16, inclusive");
+      }
+#endif
       sei_read_flag(pDecodedMessageOutputStream, val, "pri_fixed_aspect_ratio_flag[i]");
       sei.m_fixedAspectRatioFlag[i] = val != 0;
       if (!sei.m_fixedAspectRatioFlag[i])
@@ -5044,6 +5064,16 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, uint32_t payL
         sei.m_resamplingHeightNumMinus1[i] = val;
         sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_resampling_height_denom_minus1[i]");
         sei.m_resamplingHeightDenomMinus1[i] = val;
+#if JVET_AL0324_AL0070_PRI_SEI
+        if (sei.m_targetPicParamsPresentFlag)
+        {
+          Fraction verRatio;
+          verRatio.num = sei.m_resamplingHeightNumMinus1[i] + 1;
+          verRatio.den = sei.m_resamplingHeightDenomMinus1[i] + 1;
+          double verRatioVal = verRatio.getFloatVal();
+          CHECK(verRatioVal < 1.0 / 16.0 || verRatioVal > 16.0, "(pri_resampling_height_num_minus1[i] + 1) / (pri_resampling_height_denom_minus1[i] + 1) shall be in the range of 1/16 to 16, inclusive");
+        }
+#endif
       }
       else
       {
@@ -5053,24 +5083,51 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, uint32_t payL
     }
 
     sei.m_regionId.resize(sei.m_numRegionsMinus1 + 1);
+#if JVET_AL0324_AL0070_PRI_SEI
+    sei.m_regionLayerId.resize(sei.m_numRegionsMinus1 + 1);
+    sei.m_regionIsALayerFlag.resize(sei.m_numRegionsMinus1 + 1);
+#endif
     sei.m_regionTopLeftInUnitsX.resize(sei.m_numRegionsMinus1 + 1);
     sei.m_regionTopLeftInUnitsY.resize(sei.m_numRegionsMinus1 + 1);
     sei.m_regionWidthInUnitsMinus1.resize(sei.m_numRegionsMinus1 + 1);
     sei.m_regionHeightInUnitsMinus1.resize(sei.m_numRegionsMinus1 + 1);
     sei.m_resamplingRatioIdx.resize(sei.m_numRegionsMinus1 + 1);
+#if JVET_AL0324_AL0070_PRI_SEI
+    std::fill(sei.m_regionId.begin(), sei.m_regionId.end(), MAX_UINT);
+    sei.m_targetRegionTopLeftInUnitsX.resize(sei.m_numRegionsMinus1 + 1);
+    sei.m_targetRegionTopLeftInUnitsY.resize(sei.m_numRegionsMinus1 + 1);
+#else
     sei.m_targetRegionTopLeftX.resize(sei.m_numRegionsMinus1 + 1);
     sei.m_targetRegionTopLeftY.resize(sei.m_numRegionsMinus1 + 1);
+#endif
     for (uint32_t i = 0; i <= sei.m_numRegionsMinus1; i++)
     {
       if (sei.m_regionIdPresentFlag)
       {
         sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_region_id[i]");
+#if JVET_AL0324_AL0070_PRI_SEI
+        CHECK(val > 1023, "The value of pri_region_id[i] shall be in the range of 0 to 1023, inclusive");
+        auto it = std::find(sei.m_regionId.begin(), sei.m_regionId.end(), val);
+        CHECK(it != sei.m_regionId.end(), "For any two different values of i and j, pri_region_id[i] shall not be equal to pri_region_id[j]");
+#endif
         sei.m_regionId[i] = val;
       }
       else
       {
         sei.m_regionId[i] = i;
       }
+#if JVET_AL0324_AL0070_PRI_SEI
+      if (sei.m_multilayerFlag)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_region_layer_id[i]");
+        CHECK(val > 55, "The value of pri_region_layer_id[i] shall be in the range of 0 to 55, inclusive");
+        sei.m_regionLayerId[i] = val;
+        sei_read_flag(pDecodedMessageOutputStream, val, "pri_region_is_a_layer_flag[i]");
+        sei.m_regionIsALayerFlag[i] = val;
+      }
+      if (!sei.m_regionIsALayerFlag[i])
+      {
+#endif
       sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_top_left_in_units_x[i]");
       sei.m_regionTopLeftInUnitsX[i] = val;
       sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_top_left_in_units_y[i]");
@@ -5079,6 +5136,9 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, uint32_t payL
       sei.m_regionWidthInUnitsMinus1[i] = val;
       sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_region_height_in_units_minus1[i]");
       sei.m_regionHeightInUnitsMinus1[i] = val;
+#if JVET_AL0324_AL0070_PRI_SEI
+      }
+#endif
       if (sei.m_numResamplingRatiosMinus1 > 0)
       {
         sei_read_code(pDecodedMessageOutputStream, ceilLog2(sei.m_numResamplingRatiosMinus1 + 1), val, "pri_resampling_ratio_idx[i]");
@@ -5090,10 +5150,17 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, uint32_t payL
       }
       if (sei.m_targetPicParamsPresentFlag)
       {
+#if JVET_AL0324_AL0070_PRI_SEI
+        sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_target_region_top_left_in_units_x[i]");
+        sei.m_targetRegionTopLeftInUnitsX[i] = val;
+        sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_target_region_top_left_in_units_y[i]");
+        sei.m_targetRegionTopLeftInUnitsY[i] = val;
+#else
         sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_target_region_top_left_x[i]");
         sei.m_targetRegionTopLeftX[i] = val;
         sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_target_region_top_left_y[i]");
         sei.m_targetRegionTopLeftY[i] = val;
+#endif
       }
     }
     if (sei.m_regionIdPresentFlag)

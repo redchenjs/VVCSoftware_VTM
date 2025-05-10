@@ -62,6 +62,14 @@ void SEIPackedRegionsInfoProcess::init(SEIPackedRegionsInfo& sei, const SPS& sps
   m_subWidthC = SPS::getWinUnitX(sps.getChromaFormatIdc());
   m_subHeightC = SPS::getWinUnitY(sps.getChromaFormatIdc());
 
+  #if JVET_AL0324_AL0070_PRI_SEI
+  if (sei.m_targetPicParamsPresentFlag)
+  {
+    CHECK(m_targetPicWidth % m_subWidthC != 0, "The value of (pri_target_pic_width_minus1 + 1) % SubWidthC shall be equal to 0");
+    CHECK(m_targetPicHeight % m_subHeightC != 0, "The value of (pri_target_pic_height_minus1 + 1) % SubHeightC shall be equal to 0");
+  }
+  #endif
+
   m_priNumRegions = sei.m_numRegionsMinus1 + 1;
   m_priRegionTopLeftX.resize(sei.m_numRegionsMinus1 + 1);
   m_priRegionTopLeftY.resize(sei.m_numRegionsMinus1 + 1);
@@ -91,6 +99,15 @@ void SEIPackedRegionsInfoProcess::init(SEIPackedRegionsInfo& sei, const SPS& sps
       m_priRegionWidth[i] = ((sei.m_regionWidthInUnitsMinus1[i] + 1) * m_priUnitSize * m_picWidth + m_maxPicWidth/2) / m_maxPicWidth;
       m_priRegionHeight[i] = ((sei.m_regionHeightInUnitsMinus1[i] + 1) * m_priUnitSize * m_picHeight + m_maxPicHeight/2) / m_maxPicHeight;
     }
+#if JVET_AL0324_AL0070_PRI_SEI
+    if (sei.m_targetPicParamsPresentFlag)
+    {
+      CHECK(m_priRegionTopLeftX[i] % m_subWidthC != 0, "The value of priRegionTopLeftX[i] % SubWidthC shall be equal to 0");
+      CHECK(m_priRegionTopLeftY[i] % m_subHeightC != 0, "The value of priRegionTopLeftY[i] % SubHeightC shall be equal to 0");
+      CHECK(m_priRegionWidth[i] % m_subWidthC != 0,  "The value of priRegionWidth[i] % SubWidthC shall be equal to 0");
+      CHECK(m_priRegionHeight[i] % m_subHeightC != 0, "The value of priRegionHeight[i] % SubHeightC shall be equal to 0");
+    }
+#endif
     uint32_t resamplingRatioIdx = 0;
     if (sei.m_numResamplingRatiosMinus1 > 0)
     {
@@ -103,8 +120,19 @@ void SEIPackedRegionsInfoProcess::init(SEIPackedRegionsInfo& sei, const SPS& sps
     m_priTargetRegionWidth[i] = ((uint32_t)(((double)m_priRegionWidth[i] * m_priResampleWidthNum[i]) / (m_priResampleWidthDenom[i] * m_subWidthC) + 0.5)) * m_subWidthC;
     m_priTargetRegionHeight[i] = ((uint32_t)(((double)m_priRegionHeight[i] * m_priResampleHeightNum[i]) / (m_priResampleHeightDenom[i] * m_subHeightC) + 0.5)) * m_subHeightC;
   }
+#if JVET_AL0324_AL0070_PRI_SEI
+  if (sei.m_targetPicParamsPresentFlag)
+  {
+    for (uint32_t i = 0; i <= sei.m_numRegionsMinus1; i++)
+    {
+      m_priTargetRegionTopLeftX[i] = sei.m_targetRegionTopLeftInUnitsX[i] * m_priUnitSize;
+      m_priTargetRegionTopLeftY[i] = sei.m_targetRegionTopLeftInUnitsY[i] * m_priUnitSize;
+    }
+  }
+#else
   m_priTargetRegionTopLeftX = sei.m_targetRegionTopLeftX;
   m_priTargetRegionTopLeftY = sei.m_targetRegionTopLeftY;
+#endif
   m_priRegionId = sei.m_regionId;
 }
 

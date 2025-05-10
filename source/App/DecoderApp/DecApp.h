@@ -125,6 +125,10 @@ private:
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void xOutputPackedRegionsInfo(Picture* pcPic);
   void xOutputPackedRegionsInfoVector(FILE* fp, const char* paramName, const std::vector<uint32_t>& v);
+#if JVET_AL0324_AL0070_PRI_SEI
+  void xOutputPackedRegionsInfoVector(FILE* fp, const char* paramName, const std::vector<bool>& v);
+  void xOutputPackedRegionsInfoVector(FILE* fp, const char* paramName, const std::vector<uint32_t>& l, const std::vector<bool>& b);
+#endif
 #endif
 };
 

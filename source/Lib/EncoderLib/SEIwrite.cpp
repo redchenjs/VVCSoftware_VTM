@@ -2971,6 +2971,9 @@ void SEIWriter::xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei)
   {
     xWriteFlag(sei.m_persistenceFlag, "pri_persistence_flag");
     xWriteUvlc(sei.m_numRegionsMinus1, "pri_num_regions_minus1");
+#if JVET_AL0324_AL0070_PRI_SEI
+    xWriteFlag(sei.m_multilayerFlag, "pri_multilayer_flag");
+#endif
     xWriteFlag(sei.m_useMaxDimensionsFlag, "pri_use_max_dimensions_flag");
     xWriteCode(sei.m_log2UnitSize, 4, "pri_log2_unit_size");
     xWriteCode(sei.m_regionSizeLenMinus1, 4, "pri_region_size_len_minus1");
@@ -2999,18 +3002,35 @@ void SEIWriter::xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei)
       {
         xWriteUvlc(sei.m_regionId[i], "pri_region_id[i]");
       }
+#if JVET_AL0324_AL0070_PRI_SEI
+      if (sei.m_multilayerFlag)
+      {
+        xWriteUvlc(sei.m_regionLayerId[i], "pri_region_layer_id[i]");
+        xWriteFlag(sei.m_regionIsALayerFlag[i], "pri_region_is_a_layer_flag[i]");
+      }
+      if (!sei.m_regionIsALayerFlag[i])
+      {
+#endif
       xWriteCode(sei.m_regionTopLeftInUnitsX[i], sei.m_regionSizeLenMinus1 + 1, "pri_region_top_left_in_units_x[i]");
       xWriteCode(sei.m_regionTopLeftInUnitsY[i], sei.m_regionSizeLenMinus1 + 1, "pri_region_top_left_in_units_y[i]");
       xWriteCode(sei.m_regionWidthInUnitsMinus1[i], sei.m_regionSizeLenMinus1 + 1, "pri_region_width_in_units_minus1[i]");
       xWriteCode(sei.m_regionHeightInUnitsMinus1[i], sei.m_regionSizeLenMinus1 + 1, "pri_region_height_in_units_minus1[i]");
+#if JVET_AL0324_AL0070_PRI_SEI
+      }
+#endif
       if (sei.m_numResamplingRatiosMinus1 > 0)
       {
         xWriteCode(sei.m_resamplingRatioIdx[i], ceilLog2(sei.m_numResamplingRatiosMinus1 + 1), "pri_resampling_ratio_idx[i]");
       }
       if (sei.m_targetPicParamsPresentFlag)
       {
+#if JVET_AL0324_AL0070_PRI_SEI
+        xWriteCode(sei.m_targetRegionTopLeftInUnitsX[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_in_units_x[i]");
+        xWriteCode(sei.m_targetRegionTopLeftInUnitsY[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_in_units_y[i]");
+#else
         xWriteCode(sei.m_targetRegionTopLeftX[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_x[i]");
         xWriteCode(sei.m_targetRegionTopLeftY[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_y[i]");
+#endif
       }
     }
   }
