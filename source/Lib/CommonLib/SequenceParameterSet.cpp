@@ -149,7 +149,7 @@ void ChromaQpMappingTable::deriveChromaQPMappingTables()
     const int numPtsInCQPTableMinus1 = getNumPtsInCQPTableMinus1(i);
     std::vector<int> qpInVal(numPtsInCQPTableMinus1 + 2), qpOutVal(numPtsInCQPTableMinus1 + 2);
 
-    qpInVal[0] = getQpTableStartMinus26(i) + 26;
+    qpInVal[0]  = getQpTableStartMinus26(i) + QP26;
     qpOutVal[0] = qpInVal[0];
     for (int j = 0; j <= getNumPtsInCQPTableMinus1(i); j++)
     {
