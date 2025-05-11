@@ -152,6 +152,7 @@ static constexpr int IBC_REF_IDX        = MAX_NUM_ACTIVE_REF;
 // Array indexed by reference list index and reference picture index
 template<class T> using RefSetArray = T[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
 
+inline constexpr int QP26      = 26;   // QP reference value for coding delta QP values
 static constexpr int MAX_QP =                                          63;
 static constexpr int NOT_VALID =                                       -1;
 

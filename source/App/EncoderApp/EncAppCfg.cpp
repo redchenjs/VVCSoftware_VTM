@@ -1240,6 +1240,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("LambdaScaleTowardsNextQP",                        m_lambdaScaleTowardsNextQP,                         0.0, "Scale lambda towards lambda for next integer QP. A negative number increase bitrate and a positive number decrease bitrate.")
   /* Quantization parameters */
   ("QP,q",                                            m_iQP,                                               30, "Qp value")
+  ("PPSInitialQPOffset",                              m_qpRefAdj,                                           0, "Offset added to initial QP value coded in PPS")
   ("QPIncrementFrame,-qpif",                          m_qpIncrementAtSourceFrame,   std::optional<uint32_t>(), "If a source file frame number is specified, the internal QP will be incremented for all POCs associated with source frames >= frame number. If empty, do not increment.")
   ("IntraQPOffset",                                   m_intraQPOffset,                                      0, "Qp offset value for intra slice, typically determined based on GOP size")
   ("LambdaFromQpEnable",                              m_lambdaFromQPEnable,                             false, "Enable flag for derivation of lambda from QP")
@@ -3199,12 +3200,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   {
     m_chromaQpMappingTableParams.m_sameCQPTableForAllChromaFlag = true;
 
-    cfg_qpInValCb.values    = { 26 };
-    cfg_qpInValCr.values    = { 26 };
-    cfg_qpInValCbCr.values  = { 26 };
-    cfg_qpOutValCb.values   = { 26 };
-    cfg_qpOutValCr.values   = { 26 };
-    cfg_qpOutValCbCr.values = { 26 };
+    cfg_qpInValCb.values    = { QP26 };
+    cfg_qpInValCr.values    = { QP26 };
+    cfg_qpInValCbCr.values  = { QP26 };
+    cfg_qpOutValCb.values   = { QP26 };
+    cfg_qpOutValCr.values   = { QP26 };
+    cfg_qpOutValCbCr.values = { QP26 };
   }
 
   // Need to have at least 2 points in the set. Add second one if only one given
@@ -3228,8 +3229,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   m_chromaQpMappingTableParams.m_deltaQpInValMinus1[0].resize(cfg_qpInValCb.values.size());
   m_chromaQpMappingTableParams.m_deltaQpOutVal[0].resize(cfg_qpOutValCb.values.size());
   m_chromaQpMappingTableParams.m_numPtsInCQPTableMinus1[0] = (int) cfg_qpOutValCb.values.size() - 2;
-  m_chromaQpMappingTableParams.m_qpTableStartMinus26[0]    = -26 + cfg_qpInValCb.values[0];
-  CHECK(m_chromaQpMappingTableParams.m_qpTableStartMinus26[0] < -26 - qpBdOffsetC || m_chromaQpMappingTableParams.m_qpTableStartMinus26[0] > 36, "qpTableStartMinus26[0] is out of valid range of -26 -qpBdOffsetC to 36, inclusive.")
+  m_chromaQpMappingTableParams.m_qpTableStartMinus26[0]    = -QP26 + cfg_qpInValCb.values[0];
+  CHECK(m_chromaQpMappingTableParams.m_qpTableStartMinus26[0] < -QP26 - qpBdOffsetC
+          || m_chromaQpMappingTableParams.m_qpTableStartMinus26[0] > 36,
+        "qpTableStartMinus26[0] is out of valid range of -26 -qpBdOffsetC to 36, inclusive.")
   CHECK(cfg_qpInValCb.values[0] != cfg_qpOutValCb.values[0], "First qpInValCb value should be equal to first qpOutValCb value");
   for (int i = 0; i < cfg_qpInValCb.values.size() - 1; i++)
   {
@@ -3243,8 +3246,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_chromaQpMappingTableParams.m_deltaQpInValMinus1[1].resize(cfg_qpInValCr.values.size());
     m_chromaQpMappingTableParams.m_deltaQpOutVal[1].resize(cfg_qpOutValCr.values.size());
     m_chromaQpMappingTableParams.m_numPtsInCQPTableMinus1[1] = (int) cfg_qpOutValCr.values.size() - 2;
-    m_chromaQpMappingTableParams.m_qpTableStartMinus26[1]    = -26 + cfg_qpInValCr.values[0];
-    CHECK(m_chromaQpMappingTableParams.m_qpTableStartMinus26[1] < -26 - qpBdOffsetC || m_chromaQpMappingTableParams.m_qpTableStartMinus26[1] > 36, "qpTableStartMinus26[1] is out of valid range of -26 -qpBdOffsetC to 36, inclusive.")
+    m_chromaQpMappingTableParams.m_qpTableStartMinus26[1]    = -QP26 + cfg_qpInValCr.values[0];
+    CHECK(m_chromaQpMappingTableParams.m_qpTableStartMinus26[1] < -QP26 - qpBdOffsetC
+            || m_chromaQpMappingTableParams.m_qpTableStartMinus26[1] > 36,
+          "qpTableStartMinus26[1] is out of valid range of -26 -qpBdOffsetC to 36, inclusive.")
     CHECK(cfg_qpInValCr.values[0] != cfg_qpOutValCr.values[0], "First qpInValCr value should be equal to first qpOutValCr value");
     for (int i = 0; i < cfg_qpInValCr.values.size() - 1; i++)
     {
@@ -3256,8 +3261,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_chromaQpMappingTableParams.m_deltaQpInValMinus1[2].resize(cfg_qpInValCbCr.values.size());
     m_chromaQpMappingTableParams.m_deltaQpOutVal[2].resize(cfg_qpOutValCbCr.values.size());
     m_chromaQpMappingTableParams.m_numPtsInCQPTableMinus1[2] = (int) cfg_qpOutValCbCr.values.size() - 2;
-    m_chromaQpMappingTableParams.m_qpTableStartMinus26[2]    = -26 + cfg_qpInValCbCr.values[0];
-    CHECK(m_chromaQpMappingTableParams.m_qpTableStartMinus26[2] < -26 - qpBdOffsetC || m_chromaQpMappingTableParams.m_qpTableStartMinus26[2] > 36, "qpTableStartMinus26[2] is out of valid range of -26 -qpBdOffsetC to 36, inclusive.")
+    m_chromaQpMappingTableParams.m_qpTableStartMinus26[2]    = -QP26 + cfg_qpInValCbCr.values[0];
+    CHECK(m_chromaQpMappingTableParams.m_qpTableStartMinus26[2] < -QP26 - qpBdOffsetC
+            || m_chromaQpMappingTableParams.m_qpTableStartMinus26[2] > 36,
+          "qpTableStartMinus26[2] is out of valid range of -26 -qpBdOffsetC to 36, inclusive.")
     CHECK(cfg_qpInValCbCr.values[0] != cfg_qpInValCbCr.values[0], "First qpInValCbCr value should be equal to first qpOutValCbCr value");
     for (int i = 0; i < cfg_qpInValCbCr.values.size() - 1; i++)
     {

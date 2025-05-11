@@ -1913,19 +1913,11 @@ void EncLib::xInitPPS(PPS &pps, const SPS &sps)
     pps.clearChromaQpOffsetList();
   }
   {
-    int baseQp = 26;
-    if( 16 == getGOPSize() )
-    {
-      baseQp = getBaseQP()-24;
-    }
-    else
-    {
-      baseQp = getBaseQP()-26;
-    }
-    const int maxDQP = 37;
-    const int minDQP = -26 + sps.getQpBDOffset(ChannelType::LUMA);
+    const int refQp = getBaseQP() + getQpRefAdj();
+    const int maxQp = MAX_QP;
+    const int minQp = sps.getQpBDOffset(ChannelType::LUMA);
 
-    pps.setPicInitQPMinus26( std::min( maxDQP, std::max( minDQP, baseQp ) ));
+    pps.setPicInitQPMinus26(std::clamp(refQp, minQp, maxQp) - QP26);
   }
 
   if (!sps.getJointCbCrEnabledFlag() || !isChromaEnabled(getChromaFormatIdc()))
