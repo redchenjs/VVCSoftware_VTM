@@ -5001,7 +5001,7 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
     sei.m_persistenceFlag = val != 0;
     sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_num_regions_minus1");
 #if JVET_AL0324_AL0070_PRI_SEI
-    CHECK(val > 255, "The value of pri_num_regions_minus1 shall be in the range of 0 to 255, inclusive");
+    CHECK(val > 255, "pri_num_regions_minus1 shall be in the range of 0 to 255, inclusive");
 #endif
     sei.m_numRegionsMinus1 = val;
     sei_read_flag(pDecodedMessageOutputStream, val, "pri_multilayer_flag");
@@ -5025,7 +5025,7 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
     }
     sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_num_resampling_ratios_minus1");
 #if JVET_AL0324_AL0070_PRI_SEI
-    CHECK(val > sei.m_numRegionsMinus1, "The value of pri_num_resampling_ratios_minus1 shall be in the range of 0 to pri_num_regions_minus1, inclusive");
+    CHECK(val > sei.m_numRegionsMinus1, "pri_num_resampling_ratios_minus1 shall be in the range of 0 to pri_num_regions_minus1, inclusive");
 #endif
     sei.m_numResamplingRatiosMinus1 = val;
 
@@ -5103,9 +5103,7 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
       {
         sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_region_id[i]");
 #if JVET_AL0324_AL0070_PRI_SEI
-        CHECK(val > 1023, "The value of pri_region_id[i] shall be in the range of 0 to 1023, inclusive");
-        auto it = std::find(sei.m_regionId.begin(), sei.m_regionId.end(), val);
-        CHECK(it != sei.m_regionId.end(), "For any two different values of i and j, pri_region_id[i] shall not be equal to pri_region_id[j]");
+        CHECK(val > 1023, "pri_region_id[i] shall be in the range of 0 to 1023, inclusive");
 #endif
         sei.m_regionId[i] = val;
       }
@@ -5116,13 +5114,20 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
       if (sei.m_multilayerFlag)
       {
         sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_region_layer_id[i]");
+#if JVET_AL0324_AL0070_PRI_SEI
+        CHECK(val > 2047, "pri_region_layer_id[i] shall be in the range of 0 to 2047, inclusive");
+#endif
         sei.m_regionLayerId[i] = val;
         sei_read_flag(pDecodedMessageOutputStream, val, "pri_region_is_a_layer_flag[i]");
         sei.m_regionIsALayerFlag[i] = val != 0;
       }
       else
       {
+#if JVET_AL0324_AL0070_PRI_SEI
+        sei.m_regionLayerId[i] = sei.m_layerId;
+#else
         sei.m_regionLayerId[i] = 0;
+#endif
         sei.m_regionIsALayerFlag[i] = 0;
       }
       if (!sei.m_regionIsALayerFlag[i])
