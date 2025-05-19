@@ -1115,6 +1115,11 @@ void EncApp::xInitLibCfg( int layerIdx )
       }
     }
   }
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  m_cEncLib.setFGCSEISpatialResolutionPresentFlag                (m_resChangeInClvsEnabled);
+  m_cEncLib.setFGCSEIPicWidthInLumaSamples                       (m_sourceWidth);
+  m_cEncLib.setFGCSEIPicHeightInLumaSamples                      (m_sourceHeight);
+#endif
   // content light level
   m_cEncLib.setCLLSEIEnabled                                     (m_cllSEIEnabled);
   m_cEncLib.setCLLSEIMaxContentLightLevel                        ((uint16_t)m_cllSEIMaxContentLevel);

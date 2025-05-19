@@ -3501,8 +3501,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       msg(WARNING, "*************************************************************************\n");
       msg(WARNING, "* WARNING: For low delay configuration, FGC SEI is inserted for first frame only!*\n");
       msg(WARNING, "*************************************************************************\n");
-      m_fgcSEIPerPictureSEI   = false;
-      m_fgcSEIPersistenceFlag = true;
+      //m_fgcSEIPerPictureSEI   = false;
+      //m_fgcSEIPersistenceFlag = true;
     }
     else if (m_intraPeriod == 1)
     {   // all intra configuration

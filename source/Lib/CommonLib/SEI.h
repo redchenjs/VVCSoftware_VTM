@@ -1037,6 +1037,12 @@ public:
 
   CompModel m_compModel[MAX_NUM_COMPONENT];
   bool      m_filmGrainCharacteristicsPersistenceFlag;
+
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  bool      m_spatialResolutionPresentFlag;
+  int       m_picWidthInLumaSamples;
+  int       m_picHeightInLumaSamples;
+#endif
 };
 
 class SEIContentLightLevelInfo : public SEI
