@@ -1460,7 +1460,11 @@ PelUnitBuf Picture::getDisplayBufFG(bool wrap)
   }
   else
   {
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+    if (message != SEIs.end())
+#else
     if (payloadType == SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS)
+#endif
     {
       msg(WARNING, "Film Grain synthesis is not performed. Error code: 0x%x \n", m_grainCharacteristic->m_errorCode);
     }
@@ -1568,7 +1572,7 @@ PelUnitBuf Picture::getDisplayBufFGUpscaled(const SPS& sps, const PPS& pps, int 
   }
   else
   {
-    if (payloadType == SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS)
+    if (message != SEIs.end())
     {
       msg(WARNING, "Film Grain synthesis is not performed. Error code: 0x%x \n", m_grainCharacteristic->m_errorCode);
     }
