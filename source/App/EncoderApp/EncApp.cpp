@@ -1420,6 +1420,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setNnPostFilterSEIActivationPrompt                   (m_nnPostFilterSEIActivationPrompt);
 #endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  m_cEncLib.setNnPostFilterSEIActivationSelectedInputFlag        (m_nnPostFilterSEIActivationSelectedInputFlag);
+#endif
   m_cEncLib.setNnPostFilterSEIActivationNumInputPicShift         (m_nnPostFilterSEIActivationNumInputPicShift);
 #endif 
   m_cEncLib.setEntropyCodingSyncEnabledFlag                      ( m_entropyCodingSyncEnabledFlag );

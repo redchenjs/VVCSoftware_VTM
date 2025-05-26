@@ -861,6 +861,9 @@ protected:
   std::string           m_nnPostFilterSEIActivationPrompt;
 #endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  bool                  m_nnPostFilterSEIActivationSelectedInputFlag;
+#endif
   uint32_t              m_nnPostFilterSEIActivationNumInputPicShift;
 #endif 
 
