@@ -3230,7 +3230,11 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     SEIDigitallySignedContentInitialization* dsci = (SEIDigitallySignedContentInitialization*) dscInitSEIs.front();
     m_dscSubstreamManager.initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag);
+#else
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
+#endif
 #else
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid);
 #endif
@@ -3253,7 +3257,18 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   {
     // process as substream 0, when no selection SEI is received
     // todo: multiples slices
+#if !JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
     xProcessStoredNALUnitsForSignature(0);
+#else
+    if(m_dscSubstreamManager.getDscAssociationModeFlag()){
+      int32_t dscsVSSID = vps->getMaxLayers()*nalu.m_nuhLayerId + nalu.m_temporalId;
+      xProcessStoredNALUnitsForSignature(dscsVSSID);
+    }
+    else
+    {
+      xProcessStoredNALUnitsForSignature(0);
+    }
+#endif
   }
 #endif
 

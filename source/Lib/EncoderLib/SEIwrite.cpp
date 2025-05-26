@@ -2926,6 +2926,9 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
     }
   }
 #endif
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+  xWriteFlag(sei.dsciVSSImplicitAssociationModeFlag, "dsci_vss_implicit_association_mode_flag");
+#endif  
   xWriteUvlc(sei.dsciKeyRetrievalModeIdc, "dsci_key_retrieval_mode_idc");
   if (sei.dsciKeyRetrievalModeIdc == 1)
   {

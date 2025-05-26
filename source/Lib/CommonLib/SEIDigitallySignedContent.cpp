@@ -157,7 +157,11 @@ bool DscSubstream::calculateHash()
 
 
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+void DscSubstreamManager::initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid, const std::vector<std::vector<bool>> &refFlags, bool implicitAssociationFlag)
+#else
 void DscSubstreamManager::initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid, const std::vector<std::vector<bool>> &refFlags)
+#endif
 #else
 void DscSubstreamManager::initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid)
 #endif
@@ -184,6 +188,9 @@ void DscSubstreamManager::initDscSubstreamManager (int numSubstreams, int hashMe
 
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
     m_refSubstreamFlag = refFlags;
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+    m_implicitAssociationModeFlag = implicitAssociationFlag;
+#endif
 #endif
 
     printf ("DSC: initializing %d substreams\n", numSubstreams);
@@ -196,7 +203,11 @@ void DscSubstreamManager::initDscSubstreamManager (int numSubstreams, int hashMe
       printf ("DSC Warning: re-initializing with different number of substream, starting a new signed segment\n");
       uninitDscSubstreamManager();
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+      initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid, refFlags, implicitAssociationFlag);
+#else
       initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid, refFlags);
+#endif
 #else
       initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid);
 #endif
@@ -207,7 +218,11 @@ void DscSubstreamManager::initDscSubstreamManager (int numSubstreams, int hashMe
       printf ("DSC Warning: re-initializing with different hash method type, starting a new signed segment\n");
       uninitDscSubstreamManager();
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+      initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid, refFlags, implicitAssociationFlag);
+#else
       initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid, refFlags);
+#endif
 #else
       initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid);
 #endif
@@ -218,7 +233,11 @@ void DscSubstreamManager::initDscSubstreamManager (int numSubstreams, int hashMe
       printf ("DSC Warning: re-initializing with different certificate URI, starting a new signed segment\n");
       uninitDscSubstreamManager();
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+      initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid, refFlags, implicitAssociationFlag);
+#else
       initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid, refFlags);
+#endif
 #else
       initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid);
 #endif
@@ -229,7 +248,11 @@ void DscSubstreamManager::initDscSubstreamManager (int numSubstreams, int hashMe
       printf ("DSC Warning: re-initializing with different presence of content UUID, starting a new signed segment\n");
       uninitDscSubstreamManager();
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+      initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid, refFlags, implicitAssociationFlag);
+#else
       initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid, refFlags);
+#endif
 #else
       initDscSubstreamManager(numSubstreams, hashMethodType, certUri, hasContentUuid, contentUuid);
 #endif
