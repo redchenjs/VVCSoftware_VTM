@@ -3260,7 +3260,8 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
 #if !JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
     xProcessStoredNALUnitsForSignature(0);
 #else
-    if(m_dscSubstreamManager.getDscAssociationModeFlag()){
+    if(m_dscSubstreamManager.getDscAssociationModeFlag())
+    {
       int32_t dscsVSSID = vps->getMaxLayers()*nalu.m_nuhLayerId + nalu.m_temporalId;
       xProcessStoredNALUnitsForSignature(dscsVSSID);
     }
