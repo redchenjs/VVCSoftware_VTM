@@ -49,25 +49,27 @@ const double EncTemporalFilter::m_sigmaMultiplier =  9.0;
 const double EncTemporalFilter::m_sigmaZeroPoint  = 10.0;
 const int EncTemporalFilter::m_motionVectorFactor = 16;
 const int EncTemporalFilter::m_padding = 128;
-const int EncTemporalFilter::m_interpolationFilter[16][8] =
+// clang-format off
+const int16_t EncTemporalFilter::m_interpolationFilter[16][NTAPS] =
 {
-  {   0,   0,   0,  64,   0,   0,   0,   0 },   //0
-  {   0,   1,  -3,  64,   4,  -2,   0,   0 },   //1 -->-->
-  {   0,   1,  -6,  62,   9,  -3,   1,   0 },   //2 -->
-  {   0,   2,  -8,  60,  14,  -5,   1,   0 },   //3 -->-->
-  {   0,   2,  -9,  57,  19,  -7,   2,   0 },   //4
-  {   0,   3, -10,  53,  24,  -8,   2,   0 },   //5 -->-->
-  {   0,   3, -11,  50,  29,  -9,   2,   0 },   //6 -->
-  {   0,   3, -11,  44,  35, -10,   3,   0 },   //7 -->-->
-  {   0,   1,  -7,  38,  38,  -7,   1,   0 },   //8
-  {   0,   3, -10,  35,  44, -11,   3,   0 },   //9 -->-->
-  {   0,   2,  -9,  29,  50, -11,   3,   0 },   //10-->
-  {   0,   2,  -8,  24,  53, -10,   3,   0 },   //11-->-->
-  {   0,   2,  -7,  19,  57,  -9,   2,   0 },   //12
-  {   0,   1,  -5,  14,  60,  -8,   2,   0 },   //13-->-->
-  {   0,   1,  -3,   9,  62,  -6,   1,   0 },   //14-->
-  {   0,   0,  -2,   4,  64,  -3,   1,   0 }    //15-->-->
+  {   0,   0,  64,   0,   0,   0 },  // 0
+  {   1,  -3,  64,   4,  -2,   0 },  // 1 -->-->
+  {   1,  -6,  62,   9,  -3,   1 },  // 2 -->
+  {   2,  -8,  60,  14,  -5,   1 },  // 3 -->-->
+  {   2,  -9,  57,  19,  -7,   2 },  // 4
+  {   3, -10,  53,  24,  -8,   2 },  // 5 -->-->
+  {   3, -11,  50,  29,  -9,   2 },  // 6 -->
+  {   3, -11,  44,  35, -10,   3 },  // 7 -->-->
+  {   1,  -7,  38,  38,  -7,   1 },  // 8
+  {   3, -10,  35,  44, -11,   3 },  // 9 -->-->
+  {   2,  -9,  29,  50, -11,   3 },  // 10-->
+  {   2,  -8,  24,  53, -10,   3 },  // 11-->-->
+  {   2,  -7,  19,  57,  -9,   2 },  // 12
+  {   1,  -5,  14,  60,  -8,   2 },  // 13-->-->
+  {   1,  -3,   9,  62,  -6,   1 },  // 14-->
+  {   0,  -2,   4,  64,  -3,   1 }   // 15-->-->
 };
+// clang-format on
 
 const double EncTemporalFilter::m_refStrengths[2][4] = {
   // abs(POC offset)
@@ -391,86 +393,127 @@ void EncTemporalFilter::subsampleLuma(const PelStorage &input, PelStorage &outpu
 int64_t EncTemporalFilter::motionErrorLuma(const PelStorage& orig, const PelStorage& buffer, const int x, const int y,
                                            int dx, int dy, const int bs, const int64_t besterror) const
 {
-  const Pel* origOrigin = orig.Y().buf;
+  const int  dxFrac  = dx & 15;
+  const int  dyFrac  = dy & 15;
+  const int  dxInt   = dx >> 4;
+  const int  dyInt   = dy >> 4;
+  const auto xFilter = m_interpolationFilter[dxFrac];
+  const auto yFilter = m_interpolationFilter[dyFrac];
+
   const ptrdiff_t origStride = orig.Y().stride;
-  const Pel* buffOrigin = buffer.Y().buf;
   const ptrdiff_t buffStride = buffer.Y().stride;
 
+  const Pel* origOrigin = orig.Y().buf + y * origStride + x;
+  const Pel* buffOrigin = buffer.Y().buf + (y + dyInt) * buffStride + (x + dxInt);
+
   int64_t error = 0;   // int64_t to avoid overflow at higher bit depths
-  if (((dx | dy) & 0xF) == 0)
+  const Pel maxSampleValue = (1 << m_internalBitDepth[ChannelType::LUMA]) - 1;
+
+  if (dxFrac == 0)
   {
-    dx /= m_motionVectorFactor;
-    dy /= m_motionVectorFactor;
-    for (int y1 = 0; y1 < bs; y1++)
+    if (dyFrac == 0)
     {
-      const Pel* origRowStart   = origOrigin + (y + y1) * origStride + x;
-      const Pel* bufferRowStart = buffOrigin + (y + y1 + dy) * buffStride + (x + dx);
-      for (int x1 = 0; x1 < bs; x1 += 2)
+      // No filtering required
+      for (int y1 = 0; y1 < bs; y1++)
       {
-        int diff = origRowStart[x1] - bufferRowStart[x1];
-        error += diff * diff;
-        diff = origRowStart[x1 + 1] - bufferRowStart[x1 + 1];
-        error += diff * diff;
+        for (int x1 = 0; x1 < bs; x1++)
+        {
+          const Pel diff = origOrigin[y1 * origStride + x1] - buffOrigin[y1 * buffStride + x1];
+          error += diff * diff;
+        }
       }
-      if (error > besterror)
+    }
+    else
+    {
+      // Vertical filter only
+      for (int y1 = 0; y1 < bs; y1++)
       {
-        return error;
+        for (int x1 = 0; x1 < bs; x1++)
+        {
+          const Pel* buffStart = &buffOrigin[(y1 - HALF_NTAPS) * buffStride + x1];
+
+          int sum = 1 << 5;   // rounding offset
+          for (int k = 0; k < NTAPS; k++)
+          {
+            sum += buffStart[k * buffStride] * yFilter[k];
+          }
+          sum >>= 6;
+          sum = std::clamp<int>(sum, 0, maxSampleValue);
+
+          const Pel diff = origOrigin[y1 * origStride + x1] - sum;
+          error += diff * diff;
+        }
       }
     }
   }
   else
   {
-    const int *xFilter = m_interpolationFilter[dx & 0xF];
-    const int *yFilter = m_interpolationFilter[dy & 0xF];
-    int tempArray[64 + 8][64];
-
-    int sum, base;
-    for (int y1 = 1; y1 < bs + 7; y1++)
+    if (dyFrac == 0)
     {
-      const int yOffset = y + y1 + (dy >> 4) - 3;
-      const Pel *sourceRow = buffOrigin + yOffset * buffStride + 0;
-      for (int x1 = 0; x1 < bs; x1++)
+      // Horizontal filter only
+      for (int y1 = 0; y1 < bs; y1++)
       {
-        sum = 0;
-        base = x + x1 + (dx >> 4) - 3;
-        const Pel *rowStart = sourceRow + base;
+        for (int x1 = 0; x1 < bs; x1++)
+        {
+          const Pel* buffStart = &buffOrigin[y1 * buffStride + (x1 - HALF_NTAPS)];
 
-        sum += xFilter[1] * rowStart[1];
-        sum += xFilter[2] * rowStart[2];
-        sum += xFilter[3] * rowStart[3];
-        sum += xFilter[4] * rowStart[4];
-        sum += xFilter[5] * rowStart[5];
-        sum += xFilter[6] * rowStart[6];
+          int sum = 1 << 5;   // rounding offset
+          for (int k = 0; k < NTAPS; k++)
+          {
+            sum += buffStart[k] * xFilter[k];
+          }
+          sum >>= 6;
+          sum = std::clamp<int>(sum, 0, maxSampleValue);
 
-        tempArray[y1][x1] = sum;
+          const Pel diff = origOrigin[y1 * origStride + x1] - sum;
+          error += diff * diff;
+        }
       }
     }
-
-    const Pel maxSampleValue = (1 << m_internalBitDepth[ChannelType::LUMA]) - 1;
-    for (int y1 = 0; y1 < bs; y1++)
+    else
     {
-      const Pel *origRow = origOrigin + (y + y1) * origStride;
-      for (int x1 = 0; x1 < bs; x1++)
+      constexpr int MAX_BS = 16;
+      CHECK(bs > MAX_BS, "block size is too large");
+      int tempArray[(MAX_BS + NTAPS - 1) * MAX_BS];
+
+      // Horizontal filter
+      for (int y1 = 0; y1 < bs + NTAPS - 1; y1++)
       {
-        sum = 0;
-        sum += yFilter[1] * tempArray[y1 + 1][x1];
-        sum += yFilter[2] * tempArray[y1 + 2][x1];
-        sum += yFilter[3] * tempArray[y1 + 3][x1];
-        sum += yFilter[4] * tempArray[y1 + 4][x1];
-        sum += yFilter[5] * tempArray[y1 + 5][x1];
-        sum += yFilter[6] * tempArray[y1 + 6][x1];
+        for (int x1 = 0; x1 < bs; x1++)
+        {
+          const Pel* buffStart = &buffOrigin[(y1 - HALF_NTAPS) * buffStride + (x1 - HALF_NTAPS)];
 
-        sum = (sum + (1 << 11)) >> 12;
-        sum = sum < 0 ? 0 : (sum > maxSampleValue ? maxSampleValue : sum);
-
-        error += (sum - origRow[x + x1]) * (sum - origRow[x + x1]);
+          int sum = 0;
+          for (int k = 0; k < NTAPS; k++)
+          {
+            sum += buffStart[k] * xFilter[k];
+          }
+          tempArray[y1 * bs + x1] = sum;
+        }
       }
-      if (error > besterror)
+
+      // Vertical filter
+      for (int y1 = 0; y1 < bs; y1++)
       {
-        return error;
+        for (int x1 = 0; x1 < bs; x1++)
+        {
+          const int* tempStart = &tempArray[y1 * bs + x1];
+
+          int sum = 1 << 11;   // rounding offset
+          for (int k = 0; k < NTAPS; k++)
+          {
+            sum += tempStart[k * bs] * yFilter[k];
+          }
+          sum >>= 12;
+          sum = std::clamp<int>(sum, 0, maxSampleValue);
+
+          const Pel diff = origOrigin[y1 * origStride + x1] - sum;
+          error += diff * diff;
+        }
       }
     }
   }
+
   return error;
 }
 
@@ -668,52 +711,48 @@ void EncTemporalFilter::applyMotion(const Array2D<MotionVector> &mvs, const PelS
         const int xInt = mv.x >> (4 + csx) ;
         const int yInt = mv.y >> (4 + csy) ;
 
-        const int *xFilter = m_interpolationFilter[dx & 0xf];
-        const int *yFilter = m_interpolationFilter[dy & 0xf]; // will add 6 bit.
-        const int numFilterTaps   = 7;
-        const int centerTapOffset = 3;
+        const auto xFilter = m_interpolationFilter[dx & 0xf];
+        const auto yFilter = m_interpolationFilter[dy & 0xf];   // will add 6 bit.
 
-        int tempArray[lumaBlockSize + numFilterTaps][lumaBlockSize];
+        constexpr int MAX_BS = 16;
+        CHECK(blockSizeX > MAX_BS, "block width is too large");
+        CHECK(blockSizeY > MAX_BS, "block height is too large");
+        int tempArray[(MAX_BS + NTAPS - 1) * MAX_BS];
 
-        for (int by = 1; by < blockSizeY + numFilterTaps; by++)
+        for (int by = 0; by < blockSizeY + NTAPS - 1; by++)
         {
-          const int yOffset = y + by + yInt - centerTapOffset;
+          const int  yOffset   = y + by + yInt - HALF_NTAPS;
           const Pel *sourceRow = srcImage + yOffset * srcStride;
           for (int bx = 0; bx < blockSizeX; bx++)
           {
-            int base = x + bx + xInt - centerTapOffset;
+            int        base     = x + bx + xInt - HALF_NTAPS;
             const Pel *rowStart = sourceRow + base;
 
             int sum = 0;
-            sum += xFilter[1] * rowStart[1];
-            sum += xFilter[2] * rowStart[2];
-            sum += xFilter[3] * rowStart[3];
-            sum += xFilter[4] * rowStart[4];
-            sum += xFilter[5] * rowStart[5];
-            sum += xFilter[6] * rowStart[6];
+            for (int k = 0; k < NTAPS; k++)
+            {
+              sum += xFilter[k] * rowStart[k];
+            }
 
-            tempArray[by][bx] = sum;
+            tempArray[by * blockSizeX + bx] = sum;
           }
         }
 
-        Pel *dstRow = dstImage + y * dstStride;
+        Pel* dstRow = dstImage + y * dstStride + x;
         for (int by = 0; by < blockSizeY; by++, dstRow += dstStride)
         {
-          Pel *dstPel = dstRow + x;
-          for (int bx = 0; bx < blockSizeX; bx++, dstPel++)
+          for (int bx = 0; bx < blockSizeX; bx++)
           {
             int sum = 0;
 
-            sum += yFilter[1] * tempArray[by + 1][bx];
-            sum += yFilter[2] * tempArray[by + 2][bx];
-            sum += yFilter[3] * tempArray[by + 3][bx];
-            sum += yFilter[4] * tempArray[by + 4][bx];
-            sum += yFilter[5] * tempArray[by + 5][bx];
-            sum += yFilter[6] * tempArray[by + 6][bx];
+            for (int k = 0; k < NTAPS; k++)
+            {
+              sum += yFilter[k] * tempArray[(by + k) * blockSizeX + bx];
+            }
 
             sum = (sum + (1 << 11)) >> 12;
-            sum = sum < 0 ? 0 : (sum > maxValue ? maxValue : sum);
-            *dstPel = sum;
+            sum        = std::clamp<int>(sum, 0, maxValue);
+            dstRow[bx] = sum;
           }
         }
       }

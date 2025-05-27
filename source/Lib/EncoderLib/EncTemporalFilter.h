@@ -135,7 +135,9 @@ private:
   static const double m_sigmaZeroPoint;
   static const int m_motionVectorFactor;
   static const int m_padding;
-  static const int m_interpolationFilter[16][8];
+  static constexpr int NTAPS      = 6;
+  static constexpr int HALF_NTAPS = (NTAPS - 1) / 2;
+  static const int16_t m_interpolationFilter[16][NTAPS];
   static const double m_refStrengths[2][4];
   static const int m_cuTreeThresh[4];
 
