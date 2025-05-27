@@ -1172,7 +1172,7 @@ void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* se
           {
             uint32_t omiAuxSampleRangeDeltaMin = !seiObjMask->m_hdr.m_tolerancePresentFlag ? 0 : seiObjMask->m_auxSampleTolerance[i];
             uint32_t omiAuxSampleRangeDeltaMax = (!seiObjMask->m_hdr.m_tolerancePresentFlag || seiObjMask->m_auxSampleTolerance[i] == 0) ? 1 : seiObjMask->m_auxSampleTolerance[i];
-            CHECK((omi.auxSampleValue - omiAuxSampleRangeDeltaMin) < (prevAuxSampleValue + omiAuxSampleRangeDeltaMax), "It is a requirement of bitstream conformance that omi_aux_sample_value[ i ][ j ] – OmiAuxSampleRangeDeltaMin[ i ] shall be greater than or equal to omi_aux_sample_value[ i ][ j –  1 ] + OmiAuxSampleRangeDeltaMax[ i ]");
+            CHECK((omi.auxSampleValue - omiAuxSampleRangeDeltaMin) < (prevAuxSampleValue + omiAuxSampleRangeDeltaMax), "It is a requirement of bitstream conformance that omi_aux_sample_value[ i ][ j ] - OmiAuxSampleRangeDeltaMin[ i ] shall be greater than or equal to omi_aux_sample_value[ i ][ j - 1 ] + OmiAuxSampleRangeDeltaMax[ i ]");
           }
           prevAuxSampleValue = omi.auxSampleValue;
 #endif
