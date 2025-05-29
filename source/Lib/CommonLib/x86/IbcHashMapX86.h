@@ -43,10 +43,13 @@
 
 #include <nmmintrin.h>
 
-template<X86_VEXT vext>
-static uint32_t simdComputeCrc32c16bit(uint32_t crc, const Pel pel)
+template<X86_VEXT vext> static uint32_t simdComputeCrc32c16bit(uint32_t crc, const Pel* pels, size_t n)
 {
-  return _mm_crc32_u16(crc, pel);
+  for (size_t i = 0; i < n; i++)
+  {
+    crc = _mm_crc32_u16(crc, pels[i]);
+  }
+  return crc;
 }
 
 template <X86_VEXT vext>

@@ -204,6 +204,7 @@
 #define ENABLE_SIMD_OPT_DIST                            ( 1 && ENABLE_SIMD_OPT )                            ///< SIMD optimization for the distortion calculations(SAD,SSE,HADAMARD), no impact on RD performance
 #define ENABLE_SIMD_OPT_AFFINE_ME                       ( 1 && ENABLE_SIMD_OPT )                            ///< SIMD optimization for affine ME, no impact on RD performance
 #define ENABLE_SIMD_OPT_ALF                             ( 1 && ENABLE_SIMD_OPT )                            ///< SIMD optimization for ALF
+#define ENABLE_SIMD_OPT_IBC                             ( 1 && ENABLE_SIMD_OPT )                            ///< SIMD optimization for IBC
 #if ENABLE_SIMD_OPT_BUFFER
 #define ENABLE_SIMD_OPT_BCW                               1                                                 ///< SIMD optimization for Bcw
 #endif
