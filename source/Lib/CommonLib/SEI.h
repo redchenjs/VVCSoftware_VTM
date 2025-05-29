@@ -1853,8 +1853,13 @@ public:
   std::vector<uint32_t> m_regionWidthInUnitsMinus1;
   std::vector<uint32_t> m_regionHeightInUnitsMinus1;
   std::vector<uint32_t> m_resamplingRatioIdx;
+#if JVET_AL0324_AL0070_PRI_SEI
+  std::vector<uint32_t> m_targetRegionTopLeftInUnitsX;
+  std::vector<uint32_t> m_targetRegionTopLeftInUnitsY;
+#else
   std::vector<uint32_t> m_targetRegionTopLeftX;
   std::vector<uint32_t> m_targetRegionTopLeftY;
+#endif
   std::vector<uint32_t> m_regionLayerId;
   std::vector<uint8_t>  m_regionIsALayerFlag;
 };

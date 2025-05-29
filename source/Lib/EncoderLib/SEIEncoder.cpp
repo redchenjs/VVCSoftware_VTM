@@ -2264,8 +2264,13 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
   sei->m_regionWidthInUnitsMinus1.resize(sei->m_numRegionsMinus1 + 1);
   sei->m_regionHeightInUnitsMinus1.resize(sei->m_numRegionsMinus1 + 1);
   sei->m_resamplingRatioIdx.resize(sei->m_numRegionsMinus1 + 1);
+#if JVET_AL0324_AL0070_PRI_SEI
+  sei->m_targetRegionTopLeftInUnitsX.resize(sei->m_numRegionsMinus1 + 1);
+  sei->m_targetRegionTopLeftInUnitsY.resize(sei->m_numRegionsMinus1 + 1);
+#else
   sei->m_targetRegionTopLeftX.resize(sei->m_numRegionsMinus1 + 1);
   sei->m_targetRegionTopLeftY.resize(sei->m_numRegionsMinus1 + 1);
+#endif
   for (uint32_t i = 0; i <= sei->m_numRegionsMinus1; i++)
   {
     sei->m_regionId[i] = m_pcCfg->getPriSEIRegionId(i);
@@ -2294,8 +2299,13 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
       sei->m_regionHeightInUnitsMinus1[i] = 0;
     }
     sei->m_resamplingRatioIdx[i] = m_pcCfg->getPriSEIResamplingRatioIdx(i);
+#if JVET_AL0324_AL0070_PRI_SEI
+    sei->m_targetRegionTopLeftInUnitsX[i] = m_pcCfg->getPriSEITargetRegionTopLeftInUnitsX(i);
+    sei->m_targetRegionTopLeftInUnitsY[i] = m_pcCfg->getPriSEITargetRegionTopLeftInUnitsY(i);
+#else
     sei->m_targetRegionTopLeftX[i] = m_pcCfg->getPriSEITargetRegionTopLeftX(i);
     sei->m_targetRegionTopLeftY[i] = m_pcCfg->getPriSEITargetRegionTopLeftY(i);
+#endif
   }
 }
 #endif

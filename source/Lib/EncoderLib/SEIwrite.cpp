@@ -3018,8 +3018,13 @@ void SEIWriter::xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei)
       }
       if (sei.m_targetPicParamsPresentFlag)
       {
+#if JVET_AL0324_AL0070_PRI_SEI
+        xWriteCode(sei.m_targetRegionTopLeftInUnitsX[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_in_units_x[i]");
+        xWriteCode(sei.m_targetRegionTopLeftInUnitsY[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_in_units_y[i]");
+#else
         xWriteCode(sei.m_targetRegionTopLeftX[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_x[i]");
         xWriteCode(sei.m_targetRegionTopLeftY[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_y[i]");
+#endif
       }
     }
   }
