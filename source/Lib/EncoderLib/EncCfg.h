@@ -859,6 +859,11 @@ protected:
   uint8_t   m_fgcSEIIntensityIntervalLowerBound   [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES];
   uint8_t   m_fgcSEIIntensityIntervalUpperBound   [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES];
   uint32_t  m_fgcSEICompModelValue                [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES][MAX_NUM_MODEL_VALUES];
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  bool      m_fgcSEISpatialResolutionPresentFlag;
+  int       m_fgcSEIPicWidthInLumaSamples;
+  int       m_fgcSEIPicHeightInLumaSamples;
+#endif
 // cll SEI
   bool      m_cllSEIEnabled;
   uint16_t  m_cllSEIMaxContentLevel;
@@ -2708,6 +2713,14 @@ public:
   uint8_t   getFGCSEIIntensityIntervalUpperBound(int index, int ctr)            { return m_fgcSEIIntensityIntervalUpperBound[index][ctr]; }
   void      setFGCSEICompModelValue             (uint32_t v, int index, int ctr, int modelCtr)  { m_fgcSEICompModelValue[index][ctr][modelCtr] = v; }
   uint32_t  getFGCSEICompModelValue             (int index, int ctr, int modelCtr)              { return m_fgcSEICompModelValue[index][ctr][modelCtr]; }
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  void      setFGCSEISpatialResolutionPresentFlag(bool b)                       { m_fgcSEISpatialResolutionPresentFlag = b; }
+  bool      getFGCSEISpatialResolutionPresentFlag()                             { return m_fgcSEISpatialResolutionPresentFlag; }
+  void      setFGCSEIPicWidthInLumaSamples(int w)                               { m_fgcSEIPicWidthInLumaSamples = w; }
+  int       getFGCSEIPicWidthInLumaSamples()                                    { return m_fgcSEIPicWidthInLumaSamples; }
+  void      setFGCSEIPicHeightInLumaSamples(int w)                              { m_fgcSEIPicHeightInLumaSamples = w; }
+  int       getFGCSEIPicHeightInLumaSamples()                                   { return m_fgcSEIPicHeightInLumaSamples; }
+#endif
   // cll SEI
   void  setCLLSEIEnabled(bool b)                                     { m_cllSEIEnabled = b; }
   bool  getCLLSEIEnabled()                                           { return m_cllSEIEnabled; }

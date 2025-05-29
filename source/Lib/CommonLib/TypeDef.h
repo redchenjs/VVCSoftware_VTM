@@ -68,6 +68,8 @@
 
 #define JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG           1 // Signal flags for substreams to indicate substream dependency
 
+#define JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION            1 // add fg_pic_width_in_luma_samples and fg_pic_height_in_luma_samples to the extension of FGC SEI
+
 //########### place macros to be be kept below this line ###############
 
 #define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1

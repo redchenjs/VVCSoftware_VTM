@@ -143,6 +143,9 @@ protected:
   void sei_read_svlc(std::ostream *pOS,                int&  ruiCode, const char *pSymbolName);
   void sei_read_flag(std::ostream *pOS,                uint32_t& ruiCode, const char *pSymbolName);
   void sei_read_string(std::ostream* os, std::string& code, const char* symbolName);
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  bool xPayloadExtensionPresent();
+#endif
 
 protected:
   HRD m_nestedHrd;

@@ -1581,6 +1581,20 @@ void SEIWriter::xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacterist
     } // for c
     xWriteFlag(sei.m_filmGrainCharacteristicsPersistenceFlag, "fg_characteristics_persistence_flag");
   } // cancel flag
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  if (sei.m_spatialResolutionPresentFlag)
+  {
+    // SEI payload extension bits
+    xWriteFlag(sei.m_spatialResolutionPresentFlag,            "fg_spatialresolution_present_flag");
+    xWriteUvlc(sei.m_picWidthInLumaSamples,                   "fg_pic_width_in_luma_samples");
+    xWriteUvlc(sei.m_picHeightInLumaSamples,                  "fg_pic_height_in_luma_samples");
+    xWriteFlag(1,                                             "payload_bit_equal_to_one");
+    while (!isByteAligned())
+    {
+      xWriteFlag(0,                                           "payload_bit_equal_to_zero");
+    }
+  }
+#endif
 }
 
 void SEIWriter::xWriteSEIContentLightLevelInfo(const SEIContentLightLevelInfo& sei)

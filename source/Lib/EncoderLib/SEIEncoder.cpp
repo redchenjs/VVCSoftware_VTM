@@ -1254,6 +1254,11 @@ void SEIEncoder::initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *se
       }
     }
   }
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  seiFilmGrain->m_spatialResolutionPresentFlag = m_pcCfg->getFGCSEISpatialResolutionPresentFlag();
+  seiFilmGrain->m_picWidthInLumaSamples        = m_pcCfg->getFGCSEIPicWidthInLumaSamples();
+  seiFilmGrain->m_picHeightInLumaSamples       = m_pcCfg->getFGCSEIPicHeightInLumaSamples();
+#endif
 }
 
 void SEIEncoder::initSEIMasteringDisplayColourVolume(SEIMasteringDisplayColourVolume *seiMDCV)
