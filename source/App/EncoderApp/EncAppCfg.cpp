@@ -2298,6 +2298,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationPrompt", m_nnPostFilterSEIActivationPrompt, std::string(""), "Specifies the text string prompt used as input for the target NNPF");
 #endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+    opts.addOptions()("SEINNPostFilterActivationSelectedInputFlag", m_nnPostFilterSEIActivationSelectedInputFlag, false, "Specifies whether nnpfa_num_input_pic_shift is written to the bitstream");
+#endif
     opts.addOptions()("SEINNPostFilterActivationNumInputPicShift", m_nnPostFilterSEIActivationNumInputPicShift, 0u, "specifies the number of input pictures shift in the list of candidate input pictures to get the final input pictures for the target NNPF");
 #endif
   }
@@ -4041,6 +4044,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
     CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+    if (!NNPFAFound && m_nnPostFilterSEIActivationEnabled && m_nnPostFilterSEIActivationSelectedInputFlag)
+    {
+      m_nnPostFilterSEIActivationSelectedInputFlag = false;
+      msg(WARNING, "\nWarning: Resetting SEINNPostFilterActivationSelectedInputFlag to 0 (it shall be zero when NNPFA SEI is not present in PON SEI)\n");
+    }
+#endif
     // The following code generares sub-chain indices for conformance checking.
     uint32_t numProcStgs = m_poSEINumMinus2 + 2;
     std::vector<uint32_t> seiTypeIdx;
@@ -4083,6 +4093,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
   }
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  else if (m_nnPostFilterSEIActivationEnabled && m_nnPostFilterSEIActivationSelectedInputFlag)
+  {
+    m_nnPostFilterSEIActivationSelectedInputFlag = false;
+    msg(WARNING, "\nWarning: Resetting SEINNPostFilterActivationSelectedInputFlag to 0 (it shall be zero when NNPFA SEI is not present in PON SEI)\n");
+  }
+#endif
 
   if (m_postFilterHintSEIEnabled)
   {

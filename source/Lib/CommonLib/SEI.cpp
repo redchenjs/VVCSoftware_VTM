@@ -1120,6 +1120,9 @@ SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   m_prompt = sei.m_prompt;
 #endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  m_selectedInputFlag = sei.m_selectedInputFlag;
+#endif
   m_numInputPicShift = sei.m_numInputPicShift;
 #endif 
 }

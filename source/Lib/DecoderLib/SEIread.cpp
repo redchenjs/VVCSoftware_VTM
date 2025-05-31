@@ -3677,8 +3677,18 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
       }
 #endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfa_selected_input_flag");
+      sei.m_selectedInputFlag = val;
+      if (sei.m_selectedInputFlag)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfa_num_input_pic_shift");
+        sei.m_numInputPicShift = val;
+      }
+#else
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfa_num_input_pic_shift");
       sei.m_numInputPicShift = val;
+#endif
 #if JVET_AJ0104_NNPFA_PROMPT_UPDATE||JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
     }
 #endif 

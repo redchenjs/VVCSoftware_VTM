@@ -795,6 +795,9 @@ protected:
   std::string             m_nnPostFilterSEIActivationPrompt;
 #endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  bool                    m_nnPostFilterSEIActivationSelectedInputFlag;
+#endif
   uint32_t                m_nnPostFilterSEIActivationNumInputPicShift;
 #endif
 
@@ -2344,6 +2347,10 @@ public:
   std::string getNnPostFilterSEIActivationPrompt() const                                                                { return m_nnPostFilterSEIActivationPrompt; }
 #endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  void        setNnPostFilterSEIActivationSelectedInputFlag(uint32_t selectedInputFlag)                                 { m_nnPostFilterSEIActivationSelectedInputFlag = selectedInputFlag; }
+  bool        getNnPostFilterSEIActivationSelectedInputFlag() const                                                     { return m_nnPostFilterSEIActivationSelectedInputFlag; }
+#endif 
   void        setNnPostFilterSEIActivationNumInputPicShift(uint32_t numInputPicShift)                                   { m_nnPostFilterSEIActivationNumInputPicShift = numInputPicShift; }
   uint32_t    getNnPostFilterSEIActivationNumInputPicShift() const                                                      { return m_nnPostFilterSEIActivationNumInputPicShift; }
 #endif 
