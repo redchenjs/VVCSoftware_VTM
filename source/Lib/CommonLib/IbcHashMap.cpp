@@ -51,7 +51,6 @@ IbcHashMap::IbcHashMap()
 {
   m_picWidth  = 0;
   m_picHeight = 0;
-  m_pos2Hash  = nullptr;
 
   m_computeCrc32c = xxComputeCrc32c16bit;
 
@@ -76,26 +75,12 @@ void IbcHashMap::init(const int picWidth, const int picHeight)
 
   m_picWidth = picWidth;
   m_picHeight = picHeight;
-  m_pos2Hash = new unsigned int*[m_picHeight];
-  m_pos2Hash[0] = new unsigned int[m_picWidth * m_picHeight];
-  for (int n = 1; n < m_picHeight; n++)
-  {
-    m_pos2Hash[n] = m_pos2Hash[n - 1] + m_picWidth;
-  }
+  m_pos2Hash.resize(m_picWidth * m_picHeight);
+  m_pos2HashStride = m_picWidth;
 }
 
-void IbcHashMap::destroy()
-{
-  if (m_pos2Hash != nullptr)
-  {
-    if (m_pos2Hash[0] != nullptr)
-    {
-      delete[] m_pos2Hash[0];
-    }
-    delete[] m_pos2Hash;
-  }
-  m_pos2Hash = nullptr;
-}
+void IbcHashMap::destroy() { std::vector<unsigned int>().swap(m_pos2Hash); }
+
 ////////////////////////////////////////////////////////
 // CRC32C calculation in C code, same results as SSE 4.2's implementation
 static const uint32_t crc32Table[256] = {
@@ -222,7 +207,7 @@ void IbcHashMap::xxBuildPicHashMap(const PelUnitBuf& pic)
     for (pos.x = 0; pos.x + MIN_PU_SIZE <= pic.Y().width; pos.x++)
     {
       // 0x1FF is just an initial value
-      unsigned int hashValue = 0x1FF;
+      HashValue hashValue = 0x1FF;
 
       // luma part
       hashValue = xxCalcBlockHash(&pelY[pos.x], pic.Y().stride, MIN_PU_SIZE, MIN_PU_SIZE, hashValue);
@@ -236,15 +221,17 @@ void IbcHashMap::xxBuildPicHashMap(const PelUnitBuf& pic)
       }
 
       // hash table
-      m_hash2Pos[hashValue].push_back(pos);
-      m_pos2Hash[pos.y][pos.x] = hashValue;
+      m_hashPos.push_back(std::make_pair(hashValue, pos));
+      m_pos2Hash[pos.y * m_pos2HashStride + pos.x] = hashValue;
     }
   }
+
+  std::stable_sort(m_hashPos.begin(), m_hashPos.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
 }
 
 void IbcHashMap::rebuildPicHashMap(const PelUnitBuf& pic)
 {
-  m_hash2Pos.clear();
+  m_hashPos.clear();
 
   switch (pic.chromaFormat)
   {
@@ -272,30 +259,32 @@ bool IbcHashMap::ibcHashMatch(const Area& lumaArea, std::vector<Position>& cand,
 
   // find the block with least candidates
   size_t minSize = MAX_UINT;
-  unsigned int targetHashOneBlock = 0;
+  HashValue targetHashOneBlock = 0;
   Position targetBlockOffsetInCu(0, 0);
+  // Find 4x4 block with fewest matches
   for (SizeType y = 0; y < lumaArea.height && minSize > 1; y += MIN_PU_SIZE)
   {
     for (SizeType x = 0; x < lumaArea.width && minSize > 1; x += MIN_PU_SIZE)
     {
-      unsigned int hash = m_pos2Hash[lumaArea.pos().y + y][lumaArea.pos().x + x];
-      if (m_hash2Pos[hash].size() < minSize)
+      HashValue hash = m_pos2Hash[(lumaArea.pos().y + y) * m_pos2HashStride + lumaArea.pos().x + x];
+      if (getNumPositions(hash) < minSize)
       {
-        minSize = m_hash2Pos[hash].size();
+        minSize            = getNumPositions(hash);
         targetHashOneBlock = hash;
         targetBlockOffsetInCu.repositionTo(Position(x, y));
       }
     }
   }
 
-  if (m_hash2Pos[targetHashOneBlock].size() > 1)
+  if (getNumPositions(targetHashOneBlock) > 1)
   {
-    std::vector<Position>& candOneBlock = m_hash2Pos[targetHashOneBlock];
+    auto [first, last] = getPositions(targetHashOneBlock);
 
     // check whether whole block match
-    for (std::vector<Position>::iterator refBlockPos = candOneBlock.begin(); refBlockPos != candOneBlock.end(); refBlockPos++)
+    for (auto it = first; it != last; it++)
     {
-      Position topLeft = refBlockPos->offset(-targetBlockOffsetInCu.x, -targetBlockOffsetInCu.y);
+      auto     refBlockPos     = it->second;
+      Position topLeft         = refBlockPos.offset(-targetBlockOffsetInCu.x, -targetBlockOffsetInCu.y);
       Position bottomRight = topLeft.offset(lumaArea.width - 1, lumaArea.height - 1);
       bool wholeBlockMatch = true;
       if (lumaArea.width > MIN_PU_SIZE || lumaArea.height > MIN_PU_SIZE)
@@ -310,13 +299,14 @@ bool IbcHashMap::ibcHashMatch(const Area& lumaArea, std::vector<Position>& cand,
           for (SizeType x = 0; x < lumaArea.width && wholeBlockMatch; x += MIN_PU_SIZE)
           {
             // whether the reference block and current block has the same hash
-            wholeBlockMatch &= (m_pos2Hash[lumaArea.pos().y + y][lumaArea.pos().x + x] == m_pos2Hash[topLeft.y + y][topLeft.x + x]);
+            wholeBlockMatch &= (m_pos2Hash[(lumaArea.pos().y + y) * m_pos2HashStride + lumaArea.pos().x + x]
+                                == m_pos2Hash[(topLeft.y + y) * m_pos2HashStride + topLeft.x + x]);
           }
         }
       }
       else
       {
-        CHECK(topLeft != *refBlockPos, "4x4 target block should not have offset!");
+        CHECK(topLeft != refBlockPos, "4x4 target block should not have offset!");
         if (abs(topLeft.x - lumaArea.x) > searchRange4SmallBlk || abs(topLeft.y - lumaArea.y) > searchRange4SmallBlk
             || !cs.isDecomp(bottomRight, ChannelType::LUMA))
         {
@@ -341,13 +331,14 @@ int IbcHashMap::getHashHitRatio(const Area& lumaArea)
 {
   int maxX = std::min((int)(lumaArea.x + lumaArea.width), m_picWidth);
   int maxY = std::min((int)(lumaArea.y + lumaArea.height), m_picHeight);
-  int hit = 0, total = 0;
+  int hit   = 0;
+  int total = 0;
   for (int y = lumaArea.y; y < maxY; y += MIN_PU_SIZE)
   {
     for (int x = lumaArea.x; x < maxX; x += MIN_PU_SIZE)
     {
-      const unsigned int hash = m_pos2Hash[y][x];
-      hit += (m_hash2Pos[hash].size() > 1);
+      const HashValue hash = m_pos2Hash[y * m_pos2HashStride + x];
+      hit += (getNumPositions(hash) > 1);
       total++;
     }
   }
@@ -357,26 +348,28 @@ int IbcHashMap::getHashHitRatio(const Area& lumaArea)
 int IbcHashMap::calHashBlkMatchPerc(const Area& lumaArea)
 {
   int maxX = std::min((int)(lumaArea.x + lumaArea.width), m_picWidth);
-  int maxY = std::min((int)(lumaArea.y + lumaArea.height), m_picHeight);
-  int          maxUsage[100];
-  unsigned int mostSelHash[100];
+  int maxY = std::min((int) (lumaArea.y + lumaArea.height), m_picHeight);
 
   static constexpr int numExcludedHashValue = 36;
 
-  for (int i = 0; i < numExcludedHashValue; i++)
-  {
-    maxUsage[i] = 0;
-    mostSelHash[i] = 0;
-  }
+  std::array<int, numExcludedHashValue>          maxUsage;
+  std::array<unsigned int, numExcludedHashValue> mostSelHash;
 
-  for (std::unordered_map<unsigned int, std::vector<Position>>::iterator it = m_hash2Pos.begin(); it != m_hash2Pos.end(); ++it)
-  {
-    unsigned int hash = it->first;
-    int usage = (int)it->second.size();
-    assert(usage == m_hash2Pos[hash].size());
+  maxUsage.fill(0);
+  mostSelHash.fill(0);
 
-    int insertPos = -1;
-    for (insertPos = 0; insertPos < numExcludedHashValue; insertPos++)
+  int k = 0;
+  while (k < m_hashPos.size())
+  {
+    HashValue hash  = m_hashPos[k].first;
+    int       usage = 1;
+    while (k + usage < m_hashPos.size() && m_hashPos[k + usage].first == hash)
+    {
+      usage++;
+    }
+
+    int insertPos = 0;
+    for (; insertPos < numExcludedHashValue; insertPos++)
     {
       if (usage > maxUsage[insertPos])
       {
@@ -387,7 +380,7 @@ int IbcHashMap::calHashBlkMatchPerc(const Area& lumaArea)
 
     if (insertPos < numExcludedHashValue)
     {
-      for (int i = (numExcludedHashValue - 1); i >= (insertPos + 1); i--)
+      for (int i = numExcludedHashValue - 1; i > insertPos; i--)
       {
         maxUsage[i] = maxUsage[i - 1];
         mostSelHash[i] = mostSelHash[i - 1];
@@ -395,14 +388,17 @@ int IbcHashMap::calHashBlkMatchPerc(const Area& lumaArea)
       maxUsage[insertPos] = usage;
       mostSelHash[insertPos] = hash;
     }
+
+    k += usage;
   }
 
-  int hit = 0, total = 0;
+  int hit   = 0;
+  int total = 0;
   for (int y = lumaArea.y; y < maxY; y += MIN_PU_SIZE)
   {
     for (int x = lumaArea.x; x < maxX; x += MIN_PU_SIZE)
     {
-      unsigned int hash = m_pos2Hash[y][x];
+      HashValue hash = m_pos2Hash[y * m_pos2HashStride + x];
 
       bool excludedHash = false;
       for (int i = 0; i < numExcludedHashValue && !excludedHash; i++)
@@ -418,7 +414,7 @@ int IbcHashMap::calHashBlkMatchPerc(const Area& lumaArea)
         continue;
       }
 
-      hit += (m_hash2Pos[hash].size() > 1);
+      hit += (getNumPositions(hash) > 1);
       total++;
     }
   }
