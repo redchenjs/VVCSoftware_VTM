@@ -6017,6 +6017,14 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{false} &
   Specifies the nnpfc_absent_input_pic_zero_flag of the \emph{i}-th neural network post-filter.
   \\
+  \Option{SEINNPFCInbandSeedFlag\emph{i}} &
+  \Default{false} &
+  Specifies the nnpfc_inband_seed_flag of the \emph{i}-th neural network post-filter.
+  \\
+  \Option{SEINNPFCSeed\emph{i}} &
+  \Default{0} &
+  Indicates the seed value used as input for the \emph{i}-th neural network post-filter.
+  \\
 \end{OptionTableNoShorthand}
 
 \begin{OptionTableNoShorthand}{Neural network post-filter activation}{tab:sei-nn-post-filter-activation}
@@ -6067,6 +6075,14 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Option{SEINNPostFilterActivationSelectedInputFlag} &
   \Default{0} &
   Specifies whether input pic shift is present or not.
+  \\
+  \Option{SEINNPostFilterActivationSeedUpdateFlag} &
+  \Default{false} &
+  Specifies whether seed update is present or not.
+  \\
+  \Option{SEINNPostFilterActivationSeed} &
+  \Default{0} &
+  Specifies updated seed, if present.
   \\
   \Option{SEINNPostFilterActivationNumInputPicShift} &
   \Default{0} &

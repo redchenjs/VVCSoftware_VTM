@@ -1977,6 +1977,16 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteString(sei.m_prompt, "nnpfc_prompt");
       }
     }
+#if JVET_AK0326_NNPF_SEED
+    if ((sei.m_auxInpIdc & 4) > 0)
+    {
+      xWriteFlag(sei.m_inbandSeedFlag, "nnpfc_inband_seed_flag");
+      if (sei.m_inbandSeedFlag)
+      {
+        xWriteCode(sei.m_seed, 16, "nnpfc_seed");
+      }
+    }
+#endif
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     if (sei.m_inpFormatIdc == 1)
     {
@@ -2088,6 +2098,12 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteFlag(sei.m_applicationPurposeTagUriPresentFlag, "nnpfc_application_purpose_tag_uri_present_flag");
         if ( sei.m_applicationPurposeTagUriPresentFlag )
         {
+#if JVET_AI0070_BYTE_ALIGNMENT
+          while (!isByteAligned())
+          {
+            xWriteFlag(0, "nnpfc_metadata_alignment_zero_bit");
+          }
+#endif
           xWriteString(sei.m_applicationPurposeTagUri, "nnpfc_application_purpose_tag_uri"); 
         }
       }
@@ -2146,6 +2162,13 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
         xWriteFlag(0, "nnpfa_alignment_zero_bit");
       }
       xWriteString(sei.m_prompt, "nnpfa_prompt");
+    }
+#endif
+#if JVET_AK0326_NNPF_SEED
+    xWriteFlag(sei.m_seedUpdateFlag, "nnpfa_seed_update_flag");
+    if (sei.m_seedUpdateFlag)
+    {
+      xWriteCode(sei.m_seed, 16, "nnpfa_seed");
     }
 #endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
