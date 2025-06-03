@@ -1764,6 +1764,17 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       }
     }
 
+#if JVET_AK0326_NNPF_SEED
+    if ((sei->m_auxInpIdc & 4) > 0)
+    {
+      sei->m_inbandSeedFlag = m_pcCfg->getNNPostFilterSEICharacteristicsInbandSeedFlag(filterIdx);
+      if (sei->m_inbandSeedFlag)
+      {
+        sei->m_seed = m_pcCfg->getNNPostFilterSEICharacteristicsSeed(filterIdx);
+      }
+    }
+#endif
+
     sei->m_outFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutFormatIdc(filterIdx);
     CHECK(sei->m_outFormatIdc > 255, "The value of nnpfc_out_format_idc shall be in the range of 0 to 255");
     if (sei->m_outFormatIdc == 1)
@@ -1888,6 +1899,13 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
     if (sei->m_promptUpdateFlag)
     {
       sei->m_prompt = m_pcCfg->getNnPostFilterSEIActivationPrompt();
+    }
+#endif
+#if JVET_AK0326_NNPF_SEED
+    sei->m_seedUpdateFlag = m_pcCfg->getNnPostFilterSEIActivationSeedUpdateFlag();
+    if (sei->m_seedUpdateFlag)
+    {
+      sei->m_seed = m_pcCfg->getNnPostFilterSEIActivationSeed();
     }
 #endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT

@@ -1388,6 +1388,13 @@ void EncApp::xInitLibCfg( int layerIdx )
       m_cEncLib.setNNPostFilterSEICharacteristicsForMachineAnalysisIdc   ( m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsUriTag                  ( m_nnPostFilterSEICharacteristicsUriTag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsUri                     ( m_nnPostFilterSEICharacteristicsUri[i], i);
+#if JVET_AK0326_NNPF_SEED
+      m_cEncLib.setNNPostFilterSEICharacteristicsInbandSeedFlag          ( m_nnPostFilterSEICharacteristicsInbandSeedFlag[i], i);
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsInbandSeedFlag(i))
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsSeed                  ( m_nnPostFilterSEICharacteristicsSeed[i], i );
+      }
+#endif
     }
     if (m_cEncLib.getNNPostFilterSEICharacteristicsModeIdc(i) == POST_FILTER_MODE::ISO_IEC_15938_17)
     {
@@ -1423,6 +1430,13 @@ void EncApp::xInitLibCfg( int layerIdx )
 #if JVET_AJ0104_NNPFA_PROMPT_UPDATE
   m_cEncLib.setNnPostFilterSEIActivationPromptUpdateFlag         (m_nnPostFilterSEIActivationPromptUpdateFlag);
   m_cEncLib.setNnPostFilterSEIActivationPrompt                   (m_nnPostFilterSEIActivationPrompt);
+#endif
+#if JVET_AK0326_NNPF_SEED
+  m_cEncLib.setNnPostFilterSEIActivationSeedUpdateFlag           (m_nnPostFilterSEIActivationSeedUpdateFlag);
+  if (m_cEncLib.getNnPostFilterSEIActivationSeedUpdateFlag())
+  {
+    m_cEncLib.setNnPostFilterSEIActivationSeed                   (m_nnPostFilterSEIActivationSeed);
+  }
 #endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
 #if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
