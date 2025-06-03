@@ -6017,6 +6017,14 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{false} &
   Specifies the nnpfc_absent_input_pic_zero_flag of the \emph{i}-th neural network post-filter.
   \\
+  \Option{SEINNPFCInbandSeedFlag\emph{i}} &
+  \Default{false} &
+  Specifies the nnpfc_inband_seed_flag of the \emph{i}-th neural network post-filter.
+  \\
+  \Option{SEINNPFCSeed\emph{i}} &
+  \Default{0} &
+  Indicates the seed value used as input for the \emph{i}-th neural network post-filter.
+  \\
 \end{OptionTableNoShorthand}
 
 \begin{OptionTableNoShorthand}{Neural network post-filter activation}{tab:sei-nn-post-filter-activation}
@@ -6063,6 +6071,18 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Option{SEINNPostFilterActivationPrompt} &
   \Default{""} &
   Specifies updated input prompt, if present.
+  \\
+  \Option{SEINNPostFilterActivationSelectedInputFlag} &
+  \Default{0} &
+  Specifies whether input pic shift is present or not.
+  \\
+  \Option{SEINNPostFilterActivationSeedUpdateFlag} &
+  \Default{false} &
+  Specifies whether seed update is present or not.
+  \\
+  \Option{SEINNPostFilterActivationSeed} &
+  \Default{0} &
+  Specifies updated seed, if present.
   \\
   \Option{SEINNPostFilterActivationNumInputPicShift} &
   \Default{0} &
@@ -6834,13 +6854,13 @@ An example file can be found in cfg/sei_vui/object_mask_infos/intra/mask_info_0.
   \Default{""} &
   Specifies a list of resampling ration indices for the regions.
   \\
-  \Option{SEIPRITargetRegionTopLeftX} &
+  \Option{SEIPRITargetRegionTopLeftInUnitsX} &
   \Default{""} &
-  Specifies a list of horizontal top left postions in units of luma samples for the regions in reconstructed target picture.
+  Specifies a list of horizontal top left postions in units for the regions in reconstructed target picture.
   \\
-  \Option{SEIPRITargetRegionTopLeftY} &
+  \Option{SEIPRITargetRegionTopLeftInUnitsY} &
   \Default{""} &
-  Specifies a list of vertical top left postions in units of luma samples for the regions in reconstructed target picture.
+  Specifies a list of vertical top left postions in units for the regions in reconstructed target picture.
   \\
 \end{OptionTableNoShorthand}
 

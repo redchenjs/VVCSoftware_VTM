@@ -1581,6 +1581,20 @@ void SEIWriter::xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacterist
     } // for c
     xWriteFlag(sei.m_filmGrainCharacteristicsPersistenceFlag, "fg_characteristics_persistence_flag");
   } // cancel flag
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  if (sei.m_spatialResolutionPresentFlag)
+  {
+    // SEI payload extension bits
+    xWriteFlag(sei.m_spatialResolutionPresentFlag,            "fg_spatialresolution_present_flag");
+    xWriteUvlc(sei.m_picWidthInLumaSamples,                   "fg_pic_width_in_luma_samples");
+    xWriteUvlc(sei.m_picHeightInLumaSamples,                  "fg_pic_height_in_luma_samples");
+    xWriteFlag(1,                                             "payload_bit_equal_to_one");
+    while (!isByteAligned())
+    {
+      xWriteFlag(0,                                           "payload_bit_equal_to_zero");
+    }
+  }
+#endif
 }
 
 void SEIWriter::xWriteSEIContentLightLevelInfo(const SEIContentLightLevelInfo& sei)
@@ -1963,6 +1977,16 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteString(sei.m_prompt, "nnpfc_prompt");
       }
     }
+#if JVET_AK0326_NNPF_SEED
+    if ((sei.m_auxInpIdc & 4) > 0)
+    {
+      xWriteFlag(sei.m_inbandSeedFlag, "nnpfc_inband_seed_flag");
+      if (sei.m_inbandSeedFlag)
+      {
+        xWriteCode(sei.m_seed, 16, "nnpfc_seed");
+      }
+    }
+#endif
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     if (sei.m_inpFormatIdc == 1)
     {
@@ -2074,6 +2098,12 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteFlag(sei.m_applicationPurposeTagUriPresentFlag, "nnpfc_application_purpose_tag_uri_present_flag");
         if ( sei.m_applicationPurposeTagUriPresentFlag )
         {
+#if JVET_AI0070_BYTE_ALIGNMENT
+          while (!isByteAligned())
+          {
+            xWriteFlag(0, "nnpfc_metadata_alignment_zero_bit");
+          }
+#endif
           xWriteString(sei.m_applicationPurposeTagUri, "nnpfc_application_purpose_tag_uri"); 
         }
       }
@@ -2134,8 +2164,23 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
       xWriteString(sei.m_prompt, "nnpfa_prompt");
     }
 #endif
+#if JVET_AK0326_NNPF_SEED
+    xWriteFlag(sei.m_seedUpdateFlag, "nnpfa_seed_update_flag");
+    if (sei.m_seedUpdateFlag)
+    {
+      xWriteCode(sei.m_seed, 16, "nnpfa_seed");
+    }
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+    xWriteFlag(sei.m_selectedInputFlag, "nnpfa_selected_input_flag");
+    if (sei.m_selectedInputFlag)
+    {
+      xWriteUvlc((uint32_t)sei.m_numInputPicShift, "nnpfa_num_input_pic_shift");
+    }
+#else
     xWriteUvlc((uint32_t)sei.m_numInputPicShift, "nnpfa_num_input_pic_shift");
+#endif
 #endif 
 
   }
@@ -3021,8 +3066,13 @@ void SEIWriter::xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei)
       }
       if (sei.m_targetPicParamsPresentFlag)
       {
+#if JVET_AL0324_AL0070_PRI_SEI
+        xWriteCode(sei.m_targetRegionTopLeftInUnitsX[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_in_units_x[i]");
+        xWriteCode(sei.m_targetRegionTopLeftInUnitsY[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_in_units_y[i]");
+#else
         xWriteCode(sei.m_targetRegionTopLeftX[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_x[i]");
         xWriteCode(sei.m_targetRegionTopLeftY[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_y[i]");
+#endif
       }
     }
   }

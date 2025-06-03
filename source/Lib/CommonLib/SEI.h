@@ -1037,6 +1037,12 @@ public:
 
   CompModel m_compModel[MAX_NUM_COMPONENT];
   bool      m_filmGrainCharacteristicsPersistenceFlag;
+
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  bool      m_spatialResolutionPresentFlag;
+  int       m_picWidthInLumaSamples;
+  int       m_picHeightInLumaSamples;
+#endif
 };
 
 class SEIContentLightLevelInfo : public SEI
@@ -1460,6 +1466,10 @@ public:
     , m_prompt("")
     , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
+#if JVET_AK0326_NNPF_SEED
+    , m_inbandSeedFlag(false)
+    , m_seed(0)
+#endif
   {}
   SEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
 
@@ -1545,6 +1555,10 @@ public:
   std::vector<bool> m_inputPicOutputFlag;
   bool           m_absentInputPicZeroFlag;
   uint32_t       m_numInpPicsInOutputTensor;
+#if JVET_AK0326_NNPF_SEED
+  bool           m_inbandSeedFlag;
+  uint32_t       m_seed;
+#endif
 };
 
 class SEINeuralNetworkPostFilterActivation : public SEI
@@ -1562,7 +1576,14 @@ public:
     , m_promptUpdateFlag(false)
     , m_prompt("")
 #endif
+#if JVET_AK0326_NNPF_SEED
+    , m_seedUpdateFlag(false)
+    , m_seed(0)
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+    , m_selectedInputFlag(false)
+#endif
     , m_numInputPicShift(0)
 #endif 
 {}
@@ -1581,7 +1602,14 @@ public:
   bool           m_promptUpdateFlag;
   std::string    m_prompt;
 #endif
+#if JVET_AK0326_NNPF_SEED
+  bool           m_seedUpdateFlag;
+  uint32_t       m_seed;
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  bool           m_selectedInputFlag;
+#endif
   uint32_t       m_numInputPicShift;
 #endif 
 };
@@ -1853,8 +1881,13 @@ public:
   std::vector<uint32_t> m_regionWidthInUnitsMinus1;
   std::vector<uint32_t> m_regionHeightInUnitsMinus1;
   std::vector<uint32_t> m_resamplingRatioIdx;
+#if JVET_AL0324_AL0070_PRI_SEI
+  std::vector<uint32_t> m_targetRegionTopLeftInUnitsX;
+  std::vector<uint32_t> m_targetRegionTopLeftInUnitsY;
+#else
   std::vector<uint32_t> m_targetRegionTopLeftX;
   std::vector<uint32_t> m_targetRegionTopLeftY;
+#endif
   std::vector<uint32_t> m_regionLayerId;
   std::vector<uint8_t>  m_regionIsALayerFlag;
 };

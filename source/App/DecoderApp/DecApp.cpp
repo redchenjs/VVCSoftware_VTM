@@ -1184,9 +1184,31 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
           ChromaFormat  chromaFormatIdc    = sps->getChromaFormatIdc();
           if (m_upscaledOutput)
           {
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+            if (pcPic->filmGrainAfterUpscale())
+            {
+              const Window& confSps = sps->getConformanceWindow();
+              m_videoIOYuvSEIFGSFile[pcPic->layerId].write(
+                sps->getMaxPicWidthInLumaSamples(), sps->getMaxPicHeightInLumaSamples(),
+                pcPic->getDisplayBufFGUpscaled(*sps, *pcPic->cs->pps, m_upscaledOutput, sps->getChromaFormatIdc(), m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight),
+                m_outputColourSpaceConvert, m_packedYUVMode,
+                confSps.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
+                confSps.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIdc),
+                confSps.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc),
+                confSps.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIdc), ChromaFormat::UNDEFINED,
+                m_clipOutputVideoToRec709Range);
+            }
+            else
+            {
+              m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
+                *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+                m_upscaledOutput, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight);
+            }
+#else
             m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
               *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
               m_upscaledOutput, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight);
+#endif
           }
           else
           {
@@ -1425,9 +1447,31 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
             ChromaFormat  chromaFormatIdc = sps->getChromaFormatIdc();
             if (m_upscaledOutput)
             {
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+              if (pcPic->filmGrainAfterUpscale())
+              {
+                const Window& confSps = sps->getConformanceWindow();
+                m_videoIOYuvSEIFGSFile[pcPic->layerId].write(
+                  sps->getMaxPicWidthInLumaSamples(), sps->getMaxPicHeightInLumaSamples(),
+                  pcPic->getDisplayBufFGUpscaled(*sps, *pcPic->cs->pps, m_upscaledOutput, sps->getChromaFormatIdc(), m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight),
+                  m_outputColourSpaceConvert, m_packedYUVMode,
+                  confSps.getWindowLeftOffset() * SPS::getWinUnitX(chromaFormatIdc),
+                  confSps.getWindowRightOffset() * SPS::getWinUnitX(chromaFormatIdc),
+                  confSps.getWindowTopOffset() * SPS::getWinUnitY(chromaFormatIdc),
+                  confSps.getWindowBottomOffset() * SPS::getWinUnitY(chromaFormatIdc), ChromaFormat::UNDEFINED,
+                  m_clipOutputVideoToRec709Range);
+              }
+              else
+              {
+                m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
+                  *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
+                  m_upscaledOutput, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight);
+              }
+#else
               m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
                 *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
                 m_upscaledOutput, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight);
+#endif
             }
             else
             {
@@ -1880,8 +1924,13 @@ void DecApp::xOutputPackedRegionsInfo(Picture* pcPic)
       xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingRatioIdx :", sei.m_resamplingRatioIdx);
       if (sei.m_targetPicParamsPresentFlag)
       {
+#if JVET_AL0324_AL0070_PRI_SEI
+        xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftInUnitsX :", sei.m_targetRegionTopLeftInUnitsX);
+        xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftInUnitsY :", sei.m_targetRegionTopLeftInUnitsY);
+#else
         xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftX :", sei.m_targetRegionTopLeftX);
         xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftY :", sei.m_targetRegionTopLeftY);
+#endif
       }
       fclose(fp);
     }

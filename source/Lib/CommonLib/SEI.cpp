@@ -871,6 +871,11 @@ SEIFilmGrainCharacteristics::SEIFilmGrainCharacteristics(const SEIFilmGrainChara
     m_compModel[i].intensityValues = sei.m_compModel[i].intensityValues;
   }
   m_filmGrainCharacteristicsPersistenceFlag = sei.m_filmGrainCharacteristicsPersistenceFlag;
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  m_spatialResolutionPresentFlag = sei.m_spatialResolutionPresentFlag;
+  m_picWidthInLumaSamples = sei.m_picWidthInLumaSamples;
+  m_picHeightInLumaSamples = sei.m_picHeightInLumaSamples;
+#endif
 }
 
 SEIContentLightLevelInfo::SEIContentLightLevelInfo(const SEIContentLightLevelInfo& sei)
@@ -1019,6 +1024,10 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_inbandPromptFlag = sei.m_inbandPromptFlag;
   m_prompt =  sei.m_prompt;
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
+#if JVET_AK0326_NNPF_SEED
+  m_inbandSeedFlag = sei.m_inbandSeedFlag;
+  m_seed = sei.m_seed;
+#endif
 }
 
 bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetworkPostFilterCharacteristics& sei)
@@ -1086,7 +1095,13 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_inbandPromptFlag == sei.m_inbandPromptFlag  &&
   m_prompt ==  sei.m_prompt  &&
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
+#if JVET_AK0326_NNPF_SEED
+  m_payloadLength == sei.m_payloadLength &&
+  m_inbandSeedFlag == sei.m_inbandSeedFlag &&
+  m_seed == sei.m_seed;
+#else
   m_payloadLength == sei.m_payloadLength;
+#endif
 
   if (m_payloadByte && sei.m_payloadByte && m_payloadLength == sei.m_payloadLength)
   {
@@ -1114,7 +1129,14 @@ SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   m_promptUpdateFlag = sei.m_promptUpdateFlag;
   m_prompt = sei.m_prompt;
 #endif
+#if JVET_AK0326_NNPF_SEED
+  m_seedUpdateFlag = sei.m_seedUpdateFlag;
+  m_seed = sei.m_seed;
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  m_selectedInputFlag = sei.m_selectedInputFlag;
+#endif
   m_numInputPicShift = sei.m_numInputPicShift;
 #endif 
 }
@@ -1300,6 +1322,9 @@ SEIPackedRegionsInfo::SEIPackedRegionsInfo(SEIPackedRegionsInfo& sei)
   m_cancelFlag = sei.m_cancelFlag;
   m_persistenceFlag = sei.m_persistenceFlag;
   m_numRegionsMinus1 = sei.m_numRegionsMinus1;
+#if JVET_AL0324_AL0070_PRI_SEI
+  m_multilayerFlag = sei.m_multilayerFlag;
+#endif
   m_useMaxDimensionsFlag = sei.m_useMaxDimensionsFlag;
   m_log2UnitSize = sei.m_log2UnitSize;
   m_regionSizeLenMinus1 = sei.m_regionSizeLenMinus1;
@@ -1314,12 +1339,21 @@ SEIPackedRegionsInfo::SEIPackedRegionsInfo(SEIPackedRegionsInfo& sei)
   m_resamplingHeightNumMinus1 = sei.m_resamplingHeightNumMinus1;
   m_resamplingHeightDenomMinus1 = sei.m_resamplingHeightDenomMinus1;
   m_regionId = sei.m_regionId;
+#if JVET_AL0324_AL0070_PRI_SEI
+  m_regionLayerId = sei.m_regionLayerId;
+  m_regionIsALayerFlag = sei.m_regionIsALayerFlag;
+#endif
   m_regionTopLeftInUnitsX = sei.m_regionTopLeftInUnitsX;
   m_regionTopLeftInUnitsY = sei.m_regionTopLeftInUnitsY;
   m_regionWidthInUnitsMinus1 = sei.m_regionWidthInUnitsMinus1;
   m_regionHeightInUnitsMinus1 = sei.m_regionHeightInUnitsMinus1;
   m_resamplingRatioIdx = sei.m_resamplingRatioIdx;
+#if JVET_AL0324_AL0070_PRI_SEI
+  m_targetRegionTopLeftInUnitsX = sei.m_targetRegionTopLeftInUnitsX;
+  m_targetRegionTopLeftInUnitsY = sei.m_targetRegionTopLeftInUnitsY;
+#else
   m_targetRegionTopLeftX = sei.m_targetRegionTopLeftX;
   m_targetRegionTopLeftY = sei.m_targetRegionTopLeftY;
+#endif
 }
 #endif

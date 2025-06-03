@@ -56,6 +56,8 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
+#define JVET_AL0324_AL0070_PRI_SEI                        1 // JVET-AL0324 & JVET-AL0070 miscellaneous changes in PRI SEI message
+
 #define JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS              1 // JVET_AL0301: Add constraints to matrix_coeffs
 
 #define JVET_AL0123_AL0310_EOI                            1 // JVET-AL0123 & JVET-AL0310 EOI SEI signalling changes 
@@ -68,10 +70,19 @@
 
 #define JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION          1 // dsci_vss_implicit_association_mode_flag
 
+#define JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION            1 // add fg_pic_width_in_luma_samples and fg_pic_height_in_luma_samples to the extension of FGC SEI
+
+#define JVET_AK0326_NNPF_SEED                             1 // JVET-AK0326: seed value for NNPFC and NNPFA SEI messages
+
+#define JVET_AI0070_BYTE_ALIGNMENT                        1 // JVET-AI0070: byte alignment in NNPFC SEI message
+
 //########### place macros to be be kept below this line ###############
 
 #define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1
 #define JVET_AJ0114_NNPFA_NUM_PIC_SHIFT   1
+#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#define JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG   1
+#endif
 
 #ifndef JVET_AJ0151_DSC_SEI
 #define JVET_AJ0151_DSC_SEI   1                      // Digitally signed content signing and verification (requires OpenSSL v3)

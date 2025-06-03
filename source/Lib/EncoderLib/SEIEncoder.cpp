@@ -1254,6 +1254,11 @@ void SEIEncoder::initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *se
       }
     }
   }
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  seiFilmGrain->m_spatialResolutionPresentFlag = m_pcCfg->getFGCSEISpatialResolutionPresentFlag();
+  seiFilmGrain->m_picWidthInLumaSamples        = m_pcCfg->getFGCSEIPicWidthInLumaSamples();
+  seiFilmGrain->m_picHeightInLumaSamples       = m_pcCfg->getFGCSEIPicHeightInLumaSamples();
+#endif
 }
 
 void SEIEncoder::initSEIMasteringDisplayColourVolume(SEIMasteringDisplayColourVolume *seiMDCV)
@@ -1759,6 +1764,17 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       }
     }
 
+#if JVET_AK0326_NNPF_SEED
+    if ((sei->m_auxInpIdc & 4) > 0)
+    {
+      sei->m_inbandSeedFlag = m_pcCfg->getNNPostFilterSEICharacteristicsInbandSeedFlag(filterIdx);
+      if (sei->m_inbandSeedFlag)
+      {
+        sei->m_seed = m_pcCfg->getNNPostFilterSEICharacteristicsSeed(filterIdx);
+      }
+    }
+#endif
+
     sei->m_outFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutFormatIdc(filterIdx);
     CHECK(sei->m_outFormatIdc > 255, "The value of nnpfc_out_format_idc shall be in the range of 0 to 255");
     if (sei->m_outFormatIdc == 1)
@@ -1885,7 +1901,17 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
       sei->m_prompt = m_pcCfg->getNnPostFilterSEIActivationPrompt();
     }
 #endif
+#if JVET_AK0326_NNPF_SEED
+    sei->m_seedUpdateFlag = m_pcCfg->getNnPostFilterSEIActivationSeedUpdateFlag();
+    if (sei->m_seedUpdateFlag)
+    {
+      sei->m_seed = m_pcCfg->getNnPostFilterSEIActivationSeed();
+    }
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+    sei->m_selectedInputFlag = m_pcCfg->getNnPostFilterSEIActivationSelectedInputFlag();
+#endif
     sei->m_numInputPicShift = m_pcCfg->getNnPostFilterSEIActivationNumInputPicShift();
 #endif
   }
@@ -2267,8 +2293,13 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
   sei->m_regionWidthInUnitsMinus1.resize(sei->m_numRegionsMinus1 + 1);
   sei->m_regionHeightInUnitsMinus1.resize(sei->m_numRegionsMinus1 + 1);
   sei->m_resamplingRatioIdx.resize(sei->m_numRegionsMinus1 + 1);
+#if JVET_AL0324_AL0070_PRI_SEI
+  sei->m_targetRegionTopLeftInUnitsX.resize(sei->m_numRegionsMinus1 + 1);
+  sei->m_targetRegionTopLeftInUnitsY.resize(sei->m_numRegionsMinus1 + 1);
+#else
   sei->m_targetRegionTopLeftX.resize(sei->m_numRegionsMinus1 + 1);
   sei->m_targetRegionTopLeftY.resize(sei->m_numRegionsMinus1 + 1);
+#endif
   for (uint32_t i = 0; i <= sei->m_numRegionsMinus1; i++)
   {
     sei->m_regionId[i] = m_pcCfg->getPriSEIRegionId(i);
@@ -2297,8 +2328,13 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
       sei->m_regionHeightInUnitsMinus1[i] = 0;
     }
     sei->m_resamplingRatioIdx[i] = m_pcCfg->getPriSEIResamplingRatioIdx(i);
+#if JVET_AL0324_AL0070_PRI_SEI
+    sei->m_targetRegionTopLeftInUnitsX[i] = m_pcCfg->getPriSEITargetRegionTopLeftInUnitsX(i);
+    sei->m_targetRegionTopLeftInUnitsY[i] = m_pcCfg->getPriSEITargetRegionTopLeftInUnitsY(i);
+#else
     sei->m_targetRegionTopLeftX[i] = m_pcCfg->getPriSEITargetRegionTopLeftX(i);
     sei->m_targetRegionTopLeftY[i] = m_pcCfg->getPriSEITargetRegionTopLeftY(i);
+#endif
   }
 }
 #endif

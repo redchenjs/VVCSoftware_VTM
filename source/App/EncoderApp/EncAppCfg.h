@@ -850,6 +850,10 @@ protected:
   std::string           m_nnPostFilterSEICharacteristicsPrompt[MAX_NUM_NN_POST_FILTERS];
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AK0326_NNPF_SEED
+  bool                  m_nnPostFilterSEICharacteristicsInbandSeedFlag[MAX_NUM_NN_POST_FILTERS];
+  uint32_t              m_nnPostFilterSEICharacteristicsSeed[MAX_NUM_NN_POST_FILTERS];
+#endif
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
   bool                    m_nnPostFilterSEIActivationNoPrevCLVSFlag;
@@ -860,7 +864,14 @@ protected:
   bool                  m_nnPostFilterSEIActivationPromptUpdateFlag;
   std::string           m_nnPostFilterSEIActivationPrompt;
 #endif
+#if JVET_AK0326_NNPF_SEED
+  bool                  m_nnPostFilterSEIActivationSeedUpdateFlag;
+  uint32_t              m_nnPostFilterSEIActivationSeed;
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  bool                  m_nnPostFilterSEIActivationSelectedInputFlag;
+#endif
   uint32_t              m_nnPostFilterSEIActivationNumInputPicShift;
 #endif 
 
@@ -1224,6 +1235,9 @@ protected:
   bool     m_priSEICancelFlag;
   bool     m_priSEIPersistenceFlag;
   uint32_t m_priSEINumRegionsMinus1;
+#if JVET_AL0324_AL0070_PRI_SEI
+  bool     m_priSEIMultilayerFlag;
+#endif
   bool     m_priSEIUseMaxDimensionsFlag;
   uint32_t m_priSEILog2UnitSize;
   uint32_t m_priSEIRegionSizeLenMinus1;
@@ -1238,16 +1252,25 @@ protected:
   std::vector<uint32_t> m_priSEIResamplingHeightNumMinus1;
   std::vector<uint32_t> m_priSEIResamplingHeightDenomMinus1;
   std::vector<uint32_t> m_priSEIRegionId;
+#if JVET_AL0324_AL0070_PRI_SEI
+  std::vector<uint32_t> m_priSEIRegionLayerId;
+  std::vector<bool>     m_priSEIRegionIsALayerFlag;
+#endif
   std::vector<uint32_t> m_priSEIRegionTopLeftInUnitsX;
   std::vector<uint32_t> m_priSEIRegionTopLeftInUnitsY;
   std::vector<uint32_t> m_priSEIRegionWidthInUnitsMinus1;
   std::vector<uint32_t> m_priSEIRegionHeightInUnitsMinus1;
   std::vector<uint32_t> m_priSEIResamplingRatioIdx;
+#if JVET_AL0324_AL0070_PRI_SEI
+  std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsX;
+  std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsY;
+#else
   std::vector<uint32_t> m_priSEITargetRegionTopLeftX;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftY;
   bool     m_priSEIMultilayerFlag;
   std::vector<uint32_t> m_priSEIRegionLayerId;
   std::vector<bool>     m_priSEIRegionIsALayerFlag;
+#endif
 #endif
 
   // internal member functions
