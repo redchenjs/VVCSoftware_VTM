@@ -5009,6 +5009,10 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
     }
   }
 #endif
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+  sei_read_flag(pDecodedMessageOutputStream, val, "dsci_vss_implicit_association_mode_flag");
+  sei.dsciVSSImplicitAssociationModeFlag = (val!=0);
+#endif
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dsci_key_retrieval_mode_idc");
   sei.dsciKeyRetrievalModeIdc = val;
   if (sei.dsciKeyRetrievalModeIdc == 1)
