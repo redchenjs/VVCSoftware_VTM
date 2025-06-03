@@ -165,15 +165,17 @@ static const uint32_t crc32Table[256] = {
   0xBE2DA0A5L, 0x4C4623A6L, 0x5F16D052L, 0xAD7D5351L
 };
 
-uint32_t IbcHashMap::xxComputeCrc32c16bit(uint32_t crc, const Pel pel)
+uint32_t IbcHashMap::xxComputeCrc32c16bit(uint32_t crc, const Pel* pels, size_t n)
 {
-  const void *buf = &pel;
-  const uint8_t *p = (const uint8_t *)buf;
-  size_t size = 2;
-
-  while (size--)
+  for (size_t i = 0; i < n; i++)
   {
-    crc = crc32Table[(crc ^ *p++) & 0xff] ^ (crc >> 8);
+    auto   p    = reinterpret_cast<const uint8_t*>(pels + i);
+    size_t size = 2;
+
+    while (size--)
+    {
+      crc = crc32Table[(crc ^ *p++) & 0xff] ^ (crc >> 8);
+    }
   }
 
   return crc;
@@ -186,11 +188,7 @@ unsigned int IbcHashMap::xxCalcBlockHash(const Pel *pel, const ptrdiff_t stride,
 {
   for (int y = 0; y < height; y++)
   {
-    for (int x = 0; x < width; x++)
-    {
-      crc = m_computeCrc32c(crc, pel[x]);
-    }
-    pel += stride;
+    crc = m_computeCrc32c(crc, pel + y * stride, width);
   }
   return crc;
 }

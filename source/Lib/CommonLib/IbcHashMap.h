@@ -69,10 +69,10 @@ private:
   template<ChromaFormat chromaFormat>
   void    xxBuildPicHashMap(const PelUnitBuf& pic);
 
-  static  uint32_t xxComputeCrc32c16bit(uint32_t crc, const Pel pel);
+  static uint32_t xxComputeCrc32c16bit(uint32_t crc, const Pel* pels, size_t n);
 
 public:
-  uint32_t (*m_computeCrc32c) (uint32_t crc, const Pel pel);
+  uint32_t (*m_computeCrc32c)(uint32_t crc, const Pel* pels, size_t n);
 
   IbcHashMap();
   virtual ~IbcHashMap();
