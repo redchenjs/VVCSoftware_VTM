@@ -979,14 +979,14 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
           xWriteFlag(sei.m_objectMaskInfos[maskCnt].maskBoundingBoxPresentFlag, "omi_mask_bounding_box_present_flag[i][j]");
           if (sei.m_objectMaskInfos[maskCnt].maskBoundingBoxPresentFlag)
           {
-          xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskTop, 16, "omi_mask_top[i][j]");
-          xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskLeft, 16, "omi_mask_left[i][j]");
+            xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskTop, 16, "omi_mask_top[i][j]");
+            xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskLeft, 16, "omi_mask_left[i][j]");
 #if JVET_AL0067_OMI_SEI_CONSTRAINTS
-          xWriteCode((uint32_t) (sei.m_objectMaskInfos[maskCnt].maskWidth - 1), 16, "omi_mask_width_minus1[i][j]");
-          xWriteCode((uint32_t) (sei.m_objectMaskInfos[maskCnt].maskHeight - 1), 16, "omi_mask_height_minus1[i][j]");
+            xWriteCode((uint32_t) (sei.m_objectMaskInfos[maskCnt].maskWidth - 1), 16, "omi_mask_width_minus1[i][j]");
+            xWriteCode((uint32_t) (sei.m_objectMaskInfos[maskCnt].maskHeight - 1), 16, "omi_mask_height_minus1[i][j]");
 #else
-          xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskWidth, 16, "omi_mask_width[i][j]");
-          xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskHeight, 16, "omi_mask_height[i][j]");
+            xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskWidth, 16, "omi_mask_width[i][j]");
+            xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskHeight, 16, "omi_mask_height[i][j]");
 #endif
           }
           if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
