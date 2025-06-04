@@ -76,6 +76,8 @@
 
 #define JVET_AI0070_BYTE_ALIGNMENT                        1 // JVET-AI0070: byte alignment in NNPFC SEI message
 
+#define JVET_AL0056_EOI_SEI_QUANT_CONSTRAINT              1 // JVET-AL0056: On the encoder optimization information SEI message
+
 //########### place macros to be be kept below this line ###############
 
 #define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1
