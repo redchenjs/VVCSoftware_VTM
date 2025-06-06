@@ -872,6 +872,21 @@ public:
   int                   m_doTransformType;
 };
 
+#if GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+enum GREEN_METADATA_AMI_FLAGS
+{
+  UNKNOWN   = 0,
+  CANCEL    = 1,
+  GLOBAL    = 2,
+  APPROX    = 4,
+  PREPROC   = 8,
+  BACKLIGHT = 16,
+  QUALITY   = 32
+};
+#endif
+#endif
+
 class SEIGreenMetadata : public SEI
 {
 public:
@@ -903,10 +918,10 @@ public:
   int     m_xsdMetricValueWPSNR;
   int    m_xsdMetricValueWSPSNR;
 
-  bool     m_xsdMetricTypePSNR;
-  bool     m_xsdMetricTypeSSIM;
-  bool     m_xsdMetricTypeWPSNR;
-  bool     m_xsdMetricTypeWSPSNR;
+  bool     m_xsdMetricTypePSNR = false;
+  bool     m_xsdMetricTypeSSIM = false;
+  bool     m_xsdMetricTypeWPSNR = false;
+  bool     m_xsdMetricTypeWSPSNR = false;
 
   int      m_greenMetadataGranularityType = 0;
   int      m_greenMetadataExtendedRepresentation = 0;
@@ -914,6 +929,25 @@ public:
   int m_numPictures= -1;
   int m_numSeconds = -1;
   SEIComplexityMetrics m_greenComplexityMetrics;
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  uint8_t                           m_greenMetadataAMIFlags              = 0;
+  uint8_t                           m_greenMetadataAMIDisplayModel       = 0;
+  uint8_t                           m_greenMetadataAMIApproximationModel = 0;
+  uint8_t                           m_greenMetadataAMIMapNumber          = 0;
+  std::vector<uint8_t>              m_greenMetadataAMILayerId;
+  std::vector<uint8_t>              m_greenMetadataAMIOlsNumber;
+  std::vector<std::vector<uint8_t>> m_greenMetadataAMIOlsId;
+  std::vector<uint8_t>              m_greenMetadataAMIEnergyReductionRate;
+  std::vector<uint8_t>              m_greenMetadataAMIVideoQualityMetricType;
+  std::vector<uint16_t>             m_greenMetadataAMIVideoQualityLevel;
+  std::vector<uint8_t>              m_greenMetadataAMIMaxValue;
+  std::vector<uint8_t>              m_greenMetadataAMIAttenuationUseIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIAttenuationCompIdc;
+  std::vector<bool>                 m_greenMetadataAMIPreprocessingFlag;
+  std::vector<uint8_t>              m_greenMetadataAMIPreprocessingTypeIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIPreprocessingScaleIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIBacklightScalingIdc;
+#endif
 };
 
 

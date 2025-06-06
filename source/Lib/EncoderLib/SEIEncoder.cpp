@@ -260,6 +260,33 @@ void SEIEncoder::initSEIGreenMetadataInfo(SEIGreenMetadataInfo* seiGreenMetadata
       break;   //
     }
   }
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  else if (m_pcCfg->getSEIGreenMetadataType() == 2)   // Metadata for attenuation map
+  {
+    seiGreenMetadataInfo->m_greenMetadataType            = m_pcCfg->getSEIGreenMetadataType();
+    seiGreenMetadataInfo->m_greenMetadataAMIFlags        = uint8_t(m_pcCfg->getSEIGreenMetadataAMIFlags());
+    seiGreenMetadataInfo->m_greenMetadataAMIDisplayModel = uint8_t(m_pcCfg->getSEIGreenMetadataAMIDisplayModel());
+    seiGreenMetadataInfo->m_greenMetadataAMIApproximationModel =
+      uint8_t(m_pcCfg->getSEIGreenMetadataAMIApproximationModel());
+    seiGreenMetadataInfo->m_greenMetadataAMIMapNumber           = uint8_t(m_pcCfg->getSEIGreenMetadataAMIMapNumber());
+    seiGreenMetadataInfo->m_greenMetadataAMILayerId             = m_pcCfg->getSEIGreenMetadataAMILayerId();
+    seiGreenMetadataInfo->m_greenMetadataAMIOlsNumber           = m_pcCfg->getSEIGreenMetadataAMIOlsNumber();
+    seiGreenMetadataInfo->m_greenMetadataAMIOlsId               = m_pcCfg->getSEIGreenMetadataAMIOlsId();
+    seiGreenMetadataInfo->m_greenMetadataAMIEnergyReductionRate = m_pcCfg->getSEIGreenMetadataAMIEnergyReductionRate();
+    seiGreenMetadataInfo->m_greenMetadataAMIVideoQualityMetricType =
+      m_pcCfg->getSEIGreenMetadataAMIVideoQualityMetricType();
+    seiGreenMetadataInfo->m_greenMetadataAMIVideoQualityLevel  = m_pcCfg->getSEIGreenMetadataAMIVideoQualityLevel();
+    seiGreenMetadataInfo->m_greenMetadataAMIMaxValue           = m_pcCfg->getSEIGreenMetadataAMIMaxValue();
+    seiGreenMetadataInfo->m_greenMetadataAMIAttenuationUseIdc  = m_pcCfg->getSEIGreenMetadataAMIAttenuationUseIdc();
+    seiGreenMetadataInfo->m_greenMetadataAMIAttenuationCompIdc = m_pcCfg->getSEIGreenMetadataAMIAttenuationCompIdc();
+    seiGreenMetadataInfo->m_greenMetadataAMIPreprocessingFlag  = m_pcCfg->getSEIGreenMetadataAMIPreprocessingFlag();
+    seiGreenMetadataInfo->m_greenMetadataAMIPreprocessingTypeIdc =
+      m_pcCfg->getSEIGreenMetadataAMIPreprocessingTypeIdc();
+    seiGreenMetadataInfo->m_greenMetadataAMIPreprocessingScaleIdc =
+      m_pcCfg->getSEIGreenMetadataAMIPreprocessingScaleIdc();
+    seiGreenMetadataInfo->m_greenMetadataAMIBacklightScalingIdc = m_pcCfg->getSEIGreenMetadataAMIBacklightScalingIdc();
+  }
+#endif
 }
 #endif
 

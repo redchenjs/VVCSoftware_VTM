@@ -4377,6 +4377,7 @@ Specifies the type of metadata that is present in the SEI message.
 	-1 & Disabled \\
 	0 & Metadata for decoder complexity metrics \\
 	1 & Metadata enabling quality recovery after low-power encoding\\
+	2 & Metadata for display adaptation through the use of attenuation maps\\
 \end{tabular}
 \\
 \Option{SEIGreenMetadataPeriodType} &
@@ -4433,6 +4434,136 @@ Enables or disables sending of wPSNR metric.
 \Option{SEIXSDMetricTypeWSPSNR} &
 \Default{false} &
 Enables or disables sending of WS-PSNR metric.
+\\
+\Option{SEIGreenMetadataAMIFlags} &
+\Default{0} &
+Bitfield that specifies which parameters are needed to apply the attenuation map (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & Indicates that attenuation map information follows  \\
+	1 & Indicates that attenuation map information is defined globally for all the listed attenuation maps \\
+	2 & Indicates that the listed attenuation maps can be used to approximate other attenuation maps for other reduction rates \\
+	3 & Indicates that some preprocessing is required to use the listed attenuation maps \\
+	4 & Indicates that backlight scaling is required \\
+	5 & Indicates that video quality information is present \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIDisplayModel} &
+\Default{0} &
+Bitfield that specifies the display models for which the application of attenuation maps may be used (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & Attenuation maps may be used for backlit displays  \\
+	1 & Attenuation maps may be used for emissive displays  \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIApproximationModel} &
+\Default{0} &
+Specifies the model used to extrapolate the attenuation map samples for another energy reduction rate (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & Linear scaling should be used to generate additional attenuation maps  \\
+	1 & Bilinear interpolation should be used to generate additional attenuation maps \\
+	2 & Lanczos interpolation should be used to generate additional attenuation maps  \\
+	3 & Bicubic interpolation should be used to generate additional attenuation maps \\
+	4 & User defined process \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIMapNumber} &
+\Default{0} &
+Specifies the number of auxiliary pictures of type AUX_ALPHA in the CVS. It corresponds to the number of attenuation maps (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMILayerId} &
+\Default{0} &
+Specifies the identifier of the decoded layer for the attenuation map of index i (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIOlsNumber} &
+\Default{0} &
+Specifies the number of output layer sets to which the attenuation map of index i belongs (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIOlsId} &
+\Default{0} &
+Specifies the identifier of the output layer set of index j for the attenuation map of index i (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIEnergyReductionRate} &
+\Default{0} &
+Specifies the expected energy savings rate when the video is displayed after applying the attenuation map of index i (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIVideoQualityMetricType} &
+\Default{0} &
+Specifies the quality metric which was considered to inform of the reduction of the video quality due to the application of the attenuation map of index i (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & PSNR  \\
+	1 & SSIM \\
+	2 & wPSNR  \\
+	3 & WS-PSNR \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIVideoQualityLevel} &
+\Default{0} &
+Indicates the expected video quality when the video is rendered on a display after application of the attenuation map of index i (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIMaxValue} &
+\Default{0} &
+Indicates the maximum value of the attenuation map of index i (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIAttenuationUseIdc} &
+\Default{0} &
+Specifies the use of the attenuation map sample values of the decoded auxiliary picture of index i (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & The attenuation map sample values should be substracted from the associated primary picture sample values  \\
+	1 & The attenuation map sample values should be multiplied to the associated primary picture sample values \\
+	2 & User defined process  \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIAttenuationCompIdc} &
+\Default{0} &
+Specifies on which colour component(s) of the associated primary picture the attenuation map of index i should be applied (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & The luma component of the attenuation map is applied to the luma component of the associated primary picture  \\
+	1 & The luma component of the attenuation map is applied to the luma and the chroma components of the associated primary picture  \\
+	2 & The luma component of the attenuation map is applied to the three RGB components of the associated primary picture  \\
+	3 & The luma component of the attenuation map is applied to the first component of the associated primary picture  \\
+	4 & The luma component of the attenuation map is applied to the second component of the associated primary picture  \\
+	5 & The luma component of the attenuation map is applied to the third component of the associated primary picture  \\
+	6 & User defined process  \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIPreprocessingFlag} &
+\Default{0} &
+Specifies whether some pre-upsampling is to be used on the attenuation map of index i (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIPreprocessingType} &
+\Default{0} &
+Specifies the recommended type of the interpolation used to resample the attenuation map on index i (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & Bicubic interpolation should be used to resample the attenuation map sample values  \\
+	1 & Bilinear interpolation should be used to resample the attenuation map sample values   \\
+	2 & Lanczos interpolation should be used to resample the attenuation map sample values  \\
+	3 & User defined process  \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIPreprocessingScaleIdc} &
+\Default{0} &
+Specifies which scaling should be applied to the attenuation map of index i before applying it on the decoded picture (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & Scaling of $\frac{1}{255}$  \\
+	1 & User defined process  \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIBacklightScalingIdc} &
+\Default{0} &
+Specifies the process to compute the scaling factor of the backlight of transmissive pixel displays, derived from the attenuation map of index i (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & Scaling by the ratio between maximum values before and after applying the attenuation map  \\
+	1 & User defined process  \\
+\end{tabular}
 \\
 \end{OptionTableNoShorthand}
 

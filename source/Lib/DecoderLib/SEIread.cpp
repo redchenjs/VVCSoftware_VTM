@@ -1379,6 +1379,189 @@ void SEIReader::xParseSEIGreenMetadataInfo(SEIGreenMetadataInfo& sei, uint32_t p
       }
     }
     break;
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  case 2:
+    sei_read_code(pDecodedMessageOutputStream, 8, code, "green_metadata_ami_flags");
+    CHECK(code > 63, "green_metadata_ami_flags shall be in the range 0-63");
+    sei.m_greenMetadataAMIFlags = code;
+    printf("AMI FLAGS: %i\n", sei.m_greenMetadataAMIFlags);
+
+    bool greenMetadataAMICancelFlag =
+      ((sei.m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::CANCEL) == GREEN_METADATA_AMI_FLAGS::CANCEL) ? true
+                                                                                                             : false;
+    bool greenMetadataAMIGlobalFlag =
+      ((sei.m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::GLOBAL) == GREEN_METADATA_AMI_FLAGS::GLOBAL) ? true
+                                                                                                             : false;
+    bool greenMetadataAMIApproxFlag =
+      ((sei.m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::APPROX) == GREEN_METADATA_AMI_FLAGS::APPROX) ? true
+                                                                                                             : false;
+    bool greenMetadataAMIPreprocFlag =
+      ((sei.m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::PREPROC) == GREEN_METADATA_AMI_FLAGS::PREPROC) ? true
+                                                                                                               : false;
+    bool greenMetadataAMIQualityFlag =
+      ((sei.m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::QUALITY) == GREEN_METADATA_AMI_FLAGS::QUALITY) ? true
+                                                                                                               : false;
+    bool greenMetadataAMIBacklightFlag =
+      ((sei.m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::BACKLIGHT) == GREEN_METADATA_AMI_FLAGS::BACKLIGHT)
+        ? true
+        : false;
+
+    if (!greenMetadataAMICancelFlag)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_display_model");
+      CHECK(code > 3, "green_metadata_ami_display_model shall be in the range 0-3");
+      sei.m_greenMetadataAMIDisplayModel = code;
+      printf("AMI DISPLAY MODEL: %i\n", sei.m_greenMetadataAMIDisplayModel);
+
+      if (greenMetadataAMIApproxFlag)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_approximation_model");
+        CHECK(code > 4, "green_metadata_ami_approximation_model shall be in the range 0-4");
+        sei.m_greenMetadataAMIApproximationModel = code;
+        printf("AMI APPROXIMATION MODEL: %i\n", sei.m_greenMetadataAMIApproximationModel);
+      }
+      sei_read_code(pDecodedMessageOutputStream, 3, code, "green_metadata_ami_map_number");
+      CHECK(code > 7, "green_metadata_ami_map_number shall be in the range 0-7");
+      sei.m_greenMetadataAMIMapNumber = code;
+      printf("AMI MAP NUMBER: %i\n", sei.m_greenMetadataAMIMapNumber);
+
+      int totalSize         = greenMetadataAMIGlobalFlag ? 1 : sei.m_greenMetadataAMIMapNumber;
+      int energyQualitySize = sei.m_greenMetadataAMIMapNumber > 0 ? sei.m_greenMetadataAMIMapNumber : 1;
+
+      if (sei.m_greenMetadataAMIMapNumber > 0)
+      {
+        sei.m_greenMetadataAMILayerId.resize(sei.m_greenMetadataAMIMapNumber);
+        sei.m_greenMetadataAMIOlsNumber.resize(sei.m_greenMetadataAMIMapNumber);
+        sei.m_greenMetadataAMIOlsId.resize(sei.m_greenMetadataAMIMapNumber);
+
+        sei.m_greenMetadataAMIMaxValue.resize(sei.m_greenMetadataAMIMapNumber);
+        sei.m_greenMetadataAMIAttenuationUseIdc.resize(totalSize);
+        sei.m_greenMetadataAMIAttenuationCompIdc.resize(totalSize);
+        if (greenMetadataAMIPreprocFlag)
+        {
+          sei.m_greenMetadataAMIPreprocessingFlag.resize(totalSize);
+          sei.m_greenMetadataAMIPreprocessingTypeIdc.resize(totalSize);
+          sei.m_greenMetadataAMIPreprocessingScaleIdc.resize(totalSize);
+        }
+        if (greenMetadataAMIBacklightFlag)
+          sei.m_greenMetadataAMIBacklightScalingIdc.resize(totalSize);
+      }
+
+      sei.m_greenMetadataAMIEnergyReductionRate.resize(energyQualitySize);
+      if (greenMetadataAMIQualityFlag)
+      {
+        sei.m_greenMetadataAMIVideoQualityMetricType.resize(energyQualitySize);
+        sei.m_greenMetadataAMIVideoQualityLevel.resize(energyQualitySize);
+      }
+
+      int index = 0;
+      for (int i = 0; i < sei.m_greenMetadataAMIMapNumber; i++)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 8, code, "green_metadata_ami_layer_id[i]");
+        CHECK(code > 255, "green_metadata_ami_layer_id shall be in the range 0-255");
+        sei.m_greenMetadataAMILayerId[i] = code;
+        printf("AMI LAYER ID: %i\n", sei.m_greenMetadataAMILayerId[i]);
+
+        sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_ols_number[i]");
+        CHECK(code > 15, "green_metadata_ami_ols_number shall be in the range 0-15");
+        sei.m_greenMetadataAMIOlsNumber[i] = code;
+        printf("AMI OLS NUMBER: %i\n", sei.m_greenMetadataAMIOlsNumber[i]);
+
+        sei.m_greenMetadataAMIOlsId[i] = std::vector<uint8_t>();
+        sei.m_greenMetadataAMIOlsId[i].resize(sei.m_greenMetadataAMIOlsNumber[i]);
+        for (int j = 0; j < sei.m_greenMetadataAMIOlsNumber[i]; j++)
+        {
+          sei_read_code(pDecodedMessageOutputStream, 8, code, "green_metadata_ami_ols_id[i][j]");
+          CHECK(code > 255, "green_metadata_ami_ols_id shall be in the range 0-255");
+          sei.m_greenMetadataAMIOlsId[i][j] = code;
+          printf("AMI OLS ID: %i\n", sei.m_greenMetadataAMIOlsId[i][j]);
+        }
+
+        sei_read_code(pDecodedMessageOutputStream, 5, code, "green_metadata_ami_energy_reduction_rate[i]");
+        CHECK(code > 31, "green_metadata_ami_energy_reduction_rate shall be in the range 0-31");
+        sei.m_greenMetadataAMIEnergyReductionRate[i] = code;
+        printf("AMI ENERGY REDUCTION RATE: %i\n", sei.m_greenMetadataAMIEnergyReductionRate[i]);
+
+        if (greenMetadataAMIQualityFlag)
+        {
+          sei_read_code(pDecodedMessageOutputStream, 3, code, "green_metadata_ami_video_quality_metric_type[i]");
+          CHECK(code > 3, "green_metadata_ami_video_quality_metric_type shall be in the range 0-3");
+          sei.m_greenMetadataAMIVideoQualityMetricType[i] = code;
+          printf("AMI VIDEO QUALITY METRIC TYPE: %i\n", sei.m_greenMetadataAMIVideoQualityMetricType[i]);
+
+          sei_read_code(pDecodedMessageOutputStream, 16, code, "green_metadata_ami_video_quality_level[i]");
+          CHECK(code > 65535, "green_metadata_ami_video_quality_level shall be in the range 0-65535");
+          sei.m_greenMetadataAMIVideoQualityLevel[i] = code;
+          printf("AMI VIDEO QUALITY LEVEL: %i\n", sei.m_greenMetadataAMIVideoQualityLevel[i]);
+        }
+
+        sei_read_code(pDecodedMessageOutputStream, 8, code, "green_metadata_ami_max_value[i]");
+        CHECK(code > 255, "green_metadata_ami_max_value shall be in the range 0-255");
+        sei.m_greenMetadataAMIMaxValue[i] = code;
+        printf("AMI MAX VALUE: %i\n", sei.m_greenMetadataAMIMaxValue[i]);
+
+        if ((!greenMetadataAMIGlobalFlag) || (i == 0))
+        {
+          sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_attenuation_use_idc[i]");
+          CHECK(code > 2, "green_metadata_ami_attenuation_use_idc shall be in the range 0-2");
+          sei.m_greenMetadataAMIAttenuationUseIdc[i] = code;
+          printf("AMI ATTENUATION USE IDC: %i\n", sei.m_greenMetadataAMIAttenuationUseIdc[i]);
+
+          sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_attenuation_comp_idc[i]");
+          CHECK(code > 6, "green_metadata_ami_attenuation_comp_idc shall be in the range 0-6");
+          sei.m_greenMetadataAMIAttenuationCompIdc[i] = code;
+          printf("AMI ATTENUATION COMP IDC: %i\n", sei.m_greenMetadataAMIAttenuationCompIdc[i]);
+
+          if (greenMetadataAMIPreprocFlag)
+          {
+            sei_read_flag(pDecodedMessageOutputStream, code, "green_metadata_ami_preprocessing_flag[i]");
+            // CHECK( std::is_same_v< decltype((code)), bool > == true, "green_metadata_ami_preprocessing_flag shall be
+            // a boolean"); // CHD
+            sei.m_greenMetadataAMIPreprocessingFlag[i] = code;
+            printf("AMI PREPROCESSING FLAG: %i\n", int(sei.m_greenMetadataAMIPreprocessingFlag[i]));
+
+            if (sei.m_greenMetadataAMIPreprocessingFlag[i])
+            {
+              sei_read_code(pDecodedMessageOutputStream, 2, code, "green_metadata_ami_preprocessing_type_idc[i]");
+              CHECK(code > 3, "green_metadata_ami_preprocessing_type shall be in the range 0-3");
+              sei.m_greenMetadataAMIPreprocessingTypeIdc[i] = code;
+              printf("AMI PREPROCESSING TYPE IDC: %i\n", sei.m_greenMetadataAMIPreprocessingTypeIdc[i]);
+            }
+            sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_preprocessing_scale_idc[i]");
+            CHECK(code > 2, "green_metadata_ami_preprocessing_scale_idc shall be in the range 0-2");
+            sei.m_greenMetadataAMIPreprocessingScaleIdc[i] = code;
+            printf("AMI PREPROCESSING SCALE IDC: %i\n", sei.m_greenMetadataAMIPreprocessingScaleIdc[i]);
+          }
+          if (greenMetadataAMIBacklightFlag)
+          {
+            sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_backlight_scaling_idc[i]");
+            CHECK(code > 1, "green_metadata_ami_backlight_scaling_idc shall be in the range 0-1");
+            sei.m_greenMetadataAMIBacklightScalingIdc[i] = code;
+            printf("AMI BACKLIGHT SCALING IDC: %i\n", sei.m_greenMetadataAMIBacklightScalingIdc[i]);
+          }
+        }
+      }
+      if (sei.m_greenMetadataAMIMapNumber == 0)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 5, code, "green_metadata_ami_energy_reduction_rate[0]");
+        CHECK(code > 31, "green_metadata_ami_energy_reduction_rate shall be in the range 0-31");
+        sei.m_greenMetadataAMIEnergyReductionRate[0] = code;
+        printf("AMI ENERGY REDUCTION RATE 0: %i\n", sei.m_greenMetadataAMIEnergyReductionRate[0]);
+        if (greenMetadataAMIQualityFlag)
+        {
+          sei_read_code(pDecodedMessageOutputStream, 3, code, "green_metadata_ami_video_quality_metric_type[0]");
+          CHECK(code > 3, "green_metadata_ami_video_quality_metric_type shall be in the range 0-3");
+          sei.m_greenMetadataAMIVideoQualityMetricType[0] = code;
+          printf("AMI VIDEO QUALITY METRIC TYPE 0: %i\n", sei.m_greenMetadataAMIVideoQualityMetricType[0]);
+
+          sei_read_code(pDecodedMessageOutputStream, 16, code, "green_metadata_ami_video_quality_level[0]");
+          CHECK(code > 65535, "green_metadata_ami_video_quality_level shall be in the range 0-65535");
+          sei.m_greenMetadataAMIVideoQualityLevel[0] = code;
+          printf("AMI VIDEO QUALITY LEVEL 0: %i\n", sei.m_greenMetadataAMIVideoQualityLevel[0]);
+        }
+      }
+    }
+#endif
   }
 }
 

@@ -845,6 +845,22 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<bool> cfg_priSEIRegionIsALayerFlag(0, 1, 0, std::numeric_limits<uint32_t>::max());
 #endif
 
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMILayerId(0, 255, 0, 256);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIOlsNumber(0, 15, 0, 16);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIOlsId(0, 4, 0, 5);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIEnergyReductionRate(0, 31, 0, 32);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIVideoQualityMetricType(0, 7, 0, 8);
+  SMultiValueInput<double>   cfg_greenMetadataAMIVideoQualityLevel(0, 1.0, 0, 65536);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIMaxValue(0, 255, 0, 256);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIAttenuationUseIdc(0, 15, 0, 16);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIAttenuationCompIdc(0, 15, 0, 16);
+  SMultiValueInput<bool>     cfg_greenMetadataAMIPreprocessingFlag(false, true, 0, 2);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIPreprocessingTypeIdc(0, 3, 0, 4);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIPreprocessingScaleIdc(0, 255, 0, 256);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIBacklightScalingIdc(0, 15, 0, 16);
+#endif
+
 #if ENABLE_TRACING
   std::string sTracingRule;
   std::string sTracingFile;
@@ -958,6 +974,25 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIGreenMetadataExtendedRepresentation",          m_greenMetadataExtendedRepresentation,                 0, "Specifies whether reduced or extended set of complexity metrics is signelled. ")
   ("GMFA",                                            m_GMFA,                                            false, "Write output file for the Green-Metadata analyzer for decoder complexity metrics (JVET-P0085)\n")
   ("GMFAFile",                                        m_GMFAFile,                                   std::string(""), "File for the Green Metadata Bit Stream Feature Analyzer output (JVET-P0085)\n")
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  ("SEIGreenMetadataAMIFlags",                        m_greenMetadataAMIFlags,                              0u, "Specifies which parameters are needed to apply the attenuation map.")
+  ("SEIGreenMetadataAMIDisplayModel",                 m_greenMetadataAMIDisplayModel,                       0u, "Specifies the display models for which the application of attenuation maps may be used.")
+  ("SEIGreenMetadataAMIApproximationModel",           m_greenMetadataAMIApproximationModel,                 0u, "Specifies the model used to extrapolate the attenuation map samples for another energy reduction rate.")
+  ("SEIGreenMetadataAMIMapNumber",                    m_greenMetadataAMIMapNumber,                          1u, "Specifies the number of auxiliary pictures of type AUX_ALPHA in the CVS. It corresponds to the number of attenuation maps.")
+  ("SEIGreenMetadataAMILayerId",                      cfg_greenMetadataAMILayerId, cfg_greenMetadataAMILayerId,                               "Specifies the identifier of the decoded layer for the attenuation map of index i.")
+  ("SEIGreenMetadataAMIOlsNumber",                    cfg_greenMetadataAMIOlsNumber, cfg_greenMetadataAMIOlsNumber,                           "Specifies the number of output layer sets to which the attenuation map of index i belongs.")
+  ("SEIGreenMetadataAMIOlsId",                        cfg_greenMetadataAMIOlsId, cfg_greenMetadataAMIOlsId,                                   "Specifies the identifier of the output layer set of index j for the attenuation map of index i.")
+  ("SEIGreenMetadataAMIEnergyReductionRate",          cfg_greenMetadataAMIEnergyReductionRate, cfg_greenMetadataAMIEnergyReductionRate,       "Specifies the expected energy savings rate when the video is displayed after applying the attenuation map of index i.")
+  ("SEIGreenMetadataAMIVideoQualityMetricType",       cfg_greenMetadataAMIVideoQualityMetricType, cfg_greenMetadataAMIVideoQualityMetricType, "Specifies the quality metric which was considered to inform of the reduction of the video quality due to the application of the attenuation map of index i.")
+  ("SEIGreenMetadataAMIVideoQualityLevel",            cfg_greenMetadataAMIVideoQualityLevel, cfg_greenMetadataAMIVideoQualityLevel,           "Indicates the expected video quality when the video is rendered on a display after application of the attenuation map of index i.")
+  ("SEIGreenMetadataAMIMaxValue",                     cfg_greenMetadataAMIMaxValue, cfg_greenMetadataAMIMaxValue,                             "Indicates the maximum value of the attenuation map of index i.")
+  ("SEIGreenMetadataAMIAttenuationUseIdc",            cfg_greenMetadataAMIAttenuationUseIdc, cfg_greenMetadataAMIAttenuationUseIdc,           "Specifies the use of the attenuation map sample values of the decoded auxiliary picture of index i")
+  ("SEIGreenMetadataAMIAttenuationCompIdc",           cfg_greenMetadataAMIAttenuationCompIdc, cfg_greenMetadataAMIAttenuationCompIdc,         "Specifies on which colour component(s) of the associated primary picture the attenuation map of index i should be applied.")
+  ("SEIGreenMetadataAMIPreprocessingFlag",            cfg_greenMetadataAMIPreprocessingFlag, cfg_greenMetadataAMIPreprocessingFlag,           "Specifies whether some pre-upsampling is to be used on the attenuation map of index i.")
+  ("SEIGreenMetadataAMIPreprocessingTypeIdc",         cfg_greenMetadataAMIPreprocessingTypeIdc, cfg_greenMetadataAMIPreprocessingTypeIdc,     "Specifies the recommended type of the interpolation used to resample the attenuation map on index i.")
+  ("SEIGreenMetadataAMIPreprocessingScaleIdc",        cfg_greenMetadataAMIPreprocessingScaleIdc, cfg_greenMetadataAMIPreprocessingScaleIdc,   "Specifies which scaling should be applied to the attenuation map of index i before applying it on the decoded picture.")
+  ("SEIGreenMetadataAMIBacklightScalingIdc",          cfg_greenMetadataAMIBacklightScalingIdc, cfg_greenMetadataAMIBacklightScalingIdc,       "Specifies the process to compute the scaling factor of the backlight of transmissive pixel displays, derived from the attenuation map of index i.")
+#endif
 #endif
   //Field coding parameters
   ("FieldCoding",                                     m_isField,                                        false, "Signals if it's a field based coding")
@@ -3520,6 +3555,163 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_masteringDisplay.whitePoint[idx] = uint16_t((cfg_DisplayWhitePointCode.values.size() > idx) ? cfg_DisplayWhitePointCode.values[idx] : 0);
     }
   }
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  // Set SEI green metadata parameters
+  m_greenMetadataAMICancelFlag =
+    ((m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::CANCEL) == GREEN_METADATA_AMI_FLAGS::CANCEL) ? true : false;
+  m_greenMetadataAMIGlobalFlag =
+    ((m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::GLOBAL) == GREEN_METADATA_AMI_FLAGS::GLOBAL) ? true : false;
+  m_greenMetadataAMIApproxFlag =
+    ((m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::APPROX) == GREEN_METADATA_AMI_FLAGS::APPROX) ? true : false;
+  m_greenMetadataAMIPreprocFlag =
+    ((m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::PREPROC) == GREEN_METADATA_AMI_FLAGS::PREPROC) ? true : false;
+  m_greenMetadataAMIQualityFlag =
+    ((m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::QUALITY) == GREEN_METADATA_AMI_FLAGS::QUALITY) ? true : false;
+  m_greenMetadataAMIBacklightFlag =
+    ((m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::BACKLIGHT) == GREEN_METADATA_AMI_FLAGS::BACKLIGHT) ? true
+                                                                                                             : false;
+
+  if (!m_greenMetadataAMICancelFlag)
+  {
+    if (m_greenMetadataAMIMapNumber > 0)
+    {
+      CHECK(cfg_greenMetadataAMILayerId.values.size() != m_greenMetadataAMIMapNumber,
+            "Number of AMI layer ids must be equal to AMI map number.");
+      CHECK(cfg_greenMetadataAMIOlsNumber.values.size() != m_greenMetadataAMIMapNumber,
+            "Number of AMI ols must be equal to AMI map number.");
+      CHECK(cfg_greenMetadataAMIEnergyReductionRate.values.size() != m_greenMetadataAMIMapNumber,
+            "Number of AMI energy reduction rates must be equal to AMI map number.");
+      if (m_greenMetadataAMIQualityFlag)
+      {
+        CHECK(cfg_greenMetadataAMIVideoQualityMetricType.values.size() != m_greenMetadataAMIMapNumber,
+              "Number of AMI quality types must be equal to AMI map number.");
+        CHECK(cfg_greenMetadataAMIVideoQualityLevel.values.size() != m_greenMetadataAMIMapNumber,
+              "Number of AMI quality levels must be equal to AMI map number.");
+      }
+      CHECK(cfg_greenMetadataAMIMaxValue.values.size() != m_greenMetadataAMIMapNumber,
+            "Number of AMI max values must be equal to AMI map number.");
+      if (!m_greenMetadataAMIGlobalFlag)
+      {
+        CHECK(cfg_greenMetadataAMIAttenuationUseIdc.values.size() != m_greenMetadataAMIMapNumber,
+              "Number of AMI attenuation uses must be equal to AMI map number.");
+        CHECK(cfg_greenMetadataAMIAttenuationCompIdc.values.size() != m_greenMetadataAMIMapNumber,
+              "Number of AMI attenuation comp indices must be equal to AMI map number.");
+        if (m_greenMetadataAMIPreprocFlag)
+        {
+          CHECK(cfg_greenMetadataAMIPreprocessingFlag.values.size() != m_greenMetadataAMIMapNumber,
+                "Number of AMI preprocessing flags must be equal to AMI map number.");
+          CHECK(cfg_greenMetadataAMIPreprocessingTypeIdc.values.size() != m_greenMetadataAMIMapNumber,
+                "Number of AMI preprocessing types must be equal to AMI map number.");
+          CHECK(cfg_greenMetadataAMIPreprocessingScaleIdc.values.size() != m_greenMetadataAMIMapNumber,
+                "Number of AMI preprocessing scales must be equal to AMI map number.");
+        }
+        if (m_greenMetadataAMIBacklightFlag)
+          CHECK(cfg_greenMetadataAMIBacklightScalingIdc.values.size() != m_greenMetadataAMIMapNumber,
+                "Number of AMI backlight scalings must be equal to AMI map number.");
+      }
+      else
+      {
+        CHECK(cfg_greenMetadataAMIAttenuationUseIdc.values.size() != 1,
+              "Number of AMI attenuation uses must be equal to 1.");
+        CHECK(cfg_greenMetadataAMIAttenuationCompIdc.values.size() != 1,
+              "Number of AMI attenuation comp indices must be equal to 1.");
+        if (m_greenMetadataAMIPreprocFlag)
+        {
+          CHECK(cfg_greenMetadataAMIPreprocessingFlag.values.size() != 1,
+                "Number of AMI preprocessing flags must be equal to 1.");
+          CHECK(cfg_greenMetadataAMIPreprocessingTypeIdc.values.size() != 1,
+                "Number of AMI preprocessing types must be equal to 1.");
+          CHECK(cfg_greenMetadataAMIPreprocessingScaleIdc.values.size() != 1,
+                "Number of AMI preprocessing scales must be equal to 1.");
+        }
+        if (m_greenMetadataAMIBacklightFlag)
+          CHECK(cfg_greenMetadataAMIBacklightScalingIdc.values.size() != 1,
+                "Number of AMI backlight scalings must be equal to 1.");
+      }
+      int totalOlsIds = 0;
+      for (int i = 0; i < m_greenMetadataAMIMapNumber; i++)
+      {
+        totalOlsIds = totalOlsIds + cfg_greenMetadataAMIOlsNumber.values[i];
+      }
+      CHECK(cfg_greenMetadataAMIOlsId.values.size() > totalOlsIds, "Number of AMI ols ids is higher than expected.");
+      CHECK(cfg_greenMetadataAMIOlsId.values.size() < totalOlsIds, "Number of AMI ols ids is lower than expected.");
+
+      int totalSize = m_greenMetadataAMIGlobalFlag ? 1 : m_greenMetadataAMIMapNumber;
+
+      m_greenMetadataAMILayerId.resize(m_greenMetadataAMIMapNumber);
+      m_greenMetadataAMIOlsNumber.resize(m_greenMetadataAMIMapNumber);
+      m_greenMetadataAMIOlsId.resize(m_greenMetadataAMIMapNumber);
+      m_greenMetadataAMIEnergyReductionRate.resize(m_greenMetadataAMIMapNumber);
+      if (m_greenMetadataAMIQualityFlag)
+      {
+        m_greenMetadataAMIVideoQualityMetricType.resize(m_greenMetadataAMIMapNumber);
+        m_greenMetadataAMIVideoQualityLevel.resize(m_greenMetadataAMIMapNumber);
+      }
+      m_greenMetadataAMIMaxValue.resize(m_greenMetadataAMIMapNumber);
+      m_greenMetadataAMIAttenuationUseIdc.resize(totalSize);
+      m_greenMetadataAMIAttenuationCompIdc.resize(totalSize);
+      if (m_greenMetadataAMIPreprocFlag)
+      {
+        m_greenMetadataAMIPreprocessingFlag.resize(totalSize);
+        m_greenMetadataAMIPreprocessingTypeIdc.resize(totalSize);
+        m_greenMetadataAMIPreprocessingScaleIdc.resize(totalSize);
+      }
+      if (m_greenMetadataAMIBacklightFlag)
+        m_greenMetadataAMIBacklightScalingIdc.resize(totalSize);
+
+      int index = 0;
+      for (int i = 0; i < m_greenMetadataAMIMapNumber; i++)
+      {
+        m_greenMetadataAMILayerId[i]   = uint8_t(cfg_greenMetadataAMILayerId.values[i]);
+        m_greenMetadataAMIOlsNumber[i] = uint8_t(cfg_greenMetadataAMIOlsNumber.values[i]);
+        m_greenMetadataAMIOlsId.push_back(std::vector<uint8_t>());
+
+        m_greenMetadataAMIOlsId[i].resize(m_greenMetadataAMIOlsNumber[i]);
+        for (int j = 0; j < m_greenMetadataAMIOlsNumber[i]; j++)
+        {
+          m_greenMetadataAMIOlsId[i][j] = uint8_t(cfg_greenMetadataAMIOlsId.values[index + j]);
+        }
+        index = index + m_greenMetadataAMIOlsNumber[i];
+
+        m_greenMetadataAMIEnergyReductionRate[i] = uint8_t(cfg_greenMetadataAMIEnergyReductionRate.values[i]);
+        if (m_greenMetadataAMIQualityFlag)
+        {
+          m_greenMetadataAMIVideoQualityMetricType[i] = uint8_t(cfg_greenMetadataAMIVideoQualityMetricType.values[i]);
+          m_greenMetadataAMIVideoQualityLevel[i]      = uint16_t(cfg_greenMetadataAMIVideoQualityLevel.values[i] * 100);
+        }
+        m_greenMetadataAMIMaxValue[i] = uint8_t(cfg_greenMetadataAMIMaxValue.values[i]);
+      }
+      for (int i = 0; i < totalSize; i++)
+      {
+        m_greenMetadataAMIAttenuationUseIdc[i]  = uint8_t(cfg_greenMetadataAMIAttenuationUseIdc.values[i]);
+        m_greenMetadataAMIAttenuationCompIdc[i] = uint8_t(cfg_greenMetadataAMIAttenuationCompIdc.values[i]);
+        if (m_greenMetadataAMIPreprocFlag)
+        {
+          m_greenMetadataAMIPreprocessingFlag[i]     = uint8_t(cfg_greenMetadataAMIPreprocessingFlag.values[i]);
+          m_greenMetadataAMIPreprocessingTypeIdc[i]  = uint8_t(cfg_greenMetadataAMIPreprocessingTypeIdc.values[i]);
+          m_greenMetadataAMIPreprocessingScaleIdc[i] = uint8_t(cfg_greenMetadataAMIPreprocessingScaleIdc.values[i]);
+        }
+        if (m_greenMetadataAMIBacklightFlag)
+          m_greenMetadataAMIBacklightScalingIdc[i] = uint8_t(cfg_greenMetadataAMIBacklightScalingIdc.values[i]);
+      }
+    }
+    else
+    {
+      m_greenMetadataAMIEnergyReductionRate.resize(1);
+      m_greenMetadataAMIEnergyReductionRate[1] = uint8_t(cfg_greenMetadataAMIEnergyReductionRate.values[1]);
+
+      if (m_greenMetadataAMIQualityFlag)
+      {
+        m_greenMetadataAMIVideoQualityMetricType.resize(1);
+        m_greenMetadataAMIVideoQualityLevel.resize(1);
+        m_greenMetadataAMIVideoQualityMetricType[1] = uint8_t(cfg_greenMetadataAMIVideoQualityMetricType.values[1]);
+        m_greenMetadataAMIVideoQualityLevel[1]      = uint16_t(cfg_greenMetadataAMIVideoQualityLevel.values[1] * 100);
+      }
+    }
+  }
+
+#endif
+
   // set sei film grain parameters.
   CHECK(!m_fgcSEIEnabled && m_fgcSEIAnalysisEnabled, "FGC SEI must be enabled in order to perform film grain analysis!");
   if (m_fgcSEIEnabled)
