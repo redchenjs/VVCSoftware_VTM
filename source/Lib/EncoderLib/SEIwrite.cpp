@@ -1876,23 +1876,23 @@ void SEIWriter::xWriteSEIGreenMetadataInfo(const SEIGreenMetadataInfo& sei)
         {
           if (xsdMetricArray[j] == 0)
           {
-            xWriteCode(0, 8, "xsd_metric_type");
-            xWriteCode(sei.m_xsdMetricValuePSNR, 16, "xsd_metric_type[i][j]");
+            xWriteCode(0, 8, "xsd_metric_type[i][j]");
+            xWriteCode(sei.m_xsdMetricValuePSNR, 16, "xsd_metric_value[i][j]");
           }
           else if (xsdMetricArray[j] == 1)
           {
-            xWriteCode(1, 8, "xsd_metric_type");
-            xWriteCode(sei.m_xsdMetricValueSSIM, 16, "xsd_metric_type[i][j]");
+            xWriteCode(1, 8, "xsd_metric_type[i][j]");
+            xWriteCode(sei.m_xsdMetricValueSSIM, 16, "xsd_metric_value[i][j]");
           }
           else if (xsdMetricArray[j] == 2)
           {
-            xWriteCode(3, 8, "xsd_metric_type");
-            xWriteCode(sei.m_xsdMetricValueWPSNR, 16, "xsd_metric_type[i][j]");
+            xWriteCode(3, 8, "xsd_metric_type[i][j]");
+            xWriteCode(sei.m_xsdMetricValueWPSNR, 16, "xsd_metric_value[i][j]");
           }
           else if (xsdMetricArray[j] == 3)
           {
-            xWriteCode(4, 8, "xsd_metric_type");
-            xWriteCode(sei.m_xsdMetricValueWSPSNR, 16, "xsd_metric_type[i][j]");
+            xWriteCode(4, 8, "xsd_metric_type[i][j]");
+            xWriteCode(sei.m_xsdMetricValueWSPSNR, 16, "xsd_metric_value[i][j]");
           }
         }
       }

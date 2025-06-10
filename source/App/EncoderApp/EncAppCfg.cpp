@@ -845,6 +845,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<bool> cfg_priSEIRegionIsALayerFlag(0, 1, 0, std::numeric_limits<uint32_t>::max());
 #endif
 
+  #if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  CHECK(GREEN_METADATA_SEI_ENABLED == 1,
+        "GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464 cannot be enabled when GREEN_METADATA_SEI_ENABLED is not enabled.");
+  #endif
+
 #if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
   SMultiValueInput<uint16_t> cfg_greenMetadataAMILayerId(0, 255, 0, 256);
   SMultiValueInput<uint16_t> cfg_greenMetadataAMIOlsNumber(0, 15, 0, 16);
@@ -3555,6 +3560,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_masteringDisplay.whitePoint[idx] = uint16_t((cfg_DisplayWhitePointCode.values.size() > idx) ? cfg_DisplayWhitePointCode.values[idx] : 0);
     }
   }
+#if GREEN_METADATA_SEI_ENABLED
 #if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
   // Set SEI green metadata parameters
   m_greenMetadataAMICancelFlag =
@@ -3710,6 +3716,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
+#endif
 #endif
 
   // set sei film grain parameters.

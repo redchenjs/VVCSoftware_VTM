@@ -1379,6 +1379,7 @@ void SEIReader::xParseSEIGreenMetadataInfo(SEIGreenMetadataInfo& sei, uint32_t p
       }
     }
     break;
+#if GREEN_METADATA_SEI_ENABLED
 #if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
   case 2:
     sei_read_code(pDecodedMessageOutputStream, 8, code, "green_metadata_ami_flags");
@@ -1561,6 +1562,7 @@ void SEIReader::xParseSEIGreenMetadataInfo(SEIGreenMetadataInfo& sei, uint32_t p
         }
       }
     }
+#endif
 #endif
   }
 }
