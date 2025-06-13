@@ -845,11 +845,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<bool> cfg_priSEIRegionIsALayerFlag(0, 1, 0, std::numeric_limits<uint32_t>::max());
 #endif
 
-  #if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
-  CHECK(GREEN_METADATA_SEI_ENABLED == 1,
-        "GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464 cannot be enabled when GREEN_METADATA_SEI_ENABLED is not enabled.");
-  #endif
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  CHECK(GREEN_METADATA_SEI_ENABLED == 0, "GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464 cannot be enabled when GREEN_METADATA_SEI_ENABLED is not enabled.");
+#endif
 
+#if GREEN_METADATA_SEI_ENABLED
 #if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
   SMultiValueInput<uint16_t> cfg_greenMetadataAMILayerId(0, 255, 0, 256);
   SMultiValueInput<uint16_t> cfg_greenMetadataAMIOlsNumber(0, 15, 0, 16);
@@ -864,6 +864,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint16_t> cfg_greenMetadataAMIPreprocessingTypeIdc(0, 3, 0, 4);
   SMultiValueInput<uint16_t> cfg_greenMetadataAMIPreprocessingScaleIdc(0, 255, 0, 256);
   SMultiValueInput<uint16_t> cfg_greenMetadataAMIBacklightScalingIdc(0, 15, 0, 16);
+#endif
 #endif
 
 #if ENABLE_TRACING
@@ -980,7 +981,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("GMFA",                                            m_GMFA,                                            false, "Write output file for the Green-Metadata analyzer for decoder complexity metrics (JVET-P0085)\n")
   ("GMFAFile",                                        m_GMFAFile,                                   std::string(""), "File for the Green Metadata Bit Stream Feature Analyzer output (JVET-P0085)\n")
 #if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
-  ("SEIGreenMetadataAMIFlags",                        m_greenMetadataAMIFlags,                              0u, "Specifies which parameters are needed to apply the attenuation map.")
+  ("SEIGreenMetadataAMIFlags",                        m_greenMetadataAMIFlags, (unsigned)GREEN_METADATA_AMI_FLAGS::CANCEL, "Specifies which parameters are needed to apply the attenuation map.")
   ("SEIGreenMetadataAMIDisplayModel",                 m_greenMetadataAMIDisplayModel,                       0u, "Specifies the display models for which the application of attenuation maps may be used.")
   ("SEIGreenMetadataAMIApproximationModel",           m_greenMetadataAMIApproximationModel,                 0u, "Specifies the model used to extrapolate the attenuation map samples for another energy reduction rate.")
   ("SEIGreenMetadataAMIMapNumber",                    m_greenMetadataAMIMapNumber,                          1u, "Specifies the number of auxiliary pictures of type AUX_ALPHA in the CVS. It corresponds to the number of attenuation maps.")
