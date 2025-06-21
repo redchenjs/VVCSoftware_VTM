@@ -994,6 +994,14 @@ protected:
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   std::vector<uint16_t> m_poSEINumOfPrefixBits;
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  bool                  m_poSEIComplexityInfoPresentFlag;
+  uint32_t              m_poSEIParameterTypeIdc;
+  uint32_t              m_poSEILog2ParameterBitLengthMinus3;
+  uint32_t              m_poSEINumParametersIdc;
+  uint32_t              m_poSEINumKmacOperationIdc;
+  uint32_t              m_poSEITotalKilobyteSize;
+#endif
   std::vector<std::vector<uint8_t>>  m_poSEIPrefixByte;
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
@@ -2983,6 +2991,20 @@ public:
   uint16_t getPoSEINumOfPrefixBits(uint16_t idx)               const { return m_poSEINumOfPrefixBits[idx]; }
   uint32_t getPoSEIPayloadTypeSize()                           const { return (uint32_t)m_poSEIPayloadType.size(); }
   void     setPoSEIPrefixByte(const std::vector<std::vector<uint8_t>>& b) { m_poSEIPrefixByte = b; }
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  void     setPoSEIComplexityInfoPresentFlag(bool b)                 { m_poSEIComplexityInfoPresentFlag = b; }
+  bool     getPoSEIComplexityInfoPresentFlag()                       { return m_poSEIComplexityInfoPresentFlag; }
+  void     setPoSEIParameterTypeIdc(uint32_t b)                      { m_poSEIParameterTypeIdc = b; }
+  uint32_t getPoSEIParameterTypeIdc()                                { return m_poSEIParameterTypeIdc; }
+  void     setPoSEILog2ParameterBitLengthMinus3(uint32_t b)          { m_poSEILog2ParameterBitLengthMinus3 = b; }
+  uint32_t getPoSEILog2ParameterBitLengthMinus3c()                   { return m_poSEILog2ParameterBitLengthMinus3; }
+  void     setPoSEINumParametersIdc(uint32_t b)                      { m_poSEINumParametersIdc = b; }
+  uint32_t getPoSEINumParametersIdc()                                { return m_poSEINumParametersIdc; }
+  void     setPoSEINumKmacOperationIdc(uint32_t b)                   { m_poSEINumKmacOperationIdc = b; }
+  uint32_t getPoSEINumKmacOperationIdc()                             { return m_poSEINumKmacOperationIdc; }
+  void     setPoSEITotalKilobyteSize(uint32_t b)                     { m_poSEITotalKilobyteSize = b; }
+  uint32_t getPoSEITotalKilobyteSize()                               { return m_poSEITotalKilobyteSize; }
+#endif
   std::vector<uint8_t>  getPoSEIPrefixByte(uint16_t idx)       const { return m_poSEIPrefixByte[idx]; }
   void     setPostFilterHintSEIEnabled(bool b) { m_postFilterHintSEIEnabled = b; }
   bool     getPostFilterHintSEIEnabled() { return m_postFilterHintSEIEnabled; }

@@ -889,6 +889,14 @@ protected:
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   std::vector<uint16_t>  m_poSEINumOfPrefixBits;
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  bool                  m_poSEIComplexityInfoPresentFlag;
+  uint32_t              m_poSEIParameterTypeIdc;
+  uint32_t              m_poSEILog2ParameterBitLengthMinus3;
+  uint32_t              m_poSEINumParametersIdc;
+  uint32_t              m_poSEINumKmacOperationIdc;
+  uint32_t              m_poSEITotalKilobyteSize;
+#endif
 
   uint32_t                   m_SEITextDescriptionID;
   bool                       m_SEITextCancelFlag;

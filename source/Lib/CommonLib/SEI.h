@@ -224,6 +224,14 @@ public:
   std::vector<uint16_t>   m_posProcessingOrder;
   std::vector<uint16_t>  m_posNumBitsInPrefix;
   std::vector<std::vector<uint8_t>> m_posPrefixByte;
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  bool                   m_posComplexityInfoPresentFlag;
+  uint32_t               m_posParameterTypeIdc;
+  uint32_t               m_posLog2ParameterBitLengthMinus3;
+  uint32_t               m_posNumParametersIdc;
+  uint32_t               m_posNumKmacOperationIdc;
+  uint32_t               m_posTotalKilobyteSize;
+#endif
   static bool checkWrappingSEIPayloadType(SEI::PayloadType const payloadType)
   {
     switch (payloadType)
