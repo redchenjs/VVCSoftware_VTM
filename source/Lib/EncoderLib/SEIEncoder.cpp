@@ -2278,7 +2278,6 @@ void SEIEncoder::initSEIAIUsageRestrictions(SEIAIUsageRestrictions *sei)
         sei->m_context[i] = m_pcCfg->getAURSEIContext(i);
       }
     }
-
   }
 }
 #endif 

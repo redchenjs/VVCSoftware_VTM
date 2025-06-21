@@ -1848,7 +1848,6 @@ public:
     , m_numRestrictionsMinus1(0)
   {}
   SEIAIUsageRestrictions(const SEIAIUsageRestrictions& sei);
-
   virtual ~SEIAIUsageRestrictions() {}
 
   bool                  m_cancelFlag;
@@ -1857,7 +1856,6 @@ public:
   std::vector<uint32_t> m_restrictions;
   std::vector<bool>     m_contextPresentFlag;
   std::vector<uint32_t> m_context;
-
 };
 #endif
 
