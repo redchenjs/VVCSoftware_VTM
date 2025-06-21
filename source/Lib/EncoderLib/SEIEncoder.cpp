@@ -2256,6 +2256,33 @@ void SEIEncoder::initSEIDigitallySignedContentVerification(SEIDigitallySignedCon
 }
 #endif
 
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+void SEIEncoder::initSEIAIUsageRestrictions(SEIAIUsageRestrictions *sei)
+{
+  CHECK(!(m_isInitialized), "Unspecified error");
+  CHECK(!(sei != nullptr), "Unspecified error");
+  sei->m_cancelFlag = m_pcCfg->getAURSEICancelFlag();
+  if (!sei->m_cancelFlag)
+  {
+    sei->m_persistenceFlag = m_pcCfg->getAURSEIPersistenceFlag();
+    sei->m_numRestrictionsMinus1 = m_pcCfg->getAURSEINumRestrictionsMinus1();
+    sei->m_restrictions.resize(sei->m_numRestrictionsMinus1 + 1);
+    sei->m_contextPresentFlag.resize(sei->m_numRestrictionsMinus1 + 1);
+    sei->m_context.resize(sei->m_numRestrictionsMinus1 + 1);
+    for (uint32_t i = 0; i <= sei->m_numRestrictionsMinus1; i++)
+    {
+      sei->m_restrictions[i] = m_pcCfg->getAURSEIRestrictions(i);
+      sei->m_contextPresentFlag[i] = m_pcCfg->getAURSEIContextPresentFlag(i);
+      if (sei->m_contextPresentFlag[i])
+      {
+        sei->m_context[i] = m_pcCfg->getAURSEIContext(i);
+      }
+    }
+
+  }
+}
+#endif 
+
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
 {

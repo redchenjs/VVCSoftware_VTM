@@ -1635,6 +1635,15 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setMaxNumALFAPS                                      (m_maxNumAlfAps);
   m_cEncLib.setALFAPSIDShift                                     (m_alfapsIDShift);
   m_cEncLib.setConstantJointCbCrSignFlag                         (m_constantJointCbCrSignFlag != 0);
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  m_cEncLib.setAURSEIEnabled                                     (m_aurSEIEnabled);
+  m_cEncLib.setAURSEICancelFlag                                  (m_aurSEICancelFlag);
+  m_cEncLib.setAURSEIPersistenceFlag                             (m_aurSEIPersistenceFlag);
+  m_cEncLib.setAURSEINumRestrictionsMinus1                       (m_aurSEINumRestrictionsMinus1);
+  m_cEncLib.setAURSEIRestrictions                                (m_aurSEIRestrictions);
+  m_cEncLib.setAURSEIContextPresentFlag                          (m_aurSEIContextPresentFlag);
+  m_cEncLib.setAURSEIContext                                     (m_aurSEIContext);
+#endif 
 #if JVET_O0756_CALCULATE_HDRMETRICS
   for (int i=0; i<hdrtoolslib::NB_REF_WHITE; i++)
   {

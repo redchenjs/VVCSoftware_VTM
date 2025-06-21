@@ -111,6 +111,9 @@ public:
     DIGITALLY_SIGNED_CONTENT_VERIFICATION   = 222,
     GENERATIVE_FACE_VIDEO                   = 223,
     GENERATIVE_FACE_VIDEO_ENHANCEMENT       = 224,
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+    AI_USAGE_RESTRICTIONS                   = 225,   
+#endif
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     PACKED_REGIONS_INFO                     = 226,
 #endif
@@ -1833,6 +1836,30 @@ public:
   uint16_t         m_miMaxWavelengthMantissa;  
   uint8_t          m_miMaxWavelengthExponentPlus15;  
 };
+
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+class SEIAIUsageRestrictions : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::AI_USAGE_RESTRICTIONS; }
+  SEIAIUsageRestrictions()
+    : m_cancelFlag(false)
+    , m_persistenceFlag(false)
+    , m_numRestrictionsMinus1(0)
+  {}
+  SEIAIUsageRestrictions(const SEIAIUsageRestrictions& sei);
+
+  virtual ~SEIAIUsageRestrictions() {}
+
+  bool                  m_cancelFlag;
+  bool                  m_persistenceFlag;
+  uint32_t              m_numRestrictionsMinus1;
+  std::vector<uint32_t> m_restrictions;
+  std::vector<bool>     m_contextPresentFlag;
+  std::vector<uint32_t> m_context;
+
+};
+#endif
 
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 class SEIPackedRegionsInfo : public SEI

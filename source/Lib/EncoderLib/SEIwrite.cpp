@@ -224,6 +224,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIDigitallySignedContentVerification(*static_cast<const SEIDigitallySignedContentVerification *>(&sei));
     break;
 #endif
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  case SEI::PayloadType::AI_USAGE_RESTRICTIONS:
+    xWriteSEIAIUsageRestrictions(*static_cast<const SEIAIUsageRestrictions *>(&sei));
+    break;
+#endif 
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   case SEI::PayloadType::PACKED_REGIONS_INFO:
     xWriteSEIPackedRegionsInfo(*static_cast<const SEIPackedRegionsInfo*>(&sei));
@@ -3012,6 +3017,27 @@ void SEIWriter::xWriteSEIDigitallySignedContentVerification(const SEIDigitallySi
   for (int i=0; i< sei.dscvSignature.size(); i++)
   {
     xWriteCode(sei.dscvSignature[i], 8, "dscv_signature");
+  }
+}
+#endif
+
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+void SEIWriter::xWriteSEIAIUsageRestrictions(const SEIAIUsageRestrictions &sei)
+{
+  xWriteFlag(sei.m_cancelFlag, "aur_cancel_flag");
+  if (!sei.m_cancelFlag)
+  {
+    xWriteFlag(sei.m_persistenceFlag, "aur_persistence_flag");
+    xWriteUvlc(sei.m_numRestrictionsMinus1, "aur_num_restrictions_minus1");
+    for (uint32_t i = 0; i <= sei.m_numRestrictionsMinus1; i++)
+    {
+      xWriteUvlc(sei.m_restrictions[i], "aur_restriction");
+      xWriteFlag(sei.m_contextPresentFlag[i], "aur_context_present_flag");
+      if (sei.m_contextPresentFlag[i])
+      {
+        xWriteUvlc(sei.m_context[i], "aur_context");
+      }
+    }
   }
 }
 #endif

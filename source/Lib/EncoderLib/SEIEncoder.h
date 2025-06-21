@@ -116,6 +116,9 @@ public:
 #endif
   void initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int currframeindex);
   void initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement *sei, int currframeindex);
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  void initSEIAIUsageRestrictions(SEIAIUsageRestrictions *sei);
+#endif 
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void initSEIPackedRegionsInfo(SEIPackedRegionsInfo *sei);
 #endif
