@@ -2997,7 +2997,7 @@ public:
   void     setPoSEIParameterTypeIdc(uint32_t b)                      { m_poSEIParameterTypeIdc = b; }
   uint32_t getPoSEIParameterTypeIdc()                                { return m_poSEIParameterTypeIdc; }
   void     setPoSEILog2ParameterBitLengthMinus3(uint32_t b)          { m_poSEILog2ParameterBitLengthMinus3 = b; }
-  uint32_t getPoSEILog2ParameterBitLengthMinus3c()                   { return m_poSEILog2ParameterBitLengthMinus3; }
+  uint32_t getPoSEILog2ParameterBitLengthMinus3()                   { return m_poSEILog2ParameterBitLengthMinus3; }
   void     setPoSEINumParametersIdc(uint32_t b)                      { m_poSEINumParametersIdc = b; }
   uint32_t getPoSEINumParametersIdc()                                { return m_poSEINumParametersIdc; }
   void     setPoSEINumKmacOperationIdc(uint32_t b)                   { m_poSEINumKmacOperationIdc = b; }

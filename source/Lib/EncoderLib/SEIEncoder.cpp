@@ -639,7 +639,7 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
 #if JVET_AJ0105_SPO_COMPLEXITY_INFO
   seiProcessingOrderInfo->m_posComplexityInfoPresentFlag = m_pcCfg->getPoSEIComplexityInfoPresentFlag();
   seiProcessingOrderInfo->m_posParameterTypeIdc = m_pcCfg->getPoSEIParameterTypeIdc();
-  seiProcessingOrderInfo->m_posLog2ParameterBitLengthMinus3 = m_pcCfg->getPoSEILog2ParameterBitLengthMinus3c();
+  seiProcessingOrderInfo->m_posLog2ParameterBitLengthMinus3 = m_pcCfg->getPoSEILog2ParameterBitLengthMinus3();
   seiProcessingOrderInfo->m_posNumParametersIdc = m_pcCfg->getPoSEINumParametersIdc();
   seiProcessingOrderInfo->m_posNumKmacOperationIdc = m_pcCfg->getPoSEINumKmacOperationIdc();
   seiProcessingOrderInfo->m_posTotalKilobyteSize = m_pcCfg->getPoSEITotalKilobyteSize();
