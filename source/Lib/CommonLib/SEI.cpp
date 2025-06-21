@@ -821,6 +821,25 @@ SEIGreenMetadataInfo::SEIGreenMetadataInfo(const SEIGreenMetadataInfo& sei)
   m_greenComplexityMetrics.portionDeblockingInstances = sei.m_greenComplexityMetrics.portionDeblockingInstances;
   m_greenComplexityMetrics.portionSaoInstances = sei.m_greenComplexityMetrics.portionSaoInstances;
   m_greenComplexityMetrics.portionAlfInstances = sei.m_greenComplexityMetrics.portionAlfInstances;
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  m_greenMetadataAMIFlags                  = sei.m_greenMetadataAMIFlags;
+  m_greenMetadataAMIDisplayModel           = sei.m_greenMetadataAMIDisplayModel;
+  m_greenMetadataAMIApproximationModel     = sei.m_greenMetadataAMIApproximationModel;
+  m_greenMetadataAMIMapNumber              = sei.m_greenMetadataAMIMapNumber;
+  m_greenMetadataAMILayerId                = sei.m_greenMetadataAMILayerId;
+  m_greenMetadataAMIOlsNumber              = sei.m_greenMetadataAMIOlsNumber;
+  m_greenMetadataAMIOlsId                  = sei.m_greenMetadataAMIOlsId;
+  m_greenMetadataAMIEnergyReductionRate    = sei.m_greenMetadataAMIEnergyReductionRate;
+  m_greenMetadataAMIVideoQualityMetricType = sei.m_greenMetadataAMIVideoQualityMetricType;
+  m_greenMetadataAMIVideoQualityLevel      = sei.m_greenMetadataAMIVideoQualityLevel;
+  m_greenMetadataAMIMaxValue               = sei.m_greenMetadataAMIMaxValue;
+  m_greenMetadataAMIAttenuationUseIdc      = sei.m_greenMetadataAMIAttenuationUseIdc;
+  m_greenMetadataAMIAttenuationCompIdc     = sei.m_greenMetadataAMIAttenuationCompIdc;
+  m_greenMetadataAMIPreprocessingFlag      = sei.m_greenMetadataAMIPreprocessingFlag;
+  m_greenMetadataAMIPreprocessingTypeIdc   = sei.m_greenMetadataAMIPreprocessingTypeIdc;
+  m_greenMetadataAMIPreprocessingScaleIdc  = sei.m_greenMetadataAMIPreprocessingScaleIdc;
+  m_greenMetadataAMIBacklightScalingIdc    = sei.m_greenMetadataAMIBacklightScalingIdc;
+#endif
 }
 
 SEIParameterSetsInclusionIndication::SEIParameterSetsInclusionIndication(const SEIParameterSetsInclusionIndication& sei)

@@ -4732,6 +4732,14 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           m_seiEncoder.initSEIGreenMetadataInfo(seiGreenMetadataInfo, m_featureCounter, m_SEIGreenQualityMetrics, m_SEIGreenComplexityMetrics);
           leadingSeiMessages.push_back(seiGreenMetadataInfo);
         }
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+        else if (seiGreenMetadataInfo->m_greenMetadataType == 2)   // Attenuation map signaling
+        {
+          m_seiEncoder.initSEIGreenMetadataInfo(seiGreenMetadataInfo, m_featureCounter, m_SEIGreenQualityMetrics,
+                                                m_SEIGreenComplexityMetrics);
+          leadingSeiMessages.push_back(seiGreenMetadataInfo);
+        }
+#endif 
       }
 #endif
       

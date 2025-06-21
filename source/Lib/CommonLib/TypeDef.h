@@ -162,6 +162,18 @@
 #define GREEN_METADATA_SEI_ENABLED 0 //JVET-AB0072: Analyser for the Green Metadata SEI
 #endif
 
+#ifndef GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+#if GREEN_METADATA_SEI_ENABLED
+#define GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464 0   // WG03_N01464: Attenuation Maps in Green Metadata SEI
+#else
+#define GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464 0   // DO NOT CHANGE - SHOULD ALWAYS BE 0 HERE
+#endif 
+#endif
+
+#if (GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464) && (!GREEN_METADATA_SEI_ENABLED)
+#error ERROR: cannot enable GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464 without GREEN_METADATA_SEI_ENABLED
+#endif
+
 // ====================================================================================================================
 // Debugging
 // ====================================================================================================================

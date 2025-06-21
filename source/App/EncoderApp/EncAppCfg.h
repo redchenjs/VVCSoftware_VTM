@@ -1036,6 +1036,33 @@ protected:
   bool     m_xsdMetricTypeSSIM;
   bool     m_xsdMetricTypeWPSNR;
   bool     m_xsdMetricTypeWSPSNR;
+
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  uint32_t                          m_greenMetadataAMIFlags              = 0;
+  bool                              m_greenMetadataAMICancelFlag         = false;
+  bool                              m_greenMetadataAMIGlobalFlag         = false;
+  bool                              m_greenMetadataAMIApproxFlag         = false;
+  bool                              m_greenMetadataAMIPreprocFlag        = false;
+  bool                              m_greenMetadataAMIQualityFlag        = false;
+  bool                              m_greenMetadataAMIBacklightFlag      = false;
+  uint32_t                          m_greenMetadataAMIDisplayModel       = 0;
+  uint32_t                          m_greenMetadataAMIApproximationModel = 0;
+  uint32_t                          m_greenMetadataAMIMapNumber          = 0;
+  std::vector<uint8_t>              m_greenMetadataAMILayerId;
+  std::vector<uint8_t>              m_greenMetadataAMIOlsNumber;
+  std::vector<std::vector<uint8_t>> m_greenMetadataAMIOlsId;
+  std::vector<uint8_t>              m_greenMetadataAMIEnergyReductionRate;
+  std::vector<uint8_t>              m_greenMetadataAMIVideoQualityMetricType;
+  std::vector<uint16_t>             m_greenMetadataAMIVideoQualityLevel;
+  std::vector<uint8_t>              m_greenMetadataAMIMaxValue;
+  std::vector<uint8_t>              m_greenMetadataAMIAttenuationUseIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIAttenuationCompIdc;
+  std::vector<bool>                 m_greenMetadataAMIPreprocessingFlag;
+  std::vector<uint8_t>              m_greenMetadataAMIPreprocessingTypeIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIPreprocessingScaleIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIBacklightScalingIdc;
+#endif
+
 #endif
   std::string m_summaryOutFilename;                           ///< filename to use for producing summary output file.
   std::string m_summaryPicFilenameBase;                       ///< Base filename to use for producing summary picture output files. The actual filenames used will have I.txt, P.txt and B.txt appended.

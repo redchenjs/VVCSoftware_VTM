@@ -979,6 +979,25 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setSEIXSDMetricTypeSSIM                              (m_xsdMetricTypeSSIM);
   m_cEncLib.setSEIXSDMetricTypeWPSNR                             (m_xsdMetricTypeWPSNR);
   m_cEncLib.setSEIXSDMetricTypeWSPSNR                            (m_xsdMetricTypeWSPSNR);
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  m_cEncLib.setSEIGreenMetadataAMIFlags                          (m_greenMetadataAMIFlags);
+  m_cEncLib.setSEIGreenMetadataAMIDisplayModel                   (m_greenMetadataAMIDisplayModel);
+  m_cEncLib.setSEIGreenMetadataAMIApproximationModel             (m_greenMetadataAMIApproximationModel);
+  m_cEncLib.setSEIGreenMetadataAMIMapNumber                      (m_greenMetadataAMIMapNumber);
+  m_cEncLib.setSEIGreenMetadataAMILayerId                        (m_greenMetadataAMILayerId);
+  m_cEncLib.setSEIGreenMetadataAMIOlsNumber                      (m_greenMetadataAMIOlsNumber);
+  m_cEncLib.setSEIGreenMetadataAMIOlsId                          (m_greenMetadataAMIOlsId);
+  m_cEncLib.setSEIGreenMetadataAMIEnergyReductionRate            (m_greenMetadataAMIEnergyReductionRate);
+  m_cEncLib.setSEIGreenMetadataAMIVideoQualityMetricType         (m_greenMetadataAMIVideoQualityMetricType);
+  m_cEncLib.setSEIGreenMetadataAMIVideoQualityLevel              (m_greenMetadataAMIVideoQualityLevel);
+  m_cEncLib.setSEIGreenMetadataAMIMaxValue                       (m_greenMetadataAMIMaxValue);
+  m_cEncLib.setSEIGreenMetadataAMIAttenuationUseIdc              (m_greenMetadataAMIAttenuationUseIdc);
+  m_cEncLib.setSEIGreenMetadataAMIAttenuationCompIdc             (m_greenMetadataAMIAttenuationCompIdc);
+  m_cEncLib.setSEIGreenMetadataAMIPreprocessingFlag              (m_greenMetadataAMIPreprocessingFlag);
+  m_cEncLib.setSEIGreenMetadataAMIPreprocessingTypeIdc           (m_greenMetadataAMIPreprocessingTypeIdc);
+  m_cEncLib.setSEIGreenMetadataAMIPreprocessingScaleIdc          (m_greenMetadataAMIPreprocessingScaleIdc);
+  m_cEncLib.setSEIGreenMetadataAMIBacklightScalingIdc            (m_greenMetadataAMIBacklightScalingIdc);
+#endif
 #endif
   m_cEncLib.setErpSEIEnabled                                     ( m_erpSEIEnabled );
   m_cEncLib.setErpSEICancelFlag                                  ( m_erpSEICancelFlag );

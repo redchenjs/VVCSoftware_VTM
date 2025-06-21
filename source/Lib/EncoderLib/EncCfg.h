@@ -606,6 +606,25 @@ protected:
   bool     m_xsdMetricTypeWPSNR;
   bool     m_xsdMetricTypeWSPSNR;
   bool     m_xsdMetricTypeEstimatedEnergy;
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  uint32_t                          m_greenMetadataAMIFlags;
+  uint8_t                           m_greenMetadataAMIDisplayModel;
+  uint8_t                           m_greenMetadataAMIApproximationModel;
+  uint8_t                           m_greenMetadataAMIMapNumber;
+  std::vector<uint8_t>              m_greenMetadataAMILayerId;
+  std::vector<uint8_t>              m_greenMetadataAMIOlsNumber;
+  std::vector<std::vector<uint8_t>> m_greenMetadataAMIOlsId;
+  std::vector<uint8_t>              m_greenMetadataAMIEnergyReductionRate;
+  std::vector<uint8_t>              m_greenMetadataAMIVideoQualityMetricType;
+  std::vector<uint16_t>             m_greenMetadataAMIVideoQualityLevel;
+  std::vector<uint8_t>              m_greenMetadataAMIMaxValue;
+  std::vector<uint8_t>              m_greenMetadataAMIAttenuationUseIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIAttenuationCompIdc;
+  std::vector<bool>                 m_greenMetadataAMIPreprocessingFlag;
+  std::vector<uint8_t>              m_greenMetadataAMIPreprocessingTypeIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIPreprocessingScaleIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIBacklightScalingIdc;
+#endif
 #endif
   bool      m_selfContainedClvsFlag;
   bool      m_bpDeltasGOPStructure;
@@ -2430,6 +2449,91 @@ public:
   bool getSEIXSDMetricTypeWPSNR()                                    { return m_xsdMetricTypeWPSNR;}
   void setSEIXSDMetricTypeWSPSNR(bool b)                              { m_xsdMetricTypeWSPSNR = b;}
   bool getSEIXSDMetricTypeWSPSNR()                                   { return m_xsdMetricTypeWSPSNR;}
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  void           setSEIGreenMetadataAMIFlags(uint32_t b) { m_greenMetadataAMIFlags = b; }
+  uint32_t       getSEIGreenMetadataAMIFlags() const { return m_greenMetadataAMIFlags; }
+  void           setSEIGreenMetadataAMIDisplayModel(uint32_t b) { m_greenMetadataAMIDisplayModel = b; }
+  const uint32_t getSEIGreenMetadataAMIDisplayModel() const { return m_greenMetadataAMIDisplayModel; }
+  void           setSEIGreenMetadataAMIApproximationModel(uint32_t b) { m_greenMetadataAMIApproximationModel = b; }
+  const uint32_t getSEIGreenMetadataAMIApproximationModel() const { return m_greenMetadataAMIApproximationModel; }
+  void           setSEIGreenMetadataAMIMapNumber(uint32_t b) { m_greenMetadataAMIMapNumber = b; }
+  const uint32_t getSEIGreenMetadataAMIMapNumber() const { return m_greenMetadataAMIMapNumber; }
+
+  void                        setSEIGreenMetadataAMILayerId(std::vector<uint8_t>& b) { m_greenMetadataAMILayerId = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMILayerId() const { return m_greenMetadataAMILayerId; }
+
+  void setSEIGreenMetadataAMIOlsNumber(std::vector<uint8_t>& b) { m_greenMetadataAMIOlsNumber = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIOlsNumber() const { return m_greenMetadataAMIOlsNumber; }
+
+  void setSEIGreenMetadataAMIOlsId(std::vector<std::vector<uint8_t>>& b) { m_greenMetadataAMIOlsId = b; }
+  const std::vector<std::vector<uint8_t>>& getSEIGreenMetadataAMIOlsId() const { return m_greenMetadataAMIOlsId; }
+
+  void setSEIGreenMetadataAMIEnergyReductionRate(std::vector<uint8_t>& b) { m_greenMetadataAMIEnergyReductionRate = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIEnergyReductionRate() const
+  {
+    return m_greenMetadataAMIEnergyReductionRate;
+  }
+
+  void setSEIGreenMetadataAMIVideoQualityMetricType(std::vector<uint8_t>& b)
+  {
+    m_greenMetadataAMIVideoQualityMetricType = b;
+  }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIVideoQualityMetricType() const
+  {
+    return m_greenMetadataAMIVideoQualityMetricType;
+  }
+
+  void setSEIGreenMetadataAMIVideoQualityLevel(std::vector<uint16_t>& b) { m_greenMetadataAMIVideoQualityLevel = b; }
+  const std::vector<uint16_t>& getSEIGreenMetadataAMIVideoQualityLevel() const
+  {
+    return m_greenMetadataAMIVideoQualityLevel;
+  }
+
+  void setSEIGreenMetadataAMIMaxValue(std::vector<uint8_t>& b) { m_greenMetadataAMIMaxValue = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIMaxValue() const { return m_greenMetadataAMIMaxValue; }
+
+  void setSEIGreenMetadataAMIAttenuationUseIdc(std::vector<uint8_t>& b) { m_greenMetadataAMIAttenuationUseIdc = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIAttenuationUseIdc() const
+  {
+    return m_greenMetadataAMIAttenuationUseIdc;
+  }
+
+  void setSEIGreenMetadataAMIAttenuationCompIdc(std::vector<uint8_t>& b) { m_greenMetadataAMIAttenuationCompIdc = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIAttenuationCompIdc() const
+  {
+    return m_greenMetadataAMIAttenuationCompIdc;
+  }
+
+  void setSEIGreenMetadataAMIPreprocessingFlag(std::vector<bool>& b) { m_greenMetadataAMIPreprocessingFlag = b; }
+  const std::vector<bool>& getSEIGreenMetadataAMIPreprocessingFlag() const
+  {
+    return m_greenMetadataAMIPreprocessingFlag;
+  }
+
+  void setSEIGreenMetadataAMIPreprocessingTypeIdc(std::vector<uint8_t>& b)
+  {
+    m_greenMetadataAMIPreprocessingTypeIdc = b;
+  }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIPreprocessingTypeIdc() const
+  {
+    return m_greenMetadataAMIPreprocessingTypeIdc;
+  }
+
+  void setSEIGreenMetadataAMIPreprocessingScaleIdc(std::vector<uint8_t>& b)
+  {
+    m_greenMetadataAMIPreprocessingScaleIdc = b;
+  }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIPreprocessingScaleIdc() const
+  {
+    return m_greenMetadataAMIPreprocessingScaleIdc;
+  }
+
+  void setSEIGreenMetadataAMIBacklightScalingIdc(std::vector<uint8_t>& b) { m_greenMetadataAMIBacklightScalingIdc = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIBacklightScalingIdc() const
+  {
+    return m_greenMetadataAMIBacklightScalingIdc;
+  }
+#endif
 #endif
   void  setSelfContainedClvsFlag(bool b)                             { m_selfContainedClvsFlag = b; }
   int   getSelfContainedClvsFlag()                                   { return m_selfContainedClvsFlag; }
