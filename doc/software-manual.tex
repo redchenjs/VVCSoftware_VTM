@@ -6770,6 +6770,45 @@ An example file can be found in cfg/sei_vui/object_mask_infos/intra/mask_info_0.
   \\
 \end{OptionTableNoShorthand}
 
+\begin{OptionTableNoShorthand}{AI Restrictions Usage SEI message encoder parameters}{tab:sei-aur}
+  \Option{SEIAUREnabled} &
+  \Default{false} &
+  Specifies whether AI restrictions usage SEI is generated or not.
+  \\
+  \Option{SEIAURCancelFlag} &
+  \Default{9} &
+  Specifies the value of cancellation flag.
+  \\
+  \Option{SEIAURPersistenceFlag} &
+  \Default{9} &
+  Specifies the value of persistence flag.
+  \\
+  \Option{SEIAURNumRestrictionsMinus1} &
+  \Default{9} &
+  Specifies the value of number of restrictions minus one.
+  \\
+  \Option{SEIAURRestrictions} &
+  \Default{""} &
+  List of restrictions that are applied.
+  0 : Do not use in any AI applications
+  1 : Do not use for AI training
+  2 : Do not use for generative AI
+  3 : Do not use for AI inference
+  \\
+  \Option{SEIAURContextPresentFlag} &
+  \Default{""} &
+  List of restriction context present flags.
+  1st bit : commercial use
+  2nd bit : non-commercial use
+  3rd bit : official / government use
+  4th bit : research and academic use
+  \\
+  \Option{SEIAURContext} &
+  \Default{""} &
+  List of restriction context. (Please put space in between values).
+  \\
+\end{OptionTableNoShorthand}
+
 \begin{OptionTableNoShorthand}{Generative face video enhancement SEI message encoder parameters}
 {tab:sei-gfve}
   \Option{--} &

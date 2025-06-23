@@ -1257,6 +1257,16 @@ protected:
   bool        m_calculateHdrMetrics;
 #endif
 
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  bool        m_aurSEIEnabled;
+  bool        m_aurSEICancelFlag;
+  bool        m_aurSEIPersistenceFlag;
+  uint32_t    m_aurSEINumRestrictionsMinus1;
+  std::vector<uint32_t>  m_aurSEIRestrictions;
+  std::vector<bool>      m_aurSEIContextPresentFlag;
+  std::vector<uint32_t>  m_aurSEIContext;
+#endif
+
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   bool     m_priSEIEnabled;
   bool     m_priSEICancelFlag;

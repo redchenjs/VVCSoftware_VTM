@@ -78,6 +78,8 @@
 
 #define JVET_AI0070_BYTE_ALIGNMENT                        1 // JVET-AI0070: byte alignment in NNPFC SEI message
 
+#define JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI             1 // Implementation of AI-usage restrictions SEI message
+
 #define JVET_AL0056_EOI_SEI_QUANT_CONSTRAINT              1 // JVET-AL0056: On the encoder optimization information SEI message
 
 //########### place macros to be be kept below this line ###############
@@ -875,6 +877,24 @@ enum POST_FILTER_MODE
   ISO_IEC_15938_17 = 0,
   URI = 1
 };
+
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+enum AUR_CONTEXT
+{
+  AUR_UNDEFINED = 0,
+  AUR_COMMERCIAL_USE= 1,
+  AUR_NON_COMMERCIAL_USE = 2,
+  AUR_OFFICIAL_GOVERNMENT_USE = 4,
+  AUR_RESEARCH_ACADEMIC_USE = 8,
+};
+enum AUR_RESTICTION
+{
+  AUR_ANY_APPLICATION = 0,
+  AUR_TRAINING,
+  AUR_GERNERATIVE,
+  AUR_INFERENCE,
+};
+#endif
 
 struct Fraction
 {

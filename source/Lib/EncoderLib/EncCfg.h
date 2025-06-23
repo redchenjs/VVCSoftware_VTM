@@ -1076,6 +1076,16 @@ protected:
 
   bool      m_constrainedRaslEncoding;
 
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  bool  m_aurSEIEnabled;
+  bool  m_aurSEICancelFlag;
+  bool  m_aurSEIPersistenceFlag;
+  uint32_t  m_aurSEINumRestrictionsMinus1;
+  std::vector<uint32_t>  m_aurSEIRestrictions;
+  std::vector<bool>  m_aurSEIContextPresentFlag;
+  std::vector<uint32_t>  m_aurSEIContext;
+#endif
+
   //====== Weighted Prediction ========
   bool      m_useWeightedPred;       //< Use of Weighting Prediction (P_SLICE)
   bool      m_useWeightedBiPred;    //< Use of Bi-directional Weighting Prediction (B_SLICE)
@@ -3120,6 +3130,22 @@ public:
   std::string  getTextSEIDescriptionStringLang(int idx) const {return m_textSEIDescriptionStringLang[idx];}
   void         setTextSEIDescriptionString(const std::vector<std::string> b) {m_textSEIDescriptionString = b;}
   std::string  getTextSEIDescriptionString(int idx) const {return m_textSEIDescriptionString[idx];}
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  void         setAURSEIEnabled(bool b) { m_aurSEIEnabled = b; }
+  bool         getAURSEIEnabled() const { return m_aurSEIEnabled; }
+  void         setAURSEICancelFlag(bool b) { m_aurSEICancelFlag = b; }
+  bool         getAURSEICancelFlag() const { return m_aurSEICancelFlag; }
+  void         setAURSEIPersistenceFlag(bool b) { m_aurSEIPersistenceFlag = b; }
+  bool         getAURSEIPersistenceFlag() const { return m_aurSEIPersistenceFlag; }
+  void         setAURSEINumRestrictionsMinus1(uint32_t b) { m_aurSEINumRestrictionsMinus1 = b; }
+  uint32_t     getAURSEINumRestrictionsMinus1() { return m_aurSEINumRestrictionsMinus1; }
+  void         setAURSEIRestrictions(std::vector<uint32_t> b) { m_aurSEIRestrictions = b; }
+  uint32_t     getAURSEIRestrictions(uint32_t idx) const { return m_aurSEIRestrictions[idx]; }
+  void         setAURSEIContextPresentFlag(std::vector<bool> b) { m_aurSEIContextPresentFlag = b; }
+  bool         getAURSEIContextPresentFlag(uint32_t idx) const { return m_aurSEIContextPresentFlag[idx]; }
+  void         setAURSEIContext(std::vector<uint32_t> b) { m_aurSEIContext = b; }
+  uint32_t     getAURSEIContext(uint32_t idx) const { return m_aurSEIContext[idx]; }
+#endif
 
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void     setPriSEIEnabled(bool b)                                       { m_priSEIEnabled = b; }

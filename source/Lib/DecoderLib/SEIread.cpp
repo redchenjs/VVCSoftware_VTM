@@ -590,6 +590,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIDigitallySignedContentSelection;
       xParseSEIDigitallySignedContentSelection((SEIDigitallySignedContentSelection &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+    case SEI::PayloadType::AI_USAGE_RESTRICTIONS:
+      sei = new SEIAIUsageRestrictions;
+      xParseSEIAIUsageRestrictions((SEIAIUsageRestrictions &)*sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     case SEI::PayloadType::PACKED_REGIONS_INFO:
       sei = new SEIPackedRegionsInfo;
@@ -5251,6 +5257,38 @@ void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedCo
     sei.dscvSignature[i] = val;
   }
 }
+
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+void SEIReader::xParseSEIAIUsageRestrictions(SEIAIUsageRestrictions& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
+{
+  uint32_t val;
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  sei_read_flag(pDecodedMessageOutputStream, val, "aur_cancel_flag");
+  sei.m_cancelFlag = val;
+  if (!sei.m_cancelFlag)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "aur_persistence_flag");
+    sei.m_persistenceFlag = val;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "aur_num_restrictions_minus1");
+    sei.m_numRestrictionsMinus1 = val;
+    sei.m_restrictions.resize(sei.m_numRestrictionsMinus1 + 1);
+    sei.m_contextPresentFlag.resize(sei.m_numRestrictionsMinus1 + 1);
+    sei.m_context.resize(sei.m_numRestrictionsMinus1 + 1);
+    for (uint32_t i = 0; i <= sei.m_numRestrictionsMinus1; i++)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "aur_restriction");
+      sei.m_restrictions[i] = val;
+      sei_read_flag(pDecodedMessageOutputStream, val, "aur_context_present_flag");
+      sei.m_contextPresentFlag[i] = val;
+      if (sei.m_contextPresentFlag[i])
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "aur_context");
+        sei.m_context[i] = val;
+      }
+    }
+  }
+}
+#endif
 
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_t nuhLayerId, uint32_t payLoadSize, std::ostream* pDecodedMessageOutputStream)

@@ -490,6 +490,9 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_VERIFICATION, "Digitally Signed Content Verification" },
   { SEI::PayloadType::GENERATIVE_FACE_VIDEO, "Generative face video" },
   { SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT, "Generative face video enhancement" },
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  { SEI::PayloadType::AI_USAGE_RESTRICTIONS, "AI usage restrictions" },
+#endif
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   { SEI::PayloadType::PACKED_REGIONS_INFO, "Packed regions info" },
 #endif
@@ -1304,6 +1307,19 @@ SEIGenerativeFaceVideo::SEIGenerativeFaceVideo(const SEIGenerativeFaceVideo & se
   m_matrixWidthstore = sei.m_matrixWidthstore;
   m_matrixHeightstore = sei.m_matrixHeightstore;
 }
+
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+SEIAIUsageRestrictions::SEIAIUsageRestrictions(
+  const SEIAIUsageRestrictions& sei)
+{
+  m_cancelFlag = sei.m_cancelFlag;
+  m_persistenceFlag = sei.m_persistenceFlag;
+  m_numRestrictionsMinus1 = sei.m_numRestrictionsMinus1;
+  m_restrictions = sei.m_restrictions;
+  m_contextPresentFlag = sei.m_contextPresentFlag;
+  m_context = sei.m_context;
+}
+#endif
 
 SEIGenerativeFaceVideoEnhancement::SEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement & sei)
 {
