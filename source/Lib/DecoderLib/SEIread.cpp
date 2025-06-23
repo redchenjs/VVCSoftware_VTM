@@ -897,6 +897,26 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
       }
     }
   }
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  sei_read_flag(decodedMessageOutputStream, val, "po_complexity_info_present_flag");
+  sei.m_posComplexityInfoPresentFlag = val;
+  if (sei.m_posComplexityInfoPresentFlag)
+  {
+    sei_read_code(decodedMessageOutputStream, 2, val, "po_parameter_type_idc");
+    sei.m_posParameterTypeIdc = val;
+    if (sei.m_posComplexityInfoPresentFlag)
+    {
+      sei_read_code(decodedMessageOutputStream, 2, val, "po_log2_parameter_bit_length_minus3");
+      sei.m_posLog2ParameterBitLengthMinus3 = val;
+    }
+    sei_read_code(decodedMessageOutputStream, 6, val, "po_num_parameters_idc");
+    sei.m_posNumParametersIdc = val;
+    sei_read_uvlc( decodedMessageOutputStream, val, "po_num_kmac_operation_idc" );
+    sei.m_posNumKmacOperationIdc = val;
+    sei_read_uvlc( decodedMessageOutputStream, val, "po_total_kilobyte_size" );
+    sei.m_posTotalKilobyteSize = val;
+  }
+#endif
 
   // The following code generates subchain indices from the syntax. It can be used for testing and verification of the syntax, but is not otherwise needed in VTM.
   uint32_t numProcStgs = sei.m_posNumMinus2 + 2;

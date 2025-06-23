@@ -1769,6 +1769,20 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
       }
     }
   }
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  xWriteFlag(sei.m_posComplexityInfoPresentFlag, "po_complexity_info_present_flag");
+  if (sei.m_posComplexityInfoPresentFlag)
+  {
+    xWriteCode(sei.m_posParameterTypeIdc, 2, "po_parameter_type_idc");
+    if (sei.m_posParameterTypeIdc != 2)
+    {
+      xWriteCode(sei.m_posLog2ParameterBitLengthMinus3, 2, "po_log2_parameter_bit_length_minus3");
+    }
+    xWriteCode(sei.m_posNumParametersIdc, 6, "po_num_parameters_idc");
+    xWriteUvlc(sei.m_posNumKmacOperationIdc, "po_num_kmac_operation_idc");
+    xWriteUvlc(sei.m_posTotalKilobyteSize, "po_total_kilobyte_size");
+  }
+#endif
 }
 
 void SEIWriter::xWriteSEIProcessingOrderNesting(OutputBitstream& bs, const SEIProcessingOrderNesting& sei)

@@ -545,6 +545,14 @@ SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei
   m_posPayloadType = sei.m_posPayloadType;
   m_posProcessingOrder = sei.m_posProcessingOrder;
   m_posPrefixByte = sei.m_posPrefixByte;
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  m_posComplexityInfoPresentFlag = sei.m_posComplexityInfoPresentFlag;
+  m_posParameterTypeIdc = sei.m_posParameterTypeIdc;
+  m_posLog2ParameterBitLengthMinus3 = sei.m_posLog2ParameterBitLengthMinus3;
+  m_posNumParametersIdc = sei.m_posNumParametersIdc;
+  m_posNumKmacOperationIdc = sei.m_posNumKmacOperationIdc;
+  m_posTotalKilobyteSize = sei.m_posTotalKilobyteSize;
+#endif
 }
 
 SEIProcessingOrderNesting::SEIProcessingOrderNesting(const SEIProcessingOrderNesting& sei)

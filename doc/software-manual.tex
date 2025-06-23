@@ -6317,6 +6317,30 @@ Specifies the number of prefix bits for the \emph{i}-th SEI message present in p
 \Default{0} &
 Specifies the \emph{i}-th prefix byte present in processing order SEI message.
 \\
+\Option{SEIPOComplexityInfoPresentFlag} &
+\Default{false} &
+Specifies whether complexity info is present (1) or not (0). Default value: 0.
+\\
+\Option{SEIPOParameterTypeIdc} &
+\Default{0} &
+Specifies type of parameters of the NNPFs (0) only integer, (1) integer or floating point, (2) binary only, (3) reserved. Default value: 0.
+\\
+\Option{SEIPOLog2ParameterBitLengthMinus3} &
+\Default{0} &
+0, 1, 2, and 3 means the NNPFs do not use parameters of bit length greater than 8, 16, 32, and 64, respectively. Default value: 0.
+\\
+\Option{SEIPONumParametersIdc} &
+\Default{0} &
+Specifies max number of parameters needed by NNPFs in the processing chain. Default value: 0.
+\\
+\Option{SEIPONumKmacOperationIdcg} &
+\Default{0} &
+When greater than 0 specifies that the max number of multiply-accumulate operations per sample of the NNPFs is less than or equal to po_num_kmac_operations_idc * 1000. ) means unknown. Default value: 0.
+\\
+\Option{SEIPOTotalKilobyteSize} &
+\Default{0} &
+When greater than 0 specifies a total size in kilobytes required to store the uncompressed parameters for NNPFs. 0 means unknown. Default value: 0.
+\\
 \end{OptionTableNoShorthand}
 
 \begin{OptionTableNoShorthand}{Encoder optimization info SEI message encoder parameters}{tab:sei-encoder-optimization-info}
