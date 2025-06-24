@@ -3230,7 +3230,11 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     SEIDigitallySignedContentInitialization* dsci = (SEIDigitallySignedContentInitialization*) dscInitSEIs.front();
     m_dscSubstreamManager.initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag);
+#else
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
+#endif
 #else
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid);
 #endif
@@ -3253,7 +3257,19 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   {
     // process as substream 0, when no selection SEI is received
     // todo: multiples slices
+#if !JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
     xProcessStoredNALUnitsForSignature(0);
+#else
+    if(m_dscSubstreamManager.getDscAssociationModeFlag())
+    {
+      int32_t dscsVSSID = vps->getMaxLayers()*nalu.m_nuhLayerId + nalu.m_temporalId;
+      xProcessStoredNALUnitsForSignature(dscsVSSID);
+    }
+    else
+    {
+      xProcessStoredNALUnitsForSignature(0);
+    }
+#endif
   }
 #endif
 
@@ -3371,6 +3387,25 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
 
     printf("-lmcs_enable : %d\n", picHeader->getLmcsEnabledFlag() ? 1 : 0);
     printf("-lmcs_chroma : %d\n", picHeader->getLmcsChromaResidualScaleFlag() ? 1 : 0);
+#endif
+
+#if JVET_AL0056_EOI_SEI_QUANT_CONSTRAINT
+    SEIMessages eoiSEIs = getSeisByType(m_pcPic->SEIs, SEI::PayloadType::ENCODER_OPTIMIZATION_INFO);
+    if (!eoiSEIs.empty())
+    {
+      SEIEncoderOptimizationInfo *sei = dynamic_cast<SEIEncoderOptimizationInfo*>(eoiSEIs.front());
+      if (!sei->m_cancelFlag && (sei->m_type & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) && (sei->m_objectBasedIdc & EOI_OBJECT_BASED::COARSER_QUANTIZATION))
+      {
+        if (sei->m_picQuantObjectFlag)
+        {
+          CHECK(sei->m_quantThresholdDelta < 1 || sei->m_quantThresholdDelta > (63 - pcSlice->getSliceQp()), "When eoi_pic_quant_object_flag is equal to 1, the value of eoi_quant_threshold_delta shall be in the range of 1 to 63 - PicQuant, inclusive");
+        }
+        else
+        {
+          CHECK(sei->m_quantThresholdDelta < 1 || sei->m_quantThresholdDelta > (pcSlice->getSPS()->getQpBDOffset(ChannelType::LUMA) + pcSlice->getSliceQp()), "When eoi_pic_quant_object_flag is equal to 0, the value of eoi_quant_threshold_delta shall be in the range of 1 to QpBdOffset + PicQuant, inclusive");
+        }
+      }
+    }
 #endif
   }
   pcSlice->getPic()->sliceSubpicIdx.push_back(pps->getSubPicIdxFromSubPicId(pcSlice->getSliceSubPicId()));

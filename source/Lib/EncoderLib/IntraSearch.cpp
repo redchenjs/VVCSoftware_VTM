@@ -5957,7 +5957,7 @@ void IntraSearch::xGetNextISPMode(ModeInfo& modeInfo, const ModeInfo* lastMode, 
           else // none of them reached the maximum number of subpartitions with the best angle modes, so it compares the results with the the planar mode
           {
             numSubPartsBestModeAltSplit[0] =
-              modes[0] != -1 ? ispTestedModes.getNumCompletedSubParts(otherSplit, modes[0]) : -1;
+              modes[0] != NOMODE_IDX ? ispTestedModes.getNumCompletedSubParts(otherSplit, modes[0]) : -1;
             if (numSubPartsBestModeAltSplit[0] != -1 && numSubPartsBestMode[0] != -1
                 && numSubPartsBestModeAltSplit[0] > numSubPartsBestMode[0])
             {

@@ -291,6 +291,8 @@ protected:
   int       m_edrapPeriod;
 
   int       m_iQP;                              //  if (AdaptiveQP == OFF)
+  int       m_qpRefAdj;
+
   ChromaQpMappingTableParams m_chromaQpMappingTableParams;
   int       m_intraQPOffset;                    ///< QP offset for intra slice (integer)
   int       m_lambdaFromQPEnable;               ///< enable lambda derivation from QP
@@ -604,6 +606,25 @@ protected:
   bool     m_xsdMetricTypeWPSNR;
   bool     m_xsdMetricTypeWSPSNR;
   bool     m_xsdMetricTypeEstimatedEnergy;
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  uint32_t                          m_greenMetadataAMIFlags;
+  uint8_t                           m_greenMetadataAMIDisplayModel;
+  uint8_t                           m_greenMetadataAMIApproximationModel;
+  uint8_t                           m_greenMetadataAMIMapNumber;
+  std::vector<uint8_t>              m_greenMetadataAMILayerId;
+  std::vector<uint8_t>              m_greenMetadataAMIOlsNumber;
+  std::vector<std::vector<uint8_t>> m_greenMetadataAMIOlsId;
+  std::vector<uint8_t>              m_greenMetadataAMIEnergyReductionRate;
+  std::vector<uint8_t>              m_greenMetadataAMIVideoQualityMetricType;
+  std::vector<uint16_t>             m_greenMetadataAMIVideoQualityLevel;
+  std::vector<uint8_t>              m_greenMetadataAMIMaxValue;
+  std::vector<uint8_t>              m_greenMetadataAMIAttenuationUseIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIAttenuationCompIdc;
+  std::vector<bool>                 m_greenMetadataAMIPreprocessingFlag;
+  std::vector<uint8_t>              m_greenMetadataAMIPreprocessingTypeIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIPreprocessingScaleIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIBacklightScalingIdc;
+#endif
 #endif
   bool      m_selfContainedClvsFlag;
   bool      m_bpDeltasGOPStructure;
@@ -778,6 +799,10 @@ protected:
   std::string             m_nnPostFilterSEICharacteristicsPrompt[MAX_NUM_NN_POST_FILTERS];
   std::vector<bool>       m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
+#if JVET_AK0326_NNPF_SEED
+  bool                    m_nnPostFilterSEICharacteristicsInbandSeedFlag[MAX_NUM_NN_POST_FILTERS];
+  uint32_t                m_nnPostFilterSEICharacteristicsSeed[MAX_NUM_NN_POST_FILTERS];
+#endif
 
   bool                    m_nnPostFilterSEIActivationEnabled;
   bool                    m_nnPostFilterSEIActivationUseSuffixSEI;
@@ -792,7 +817,14 @@ protected:
   bool                    m_nnPostFilterSEIActivationPromptUpdateFlag;
   std::string             m_nnPostFilterSEIActivationPrompt;
 #endif
+#if JVET_AK0326_NNPF_SEED
+  bool                    m_nnPostFilterSEIActivationSeedUpdateFlag;
+  uint32_t                m_nnPostFilterSEIActivationSeed;
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  bool                    m_nnPostFilterSEIActivationSelectedInputFlag;
+#endif
   uint32_t                m_nnPostFilterSEIActivationNumInputPicShift;
 #endif
 
@@ -857,6 +889,11 @@ protected:
   uint8_t   m_fgcSEIIntensityIntervalLowerBound   [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES];
   uint8_t   m_fgcSEIIntensityIntervalUpperBound   [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES];
   uint32_t  m_fgcSEICompModelValue                [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES][MAX_NUM_MODEL_VALUES];
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  bool      m_fgcSEISpatialResolutionPresentFlag;
+  int       m_fgcSEIPicWidthInLumaSamples;
+  int       m_fgcSEIPicHeightInLumaSamples;
+#endif
 // cll SEI
   bool      m_cllSEIEnabled;
   uint16_t  m_cllSEIMaxContentLevel;
@@ -976,6 +1013,14 @@ protected:
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   std::vector<uint16_t> m_poSEINumOfPrefixBits;
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  bool                  m_poSEIComplexityInfoPresentFlag;
+  uint32_t              m_poSEIParameterTypeIdc;
+  uint32_t              m_poSEILog2ParameterBitLengthMinus3;
+  uint32_t              m_poSEINumParametersIdc;
+  uint32_t              m_poSEINumKmacOperationIdc;
+  uint32_t              m_poSEITotalKilobyteSize;
+#endif
   std::vector<std::vector<uint8_t>>  m_poSEIPrefixByte;
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
@@ -999,6 +1044,9 @@ protected:
   bool     m_priSEICancelFlag;
   bool     m_priSEIPersistenceFlag;
   uint32_t m_priSEINumRegionsMinus1;
+#if JVET_AL0324_AL0070_PRI_SEI
+  bool     m_priSEIMultilayerFlag;
+#endif
   bool     m_priSEIUseMaxDimensionsFlag;
   uint32_t m_priSEILog2UnitSize;
   uint32_t m_priSEIRegionSizeLenMinus1;
@@ -1013,19 +1061,38 @@ protected:
   std::vector<uint32_t> m_priSEIResamplingHeightNumMinus1;
   std::vector<uint32_t> m_priSEIResamplingHeightDenomMinus1;
   std::vector<uint32_t> m_priSEIRegionId;
+#if JVET_AL0324_AL0070_PRI_SEI
+  std::vector<uint32_t> m_priSEIRegionLayerId;
+  std::vector<bool>     m_priSEIRegionIsALayerFlag;
+#endif
   std::vector<uint32_t> m_priSEIRegionTopLeftInUnitsX;
   std::vector<uint32_t> m_priSEIRegionTopLeftInUnitsY;
   std::vector<uint32_t> m_priSEIRegionWidthInUnitsMinus1;
   std::vector<uint32_t> m_priSEIRegionHeightInUnitsMinus1;
   std::vector<uint32_t> m_priSEIResamplingRatioIdx;
+#if JVET_AL0324_AL0070_PRI_SEI
+  std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsX;
+  std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsY;
+#else
   std::vector<uint32_t> m_priSEITargetRegionTopLeftX;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftY;
   bool                  m_priSEIMultilayerFlag;
   std::vector<uint32_t> m_priSEIRegionLayerId;
   std::vector<bool>     m_priSEIRegionIsALayerFlag;
 #endif
+#endif
 
   bool      m_constrainedRaslEncoding;
+
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  bool  m_aurSEIEnabled;
+  bool  m_aurSEICancelFlag;
+  bool  m_aurSEIPersistenceFlag;
+  uint32_t  m_aurSEINumRestrictionsMinus1;
+  std::vector<uint32_t>  m_aurSEIRestrictions;
+  std::vector<bool>  m_aurSEIContextPresentFlag;
+  std::vector<uint32_t>  m_aurSEIContext;
+#endif
 
   //====== Weighted Prediction ========
   bool      m_useWeightedPred;       //< Use of Weighting Prediction (P_SLICE)
@@ -1496,6 +1563,7 @@ public:
   void      setEdrapPeriod                  (int edrapPeriod) { m_edrapPeriod = edrapPeriod; }
 
   void      setBaseQP                       ( int   i )      { m_iQP = i; }
+  void      setQpRefAdj(int deltaQp) { m_qpRefAdj = deltaQp; }
   void      setIntraQPOffset                ( int   i )         { m_intraQPOffset = i; }
   void      setLambdaFromQPEnable           ( bool  b )         { m_lambdaFromQPEnable = b; }
   void      setChromaQpMappingTableParams   (const ChromaQpMappingTableParams &params) { m_chromaQpMappingTableParams = params; }
@@ -1938,6 +2006,7 @@ public:
   int       getLambdaFromQPEnable           () const    { return  m_lambdaFromQPEnable; }
 public:
   int       getBaseQP                       () const { return  m_iQP; } // public should use getQPForPicture.
+  int       getQpRefAdj() const { return m_qpRefAdj; }
   int       getQPForPicture                 (const uint32_t gopIndex, const Slice *pSlice) const; // Function actually defined in EncLib.cpp
   int       getSourcePadding                ( int i ) { CHECK(i >= 2, "Invalid index"); return  m_sourcePadding[i]; }
 
@@ -2297,6 +2366,12 @@ public:
   const       std::vector<bool>& getNNPostFilterSEICharacteristicsInputPicOutputFlag(int filterIdx)         { return m_nnPostFilterSEICharacteristicsInputPicOutputFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(bool absentInputPicZeroFlag, int filterIdx)       { m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[filterIdx] = absentInputPicZeroFlag; }
   bool        getNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(int filterIdx) const                              { return m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[filterIdx]; }
+#if JVET_AK0326_NNPF_SEED
+  void        setNNPostFilterSEICharacteristicsInbandSeedFlag(bool inbandSeedFlag, int filterIdx)                       { m_nnPostFilterSEICharacteristicsInbandSeedFlag[filterIdx] = inbandSeedFlag; }
+  bool        getNNPostFilterSEICharacteristicsInbandSeedFlag(int filterIdx) const                                      { return m_nnPostFilterSEICharacteristicsInbandSeedFlag[filterIdx]; }
+  void        setNNPostFilterSEICharacteristicsSeed(uint32_t seed, int filterIdx)                                       { m_nnPostFilterSEICharacteristicsSeed[filterIdx] = seed; }
+  uint32_t    getNNPostFilterSEICharacteristicsSeed(int filterIdx) const                                                { return m_nnPostFilterSEICharacteristicsSeed[filterIdx]; }
+#endif
   void        setNnPostFilterSEIActivationEnabled(bool enabledFlag)                                                     { m_nnPostFilterSEIActivationEnabled = enabledFlag; }
   bool        getNnPostFilterSEIActivationEnabled() const                                                               { return m_nnPostFilterSEIActivationEnabled; }
   void        setNnPostFilterSEIActivationUseSuffixSEI(bool suffixFlag)                                                 { m_nnPostFilterSEIActivationUseSuffixSEI = suffixFlag; }
@@ -2322,7 +2397,17 @@ public:
   void        setNnPostFilterSEIActivationPrompt(std::string prompt)                                                    { m_nnPostFilterSEIActivationPrompt = prompt; }
   std::string getNnPostFilterSEIActivationPrompt() const                                                                { return m_nnPostFilterSEIActivationPrompt; }
 #endif
+#if JVET_AK0326_NNPF_SEED
+  void        setNnPostFilterSEIActivationSeedUpdateFlag(bool seedUpdateFlag)                                           { m_nnPostFilterSEIActivationSeedUpdateFlag = seedUpdateFlag; }
+  bool        getNnPostFilterSEIActivationSeedUpdateFlag() const                                                        { return m_nnPostFilterSEIActivationSeedUpdateFlag; }
+  void        setNnPostFilterSEIActivationSeed(uint32_t seed)                                                           { m_nnPostFilterSEIActivationSeed = seed; }
+  uint32_t    getNnPostFilterSEIActivationSeed() const                                                                  { return m_nnPostFilterSEIActivationSeed; }
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  void        setNnPostFilterSEIActivationSelectedInputFlag(uint32_t selectedInputFlag)                                 { m_nnPostFilterSEIActivationSelectedInputFlag = selectedInputFlag; }
+  bool        getNnPostFilterSEIActivationSelectedInputFlag() const                                                     { return m_nnPostFilterSEIActivationSelectedInputFlag; }
+#endif 
   void        setNnPostFilterSEIActivationNumInputPicShift(uint32_t numInputPicShift)                                   { m_nnPostFilterSEIActivationNumInputPicShift = numInputPicShift; }
   uint32_t    getNnPostFilterSEIActivationNumInputPicShift() const                                                      { return m_nnPostFilterSEIActivationNumInputPicShift; }
 #endif 
@@ -2382,6 +2467,91 @@ public:
   bool getSEIXSDMetricTypeWPSNR()                                    { return m_xsdMetricTypeWPSNR;}
   void setSEIXSDMetricTypeWSPSNR(bool b)                              { m_xsdMetricTypeWSPSNR = b;}
   bool getSEIXSDMetricTypeWSPSNR()                                   { return m_xsdMetricTypeWSPSNR;}
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  void           setSEIGreenMetadataAMIFlags(uint32_t b) { m_greenMetadataAMIFlags = b; }
+  uint32_t       getSEIGreenMetadataAMIFlags() const { return m_greenMetadataAMIFlags; }
+  void           setSEIGreenMetadataAMIDisplayModel(uint32_t b) { m_greenMetadataAMIDisplayModel = b; }
+  const uint32_t getSEIGreenMetadataAMIDisplayModel() const { return m_greenMetadataAMIDisplayModel; }
+  void           setSEIGreenMetadataAMIApproximationModel(uint32_t b) { m_greenMetadataAMIApproximationModel = b; }
+  const uint32_t getSEIGreenMetadataAMIApproximationModel() const { return m_greenMetadataAMIApproximationModel; }
+  void           setSEIGreenMetadataAMIMapNumber(uint32_t b) { m_greenMetadataAMIMapNumber = b; }
+  const uint32_t getSEIGreenMetadataAMIMapNumber() const { return m_greenMetadataAMIMapNumber; }
+
+  void                        setSEIGreenMetadataAMILayerId(std::vector<uint8_t>& b) { m_greenMetadataAMILayerId = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMILayerId() const { return m_greenMetadataAMILayerId; }
+
+  void setSEIGreenMetadataAMIOlsNumber(std::vector<uint8_t>& b) { m_greenMetadataAMIOlsNumber = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIOlsNumber() const { return m_greenMetadataAMIOlsNumber; }
+
+  void setSEIGreenMetadataAMIOlsId(std::vector<std::vector<uint8_t>>& b) { m_greenMetadataAMIOlsId = b; }
+  const std::vector<std::vector<uint8_t>>& getSEIGreenMetadataAMIOlsId() const { return m_greenMetadataAMIOlsId; }
+
+  void setSEIGreenMetadataAMIEnergyReductionRate(std::vector<uint8_t>& b) { m_greenMetadataAMIEnergyReductionRate = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIEnergyReductionRate() const
+  {
+    return m_greenMetadataAMIEnergyReductionRate;
+  }
+
+  void setSEIGreenMetadataAMIVideoQualityMetricType(std::vector<uint8_t>& b)
+  {
+    m_greenMetadataAMIVideoQualityMetricType = b;
+  }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIVideoQualityMetricType() const
+  {
+    return m_greenMetadataAMIVideoQualityMetricType;
+  }
+
+  void setSEIGreenMetadataAMIVideoQualityLevel(std::vector<uint16_t>& b) { m_greenMetadataAMIVideoQualityLevel = b; }
+  const std::vector<uint16_t>& getSEIGreenMetadataAMIVideoQualityLevel() const
+  {
+    return m_greenMetadataAMIVideoQualityLevel;
+  }
+
+  void setSEIGreenMetadataAMIMaxValue(std::vector<uint8_t>& b) { m_greenMetadataAMIMaxValue = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIMaxValue() const { return m_greenMetadataAMIMaxValue; }
+
+  void setSEIGreenMetadataAMIAttenuationUseIdc(std::vector<uint8_t>& b) { m_greenMetadataAMIAttenuationUseIdc = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIAttenuationUseIdc() const
+  {
+    return m_greenMetadataAMIAttenuationUseIdc;
+  }
+
+  void setSEIGreenMetadataAMIAttenuationCompIdc(std::vector<uint8_t>& b) { m_greenMetadataAMIAttenuationCompIdc = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIAttenuationCompIdc() const
+  {
+    return m_greenMetadataAMIAttenuationCompIdc;
+  }
+
+  void setSEIGreenMetadataAMIPreprocessingFlag(std::vector<bool>& b) { m_greenMetadataAMIPreprocessingFlag = b; }
+  const std::vector<bool>& getSEIGreenMetadataAMIPreprocessingFlag() const
+  {
+    return m_greenMetadataAMIPreprocessingFlag;
+  }
+
+  void setSEIGreenMetadataAMIPreprocessingTypeIdc(std::vector<uint8_t>& b)
+  {
+    m_greenMetadataAMIPreprocessingTypeIdc = b;
+  }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIPreprocessingTypeIdc() const
+  {
+    return m_greenMetadataAMIPreprocessingTypeIdc;
+  }
+
+  void setSEIGreenMetadataAMIPreprocessingScaleIdc(std::vector<uint8_t>& b)
+  {
+    m_greenMetadataAMIPreprocessingScaleIdc = b;
+  }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIPreprocessingScaleIdc() const
+  {
+    return m_greenMetadataAMIPreprocessingScaleIdc;
+  }
+
+  void setSEIGreenMetadataAMIBacklightScalingIdc(std::vector<uint8_t>& b) { m_greenMetadataAMIBacklightScalingIdc = b; }
+  const std::vector<uint8_t>& getSEIGreenMetadataAMIBacklightScalingIdc() const
+  {
+    return m_greenMetadataAMIBacklightScalingIdc;
+  }
+#endif
 #endif
   void  setSelfContainedClvsFlag(bool b)                             { m_selfContainedClvsFlag = b; }
   int   getSelfContainedClvsFlag()                                   { return m_selfContainedClvsFlag; }
@@ -2692,6 +2862,14 @@ public:
   uint8_t   getFGCSEIIntensityIntervalUpperBound(int index, int ctr)            { return m_fgcSEIIntensityIntervalUpperBound[index][ctr]; }
   void      setFGCSEICompModelValue             (uint32_t v, int index, int ctr, int modelCtr)  { m_fgcSEICompModelValue[index][ctr][modelCtr] = v; }
   uint32_t  getFGCSEICompModelValue             (int index, int ctr, int modelCtr)              { return m_fgcSEICompModelValue[index][ctr][modelCtr]; }
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  void      setFGCSEISpatialResolutionPresentFlag(bool b)                       { m_fgcSEISpatialResolutionPresentFlag = b; }
+  bool      getFGCSEISpatialResolutionPresentFlag()                             { return m_fgcSEISpatialResolutionPresentFlag; }
+  void      setFGCSEIPicWidthInLumaSamples(int w)                               { m_fgcSEIPicWidthInLumaSamples = w; }
+  int       getFGCSEIPicWidthInLumaSamples()                                    { return m_fgcSEIPicWidthInLumaSamples; }
+  void      setFGCSEIPicHeightInLumaSamples(int w)                              { m_fgcSEIPicHeightInLumaSamples = w; }
+  int       getFGCSEIPicHeightInLumaSamples()                                   { return m_fgcSEIPicHeightInLumaSamples; }
+#endif
   // cll SEI
   void  setCLLSEIEnabled(bool b)                                     { m_cllSEIEnabled = b; }
   bool  getCLLSEIEnabled()                                           { return m_cllSEIEnabled; }
@@ -2927,6 +3105,20 @@ public:
   uint16_t getPoSEINumOfPrefixBits(uint16_t idx)               const { return m_poSEINumOfPrefixBits[idx]; }
   uint32_t getPoSEIPayloadTypeSize()                           const { return (uint32_t)m_poSEIPayloadType.size(); }
   void     setPoSEIPrefixByte(const std::vector<std::vector<uint8_t>>& b) { m_poSEIPrefixByte = b; }
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  void     setPoSEIComplexityInfoPresentFlag(bool b)                 { m_poSEIComplexityInfoPresentFlag = b; }
+  bool     getPoSEIComplexityInfoPresentFlag()                       { return m_poSEIComplexityInfoPresentFlag; }
+  void     setPoSEIParameterTypeIdc(uint32_t b)                      { m_poSEIParameterTypeIdc = b; }
+  uint32_t getPoSEIParameterTypeIdc()                                { return m_poSEIParameterTypeIdc; }
+  void     setPoSEILog2ParameterBitLengthMinus3(uint32_t b)          { m_poSEILog2ParameterBitLengthMinus3 = b; }
+  uint32_t getPoSEILog2ParameterBitLengthMinus3()                   { return m_poSEILog2ParameterBitLengthMinus3; }
+  void     setPoSEINumParametersIdc(uint32_t b)                      { m_poSEINumParametersIdc = b; }
+  uint32_t getPoSEINumParametersIdc()                                { return m_poSEINumParametersIdc; }
+  void     setPoSEINumKmacOperationIdc(uint32_t b)                   { m_poSEINumKmacOperationIdc = b; }
+  uint32_t getPoSEINumKmacOperationIdc()                             { return m_poSEINumKmacOperationIdc; }
+  void     setPoSEITotalKilobyteSize(uint32_t b)                     { m_poSEITotalKilobyteSize = b; }
+  uint32_t getPoSEITotalKilobyteSize()                               { return m_poSEITotalKilobyteSize; }
+#endif
   std::vector<uint8_t>  getPoSEIPrefixByte(uint16_t idx)       const { return m_poSEIPrefixByte[idx]; }
   void     setPostFilterHintSEIEnabled(bool b) { m_postFilterHintSEIEnabled = b; }
   bool     getPostFilterHintSEIEnabled() { return m_postFilterHintSEIEnabled; }
@@ -2960,6 +3152,22 @@ public:
   std::string  getTextSEIDescriptionStringLang(int idx) const {return m_textSEIDescriptionStringLang[idx];}
   void         setTextSEIDescriptionString(const std::vector<std::string> b) {m_textSEIDescriptionString = b;}
   std::string  getTextSEIDescriptionString(int idx) const {return m_textSEIDescriptionString[idx];}
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  void         setAURSEIEnabled(bool b) { m_aurSEIEnabled = b; }
+  bool         getAURSEIEnabled() const { return m_aurSEIEnabled; }
+  void         setAURSEICancelFlag(bool b) { m_aurSEICancelFlag = b; }
+  bool         getAURSEICancelFlag() const { return m_aurSEICancelFlag; }
+  void         setAURSEIPersistenceFlag(bool b) { m_aurSEIPersistenceFlag = b; }
+  bool         getAURSEIPersistenceFlag() const { return m_aurSEIPersistenceFlag; }
+  void         setAURSEINumRestrictionsMinus1(uint32_t b) { m_aurSEINumRestrictionsMinus1 = b; }
+  uint32_t     getAURSEINumRestrictionsMinus1() { return m_aurSEINumRestrictionsMinus1; }
+  void         setAURSEIRestrictions(std::vector<uint32_t> b) { m_aurSEIRestrictions = b; }
+  uint32_t     getAURSEIRestrictions(uint32_t idx) const { return m_aurSEIRestrictions[idx]; }
+  void         setAURSEIContextPresentFlag(std::vector<bool> b) { m_aurSEIContextPresentFlag = b; }
+  bool         getAURSEIContextPresentFlag(uint32_t idx) const { return m_aurSEIContextPresentFlag[idx]; }
+  void         setAURSEIContext(std::vector<uint32_t> b) { m_aurSEIContext = b; }
+  uint32_t     getAURSEIContext(uint32_t idx) const { return m_aurSEIContext[idx]; }
+#endif
 
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void     setPriSEIEnabled(bool b)                                       { m_priSEIEnabled = b; }
@@ -2970,6 +3178,10 @@ public:
   bool     getPriSEIPersistenceFlag()                                     { return m_priSEIPersistenceFlag; }
   void     setPriSEINumRegionsMinus1(uint32_t i)                          { m_priSEINumRegionsMinus1 = i; }
   uint32_t getPriSEINumRegionsMinus1()                                    { return m_priSEINumRegionsMinus1; }
+#if JVET_AL0324_AL0070_PRI_SEI
+  void     setPriSEIMultilayerFlag(bool b)                                { m_priSEIMultilayerFlag = b; }
+  bool     getPriSEIMultilayerFlag()                                      { return m_priSEIMultilayerFlag; }
+#endif
   void     setPriSEIUseMaxDimensionsFlag(bool b)                          { m_priSEIUseMaxDimensionsFlag = b; }
   bool     getPriSEIUseMaxDimensionsFlag()                                { return m_priSEIUseMaxDimensionsFlag; }
   void     setPriSEILog2UnitSize(uint32_t i)                              { m_priSEILog2UnitSize = i; }
@@ -2998,6 +3210,12 @@ public:
   uint32_t getPriSEIResamplingHeightDenomMinus1(int i)                    { return m_priSEIResamplingHeightDenomMinus1[i]; }
   void     setPriSEIRegionId(std::vector<uint32_t>& b)                    { m_priSEIRegionId = b; }
   uint32_t getPriSEIRegionId(int i)                                       { return m_priSEIRegionId[i]; }
+#if JVET_AL0324_AL0070_PRI_SEI
+  void     setPriSEIRegionLayerId(std::vector<uint32_t>& b)               { m_priSEIRegionLayerId = b; }
+  uint32_t getPriSEIRegionLayerId(int i)                                  { return m_priSEIRegionLayerId[i]; }
+  void     setPriSEIRegionIsALayerFlag(std::vector<bool>& b)              { m_priSEIRegionIsALayerFlag = b; }
+  uint32_t getPriSEIRegionIsALayerFlag(int i)                             { return m_priSEIRegionIsALayerFlag[i]; }
+#endif
   void     setPriSEIRegionTopLeftInUnitsX(std::vector<uint32_t>& b)       { m_priSEIRegionTopLeftInUnitsX = b; }
   uint32_t getPriSEIRegionTopLeftInUnitsX(int i)                          { return m_priSEIRegionTopLeftInUnitsX[i]; }
   void     setPriSEIRegionTopLeftInUnitsY(std::vector<uint32_t>& b)       { m_priSEIRegionTopLeftInUnitsY = b; }
@@ -3008,6 +3226,12 @@ public:
   uint32_t getPriSEIRegionHeightInUnitsMinus1(int i)                      { return m_priSEIRegionHeightInUnitsMinus1[i]; }
   void     setPriSEIResamplingRatioIdx(std::vector<uint32_t>& b)          { m_priSEIResamplingRatioIdx = b; }
   uint32_t getPriSEIResamplingRatioIdx(int i)                             { return m_priSEIResamplingRatioIdx[i]; }
+#if JVET_AL0324_AL0070_PRI_SEI
+  void     setPriSEITargetRegionTopLeftInUnitsX(std::vector<uint32_t>& b) { m_priSEITargetRegionTopLeftInUnitsX = b; }
+  uint32_t getPriSEITargetRegionTopLeftInUnitsX(int i) { return m_priSEITargetRegionTopLeftInUnitsX[i]; }
+  void     setPriSEITargetRegionTopLeftInUnitsY(std::vector<uint32_t>& b) { m_priSEITargetRegionTopLeftInUnitsY = b; }
+  uint32_t getPriSEITargetRegionTopLeftInUnitsY(int i) { return m_priSEITargetRegionTopLeftInUnitsY[i]; }
+#else
   void     setPriSEITargetRegionTopLeftX(std::vector<uint32_t>& b)        { m_priSEITargetRegionTopLeftX = b; }
   uint32_t getPriSEITargetRegionTopLeftX(int i)                           { return m_priSEITargetRegionTopLeftX[i]; }
   void     setPriSEITargetRegionTopLeftY(std::vector<uint32_t>& b)        { m_priSEITargetRegionTopLeftY = b; }
@@ -3018,6 +3242,7 @@ public:
   uint32_t getPriSEIRegionLayerId(int i)                                  { return m_priSEIRegionLayerId[i]; }
   void     setPriSEIRegionIsALayerFlag(std::vector<bool>& b)              { m_priSEIRegionIsALayerFlag = b; }
   bool     getPriSEIRegionIsALayerFlag(int i)                             { return m_priSEIRegionIsALayerFlag[i]; }
+#endif
 #endif
 
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }

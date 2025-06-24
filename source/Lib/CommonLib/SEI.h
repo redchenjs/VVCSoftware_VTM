@@ -111,6 +111,9 @@ public:
     DIGITALLY_SIGNED_CONTENT_VERIFICATION   = 222,
     GENERATIVE_FACE_VIDEO                   = 223,
     GENERATIVE_FACE_VIDEO_ENHANCEMENT       = 224,
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+    AI_USAGE_RESTRICTIONS                   = 225,   
+#endif
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     PACKED_REGIONS_INFO                     = 226,
 #endif
@@ -224,6 +227,14 @@ public:
   std::vector<uint16_t>   m_posProcessingOrder;
   std::vector<uint16_t>  m_posNumBitsInPrefix;
   std::vector<std::vector<uint8_t>> m_posPrefixByte;
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  bool                   m_posComplexityInfoPresentFlag;
+  uint32_t               m_posParameterTypeIdc;
+  uint32_t               m_posLog2ParameterBitLengthMinus3;
+  uint32_t               m_posNumParametersIdc;
+  uint32_t               m_posNumKmacOperationIdc;
+  uint32_t               m_posTotalKilobyteSize;
+#endif
   static bool checkWrappingSEIPayloadType(SEI::PayloadType const payloadType)
   {
     switch (payloadType)
@@ -872,6 +883,21 @@ public:
   int                   m_doTransformType;
 };
 
+#if GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+enum GREEN_METADATA_AMI_FLAGS
+{
+  UNKNOWN   = 0,
+  CANCEL    = 1,
+  GLOBAL    = 2,
+  APPROX    = 4,
+  PREPROC   = 8,
+  BACKLIGHT = 16,
+  QUALITY   = 32
+};
+#endif
+#endif
+
 class SEIGreenMetadata : public SEI
 {
 public:
@@ -903,10 +929,10 @@ public:
   int     m_xsdMetricValueWPSNR;
   int    m_xsdMetricValueWSPSNR;
 
-  bool     m_xsdMetricTypePSNR;
-  bool     m_xsdMetricTypeSSIM;
-  bool     m_xsdMetricTypeWPSNR;
-  bool     m_xsdMetricTypeWSPSNR;
+  bool     m_xsdMetricTypePSNR = false;
+  bool     m_xsdMetricTypeSSIM = false;
+  bool     m_xsdMetricTypeWPSNR = false;
+  bool     m_xsdMetricTypeWSPSNR = false;
 
   int      m_greenMetadataGranularityType = 0;
   int      m_greenMetadataExtendedRepresentation = 0;
@@ -914,6 +940,25 @@ public:
   int m_numPictures= -1;
   int m_numSeconds = -1;
   SEIComplexityMetrics m_greenComplexityMetrics;
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  uint8_t                           m_greenMetadataAMIFlags              = 0;
+  uint8_t                           m_greenMetadataAMIDisplayModel       = 0;
+  uint8_t                           m_greenMetadataAMIApproximationModel = 0;
+  uint8_t                           m_greenMetadataAMIMapNumber          = 0;
+  std::vector<uint8_t>              m_greenMetadataAMILayerId;
+  std::vector<uint8_t>              m_greenMetadataAMIOlsNumber;
+  std::vector<std::vector<uint8_t>> m_greenMetadataAMIOlsId;
+  std::vector<uint8_t>              m_greenMetadataAMIEnergyReductionRate;
+  std::vector<uint8_t>              m_greenMetadataAMIVideoQualityMetricType;
+  std::vector<uint16_t>             m_greenMetadataAMIVideoQualityLevel;
+  std::vector<uint8_t>              m_greenMetadataAMIMaxValue;
+  std::vector<uint8_t>              m_greenMetadataAMIAttenuationUseIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIAttenuationCompIdc;
+  std::vector<bool>                 m_greenMetadataAMIPreprocessingFlag;
+  std::vector<uint8_t>              m_greenMetadataAMIPreprocessingTypeIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIPreprocessingScaleIdc;
+  std::vector<uint8_t>              m_greenMetadataAMIBacklightScalingIdc;
+#endif
 };
 
 
@@ -1037,6 +1082,12 @@ public:
 
   CompModel m_compModel[MAX_NUM_COMPONENT];
   bool      m_filmGrainCharacteristicsPersistenceFlag;
+
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  bool      m_spatialResolutionPresentFlag;
+  int       m_picWidthInLumaSamples;
+  int       m_picHeightInLumaSamples;
+#endif
 };
 
 class SEIContentLightLevelInfo : public SEI
@@ -1460,6 +1511,10 @@ public:
     , m_prompt("")
     , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
+#if JVET_AK0326_NNPF_SEED
+    , m_inbandSeedFlag(false)
+    , m_seed(0)
+#endif
   {}
   SEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
 
@@ -1545,6 +1600,10 @@ public:
   std::vector<bool> m_inputPicOutputFlag;
   bool           m_absentInputPicZeroFlag;
   uint32_t       m_numInpPicsInOutputTensor;
+#if JVET_AK0326_NNPF_SEED
+  bool           m_inbandSeedFlag;
+  uint32_t       m_seed;
+#endif
 };
 
 class SEINeuralNetworkPostFilterActivation : public SEI
@@ -1562,7 +1621,14 @@ public:
     , m_promptUpdateFlag(false)
     , m_prompt("")
 #endif
+#if JVET_AK0326_NNPF_SEED
+    , m_seedUpdateFlag(false)
+    , m_seed(0)
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+    , m_selectedInputFlag(false)
+#endif
     , m_numInputPicShift(0)
 #endif 
 {}
@@ -1581,7 +1647,14 @@ public:
   bool           m_promptUpdateFlag;
   std::string    m_prompt;
 #endif
+#if JVET_AK0326_NNPF_SEED
+  bool           m_seedUpdateFlag;
+  uint32_t       m_seed;
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  bool           m_selectedInputFlag;
+#endif
   uint32_t       m_numInputPicShift;
 #endif 
 };
@@ -1806,6 +1879,28 @@ public:
   uint8_t          m_miMaxWavelengthExponentPlus15;  
 };
 
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+class SEIAIUsageRestrictions : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::AI_USAGE_RESTRICTIONS; }
+  SEIAIUsageRestrictions()
+    : m_cancelFlag(false)
+    , m_persistenceFlag(false)
+    , m_numRestrictionsMinus1(0)
+  {}
+  SEIAIUsageRestrictions(const SEIAIUsageRestrictions& sei);
+  virtual ~SEIAIUsageRestrictions() {}
+
+  bool                  m_cancelFlag;
+  bool                  m_persistenceFlag;
+  uint32_t              m_numRestrictionsMinus1;
+  std::vector<uint32_t> m_restrictions;
+  std::vector<bool>     m_contextPresentFlag;
+  std::vector<uint32_t> m_context;
+};
+#endif
+
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 class SEIPackedRegionsInfo : public SEI
 {
@@ -1853,8 +1948,13 @@ public:
   std::vector<uint32_t> m_regionWidthInUnitsMinus1;
   std::vector<uint32_t> m_regionHeightInUnitsMinus1;
   std::vector<uint32_t> m_resamplingRatioIdx;
+#if JVET_AL0324_AL0070_PRI_SEI
+  std::vector<uint32_t> m_targetRegionTopLeftInUnitsX;
+  std::vector<uint32_t> m_targetRegionTopLeftInUnitsY;
+#else
   std::vector<uint32_t> m_targetRegionTopLeftX;
   std::vector<uint32_t> m_targetRegionTopLeftY;
+#endif
   std::vector<uint32_t> m_regionLayerId;
   std::vector<uint8_t>  m_regionIsALayerFlag;
 };

@@ -823,6 +823,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<double>     cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX            (-50960.0, 50960.0, 0, 5095000);
   SMultiValueInput<double>     cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY            (-50960.0, 50960.0, 0, 5095000);
 
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  SMultiValueInput<uint32_t>   cfg_aurSEIRestrictions                                        (0, 2, 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<bool>       cfg_aurSEIContextPresentFlag                                  (0, 1, 0, 4096);
+  SMultiValueInput<uint32_t>   cfg_aurSEIContext                                             (0, 15, 0, std::numeric_limits<uint32_t>::max());
+#endif
+
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   SMultiValueInput<uint32_t> cfg_priSEIResamplingWidthNumMinus1(0, 65535, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEIResamplingWidthDenomMinus1(0, 65535, 0, std::numeric_limits<uint32_t>::max());
@@ -834,10 +840,37 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t> cfg_priSEIRegionWidthInUnitsMinus1(0, std::numeric_limits<uint32_t>::max() - 1, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEIRegionHeightInUnitsMinus1(0, std::numeric_limits<uint32_t>::max() - 1, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEIResamplingRatioIdx(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
+#if JVET_AL0324_AL0070_PRI_SEI
+  SMultiValueInput<uint32_t> cfg_priSEITargetRegionTopLeftInUnitsX(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
+  SMultiValueInput<uint32_t> cfg_priSEITargetRegionTopLeftInUnitsY(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
+#else
   SMultiValueInput<uint32_t> cfg_priSEITargetRegionTopLeftX(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEITargetRegionTopLeftY(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
+#endif
   SMultiValueInput<uint32_t> cfg_priSEIRegionLayerId(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<bool> cfg_priSEIRegionIsALayerFlag(0, 1, 0, std::numeric_limits<uint32_t>::max());
+#endif
+
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  CHECK(GREEN_METADATA_SEI_ENABLED == 0, "GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464 cannot be enabled when GREEN_METADATA_SEI_ENABLED is not enabled.");
+#endif
+
+#if GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMILayerId(0, 255, 0, 256);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIOlsNumber(0, 15, 0, 16);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIOlsId(0, 4, 0, 5);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIEnergyReductionRate(0, 31, 0, 32);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIVideoQualityMetricType(0, 7, 0, 8);
+  SMultiValueInput<double>   cfg_greenMetadataAMIVideoQualityLevel(0, 1.0, 0, 65536);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIMaxValue(0, 255, 0, 256);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIAttenuationUseIdc(0, 15, 0, 16);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIAttenuationCompIdc(0, 15, 0, 16);
+  SMultiValueInput<bool>     cfg_greenMetadataAMIPreprocessingFlag(false, true, 0, 2);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIPreprocessingTypeIdc(0, 3, 0, 4);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIPreprocessingScaleIdc(0, 255, 0, 256);
+  SMultiValueInput<uint16_t> cfg_greenMetadataAMIBacklightScalingIdc(0, 15, 0, 16);
+#endif
 #endif
 
 #if ENABLE_TRACING
@@ -953,6 +986,25 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIGreenMetadataExtendedRepresentation",          m_greenMetadataExtendedRepresentation,                 0, "Specifies whether reduced or extended set of complexity metrics is signelled. ")
   ("GMFA",                                            m_GMFA,                                            false, "Write output file for the Green-Metadata analyzer for decoder complexity metrics (JVET-P0085)\n")
   ("GMFAFile",                                        m_GMFAFile,                                   std::string(""), "File for the Green Metadata Bit Stream Feature Analyzer output (JVET-P0085)\n")
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  ("SEIGreenMetadataAMIFlags",                        m_greenMetadataAMIFlags, (unsigned)GREEN_METADATA_AMI_FLAGS::CANCEL, "Specifies which parameters are needed to apply the attenuation map.")
+  ("SEIGreenMetadataAMIDisplayModel",                 m_greenMetadataAMIDisplayModel,                       0u, "Specifies the display models for which the application of attenuation maps may be used.")
+  ("SEIGreenMetadataAMIApproximationModel",           m_greenMetadataAMIApproximationModel,                 0u, "Specifies the model used to extrapolate the attenuation map samples for another energy reduction rate.")
+  ("SEIGreenMetadataAMIMapNumber",                    m_greenMetadataAMIMapNumber,                          1u, "Specifies the number of auxiliary pictures of type AUX_ALPHA in the CVS. It corresponds to the number of attenuation maps.")
+  ("SEIGreenMetadataAMILayerId",                      cfg_greenMetadataAMILayerId, cfg_greenMetadataAMILayerId,                               "Specifies the identifier of the decoded layer for the attenuation map of index i.")
+  ("SEIGreenMetadataAMIOlsNumber",                    cfg_greenMetadataAMIOlsNumber, cfg_greenMetadataAMIOlsNumber,                           "Specifies the number of output layer sets to which the attenuation map of index i belongs.")
+  ("SEIGreenMetadataAMIOlsId",                        cfg_greenMetadataAMIOlsId, cfg_greenMetadataAMIOlsId,                                   "Specifies the identifier of the output layer set of index j for the attenuation map of index i.")
+  ("SEIGreenMetadataAMIEnergyReductionRate",          cfg_greenMetadataAMIEnergyReductionRate, cfg_greenMetadataAMIEnergyReductionRate,       "Specifies the expected energy savings rate when the video is displayed after applying the attenuation map of index i.")
+  ("SEIGreenMetadataAMIVideoQualityMetricType",       cfg_greenMetadataAMIVideoQualityMetricType, cfg_greenMetadataAMIVideoQualityMetricType, "Specifies the quality metric which was considered to inform of the reduction of the video quality due to the application of the attenuation map of index i.")
+  ("SEIGreenMetadataAMIVideoQualityLevel",            cfg_greenMetadataAMIVideoQualityLevel, cfg_greenMetadataAMIVideoQualityLevel,           "Indicates the expected video quality when the video is rendered on a display after application of the attenuation map of index i.")
+  ("SEIGreenMetadataAMIMaxValue",                     cfg_greenMetadataAMIMaxValue, cfg_greenMetadataAMIMaxValue,                             "Indicates the maximum value of the attenuation map of index i.")
+  ("SEIGreenMetadataAMIAttenuationUseIdc",            cfg_greenMetadataAMIAttenuationUseIdc, cfg_greenMetadataAMIAttenuationUseIdc,           "Specifies the use of the attenuation map sample values of the decoded auxiliary picture of index i")
+  ("SEIGreenMetadataAMIAttenuationCompIdc",           cfg_greenMetadataAMIAttenuationCompIdc, cfg_greenMetadataAMIAttenuationCompIdc,         "Specifies on which colour component(s) of the associated primary picture the attenuation map of index i should be applied.")
+  ("SEIGreenMetadataAMIPreprocessingFlag",            cfg_greenMetadataAMIPreprocessingFlag, cfg_greenMetadataAMIPreprocessingFlag,           "Specifies whether some pre-upsampling is to be used on the attenuation map of index i.")
+  ("SEIGreenMetadataAMIPreprocessingTypeIdc",         cfg_greenMetadataAMIPreprocessingTypeIdc, cfg_greenMetadataAMIPreprocessingTypeIdc,     "Specifies the recommended type of the interpolation used to resample the attenuation map on index i.")
+  ("SEIGreenMetadataAMIPreprocessingScaleIdc",        cfg_greenMetadataAMIPreprocessingScaleIdc, cfg_greenMetadataAMIPreprocessingScaleIdc,   "Specifies which scaling should be applied to the attenuation map of index i before applying it on the decoded picture.")
+  ("SEIGreenMetadataAMIBacklightScalingIdc",          cfg_greenMetadataAMIBacklightScalingIdc, cfg_greenMetadataAMIBacklightScalingIdc,       "Specifies the process to compute the scaling factor of the backlight of transmissive pixel displays, derived from the attenuation map of index i.")
+#endif
 #endif
   //Field coding parameters
   ("FieldCoding",                                     m_isField,                                        false, "Signals if it's a field based coding")
@@ -1240,6 +1292,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("LambdaScaleTowardsNextQP",                        m_lambdaScaleTowardsNextQP,                         0.0, "Scale lambda towards lambda for next integer QP. A negative number increase bitrate and a positive number decrease bitrate.")
   /* Quantization parameters */
   ("QP,q",                                            m_iQP,                                               30, "Qp value")
+  ("PPSInitialQPOffset",                              m_qpRefAdj,                                           0, "Offset added to initial QP value coded in PPS")
   ("QPIncrementFrame,-qpif",                          m_qpIncrementAtSourceFrame,   std::optional<uint32_t>(), "If a source file frame number is specified, the internal QP will be incremented for all POCs associated with source frames >= frame number. If empty, do not increment.")
   ("IntraQPOffset",                                   m_intraQPOffset,                                      0, "Qp offset value for intra slice, typically determined based on GOP size")
   ("LambdaFromQpEnable",                              m_lambdaFromQPEnable,                             false, "Enable flag for derivation of lambda from QP")
@@ -1574,6 +1627,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
                                                                      "\t6: SHA-512/256")
 ("SEIDSCSigningKeyFile", m_cfgDigitallySignedContentSEI.privateKeyFile, std::string("") , "(Private) signing key location for Digitally Signed Content SEI messages")
 ("SEIDSCVerificationKeyURI", m_cfgDigitallySignedContentSEI.publicKeyUri, std::string("") , "(Public) verification key URI for Digitally Signed Content SEI messages")
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+("SEIDSCImplicitAssociationModeFlag", m_cfgDigitallySignedContentSEI.implicitAssociationModeFlag, false , "Used to infer the verification substream ID")
+#endif
 ("SEIDSCKeyIDEnabled", m_cfgDigitallySignedContentSEI.keyIdEnabled, false, "Enable using a key ID addition to URI of public key of Digitally Signed Content SEI messages")
 ("SEIDSCKeyID", m_cfgDigitallySignedContentSEI.keyId, 0 , "Public Key ID for Digitally Signed Content SEI messages (if enabled)")
 #endif
@@ -1782,6 +1838,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPOProcessingOrder",                            cfg_poSEIProcessingOrder,       cfg_poSEIProcessingOrder, "List of payloadType processing order")
   ("SEIPONumofPrefixBits",                            cfg_poSEINumofPrefixBits,       cfg_poSEINumofPrefixBits, "List of number of prefix bits")
   ("SEIPOPrefixByte",                                 cfg_poSEIPrefixByte,                 cfg_poSEIPrefixByte, "List of prefix bytes")
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  ("SEIPOComplexityInfoPresentFlag",                  m_poSEIComplexityInfoPresentFlag,                  false, "Specifies whether complexity info is present (1) or not (0). (0, default)")
+  ("SEIPOParameterTypeIdc",                           m_poSEIParameterTypeIdc         ,                     0u, "Specifies type of parameters of the NNPFs (0) only integer, (1) integer or floating point, (2) binary only, (3) reserved. (0, default)")
+  ("SEIPOLog2ParameterBitLengthMinus3",               m_poSEILog2ParameterBitLengthMinus3,                  0u, "0, 1, 2, and 3 means the NNPFs do not use parameters of bit length greater than 8, 16, 32, and 64, respectively. (0, default)")
+  ("SEIPONumParametersIdc",                           m_poSEINumParametersIdc,                              0u, "Specifies max number of parameters needed by NNPFs in the processing chain. (0, default)")
+  ("SEIPONumKmacOperationIdcg",                       m_poSEINumKmacOperationIdc,                           0u, "When greater than 0 specifies that the max number of multiply-accumulate operations per sample of the NNPFs is less than or equal to po_num_kmac_operations_idc * 1000. ) means unknown. (0, default)")
+  ("SEIPOTotalKilobyteSize",                          m_poSEITotalKilobyteSize,                             0u, "When greater than 0 specifies a total size in kilobytes required to store the uncompressed parameters for NNPFs. 0 means unknown. (0, default)")
+#endif
   ("SEIPostFilterHintEnabled",                        m_postFilterHintSEIEnabled,                        false, "Control generation of post-filter Hint SEI message")
   ("SEIPostFilterHintCancelFlag",                     m_postFilterHintSEICancelFlag,                     false, "Specifies the persistence of any previous post-filter Hint SEI message in output order")
   ("SEIPostFilterHintPersistenceFlag",                m_postFilterHintSEIPersistenceFlag,                false, "Specifies the persistence of the post-filter Hint SEI message for the current layer")
@@ -1819,8 +1883,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPRIRegionWidthInUnitsMinus1",                  cfg_priSEIRegionWidthInUnitsMinus1, cfg_priSEIRegionWidthInUnitsMinus1, "Specifies a list of widths minus 1 in units for the regions")
   ("SEIPRIRegionHeightInUnitsMinus1",                 cfg_priSEIRegionHeightInUnitsMinus1, cfg_priSEIRegionHeightInUnitsMinus1, "Specifies a list of heights minus 1 in units for the regions")
   ("SEIPRIResamplingRatioIdx",                        cfg_priSEIResamplingRatioIdx, cfg_priSEIResamplingRatioIdx, "Specifies a list of resampling ration indices for the regions")
+#if JVET_AL0324_AL0070_PRI_SEI
+  ("SEIPRITargetRegionTopLeftInUnitsX",               cfg_priSEITargetRegionTopLeftInUnitsX, cfg_priSEITargetRegionTopLeftInUnitsX, "Specifies a list of horizontal top left postions in units of priUnitSize luma samples for the regions in reconstructed target picture")
+  ("SEIPRITargetRegionTopLeftInUnitsY",               cfg_priSEITargetRegionTopLeftInUnitsY, cfg_priSEITargetRegionTopLeftInUnitsY, "Specifies a list of vertical top left postions in units of priUnitSize luma samples for the regions in reconstructed target picture")
+#else
   ("SEIPRITargetRegionTopLeftX",                      cfg_priSEITargetRegionTopLeftX, cfg_priSEITargetRegionTopLeftX, "Specifies a list of horizontal top left postions in units of luma samples for the regions in reconstructed target picture")
   ("SEIPRITargetRegionTopLeftY",                      cfg_priSEITargetRegionTopLeftY, cfg_priSEITargetRegionTopLeftY, "Specifies a list of vertical top left postions in units of luma samples for the regions in reconstructed target picture")
+#endif
   ("SEIPRIMultilayerFlag",                            m_priSEIMultilayerFlag,                            false, "Specifies whether layer IDs are signalled")
   ("SEIPRIRegionLayerId",                             cfg_priSEIRegionLayerId,         cfg_priSEIRegionLayerId, "Specifies a list of the layer ids of the picture that the region information relate to")
   ("SEIPRIRegionIsALayerFlag",                        cfg_priSEIRegionIsALayerFlag, cfg_priSEIRegionIsALayerFlag, "Specifies a list of flags indicating for each region if the picture width and height in the layer are the same as the region's")
@@ -1984,6 +2053,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("SEIGenerativeFaceVideoEnhancementPupilRightEyeCoordinateY",        cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY,       cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY,       "the Y coordinate of the right eye pupil")
     ("SEIGenerativeFaceVideoEnhancementPayloadFilename",                 m_generativeFaceVideoEnhancementSEIPayloadFilename,                  std::string(""),                                                     "specify path to payloadfile") ;
   
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  opts.addOptions()
+    ("SEIAUREnabled",                                         m_aurSEIEnabled,                                          false,                                                         "Control use of the AI usage restrictions SEI")
+    ("SEIAURCancelFlag",                                      m_aurSEICancelFlag,                                       false,                                                         "Specifies the persistence of any previous AI usage restrictions SEI message in output order")
+    ("SEIAURPersistenceFlag",                                 m_aurSEIPersistenceFlag,                                  false,                                                         "Specifies the persistence of the AI usage restrictions SEI message for the current layer.")
+    ("SEIAURNumRestrictionsMinus1",                           m_aurSEINumRestrictionsMinus1,                            0u,                                                            "plus one specifies the number of restriction")
+    ("SEIAURRestrictions",                                    cfg_aurSEIRestrictions,                                   cfg_aurSEIRestrictions,                                        "List of restrictions")
+    ("SEIAURContextPresentFlag",                              cfg_aurSEIContextPresentFlag,                             cfg_aurSEIContextPresentFlag,                                  "List of flags indicating whether aur_context syntax elements are present")
+    ("SEIAURContext",                                         cfg_aurSEIContext,                                        cfg_aurSEIContext,                                             "List of context");
+#endif
   // clang-format on
 
 #if EXTENSION_360_VIDEO
@@ -2272,6 +2351,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     std::ostringstream absentInputPicZeroFlag;
     absentInputPicZeroFlag << "SEINNPFCAbsentInputPicZeroFlag" << i;
     opts.addOptions()(absentInputPicZeroFlag.str(), m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[i], false, "Specifies the value of nnpfc_absent_input_pic_zero_flag in the Neural Network Post Filter Characteristics SEI message");
+#if JVET_AK0326_NNPF_SEED
+    std::ostringstream inbandSeedFlag;
+    inbandSeedFlag << "SEINNPFCInbandSeedFlag" << i;
+    opts.addOptions()(inbandSeedFlag.str(), m_nnPostFilterSEICharacteristicsInbandSeedFlag[i], false, "Specifies the value of nnpfc_inband_seed_flag in the Neural Network Post Filter Characteristics SEI message");
+    std::ostringstream seed;
+    seed << "SEINNPFCSeed" << i;
+    opts.addOptions()(seed.str(), m_nnPostFilterSEICharacteristicsSeed[i], 0u, "Indicates the seed value used as input for an NNPF");
+#endif
 
     opts.addOptions()("SEINNPostFilterActivationEnabled", m_nnPostFilterSEIActivationEnabled, false, "Control use of the Neural Network Post Filter SEI on current picture");
     opts.addOptions()("SEINNPostFilterActivationUseSuffixSEI",  m_nnPostFilterSEIActivationUseSuffixSEI, false, "Code NNPFA SEI either as suffix (1) or prefix (0) SEI message");
@@ -2286,7 +2373,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationPromptUpdateFlag", m_nnPostFilterSEIActivationPromptUpdateFlag, false, "Specifies that nnpfa_prompt syntax element is present and nnpfa_alignment_zero_bit syntax element may be present");
     opts.addOptions()("SEINNPostFilterActivationPrompt", m_nnPostFilterSEIActivationPrompt, std::string(""), "Specifies the text string prompt used as input for the target NNPF");
 #endif
+#if JVET_AK0326_NNPF_SEED
+    opts.addOptions()("SEINNPostFilterActivationSeedUpdateFlag", m_nnPostFilterSEIActivationSeedUpdateFlag, false, "Specifies the value of nnpfa_seed_update_flag in the Neural Network Post Filter Activation SEI message");
+    opts.addOptions()("SEINNPostFilterActivationSeed", m_nnPostFilterSEIActivationSeed, 0u, "Specifies the seed value used as input for the target NNPF");
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+    opts.addOptions()("SEINNPostFilterActivationSelectedInputFlag", m_nnPostFilterSEIActivationSelectedInputFlag, false, "Specifies whether nnpfa_num_input_pic_shift is written to the bitstream");
+#endif
     opts.addOptions()("SEINNPostFilterActivationNumInputPicShift", m_nnPostFilterSEIActivationNumInputPicShift, 0u, "specifies the number of input pictures shift in the list of candidate input pictures to get the final input pictures for the target NNPF");
 #endif
   }
@@ -3199,12 +3293,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   {
     m_chromaQpMappingTableParams.m_sameCQPTableForAllChromaFlag = true;
 
-    cfg_qpInValCb.values    = { 26 };
-    cfg_qpInValCr.values    = { 26 };
-    cfg_qpInValCbCr.values  = { 26 };
-    cfg_qpOutValCb.values   = { 26 };
-    cfg_qpOutValCr.values   = { 26 };
-    cfg_qpOutValCbCr.values = { 26 };
+    cfg_qpInValCb.values    = { QP26 };
+    cfg_qpInValCr.values    = { QP26 };
+    cfg_qpInValCbCr.values  = { QP26 };
+    cfg_qpOutValCb.values   = { QP26 };
+    cfg_qpOutValCr.values   = { QP26 };
+    cfg_qpOutValCbCr.values = { QP26 };
   }
 
   // Need to have at least 2 points in the set. Add second one if only one given
@@ -3228,8 +3322,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   m_chromaQpMappingTableParams.m_deltaQpInValMinus1[0].resize(cfg_qpInValCb.values.size());
   m_chromaQpMappingTableParams.m_deltaQpOutVal[0].resize(cfg_qpOutValCb.values.size());
   m_chromaQpMappingTableParams.m_numPtsInCQPTableMinus1[0] = (int) cfg_qpOutValCb.values.size() - 2;
-  m_chromaQpMappingTableParams.m_qpTableStartMinus26[0]    = -26 + cfg_qpInValCb.values[0];
-  CHECK(m_chromaQpMappingTableParams.m_qpTableStartMinus26[0] < -26 - qpBdOffsetC || m_chromaQpMappingTableParams.m_qpTableStartMinus26[0] > 36, "qpTableStartMinus26[0] is out of valid range of -26 -qpBdOffsetC to 36, inclusive.")
+  m_chromaQpMappingTableParams.m_qpTableStartMinus26[0]    = -QP26 + cfg_qpInValCb.values[0];
+  CHECK(m_chromaQpMappingTableParams.m_qpTableStartMinus26[0] < -QP26 - qpBdOffsetC
+          || m_chromaQpMappingTableParams.m_qpTableStartMinus26[0] > 36,
+        "qpTableStartMinus26[0] is out of valid range of -26 -qpBdOffsetC to 36, inclusive.")
   CHECK(cfg_qpInValCb.values[0] != cfg_qpOutValCb.values[0], "First qpInValCb value should be equal to first qpOutValCb value");
   for (int i = 0; i < cfg_qpInValCb.values.size() - 1; i++)
   {
@@ -3243,8 +3339,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_chromaQpMappingTableParams.m_deltaQpInValMinus1[1].resize(cfg_qpInValCr.values.size());
     m_chromaQpMappingTableParams.m_deltaQpOutVal[1].resize(cfg_qpOutValCr.values.size());
     m_chromaQpMappingTableParams.m_numPtsInCQPTableMinus1[1] = (int) cfg_qpOutValCr.values.size() - 2;
-    m_chromaQpMappingTableParams.m_qpTableStartMinus26[1]    = -26 + cfg_qpInValCr.values[0];
-    CHECK(m_chromaQpMappingTableParams.m_qpTableStartMinus26[1] < -26 - qpBdOffsetC || m_chromaQpMappingTableParams.m_qpTableStartMinus26[1] > 36, "qpTableStartMinus26[1] is out of valid range of -26 -qpBdOffsetC to 36, inclusive.")
+    m_chromaQpMappingTableParams.m_qpTableStartMinus26[1]    = -QP26 + cfg_qpInValCr.values[0];
+    CHECK(m_chromaQpMappingTableParams.m_qpTableStartMinus26[1] < -QP26 - qpBdOffsetC
+            || m_chromaQpMappingTableParams.m_qpTableStartMinus26[1] > 36,
+          "qpTableStartMinus26[1] is out of valid range of -26 -qpBdOffsetC to 36, inclusive.")
     CHECK(cfg_qpInValCr.values[0] != cfg_qpOutValCr.values[0], "First qpInValCr value should be equal to first qpOutValCr value");
     for (int i = 0; i < cfg_qpInValCr.values.size() - 1; i++)
     {
@@ -3256,8 +3354,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_chromaQpMappingTableParams.m_deltaQpInValMinus1[2].resize(cfg_qpInValCbCr.values.size());
     m_chromaQpMappingTableParams.m_deltaQpOutVal[2].resize(cfg_qpOutValCbCr.values.size());
     m_chromaQpMappingTableParams.m_numPtsInCQPTableMinus1[2] = (int) cfg_qpOutValCbCr.values.size() - 2;
-    m_chromaQpMappingTableParams.m_qpTableStartMinus26[2]    = -26 + cfg_qpInValCbCr.values[0];
-    CHECK(m_chromaQpMappingTableParams.m_qpTableStartMinus26[2] < -26 - qpBdOffsetC || m_chromaQpMappingTableParams.m_qpTableStartMinus26[2] > 36, "qpTableStartMinus26[2] is out of valid range of -26 -qpBdOffsetC to 36, inclusive.")
+    m_chromaQpMappingTableParams.m_qpTableStartMinus26[2]    = -QP26 + cfg_qpInValCbCr.values[0];
+    CHECK(m_chromaQpMappingTableParams.m_qpTableStartMinus26[2] < -QP26 - qpBdOffsetC
+            || m_chromaQpMappingTableParams.m_qpTableStartMinus26[2] > 36,
+          "qpTableStartMinus26[2] is out of valid range of -26 -qpBdOffsetC to 36, inclusive.")
     CHECK(cfg_qpInValCbCr.values[0] != cfg_qpInValCbCr.values[0], "First qpInValCbCr value should be equal to first qpOutValCbCr value");
     for (int i = 0; i < cfg_qpInValCbCr.values.size() - 1; i++)
     {
@@ -3485,6 +3585,165 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_masteringDisplay.whitePoint[idx] = uint16_t((cfg_DisplayWhitePointCode.values.size() > idx) ? cfg_DisplayWhitePointCode.values[idx] : 0);
     }
   }
+#if GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  // Set SEI green metadata parameters
+  m_greenMetadataAMICancelFlag =
+    ((m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::CANCEL) == GREEN_METADATA_AMI_FLAGS::CANCEL) ? true : false;
+  m_greenMetadataAMIGlobalFlag =
+    ((m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::GLOBAL) == GREEN_METADATA_AMI_FLAGS::GLOBAL) ? true : false;
+  m_greenMetadataAMIApproxFlag =
+    ((m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::APPROX) == GREEN_METADATA_AMI_FLAGS::APPROX) ? true : false;
+  m_greenMetadataAMIPreprocFlag =
+    ((m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::PREPROC) == GREEN_METADATA_AMI_FLAGS::PREPROC) ? true : false;
+  m_greenMetadataAMIQualityFlag =
+    ((m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::QUALITY) == GREEN_METADATA_AMI_FLAGS::QUALITY) ? true : false;
+  m_greenMetadataAMIBacklightFlag =
+    ((m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::BACKLIGHT) == GREEN_METADATA_AMI_FLAGS::BACKLIGHT) ? true
+                                                                                                             : false;
+
+  if (!m_greenMetadataAMICancelFlag)
+  {
+    if (m_greenMetadataAMIMapNumber > 0)
+    {
+      CHECK(cfg_greenMetadataAMILayerId.values.size() != m_greenMetadataAMIMapNumber,
+            "Number of AMI layer ids must be equal to AMI map number.");
+      CHECK(cfg_greenMetadataAMIOlsNumber.values.size() != m_greenMetadataAMIMapNumber,
+            "Number of AMI ols must be equal to AMI map number.");
+      CHECK(cfg_greenMetadataAMIEnergyReductionRate.values.size() != m_greenMetadataAMIMapNumber,
+            "Number of AMI energy reduction rates must be equal to AMI map number.");
+      if (m_greenMetadataAMIQualityFlag)
+      {
+        CHECK(cfg_greenMetadataAMIVideoQualityMetricType.values.size() != m_greenMetadataAMIMapNumber,
+              "Number of AMI quality types must be equal to AMI map number.");
+        CHECK(cfg_greenMetadataAMIVideoQualityLevel.values.size() != m_greenMetadataAMIMapNumber,
+              "Number of AMI quality levels must be equal to AMI map number.");
+      }
+      CHECK(cfg_greenMetadataAMIMaxValue.values.size() != m_greenMetadataAMIMapNumber,
+            "Number of AMI max values must be equal to AMI map number.");
+      if (!m_greenMetadataAMIGlobalFlag)
+      {
+        CHECK(cfg_greenMetadataAMIAttenuationUseIdc.values.size() != m_greenMetadataAMIMapNumber,
+              "Number of AMI attenuation uses must be equal to AMI map number.");
+        CHECK(cfg_greenMetadataAMIAttenuationCompIdc.values.size() != m_greenMetadataAMIMapNumber,
+              "Number of AMI attenuation comp indices must be equal to AMI map number.");
+        if (m_greenMetadataAMIPreprocFlag)
+        {
+          CHECK(cfg_greenMetadataAMIPreprocessingFlag.values.size() != m_greenMetadataAMIMapNumber,
+                "Number of AMI preprocessing flags must be equal to AMI map number.");
+          CHECK(cfg_greenMetadataAMIPreprocessingTypeIdc.values.size() != m_greenMetadataAMIMapNumber,
+                "Number of AMI preprocessing types must be equal to AMI map number.");
+          CHECK(cfg_greenMetadataAMIPreprocessingScaleIdc.values.size() != m_greenMetadataAMIMapNumber,
+                "Number of AMI preprocessing scales must be equal to AMI map number.");
+        }
+        if (m_greenMetadataAMIBacklightFlag)
+          CHECK(cfg_greenMetadataAMIBacklightScalingIdc.values.size() != m_greenMetadataAMIMapNumber,
+                "Number of AMI backlight scalings must be equal to AMI map number.");
+      }
+      else
+      {
+        CHECK(cfg_greenMetadataAMIAttenuationUseIdc.values.size() != 1,
+              "Number of AMI attenuation uses must be equal to 1.");
+        CHECK(cfg_greenMetadataAMIAttenuationCompIdc.values.size() != 1,
+              "Number of AMI attenuation comp indices must be equal to 1.");
+        if (m_greenMetadataAMIPreprocFlag)
+        {
+          CHECK(cfg_greenMetadataAMIPreprocessingFlag.values.size() != 1,
+                "Number of AMI preprocessing flags must be equal to 1.");
+          CHECK(cfg_greenMetadataAMIPreprocessingTypeIdc.values.size() != 1,
+                "Number of AMI preprocessing types must be equal to 1.");
+          CHECK(cfg_greenMetadataAMIPreprocessingScaleIdc.values.size() != 1,
+                "Number of AMI preprocessing scales must be equal to 1.");
+        }
+        if (m_greenMetadataAMIBacklightFlag)
+          CHECK(cfg_greenMetadataAMIBacklightScalingIdc.values.size() != 1,
+                "Number of AMI backlight scalings must be equal to 1.");
+      }
+      int totalOlsIds = 0;
+      for (int i = 0; i < m_greenMetadataAMIMapNumber; i++)
+      {
+        totalOlsIds = totalOlsIds + cfg_greenMetadataAMIOlsNumber.values[i];
+      }
+      CHECK(cfg_greenMetadataAMIOlsId.values.size() > totalOlsIds, "Number of AMI ols ids is higher than expected.");
+      CHECK(cfg_greenMetadataAMIOlsId.values.size() < totalOlsIds, "Number of AMI ols ids is lower than expected.");
+
+      int totalSize = m_greenMetadataAMIGlobalFlag ? 1 : m_greenMetadataAMIMapNumber;
+
+      m_greenMetadataAMILayerId.resize(m_greenMetadataAMIMapNumber);
+      m_greenMetadataAMIOlsNumber.resize(m_greenMetadataAMIMapNumber);
+      m_greenMetadataAMIOlsId.resize(m_greenMetadataAMIMapNumber);
+      m_greenMetadataAMIEnergyReductionRate.resize(m_greenMetadataAMIMapNumber);
+      if (m_greenMetadataAMIQualityFlag)
+      {
+        m_greenMetadataAMIVideoQualityMetricType.resize(m_greenMetadataAMIMapNumber);
+        m_greenMetadataAMIVideoQualityLevel.resize(m_greenMetadataAMIMapNumber);
+      }
+      m_greenMetadataAMIMaxValue.resize(m_greenMetadataAMIMapNumber);
+      m_greenMetadataAMIAttenuationUseIdc.resize(totalSize);
+      m_greenMetadataAMIAttenuationCompIdc.resize(totalSize);
+      if (m_greenMetadataAMIPreprocFlag)
+      {
+        m_greenMetadataAMIPreprocessingFlag.resize(totalSize);
+        m_greenMetadataAMIPreprocessingTypeIdc.resize(totalSize);
+        m_greenMetadataAMIPreprocessingScaleIdc.resize(totalSize);
+      }
+      if (m_greenMetadataAMIBacklightFlag)
+        m_greenMetadataAMIBacklightScalingIdc.resize(totalSize);
+
+      int index = 0;
+      for (int i = 0; i < m_greenMetadataAMIMapNumber; i++)
+      {
+        m_greenMetadataAMILayerId[i]   = uint8_t(cfg_greenMetadataAMILayerId.values[i]);
+        m_greenMetadataAMIOlsNumber[i] = uint8_t(cfg_greenMetadataAMIOlsNumber.values[i]);
+        m_greenMetadataAMIOlsId.push_back(std::vector<uint8_t>());
+
+        m_greenMetadataAMIOlsId[i].resize(m_greenMetadataAMIOlsNumber[i]);
+        for (int j = 0; j < m_greenMetadataAMIOlsNumber[i]; j++)
+        {
+          m_greenMetadataAMIOlsId[i][j] = uint8_t(cfg_greenMetadataAMIOlsId.values[index + j]);
+        }
+        index = index + m_greenMetadataAMIOlsNumber[i];
+
+        m_greenMetadataAMIEnergyReductionRate[i] = uint8_t(cfg_greenMetadataAMIEnergyReductionRate.values[i]);
+        if (m_greenMetadataAMIQualityFlag)
+        {
+          m_greenMetadataAMIVideoQualityMetricType[i] = uint8_t(cfg_greenMetadataAMIVideoQualityMetricType.values[i]);
+          m_greenMetadataAMIVideoQualityLevel[i]      = uint16_t(cfg_greenMetadataAMIVideoQualityLevel.values[i] * 100);
+        }
+        m_greenMetadataAMIMaxValue[i] = uint8_t(cfg_greenMetadataAMIMaxValue.values[i]);
+      }
+      for (int i = 0; i < totalSize; i++)
+      {
+        m_greenMetadataAMIAttenuationUseIdc[i]  = uint8_t(cfg_greenMetadataAMIAttenuationUseIdc.values[i]);
+        m_greenMetadataAMIAttenuationCompIdc[i] = uint8_t(cfg_greenMetadataAMIAttenuationCompIdc.values[i]);
+        if (m_greenMetadataAMIPreprocFlag)
+        {
+          m_greenMetadataAMIPreprocessingFlag[i]     = uint8_t(cfg_greenMetadataAMIPreprocessingFlag.values[i]);
+          m_greenMetadataAMIPreprocessingTypeIdc[i]  = uint8_t(cfg_greenMetadataAMIPreprocessingTypeIdc.values[i]);
+          m_greenMetadataAMIPreprocessingScaleIdc[i] = uint8_t(cfg_greenMetadataAMIPreprocessingScaleIdc.values[i]);
+        }
+        if (m_greenMetadataAMIBacklightFlag)
+          m_greenMetadataAMIBacklightScalingIdc[i] = uint8_t(cfg_greenMetadataAMIBacklightScalingIdc.values[i]);
+      }
+    }
+    else
+    {
+      m_greenMetadataAMIEnergyReductionRate.resize(1);
+      m_greenMetadataAMIEnergyReductionRate[1] = uint8_t(cfg_greenMetadataAMIEnergyReductionRate.values[1]);
+
+      if (m_greenMetadataAMIQualityFlag)
+      {
+        m_greenMetadataAMIVideoQualityMetricType.resize(1);
+        m_greenMetadataAMIVideoQualityLevel.resize(1);
+        m_greenMetadataAMIVideoQualityMetricType[1] = uint8_t(cfg_greenMetadataAMIVideoQualityMetricType.values[1]);
+        m_greenMetadataAMIVideoQualityLevel[1]      = uint16_t(cfg_greenMetadataAMIVideoQualityLevel.values[1] * 100);
+      }
+    }
+  }
+
+#endif
+#endif
+
   // set sei film grain parameters.
   CHECK(!m_fgcSEIEnabled && m_fgcSEIAnalysisEnabled, "FGC SEI must be enabled in order to perform film grain analysis!");
   if (m_fgcSEIEnabled)
@@ -3961,7 +4220,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     bool NNPFCFound = false;
     bool NNPFAFound = false;
 #if JVET_AK0055_SPO_SEI_CONSTRAINT
-    std::vector<int> erp_indices, gcmp_indices, rwp_indices, fpa_indices;
+    std::vector<int> erpIndices, gcmpIndices, rwpIndices, fpaIndices;
 #endif
     for (uint32_t i = 0; i < (m_poSEINumMinus2 + 2); i++)
     {
@@ -3990,21 +4249,21 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #if JVET_AK0055_SPO_SEI_CONSTRAINT
       if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::EQUIRECTANGULAR_PROJECTION)
       {
-        CHECK(gcmp_indices.empty(), "ERP and GCMP SEI messages cannot coexist");
-        erp_indices.push_back(i);
+        CHECK(gcmpIndices.empty(), "ERP and GCMP SEI messages cannot coexist");
+        erpIndices.push_back(i);
       }
       else if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::GENERALIZED_CUBEMAP_PROJECTION)
       {
-        CHECK(erp_indices.empty(), "ERP and GCMP SEI messages cannot coexist");
-        gcmp_indices.push_back(i);
+        CHECK(erpIndices.empty(), "ERP and GCMP SEI messages cannot coexist");
+        gcmpIndices.push_back(i);
       }
       else if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::REGION_WISE_PACKING)
       {
-        rwp_indices.push_back(i);
+        rwpIndices.push_back(i);
       }
       else if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::FRAME_PACKING)
       {
-        fpa_indices.push_back(i);
+        fpaIndices.push_back(i);
       }
       m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
       if (m_poSEIPrefixFlag[i])
@@ -4063,44 +4322,44 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
     CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
 #if JVET_AK0055_SPO_SEI_CONSTRAINT
-    if (!rwp_indices.empty())
+    if (!rwpIndices.empty())
     {
-      CHECK(!erp_indices.empty() || !gcmp_indices.empty(), "If RWP is present, at least one of ERP or GCMP must be present");
-      for (int rwpIdx : rwp_indices)
+      CHECK(!erpIndices.empty() || !gcmpIndices.empty(), "If RWP is present, at least one of ERP or GCMP must be present");
+      for (int rwpIdx : rwpIndices)
       {
-        for (int erpIdx : erp_indices)
+        for (int erpIdx : erpIndices)
         {
           CHECK(rwpIdx < erpIdx, "ERP must come after RWP");
         }
-        for (int gcmpIdx : gcmp_indices)
+        for (int gcmpIdx : gcmpIndices)
         {
           CHECK(rwpIdx < gcmpIdx, "GCMP must come after RWP");
         }
       }
     }
 
-    if (!fpa_indices.empty())
+    if (!fpaIndices.empty())
     {
-      for (int fpaIdx : fpa_indices)
+      for (int fpaIdx : fpaIndices)
       {
-        for (int erpIdx : erp_indices)
+        for (int erpIdx : erpIndices)
         {
           CHECK(fpaIdx < erpIdx, "ERP must come after FPA");
         }
-        for (int gcmpIdx : gcmp_indices)
+        for (int gcmpIdx : gcmpIndices)
         {
           CHECK(fpaIdx < gcmpIdx, "GCMP must come after FPA");
         }
       }
     }
 
-    if (!rwp_indices.empty() && !fpa_indices.empty() && !erp_indices.empty())
+    if (!rwpIndices.empty() && !fpaIndices.empty() && !erpIndices.empty())
     {
-      for (int rwpIdx : rwp_indices)
+      for (int rwpIdx : rwpIndices)
       {
-        for (int fpaIdx : fpa_indices)
+        for (int fpaIdx : fpaIndices)
         {
-          for (int erpIdx : erp_indices)
+          for (int erpIdx : erpIndices)
           {
             CHECK(rwpIdx < fpaIdx && fpaIdx < erpIdx, "Order must be: RWP < FPA < ERP");
           }
@@ -4108,18 +4367,25 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
 
-    if (!rwp_indices.empty() && !fpa_indices.empty() && !gcmp_indices.empty())
+    if (!rwpIndices.empty() && !fpaIndices.empty() && !gcmpIndices.empty())
     {
-      for (int rwpIdx : rwp_indices)
+      for (int rwpIdx : rwpIndices)
       {
-        for (int fpaIdx : fpa_indices)
+        for (int fpaIdx : fpaIndices)
         {
-          for (int gcmpIdx : gcmp_indices)
+          for (int gcmpIdx : gcmpIndices)
           {
             CHECK(rwpIdx < fpaIdx && fpaIdx < gcmpIdx, "Order must be: RWP < FPA < GCMP");
           }
         }
       }
+    }
+#endif
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+    if (!NNPFAFound && m_nnPostFilterSEIActivationEnabled && m_nnPostFilterSEIActivationSelectedInputFlag)
+    {
+      m_nnPostFilterSEIActivationSelectedInputFlag = false;
+      msg(WARNING, "\nWarning: Resetting SEINNPostFilterActivationSelectedInputFlag to 0 (it shall be zero when NNPFA SEI is not present in PON SEI)\n");
     }
 #endif
     // The following code generares sub-chain indices for conformance checking.
@@ -4164,6 +4430,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
   }
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  else if (m_nnPostFilterSEIActivationEnabled && m_nnPostFilterSEIActivationSelectedInputFlag)
+  {
+    m_nnPostFilterSEIActivationSelectedInputFlag = false;
+    msg(WARNING, "\nWarning: Resetting SEINNPostFilterActivationSelectedInputFlag to 0 (it shall be zero when NNPFA SEI is not present in PON SEI)\n");
+  }
+#endif
 
   if (m_postFilterHintSEIEnabled)
   {
@@ -4487,6 +4760,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  if (m_aurSEIEnabled)
+  {
+    m_aurSEIRestrictions = cfg_aurSEIRestrictions.values;
+    m_aurSEIContextPresentFlag = cfg_aurSEIContextPresentFlag.values;
+    m_aurSEIContext = cfg_aurSEIContext.values;
+
+  }
+#endif 
+
   if( m_costMode == COST_LOSSLESS_CODING )
   {
     bool firstSliceLossless = false;
@@ -4576,9 +4859,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     {
       CHECK(cfg_priSEIResamplingRatioIdx.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRIResamplingRatioIdx must be equal to SEIPRINumRegionsMinus1 + 1");
     }
+#if JVET_AL0324_AL0070_PRI_SEI
+    if (m_priSEITargetPicParamsPresentFlag)
+    {
+      CHECK(cfg_priSEITargetRegionTopLeftInUnitsX.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRITargetRegionTopLeftInUnitsX must be equal to SEIPRINumRegionsMinus1 + 1");
+      CHECK(cfg_priSEITargetRegionTopLeftInUnitsY.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRITargetRegionTopLeftInUnitsY must be equal to SEIPRINumRegionsMinus1 + 1");
+    }
+#else
     CHECK(cfg_priSEITargetRegionTopLeftX.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRITargetRegionTopLeftX must be equal to SEIPRINumRegionsMinus1 + 1");
     CHECK(cfg_priSEITargetRegionTopLeftY.values.size() != (m_priSEINumRegionsMinus1 + 1), "Number of elements in SEIPRITargetRegionTopLeftY must be equal to SEIPRINumRegionsMinus1 + 1");
-
+#endif
     m_priSEIRegionId = cfg_priSEIRegionId.values;
     m_priSEIRegionTopLeftInUnitsX = cfg_priSEIRegionTopLeftInUnitsX.values;
     m_priSEIRegionTopLeftInUnitsY = cfg_priSEIRegionTopLeftInUnitsY.values;
@@ -4592,8 +4882,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     {
       m_priSEIResamplingRatioIdx = {0};
     }
+#if JVET_AL0324_AL0070_PRI_SEI
+    m_priSEITargetRegionTopLeftInUnitsX = cfg_priSEITargetRegionTopLeftInUnitsX.values;
+    m_priSEITargetRegionTopLeftInUnitsY = cfg_priSEITargetRegionTopLeftInUnitsY.values;
+#else
     m_priSEITargetRegionTopLeftX = cfg_priSEITargetRegionTopLeftX.values;
     m_priSEITargetRegionTopLeftY = cfg_priSEITargetRegionTopLeftY.values;
+#endif
   }
 #endif
 

@@ -618,6 +618,7 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setIntraQpFactor                                     ( m_dIntraQpFactor );
   m_cEncLib.setLambdaScaleTowardsNextQP                          ( m_lambdaScaleTowardsNextQP );
   m_cEncLib.setBaseQP                                            ( m_iQP );
+  m_cEncLib.setQpRefAdj(m_qpRefAdj);
 
   m_cEncLib.setIntraQPOffset                                     ( m_intraQPOffset );
   m_cEncLib.setLambdaFromQPEnable                                ( m_lambdaFromQPEnable );
@@ -978,6 +979,25 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setSEIXSDMetricTypeSSIM                              (m_xsdMetricTypeSSIM);
   m_cEncLib.setSEIXSDMetricTypeWPSNR                             (m_xsdMetricTypeWPSNR);
   m_cEncLib.setSEIXSDMetricTypeWSPSNR                            (m_xsdMetricTypeWSPSNR);
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  m_cEncLib.setSEIGreenMetadataAMIFlags                          (m_greenMetadataAMIFlags);
+  m_cEncLib.setSEIGreenMetadataAMIDisplayModel                   (m_greenMetadataAMIDisplayModel);
+  m_cEncLib.setSEIGreenMetadataAMIApproximationModel             (m_greenMetadataAMIApproximationModel);
+  m_cEncLib.setSEIGreenMetadataAMIMapNumber                      (m_greenMetadataAMIMapNumber);
+  m_cEncLib.setSEIGreenMetadataAMILayerId                        (m_greenMetadataAMILayerId);
+  m_cEncLib.setSEIGreenMetadataAMIOlsNumber                      (m_greenMetadataAMIOlsNumber);
+  m_cEncLib.setSEIGreenMetadataAMIOlsId                          (m_greenMetadataAMIOlsId);
+  m_cEncLib.setSEIGreenMetadataAMIEnergyReductionRate            (m_greenMetadataAMIEnergyReductionRate);
+  m_cEncLib.setSEIGreenMetadataAMIVideoQualityMetricType         (m_greenMetadataAMIVideoQualityMetricType);
+  m_cEncLib.setSEIGreenMetadataAMIVideoQualityLevel              (m_greenMetadataAMIVideoQualityLevel);
+  m_cEncLib.setSEIGreenMetadataAMIMaxValue                       (m_greenMetadataAMIMaxValue);
+  m_cEncLib.setSEIGreenMetadataAMIAttenuationUseIdc              (m_greenMetadataAMIAttenuationUseIdc);
+  m_cEncLib.setSEIGreenMetadataAMIAttenuationCompIdc             (m_greenMetadataAMIAttenuationCompIdc);
+  m_cEncLib.setSEIGreenMetadataAMIPreprocessingFlag              (m_greenMetadataAMIPreprocessingFlag);
+  m_cEncLib.setSEIGreenMetadataAMIPreprocessingTypeIdc           (m_greenMetadataAMIPreprocessingTypeIdc);
+  m_cEncLib.setSEIGreenMetadataAMIPreprocessingScaleIdc          (m_greenMetadataAMIPreprocessingScaleIdc);
+  m_cEncLib.setSEIGreenMetadataAMIBacklightScalingIdc            (m_greenMetadataAMIBacklightScalingIdc);
+#endif
 #endif
   m_cEncLib.setErpSEIEnabled                                     ( m_erpSEIEnabled );
   m_cEncLib.setErpSEICancelFlag                                  ( m_erpSEICancelFlag );
@@ -1114,6 +1134,11 @@ void EncApp::xInitLibCfg( int layerIdx )
       }
     }
   }
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  m_cEncLib.setFGCSEISpatialResolutionPresentFlag                (m_resChangeInClvsEnabled);
+  m_cEncLib.setFGCSEIPicWidthInLumaSamples                       (m_sourceWidth);
+  m_cEncLib.setFGCSEIPicHeightInLumaSamples                      (m_sourceHeight);
+#endif
   // content light level
   m_cEncLib.setCLLSEIEnabled                                     (m_cllSEIEnabled);
   m_cEncLib.setCLLSEIMaxContentLightLevel                        ((uint16_t)m_cllSEIMaxContentLevel);
@@ -1382,6 +1407,13 @@ void EncApp::xInitLibCfg( int layerIdx )
       m_cEncLib.setNNPostFilterSEICharacteristicsForMachineAnalysisIdc   ( m_nnPostFilterSEICharacteristicsForMachineAnalysisIdc[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsUriTag                  ( m_nnPostFilterSEICharacteristicsUriTag[i], i);
       m_cEncLib.setNNPostFilterSEICharacteristicsUri                     ( m_nnPostFilterSEICharacteristicsUri[i], i);
+#if JVET_AK0326_NNPF_SEED
+      m_cEncLib.setNNPostFilterSEICharacteristicsInbandSeedFlag          ( m_nnPostFilterSEICharacteristicsInbandSeedFlag[i], i);
+      if (m_cEncLib.getNNPostFilterSEICharacteristicsInbandSeedFlag(i))
+      {
+        m_cEncLib.setNNPostFilterSEICharacteristicsSeed                  ( m_nnPostFilterSEICharacteristicsSeed[i], i );
+      }
+#endif
     }
     if (m_cEncLib.getNNPostFilterSEICharacteristicsModeIdc(i) == POST_FILTER_MODE::ISO_IEC_15938_17)
     {
@@ -1418,7 +1450,17 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setNnPostFilterSEIActivationPromptUpdateFlag         (m_nnPostFilterSEIActivationPromptUpdateFlag);
   m_cEncLib.setNnPostFilterSEIActivationPrompt                   (m_nnPostFilterSEIActivationPrompt);
 #endif
+#if JVET_AK0326_NNPF_SEED
+  m_cEncLib.setNnPostFilterSEIActivationSeedUpdateFlag           (m_nnPostFilterSEIActivationSeedUpdateFlag);
+  if (m_cEncLib.getNnPostFilterSEIActivationSeedUpdateFlag())
+  {
+    m_cEncLib.setNnPostFilterSEIActivationSeed                   (m_nnPostFilterSEIActivationSeed);
+  }
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+  m_cEncLib.setNnPostFilterSEIActivationSelectedInputFlag        (m_nnPostFilterSEIActivationSelectedInputFlag);
+#endif
   m_cEncLib.setNnPostFilterSEIActivationNumInputPicShift         (m_nnPostFilterSEIActivationNumInputPicShift);
 #endif 
   m_cEncLib.setEntropyCodingSyncEnabledFlag                      ( m_entropyCodingSyncEnabledFlag );
@@ -1491,6 +1533,14 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
   m_cEncLib.setPoSEINumOfPrefixBits                              (m_poSEINumOfPrefixBits);
   m_cEncLib.setPoSEIPrefixByte                                   (m_poSEIPrefixByte);
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  m_cEncLib.setPoSEIComplexityInfoPresentFlag                    (m_poSEIComplexityInfoPresentFlag);
+  m_cEncLib.setPoSEIParameterTypeIdc                             (m_poSEIParameterTypeIdc);
+  m_cEncLib.setPoSEILog2ParameterBitLengthMinus3                 (m_poSEILog2ParameterBitLengthMinus3);
+  m_cEncLib.setPoSEINumParametersIdc                             (m_poSEINumParametersIdc);
+  m_cEncLib.setPoSEINumKmacOperationIdc                          (m_poSEINumKmacOperationIdc);
+  m_cEncLib.setPoSEITotalKilobyteSize                            (m_poSEITotalKilobyteSize);
+#endif
 
   m_cEncLib.setTextDescriptionSEIId(m_SEITextDescriptionID);
   m_cEncLib.setTextSEICancelFlag(m_SEITextCancelFlag);
@@ -1507,6 +1557,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPriSEICancelFlag(m_priSEICancelFlag);
   m_cEncLib.setPriSEIPersistenceFlag(m_priSEIPersistenceFlag);
   m_cEncLib.setPriSEINumRegionsMinus1(m_priSEINumRegionsMinus1);
+#if JVET_AL0324_AL0070_PRI_SEI
+  m_cEncLib.setPriSEIMultilayerFlag(m_priSEIMultilayerFlag);
+#endif
   m_cEncLib.setPriSEIUseMaxDimensionsFlag(m_priSEIUseMaxDimensionsFlag);
   m_cEncLib.setPriSEILog2UnitSize(m_priSEILog2UnitSize);
   m_cEncLib.setPriSEIRegionSizeLenMinus1(m_priSEIRegionSizeLenMinus1);
@@ -1521,11 +1574,19 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPriSEIResamplingHeightNumMinus1(m_priSEIResamplingHeightNumMinus1);
   m_cEncLib.setPriSEIResamplingHeightDenomMinus1(m_priSEIResamplingHeightDenomMinus1);
   m_cEncLib.setPriSEIRegionId(m_priSEIRegionId);
+#if JVET_AL0324_AL0070_PRI_SEI
+  m_cEncLib.setPriSEIRegionLayerId(m_priSEIRegionLayerId);
+  m_cEncLib.setPriSEIRegionIsALayerFlag(m_priSEIRegionIsALayerFlag);
+#endif
   m_cEncLib.setPriSEIRegionTopLeftInUnitsX(m_priSEIRegionTopLeftInUnitsX);
   m_cEncLib.setPriSEIRegionTopLeftInUnitsY(m_priSEIRegionTopLeftInUnitsY);
   m_cEncLib.setPriSEIRegionWidthInUnitsMinus1(m_priSEIRegionWidthInUnitsMinus1);
   m_cEncLib.setPriSEIRegionHeightInUnitsMinus1(m_priSEIRegionHeightInUnitsMinus1);
   m_cEncLib.setPriSEIResamplingRatioIdx(m_priSEIResamplingRatioIdx);
+#if JVET_AL0324_AL0070_PRI_SEI
+  m_cEncLib.setPriSEITargetRegionTopLeftInUnitsX(m_priSEITargetRegionTopLeftInUnitsX);
+  m_cEncLib.setPriSEITargetRegionTopLeftInUnitsY(m_priSEITargetRegionTopLeftInUnitsY);
+#else
   m_cEncLib.setPriSEITargetRegionTopLeftX(m_priSEITargetRegionTopLeftX);
   m_cEncLib.setPriSEITargetRegionTopLeftY(m_priSEITargetRegionTopLeftY);
   m_cEncLib.setPriSEIMultilayerFlag(m_priSEIMultilayerFlag);
@@ -1534,6 +1595,7 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setPriSEIRegionLayerId(m_priSEIRegionLayerId);
     m_cEncLib.setPriSEIRegionIsALayerFlag(m_priSEIRegionIsALayerFlag);
   }
+#endif
 #endif
   m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
   m_cEncLib.setPostFilterHintSEICancelFlag(m_postFilterHintSEICancelFlag);
@@ -1600,6 +1662,15 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setMaxNumALFAPS                                      (m_maxNumAlfAps);
   m_cEncLib.setALFAPSIDShift                                     (m_alfapsIDShift);
   m_cEncLib.setConstantJointCbCrSignFlag                         (m_constantJointCbCrSignFlag != 0);
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  m_cEncLib.setAURSEIEnabled                                     (m_aurSEIEnabled);
+  m_cEncLib.setAURSEICancelFlag                                  (m_aurSEICancelFlag);
+  m_cEncLib.setAURSEIPersistenceFlag                             (m_aurSEIPersistenceFlag);
+  m_cEncLib.setAURSEINumRestrictionsMinus1                       (m_aurSEINumRestrictionsMinus1);
+  m_cEncLib.setAURSEIRestrictions                                (m_aurSEIRestrictions);
+  m_cEncLib.setAURSEIContextPresentFlag                          (m_aurSEIContextPresentFlag);
+  m_cEncLib.setAURSEIContext                                     (m_aurSEIContext);
+#endif 
 #if JVET_O0756_CALCULATE_HDRMETRICS
   for (int i=0; i<hdrtoolslib::NB_REF_WHITE; i++)
   {

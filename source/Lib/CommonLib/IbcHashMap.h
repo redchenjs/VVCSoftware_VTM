@@ -58,10 +58,28 @@
 class IbcHashMap
 {
 private:
+  using HashValue = uint32_t;
+
   int     m_picWidth;
   int     m_picHeight;
-  unsigned int**  m_pos2Hash;
-  std::unordered_map<unsigned int, std::vector<Position>> m_hash2Pos;
+
+  std::vector<HashValue> m_pos2Hash;
+  ptrdiff_t              m_pos2HashStride;
+
+  // sorted according to hash value
+  std::vector<std::pair<HashValue, Position>> m_hashPos;
+
+  auto getPositions(HashValue hash) const
+  {
+    return std::equal_range(m_hashPos.begin(), m_hashPos.end(), std::make_pair(hash, Position()),
+                            [](const auto& a, const auto& b) { return a.first < b.first; });
+  }
+
+  size_t getNumPositions(HashValue hash)
+  {
+    auto [first, last] = getPositions(hash);
+    return std::distance(first, last);
+  }
 
   unsigned int xxCalcBlockHash(const Pel *pel, const ptrdiff_t stride, const int width, const int height,
                                unsigned int crc);
@@ -69,10 +87,10 @@ private:
   template<ChromaFormat chromaFormat>
   void    xxBuildPicHashMap(const PelUnitBuf& pic);
 
-  static  uint32_t xxComputeCrc32c16bit(uint32_t crc, const Pel pel);
+  static uint32_t xxComputeCrc32c16bit(uint32_t crc, const Pel* pels, size_t n);
 
 public:
-  uint32_t (*m_computeCrc32c) (uint32_t crc, const Pel pel);
+  uint32_t (*m_computeCrc32c)(uint32_t crc, const Pel* pels, size_t n);
 
   IbcHashMap();
   virtual ~IbcHashMap();

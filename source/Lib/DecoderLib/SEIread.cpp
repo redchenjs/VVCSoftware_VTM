@@ -104,6 +104,23 @@ void SEIReader::sei_read_string(std::ostream* os, std::string& code, const char*
   }
 }
 
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+bool SEIReader::xPayloadExtensionPresent()
+{
+  if (getBitstream()->getNumBitsLeft() == 0)
+  {
+    return false;
+  }
+  else if (getBitstream()->getNumBitsLeft() > 8)
+  {
+    return true;
+  }
+
+  uint32_t remBits = getBitstream()->peekBits(getBitstream()->getNumBitsLeft());
+  return remBits != (1 << (getBitstream()->getNumBitsLeft() - 1));
+}
+#endif
+
 
 static inline void output_sei_message_header(SEI &sei, std::ostream *pDecodedMessageOutputStream, uint32_t payloadSize)
 {
@@ -573,6 +590,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIDigitallySignedContentSelection;
       xParseSEIDigitallySignedContentSelection((SEIDigitallySignedContentSelection &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+    case SEI::PayloadType::AI_USAGE_RESTRICTIONS:
+      sei = new SEIAIUsageRestrictions;
+      xParseSEIAIUsageRestrictions((SEIAIUsageRestrictions &)*sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     case SEI::PayloadType::PACKED_REGIONS_INFO:
       sei = new SEIPackedRegionsInfo;
@@ -874,6 +897,26 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
       }
     }
   }
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  sei_read_flag(decodedMessageOutputStream, val, "po_complexity_info_present_flag");
+  sei.m_posComplexityInfoPresentFlag = val;
+  if (sei.m_posComplexityInfoPresentFlag)
+  {
+    sei_read_code(decodedMessageOutputStream, 2, val, "po_parameter_type_idc");
+    sei.m_posParameterTypeIdc = val;
+    if (sei.m_posComplexityInfoPresentFlag)
+    {
+      sei_read_code(decodedMessageOutputStream, 2, val, "po_log2_parameter_bit_length_minus3");
+      sei.m_posLog2ParameterBitLengthMinus3 = val;
+    }
+    sei_read_code(decodedMessageOutputStream, 6, val, "po_num_parameters_idc");
+    sei.m_posNumParametersIdc = val;
+    sei_read_uvlc( decodedMessageOutputStream, val, "po_num_kmac_operation_idc" );
+    sei.m_posNumKmacOperationIdc = val;
+    sei_read_uvlc( decodedMessageOutputStream, val, "po_total_kilobyte_size" );
+    sei.m_posTotalKilobyteSize = val;
+  }
+#endif
 
   // The following code generates subchain indices from the syntax. It can be used for testing and verification of the syntax, but is not otherwise needed in VTM.
   uint32_t numProcStgs = sei.m_posNumMinus2 + 2;
@@ -1362,6 +1405,191 @@ void SEIReader::xParseSEIGreenMetadataInfo(SEIGreenMetadataInfo& sei, uint32_t p
       }
     }
     break;
+#if GREEN_METADATA_SEI_ENABLED
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  case 2:
+    sei_read_code(pDecodedMessageOutputStream, 8, code, "green_metadata_ami_flags");
+    CHECK(code > 63, "green_metadata_ami_flags shall be in the range 0-63");
+    sei.m_greenMetadataAMIFlags = code;
+    printf("AMI FLAGS: %i\n", sei.m_greenMetadataAMIFlags);
+
+    bool greenMetadataAMICancelFlag =
+      ((sei.m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::CANCEL) == GREEN_METADATA_AMI_FLAGS::CANCEL) ? true
+                                                                                                             : false;
+    bool greenMetadataAMIGlobalFlag =
+      ((sei.m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::GLOBAL) == GREEN_METADATA_AMI_FLAGS::GLOBAL) ? true
+                                                                                                             : false;
+    bool greenMetadataAMIApproxFlag =
+      ((sei.m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::APPROX) == GREEN_METADATA_AMI_FLAGS::APPROX) ? true
+                                                                                                             : false;
+    bool greenMetadataAMIPreprocFlag =
+      ((sei.m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::PREPROC) == GREEN_METADATA_AMI_FLAGS::PREPROC) ? true
+                                                                                                               : false;
+    bool greenMetadataAMIQualityFlag =
+      ((sei.m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::QUALITY) == GREEN_METADATA_AMI_FLAGS::QUALITY) ? true
+                                                                                                               : false;
+    bool greenMetadataAMIBacklightFlag =
+      ((sei.m_greenMetadataAMIFlags & GREEN_METADATA_AMI_FLAGS::BACKLIGHT) == GREEN_METADATA_AMI_FLAGS::BACKLIGHT)
+        ? true
+        : false;
+
+    if (!greenMetadataAMICancelFlag)
+    {
+      sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_display_model");
+      CHECK(code > 3, "green_metadata_ami_display_model shall be in the range 0-3");
+      sei.m_greenMetadataAMIDisplayModel = code;
+      printf("AMI DISPLAY MODEL: %i\n", sei.m_greenMetadataAMIDisplayModel);
+
+      if (greenMetadataAMIApproxFlag)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_approximation_model");
+        CHECK(code > 4, "green_metadata_ami_approximation_model shall be in the range 0-4");
+        sei.m_greenMetadataAMIApproximationModel = code;
+        printf("AMI APPROXIMATION MODEL: %i\n", sei.m_greenMetadataAMIApproximationModel);
+      }
+      sei_read_code(pDecodedMessageOutputStream, 3, code, "green_metadata_ami_map_number");
+      CHECK(code > 7, "green_metadata_ami_map_number shall be in the range 0-7");
+      sei.m_greenMetadataAMIMapNumber = code;
+      printf("AMI MAP NUMBER: %i\n", sei.m_greenMetadataAMIMapNumber);
+
+      int totalSize         = greenMetadataAMIGlobalFlag ? 1 : sei.m_greenMetadataAMIMapNumber;
+      int energyQualitySize = sei.m_greenMetadataAMIMapNumber > 0 ? sei.m_greenMetadataAMIMapNumber : 1;
+
+      if (sei.m_greenMetadataAMIMapNumber > 0)
+      {
+        sei.m_greenMetadataAMILayerId.resize(sei.m_greenMetadataAMIMapNumber);
+        sei.m_greenMetadataAMIOlsNumber.resize(sei.m_greenMetadataAMIMapNumber);
+        sei.m_greenMetadataAMIOlsId.resize(sei.m_greenMetadataAMIMapNumber);
+
+        sei.m_greenMetadataAMIMaxValue.resize(sei.m_greenMetadataAMIMapNumber);
+        sei.m_greenMetadataAMIAttenuationUseIdc.resize(totalSize);
+        sei.m_greenMetadataAMIAttenuationCompIdc.resize(totalSize);
+        if (greenMetadataAMIPreprocFlag)
+        {
+          sei.m_greenMetadataAMIPreprocessingFlag.resize(totalSize);
+          sei.m_greenMetadataAMIPreprocessingTypeIdc.resize(totalSize);
+          sei.m_greenMetadataAMIPreprocessingScaleIdc.resize(totalSize);
+        }
+        if (greenMetadataAMIBacklightFlag)
+          sei.m_greenMetadataAMIBacklightScalingIdc.resize(totalSize);
+      }
+
+      sei.m_greenMetadataAMIEnergyReductionRate.resize(energyQualitySize);
+      if (greenMetadataAMIQualityFlag)
+      {
+        sei.m_greenMetadataAMIVideoQualityMetricType.resize(energyQualitySize);
+        sei.m_greenMetadataAMIVideoQualityLevel.resize(energyQualitySize);
+      }
+
+      int index = 0;
+      for (int i = 0; i < sei.m_greenMetadataAMIMapNumber; i++)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 8, code, "green_metadata_ami_layer_id[i]");
+        CHECK(code > 255, "green_metadata_ami_layer_id shall be in the range 0-255");
+        sei.m_greenMetadataAMILayerId[i] = code;
+        printf("AMI LAYER ID: %i\n", sei.m_greenMetadataAMILayerId[i]);
+
+        sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_ols_number[i]");
+        CHECK(code > 15, "green_metadata_ami_ols_number shall be in the range 0-15");
+        sei.m_greenMetadataAMIOlsNumber[i] = code;
+        printf("AMI OLS NUMBER: %i\n", sei.m_greenMetadataAMIOlsNumber[i]);
+
+        sei.m_greenMetadataAMIOlsId[i] = std::vector<uint8_t>();
+        sei.m_greenMetadataAMIOlsId[i].resize(sei.m_greenMetadataAMIOlsNumber[i]);
+        for (int j = 0; j < sei.m_greenMetadataAMIOlsNumber[i]; j++)
+        {
+          sei_read_code(pDecodedMessageOutputStream, 8, code, "green_metadata_ami_ols_id[i][j]");
+          CHECK(code > 255, "green_metadata_ami_ols_id shall be in the range 0-255");
+          sei.m_greenMetadataAMIOlsId[i][j] = code;
+          printf("AMI OLS ID: %i\n", sei.m_greenMetadataAMIOlsId[i][j]);
+        }
+
+        sei_read_code(pDecodedMessageOutputStream, 5, code, "green_metadata_ami_energy_reduction_rate[i]");
+        CHECK(code > 31, "green_metadata_ami_energy_reduction_rate shall be in the range 0-31");
+        sei.m_greenMetadataAMIEnergyReductionRate[i] = code;
+        printf("AMI ENERGY REDUCTION RATE: %i\n", sei.m_greenMetadataAMIEnergyReductionRate[i]);
+
+        if (greenMetadataAMIQualityFlag)
+        {
+          sei_read_code(pDecodedMessageOutputStream, 3, code, "green_metadata_ami_video_quality_metric_type[i]");
+          CHECK(code > 3, "green_metadata_ami_video_quality_metric_type shall be in the range 0-3");
+          sei.m_greenMetadataAMIVideoQualityMetricType[i] = code;
+          printf("AMI VIDEO QUALITY METRIC TYPE: %i\n", sei.m_greenMetadataAMIVideoQualityMetricType[i]);
+
+          sei_read_code(pDecodedMessageOutputStream, 16, code, "green_metadata_ami_video_quality_level[i]");
+          CHECK(code > 65535, "green_metadata_ami_video_quality_level shall be in the range 0-65535");
+          sei.m_greenMetadataAMIVideoQualityLevel[i] = code;
+          printf("AMI VIDEO QUALITY LEVEL: %i\n", sei.m_greenMetadataAMIVideoQualityLevel[i]);
+        }
+
+        sei_read_code(pDecodedMessageOutputStream, 8, code, "green_metadata_ami_max_value[i]");
+        CHECK(code > 255, "green_metadata_ami_max_value shall be in the range 0-255");
+        sei.m_greenMetadataAMIMaxValue[i] = code;
+        printf("AMI MAX VALUE: %i\n", sei.m_greenMetadataAMIMaxValue[i]);
+
+        if ((!greenMetadataAMIGlobalFlag) || (i == 0))
+        {
+          sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_attenuation_use_idc[i]");
+          CHECK(code > 2, "green_metadata_ami_attenuation_use_idc shall be in the range 0-2");
+          sei.m_greenMetadataAMIAttenuationUseIdc[i] = code;
+          printf("AMI ATTENUATION USE IDC: %i\n", sei.m_greenMetadataAMIAttenuationUseIdc[i]);
+
+          sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_attenuation_comp_idc[i]");
+          CHECK(code > 6, "green_metadata_ami_attenuation_comp_idc shall be in the range 0-6");
+          sei.m_greenMetadataAMIAttenuationCompIdc[i] = code;
+          printf("AMI ATTENUATION COMP IDC: %i\n", sei.m_greenMetadataAMIAttenuationCompIdc[i]);
+
+          if (greenMetadataAMIPreprocFlag)
+          {
+            sei_read_flag(pDecodedMessageOutputStream, code, "green_metadata_ami_preprocessing_flag[i]");
+            // CHECK( std::is_same_v< decltype((code)), bool > == true, "green_metadata_ami_preprocessing_flag shall be
+            // a boolean"); // CHD
+            sei.m_greenMetadataAMIPreprocessingFlag[i] = code;
+            printf("AMI PREPROCESSING FLAG: %i\n", int(sei.m_greenMetadataAMIPreprocessingFlag[i]));
+
+            if (sei.m_greenMetadataAMIPreprocessingFlag[i])
+            {
+              sei_read_code(pDecodedMessageOutputStream, 2, code, "green_metadata_ami_preprocessing_type_idc[i]");
+              CHECK(code > 3, "green_metadata_ami_preprocessing_type shall be in the range 0-3");
+              sei.m_greenMetadataAMIPreprocessingTypeIdc[i] = code;
+              printf("AMI PREPROCESSING TYPE IDC: %i\n", sei.m_greenMetadataAMIPreprocessingTypeIdc[i]);
+            }
+            sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_preprocessing_scale_idc[i]");
+            CHECK(code > 2, "green_metadata_ami_preprocessing_scale_idc shall be in the range 0-2");
+            sei.m_greenMetadataAMIPreprocessingScaleIdc[i] = code;
+            printf("AMI PREPROCESSING SCALE IDC: %i\n", sei.m_greenMetadataAMIPreprocessingScaleIdc[i]);
+          }
+          if (greenMetadataAMIBacklightFlag)
+          {
+            sei_read_code(pDecodedMessageOutputStream, 4, code, "green_metadata_ami_backlight_scaling_idc[i]");
+            CHECK(code > 1, "green_metadata_ami_backlight_scaling_idc shall be in the range 0-1");
+            sei.m_greenMetadataAMIBacklightScalingIdc[i] = code;
+            printf("AMI BACKLIGHT SCALING IDC: %i\n", sei.m_greenMetadataAMIBacklightScalingIdc[i]);
+          }
+        }
+      }
+      if (sei.m_greenMetadataAMIMapNumber == 0)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 5, code, "green_metadata_ami_energy_reduction_rate[0]");
+        CHECK(code > 31, "green_metadata_ami_energy_reduction_rate shall be in the range 0-31");
+        sei.m_greenMetadataAMIEnergyReductionRate[0] = code;
+        printf("AMI ENERGY REDUCTION RATE 0: %i\n", sei.m_greenMetadataAMIEnergyReductionRate[0]);
+        if (greenMetadataAMIQualityFlag)
+        {
+          sei_read_code(pDecodedMessageOutputStream, 3, code, "green_metadata_ami_video_quality_metric_type[0]");
+          CHECK(code > 3, "green_metadata_ami_video_quality_metric_type shall be in the range 0-3");
+          sei.m_greenMetadataAMIVideoQualityMetricType[0] = code;
+          printf("AMI VIDEO QUALITY METRIC TYPE 0: %i\n", sei.m_greenMetadataAMIVideoQualityMetricType[0]);
+
+          sei_read_code(pDecodedMessageOutputStream, 16, code, "green_metadata_ami_video_quality_level[0]");
+          CHECK(code > 65535, "green_metadata_ami_video_quality_level shall be in the range 0-65535");
+          sei.m_greenMetadataAMIVideoQualityLevel[0] = code;
+          printf("AMI VIDEO QUALITY LEVEL 0: %i\n", sei.m_greenMetadataAMIVideoQualityLevel[0]);
+        }
+      }
+    }
+#endif
+#endif
   }
 }
 
@@ -2029,10 +2257,17 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
             objMaskInfo.maskTop = val;
             sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_left[i][j]");
             objMaskInfo.maskLeft = val;
+#if JVET_AL0067_OMI_SEI_CONSTRAINTS
+            sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_width_minus1[i][j]");
+            objMaskInfo.maskWidth = val + 1;
+            sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_height_minus1[i][j]");
+            objMaskInfo.maskHeight = val + 1;
+#else
             sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_width[i][j]");
             objMaskInfo.maskWidth = val;
             sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_height[i][j]");
             objMaskInfo.maskHeight = val;
+#endif
           }
           if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
           {
@@ -2401,6 +2636,17 @@ void SEIReader::xParseSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics& s
     } // for c
     sei_read_flag(pDecodedMessageOutputStream, code, "fg_characteristics_persistence_flag");         sei.m_filmGrainCharacteristicsPersistenceFlag = code != 0;
   } // cancel flag
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  if (xPayloadExtensionPresent())
+  {
+    sei_read_flag(pDecodedMessageOutputStream, code, "fg_spatialresolution_present_flag");           sei.m_spatialResolutionPresentFlag = code != 0;
+    if (sei.m_spatialResolutionPresentFlag)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, code, "fg_pic_width_in_luma_samples");              sei.m_picWidthInLumaSamples = code;
+      sei_read_uvlc(pDecodedMessageOutputStream, code, "fg_pic_height_in_luma_samples");             sei.m_picHeightInLumaSamples = code;
+    }
+  }
+#endif
 }
 
 void SEIReader::xParseSEIContentLightLevelInfo(SEIContentLightLevelInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
@@ -3318,7 +3564,11 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_auxiliary_inp_idc");
     sei.m_auxInpIdc = val;
+#if JVET_AK0326_NNPF_SEED
+    CHECK(val > 7, "The value of nnpfc_auxiliary_inp_idc shall be in the range of 0 to 7");
+#else
     CHECK(val > 3, "The value of nnpfc_auxiliary_inp_idc shall be in the range of 0 to 3");
+#endif
     if ((sei.m_auxInpIdc & 2) > 0)
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_inband_prompt_flag");
@@ -3335,6 +3585,18 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei.m_prompt = valp;
       }
     }
+#if JVET_AK0326_NNPF_SEED
+    if ((sei.m_auxInpIdc & 4) > 0)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_inband_seed_flag");
+      sei.m_inbandSeedFlag = val;
+      if (sei.m_inbandSeedFlag)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 16, val, "nnpfc_seed");
+        sei.m_seed = val;
+      }
+    }
+#endif
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
     CHECK(val > 3, "The value of nnpfc_inp_order_idc shall be in the range of 0 to 3");
@@ -3539,6 +3801,13 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         if ( sei.m_applicationPurposeTagUriPresentFlag )
         { 
           std::string val2;
+#if JVET_AI0070_BYTE_ALIGNMENT
+          while (!isByteAligned())
+          {
+            sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_metadata_alignment_zero_bit");
+            CHECK(val != 0, "nnpfc_metadata_alignment_zero_bit not equal to zero");
+          }
+#endif
           sei_read_string(pDecodedMessageOutputStream, val2, "nnpfc_application_purpose_tag_uri");
           sei.m_applicationPurposeTagUri = val2;
           numberExtensionBitsUsed += (static_cast<uint32_t>(sei.m_applicationPurposeTagUri.length() + 1) * 8);
@@ -3628,7 +3897,7 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
       sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_output_flag" );
       sei.m_outputFlag[i] = val;
     }
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE||JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AJ0104_NNPFA_PROMPT_UPDATE||JVET_AJ0114_NNPFA_NUM_PIC_SHIFT||JVET_AK0326_NNPF_SEED
     if (m_pcBitstream->getNumBitsLeft())
     {
 #endif 
@@ -3648,9 +3917,28 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
         CHECK(sei.m_prompt.empty(), "When present in the bitstream, nnpfa_prompt shall not be a null string");
       }
 #endif
+#if JVET_AK0326_NNPF_SEED
+      sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_seed_update_flag" );
+      sei.m_seedUpdateFlag = val;
+      if (sei.m_seedUpdateFlag)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 16, val, "nnpfa_seed");
+        sei.m_seed = val;
+      }
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+      sei_read_flag(pDecodedMessageOutputStream, val, "nnpfa_selected_input_flag");
+      sei.m_selectedInputFlag = val;
+      if (sei.m_selectedInputFlag)
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfa_num_input_pic_shift");
+        sei.m_numInputPicShift = val;
+      }
+#else
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfa_num_input_pic_shift");
       sei.m_numInputPicShift = val;
+#endif
 #if JVET_AJ0104_NNPFA_PROMPT_UPDATE||JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
     }
 #endif 
@@ -4939,6 +5227,10 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
     }
   }
 #endif
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+  sei_read_flag(pDecodedMessageOutputStream, val, "dsci_vss_implicit_association_mode_flag");
+  sei.dsciVSSImplicitAssociationModeFlag = (val!=0);
+#endif
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dsci_key_retrieval_mode_idc");
   sei.dsciKeyRetrievalModeIdc = val;
   if (sei.dsciKeyRetrievalModeIdc == 1)
@@ -4986,6 +5278,38 @@ void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedCo
   }
 }
 
+#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+void SEIReader::xParseSEIAIUsageRestrictions(SEIAIUsageRestrictions& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
+{
+  uint32_t val;
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);
+  sei_read_flag(pDecodedMessageOutputStream, val, "aur_cancel_flag");
+  sei.m_cancelFlag = val;
+  if (!sei.m_cancelFlag)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "aur_persistence_flag");
+    sei.m_persistenceFlag = val;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "aur_num_restrictions_minus1");
+    sei.m_numRestrictionsMinus1 = val;
+    sei.m_restrictions.resize(sei.m_numRestrictionsMinus1 + 1);
+    sei.m_contextPresentFlag.resize(sei.m_numRestrictionsMinus1 + 1);
+    sei.m_context.resize(sei.m_numRestrictionsMinus1 + 1);
+    for (uint32_t i = 0; i <= sei.m_numRestrictionsMinus1; i++)
+    {
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "aur_restriction");
+      sei.m_restrictions[i] = val;
+      sei_read_flag(pDecodedMessageOutputStream, val, "aur_context_present_flag");
+      sei.m_contextPresentFlag[i] = val;
+      if (sei.m_contextPresentFlag[i])
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "aur_context");
+        sei.m_context[i] = val;
+      }
+    }
+  }
+}
+#endif
+
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_t nuhLayerId, uint32_t payLoadSize, std::ostream* pDecodedMessageOutputStream)
 {
@@ -5000,6 +5324,9 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
     sei_read_flag(pDecodedMessageOutputStream, val, "pri_persistence_flag");
     sei.m_persistenceFlag = val != 0;
     sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_num_regions_minus1");
+#if JVET_AL0324_AL0070_PRI_SEI
+    CHECK(val > 255, "pri_num_regions_minus1 shall be in the range of 0 to 255, inclusive");
+#endif
     sei.m_numRegionsMinus1 = val;
     sei_read_flag(pDecodedMessageOutputStream, val, "pri_multilayer_flag");
     sei.m_multilayerFlag = val != 0;
@@ -5021,6 +5348,9 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
       sei.m_targetPicHeightMinus1 = val;
     }
     sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_num_resampling_ratios_minus1");
+#if JVET_AL0324_AL0070_PRI_SEI
+    CHECK(val > sei.m_numRegionsMinus1, "pri_num_resampling_ratios_minus1 shall be in the range of 0 to pri_num_regions_minus1, inclusive");
+#endif
     sei.m_numResamplingRatiosMinus1 = val;
 
     sei.m_resamplingWidthNumMinus1.resize(sei.m_numResamplingRatiosMinus1 + 1);
@@ -5039,6 +5369,16 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
       sei.m_resamplingWidthNumMinus1[i] = val;
       sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_resampling_width_denom_minus1[i]");
       sei.m_resamplingWidthDenomMinus1[i] = val;
+#if JVET_AL0324_AL0070_PRI_SEI
+      if (sei.m_targetPicParamsPresentFlag)
+      {
+        Fraction horRatio;
+        horRatio.num = sei.m_resamplingWidthNumMinus1[i] + 1;
+        horRatio.den = sei.m_resamplingWidthDenomMinus1[i] + 1;
+        double horRatioVal = horRatio.getFloatVal();
+        CHECK(horRatioVal < 1.0 / 16.0 || horRatioVal > 16.0, "(pri_resampling_width_num_minus1[i] + 1) / (pri_resampling_width_denom_minus1[i] + 1) shall be in the range of 1/16 to 16, inclusive");
+      }
+#endif
       sei_read_flag(pDecodedMessageOutputStream, val, "pri_fixed_aspect_ratio_flag[i]");
       sei.m_fixedAspectRatioFlag[i] = val != 0;
       if (!sei.m_fixedAspectRatioFlag[i])
@@ -5047,6 +5387,16 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
         sei.m_resamplingHeightNumMinus1[i] = val;
         sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_resampling_height_denom_minus1[i]");
         sei.m_resamplingHeightDenomMinus1[i] = val;
+#if JVET_AL0324_AL0070_PRI_SEI
+        if (sei.m_targetPicParamsPresentFlag)
+        {
+          Fraction verRatio;
+          verRatio.num = sei.m_resamplingHeightNumMinus1[i] + 1;
+          verRatio.den = sei.m_resamplingHeightDenomMinus1[i] + 1;
+          double verRatioVal = verRatio.getFloatVal();
+          CHECK(verRatioVal < 1.0 / 16.0 || verRatioVal > 16.0, "(pri_resampling_height_num_minus1[i] + 1) / (pri_resampling_height_denom_minus1[i] + 1) shall be in the range of 1/16 to 16, inclusive");
+        }
+#endif
       }
       else
       {
@@ -5063,13 +5413,22 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
     sei.m_regionWidthInUnitsMinus1.resize(sei.m_numRegionsMinus1 + 1);
     sei.m_regionHeightInUnitsMinus1.resize(sei.m_numRegionsMinus1 + 1);
     sei.m_resamplingRatioIdx.resize(sei.m_numRegionsMinus1 + 1);
+#if JVET_AL0324_AL0070_PRI_SEI
+    std::fill(sei.m_regionId.begin(), sei.m_regionId.end(), MAX_UINT);
+    sei.m_targetRegionTopLeftInUnitsX.resize(sei.m_numRegionsMinus1 + 1);
+    sei.m_targetRegionTopLeftInUnitsY.resize(sei.m_numRegionsMinus1 + 1);
+#else
     sei.m_targetRegionTopLeftX.resize(sei.m_numRegionsMinus1 + 1);
     sei.m_targetRegionTopLeftY.resize(sei.m_numRegionsMinus1 + 1);
+#endif
     for (uint32_t i = 0; i <= sei.m_numRegionsMinus1; i++)
     {
       if (sei.m_regionIdPresentFlag)
       {
         sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_region_id[i]");
+#if JVET_AL0324_AL0070_PRI_SEI
+        CHECK(val > 1023, "pri_region_id[i] shall be in the range of 0 to 1023, inclusive");
+#endif
         sei.m_regionId[i] = val;
       }
       else
@@ -5079,13 +5438,20 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
       if (sei.m_multilayerFlag)
       {
         sei_read_uvlc(pDecodedMessageOutputStream, val, "pri_region_layer_id[i]");
+#if JVET_AL0324_AL0070_PRI_SEI
+        CHECK(val > 2047, "pri_region_layer_id[i] shall be in the range of 0 to 2047, inclusive");
+#endif
         sei.m_regionLayerId[i] = val;
         sei_read_flag(pDecodedMessageOutputStream, val, "pri_region_is_a_layer_flag[i]");
         sei.m_regionIsALayerFlag[i] = val != 0;
       }
       else
       {
+#if JVET_AL0324_AL0070_PRI_SEI
+        sei.m_regionLayerId[i] = sei.m_layerId;
+#else
         sei.m_regionLayerId[i] = 0;
+#endif
         sei.m_regionIsALayerFlag[i] = 0;
       }
       if (!sei.m_regionIsALayerFlag[i])
@@ -5117,10 +5483,17 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
       }
       if (sei.m_targetPicParamsPresentFlag)
       {
+#if JVET_AL0324_AL0070_PRI_SEI
+        sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_target_region_top_left_in_units_x[i]");
+        sei.m_targetRegionTopLeftInUnitsX[i] = val;
+        sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_target_region_top_left_in_units_y[i]");
+        sei.m_targetRegionTopLeftInUnitsY[i] = val;
+#else
         sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_target_region_top_left_x[i]");
         sei.m_targetRegionTopLeftX[i] = val;
         sei_read_code(pDecodedMessageOutputStream, sei.m_regionSizeLenMinus1 + 1, val, "pri_target_region_top_left_y[i]");
         sei.m_targetRegionTopLeftY[i] = val;
+#endif
       }
     }
     if (sei.m_regionIdPresentFlag)

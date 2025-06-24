@@ -260,6 +260,33 @@ void SEIEncoder::initSEIGreenMetadataInfo(SEIGreenMetadataInfo* seiGreenMetadata
       break;   //
     }
   }
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+  else if (m_pcCfg->getSEIGreenMetadataType() == 2)   // Metadata for attenuation map
+  {
+    seiGreenMetadataInfo->m_greenMetadataType            = m_pcCfg->getSEIGreenMetadataType();
+    seiGreenMetadataInfo->m_greenMetadataAMIFlags        = uint8_t(m_pcCfg->getSEIGreenMetadataAMIFlags());
+    seiGreenMetadataInfo->m_greenMetadataAMIDisplayModel = uint8_t(m_pcCfg->getSEIGreenMetadataAMIDisplayModel());
+    seiGreenMetadataInfo->m_greenMetadataAMIApproximationModel =
+      uint8_t(m_pcCfg->getSEIGreenMetadataAMIApproximationModel());
+    seiGreenMetadataInfo->m_greenMetadataAMIMapNumber           = uint8_t(m_pcCfg->getSEIGreenMetadataAMIMapNumber());
+    seiGreenMetadataInfo->m_greenMetadataAMILayerId             = m_pcCfg->getSEIGreenMetadataAMILayerId();
+    seiGreenMetadataInfo->m_greenMetadataAMIOlsNumber           = m_pcCfg->getSEIGreenMetadataAMIOlsNumber();
+    seiGreenMetadataInfo->m_greenMetadataAMIOlsId               = m_pcCfg->getSEIGreenMetadataAMIOlsId();
+    seiGreenMetadataInfo->m_greenMetadataAMIEnergyReductionRate = m_pcCfg->getSEIGreenMetadataAMIEnergyReductionRate();
+    seiGreenMetadataInfo->m_greenMetadataAMIVideoQualityMetricType =
+      m_pcCfg->getSEIGreenMetadataAMIVideoQualityMetricType();
+    seiGreenMetadataInfo->m_greenMetadataAMIVideoQualityLevel  = m_pcCfg->getSEIGreenMetadataAMIVideoQualityLevel();
+    seiGreenMetadataInfo->m_greenMetadataAMIMaxValue           = m_pcCfg->getSEIGreenMetadataAMIMaxValue();
+    seiGreenMetadataInfo->m_greenMetadataAMIAttenuationUseIdc  = m_pcCfg->getSEIGreenMetadataAMIAttenuationUseIdc();
+    seiGreenMetadataInfo->m_greenMetadataAMIAttenuationCompIdc = m_pcCfg->getSEIGreenMetadataAMIAttenuationCompIdc();
+    seiGreenMetadataInfo->m_greenMetadataAMIPreprocessingFlag  = m_pcCfg->getSEIGreenMetadataAMIPreprocessingFlag();
+    seiGreenMetadataInfo->m_greenMetadataAMIPreprocessingTypeIdc =
+      m_pcCfg->getSEIGreenMetadataAMIPreprocessingTypeIdc();
+    seiGreenMetadataInfo->m_greenMetadataAMIPreprocessingScaleIdc =
+      m_pcCfg->getSEIGreenMetadataAMIPreprocessingScaleIdc();
+    seiGreenMetadataInfo->m_greenMetadataAMIBacklightScalingIdc = m_pcCfg->getSEIGreenMetadataAMIBacklightScalingIdc();
+  }
+#endif
 }
 #endif
 
@@ -636,6 +663,14 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
       seiProcessingOrderInfo->m_posPrefixByte[i] = m_pcCfg->getPoSEIPrefixByte(i);
     }
   }
+#if JVET_AJ0105_SPO_COMPLEXITY_INFO
+  seiProcessingOrderInfo->m_posComplexityInfoPresentFlag = m_pcCfg->getPoSEIComplexityInfoPresentFlag();
+  seiProcessingOrderInfo->m_posParameterTypeIdc = m_pcCfg->getPoSEIParameterTypeIdc();
+  seiProcessingOrderInfo->m_posLog2ParameterBitLengthMinus3 = m_pcCfg->getPoSEILog2ParameterBitLengthMinus3();
+  seiProcessingOrderInfo->m_posNumParametersIdc = m_pcCfg->getPoSEINumParametersIdc();
+  seiProcessingOrderInfo->m_posNumKmacOperationIdc = m_pcCfg->getPoSEINumKmacOperationIdc();
+  seiProcessingOrderInfo->m_posTotalKilobyteSize = m_pcCfg->getPoSEITotalKilobyteSize();
+#endif
   seiProcessingOrderNesting->m_ponTargetPoId.clear();
   seiProcessingOrderNesting->m_ponPayloadType.clear();
   seiProcessingOrderNesting->m_ponProcessingOrder.clear();
@@ -1128,8 +1163,13 @@ void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* se
             std::string cfgMaskHeightStr = "SEIOmiMaskHeight[" + std::to_string(i) + "][" + std::to_string(j) + "]";
             readTokenValueAndValidate(omi.maskTop, failed, fic, cfgMaskTopStr.c_str(), uint32_t(0), uint32_t(0xffff));
             readTokenValueAndValidate(omi.maskLeft, failed, fic, cfgMaskLeftStr.c_str(), uint32_t(0), uint32_t(0xffff));
+#if JVET_AL0067_OMI_SEI_CONSTRAINTS
+            readTokenValueAndValidate(omi.maskWidth, failed, fic, cfgMaskWidthStr.c_str(), uint32_t(1),uint32_t(0x10000));
+            readTokenValueAndValidate(omi.maskHeight, failed, fic, cfgMaskHeightStr.c_str(), uint32_t(1),uint32_t(0x10000));
+#else
             readTokenValueAndValidate(omi.maskWidth, failed, fic, cfgMaskWidthStr.c_str(), uint32_t(0),uint32_t(0xffff));
             readTokenValueAndValidate(omi.maskHeight, failed, fic, cfgMaskHeightStr.c_str(), uint32_t(0),uint32_t(0xffff));
+#endif
           }
           if (seiObjMask->m_hdr.m_maskConfidenceInfoPresentFlag)
           {
@@ -1254,6 +1294,11 @@ void SEIEncoder::initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *se
       }
     }
   }
+#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
+  seiFilmGrain->m_spatialResolutionPresentFlag = m_pcCfg->getFGCSEISpatialResolutionPresentFlag();
+  seiFilmGrain->m_picWidthInLumaSamples        = m_pcCfg->getFGCSEIPicWidthInLumaSamples();
+  seiFilmGrain->m_picHeightInLumaSamples       = m_pcCfg->getFGCSEIPicHeightInLumaSamples();
+#endif
 }
 
 void SEIEncoder::initSEIMasteringDisplayColourVolume(SEIMasteringDisplayColourVolume *seiMDCV)
@@ -1759,6 +1804,17 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
       }
     }
 
+#if JVET_AK0326_NNPF_SEED
+    if ((sei->m_auxInpIdc & 4) > 0)
+    {
+      sei->m_inbandSeedFlag = m_pcCfg->getNNPostFilterSEICharacteristicsInbandSeedFlag(filterIdx);
+      if (sei->m_inbandSeedFlag)
+      {
+        sei->m_seed = m_pcCfg->getNNPostFilterSEICharacteristicsSeed(filterIdx);
+      }
+    }
+#endif
+
     sei->m_outFormatIdc = m_pcCfg->getNNPostFilterSEICharacteristicsOutFormatIdc(filterIdx);
     CHECK(sei->m_outFormatIdc > 255, "The value of nnpfc_out_format_idc shall be in the range of 0 to 255");
     if (sei->m_outFormatIdc == 1)
@@ -1885,7 +1941,17 @@ void SEIEncoder::initSEINeuralNetworkPostFilterActivation(SEINeuralNetworkPostFi
       sei->m_prompt = m_pcCfg->getNnPostFilterSEIActivationPrompt();
     }
 #endif
+#if JVET_AK0326_NNPF_SEED
+    sei->m_seedUpdateFlag = m_pcCfg->getNnPostFilterSEIActivationSeedUpdateFlag();
+    if (sei->m_seedUpdateFlag)
+    {
+      sei->m_seed = m_pcCfg->getNnPostFilterSEIActivationSeed();
+    }
+#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
+#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
+    sei->m_selectedInputFlag = m_pcCfg->getNnPostFilterSEIActivationSelectedInputFlag();
+#endif
     sei->m_numInputPicShift = m_pcCfg->getNnPostFilterSEIActivationNumInputPicShift();
 #endif
   }
@@ -2207,6 +2273,9 @@ void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedC
 #endif
   sei->dsciHashMethodType = m_pcCfg->getDigitallySignedContentSEICfg().hashMethod;
   sei->dsciKeySourceUri = m_pcCfg->getDigitallySignedContentSEICfg().publicKeyUri;
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION  
+  sei->dsciVSSImplicitAssociationModeFlag = m_pcCfg->getDigitallySignedContentSEICfg().implicitAssociationModeFlag;
+#endif
   sei->dsciUseKeyRegisterIdxFlag = m_pcCfg->getDigitallySignedContentSEICfg().keyIdEnabled;
   sei->dsciKeyRegisterIdx = m_pcCfg->getDigitallySignedContentSEICfg().keyId;
 }
@@ -2221,6 +2290,32 @@ void SEIEncoder::initSEIDigitallySignedContentVerification(SEIDigitallySignedCon
   sei->dscvSignature = signature;
 }
 #endif
+
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+void SEIEncoder::initSEIAIUsageRestrictions(SEIAIUsageRestrictions *sei)
+{
+  CHECK(!(m_isInitialized), "Unspecified error");
+  CHECK(!(sei != nullptr), "Unspecified error");
+  sei->m_cancelFlag = m_pcCfg->getAURSEICancelFlag();
+  if (!sei->m_cancelFlag)
+  {
+    sei->m_persistenceFlag = m_pcCfg->getAURSEIPersistenceFlag();
+    sei->m_numRestrictionsMinus1 = m_pcCfg->getAURSEINumRestrictionsMinus1();
+    sei->m_restrictions.resize(sei->m_numRestrictionsMinus1 + 1);
+    sei->m_contextPresentFlag.resize(sei->m_numRestrictionsMinus1 + 1);
+    sei->m_context.resize(sei->m_numRestrictionsMinus1 + 1);
+    for (uint32_t i = 0; i <= sei->m_numRestrictionsMinus1; i++)
+    {
+      sei->m_restrictions[i] = m_pcCfg->getAURSEIRestrictions(i);
+      sei->m_contextPresentFlag[i] = m_pcCfg->getAURSEIContextPresentFlag(i);
+      if (sei->m_contextPresentFlag[i])
+      {
+        sei->m_context[i] = m_pcCfg->getAURSEIContext(i);
+      }
+    }
+  }
+}
+#endif 
 
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
@@ -2264,8 +2359,13 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
   sei->m_regionWidthInUnitsMinus1.resize(sei->m_numRegionsMinus1 + 1);
   sei->m_regionHeightInUnitsMinus1.resize(sei->m_numRegionsMinus1 + 1);
   sei->m_resamplingRatioIdx.resize(sei->m_numRegionsMinus1 + 1);
+#if JVET_AL0324_AL0070_PRI_SEI
+  sei->m_targetRegionTopLeftInUnitsX.resize(sei->m_numRegionsMinus1 + 1);
+  sei->m_targetRegionTopLeftInUnitsY.resize(sei->m_numRegionsMinus1 + 1);
+#else
   sei->m_targetRegionTopLeftX.resize(sei->m_numRegionsMinus1 + 1);
   sei->m_targetRegionTopLeftY.resize(sei->m_numRegionsMinus1 + 1);
+#endif
   for (uint32_t i = 0; i <= sei->m_numRegionsMinus1; i++)
   {
     sei->m_regionId[i] = m_pcCfg->getPriSEIRegionId(i);
@@ -2294,8 +2394,13 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
       sei->m_regionHeightInUnitsMinus1[i] = 0;
     }
     sei->m_resamplingRatioIdx[i] = m_pcCfg->getPriSEIResamplingRatioIdx(i);
+#if JVET_AL0324_AL0070_PRI_SEI
+    sei->m_targetRegionTopLeftInUnitsX[i] = m_pcCfg->getPriSEITargetRegionTopLeftInUnitsX(i);
+    sei->m_targetRegionTopLeftInUnitsY[i] = m_pcCfg->getPriSEITargetRegionTopLeftInUnitsY(i);
+#else
     sei->m_targetRegionTopLeftX[i] = m_pcCfg->getPriSEITargetRegionTopLeftX(i);
     sei->m_targetRegionTopLeftY[i] = m_pcCfg->getPriSEITargetRegionTopLeftY(i);
+#endif
   }
 }
 #endif

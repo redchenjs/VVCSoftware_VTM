@@ -1183,6 +1183,14 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     seiMessages.push_back(sei);
   }
 #endif
+#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
+  if (m_pcCfg->getAURSEIEnabled())
+  {
+    SEIAIUsageRestrictions *aurSEI = new SEIAIUsageRestrictions;
+    m_seiEncoder.initSEIAIUsageRestrictions(aurSEI);
+    seiMessages.push_back(aurSEI);
+  }
+#endif 
 }
 
 void EncGOP::xCreateGenerativeFaceVideoSEIMessages(SEIMessages& seiMessages)
@@ -4143,7 +4151,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         };
         const EncCfgParam::CfgSEIDigitallySignedContent &dscCfg = m_pcCfg->getDigitallySignedContentSEICfg();
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+        m_dscSubstreamManager.initDscSubstreamManager(dscCfg.numVerificationSubstreams, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid, dscCfg.refSubstreamFlag, dscCfg.implicitAssociationModeFlag);
+#else
         m_dscSubstreamManager.initDscSubstreamManager(dscCfg.numVerificationSubstreams, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid, dscCfg.refSubstreamFlag);
+#endif
 #else
         m_dscSubstreamManager.initDscSubstreamManager(1, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid);
 #endif
@@ -4411,7 +4423,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
           if (!m_pcCfg->getSliceLevelDeltaQp())
           {
-            picHeader->setQpDelta(pcSlice->getSliceQp() - (pcSlice->getPPS()->getPicInitQPMinus26() + 26));
+            picHeader->setQpDelta(pcSlice->getSliceQp() - (pcSlice->getPPS()->getPicInitQPMinus26() + QP26));
           }
 
           // code SAO parameters in picture header or slice headers
@@ -4466,6 +4478,20 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           {
             CHECK(pcSlice->getPictureHeaderInSliceHeader() == false, "PH shall be present in SH, when pic_header_in_slice_header_constraint_flag is equal to 1");
           }
+
+#if JVET_AL0056_EOI_SEI_QUANT_CONSTRAINT
+          if (m_pcCfg->getEOISEIEnabled() && !m_pcCfg->getEOISEICancelFlag() && (m_pcCfg->getEOISEIType() & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) && (m_pcCfg->getEOISEIObjectBasedIdc() & EOI_OBJECT_BASED::COARSER_QUANTIZATION))
+          {
+            if (m_pcCfg->getEOISEIPicQuantObjectFlag())
+            {
+              CHECK(m_pcCfg->getEOISEIQuantThresholdDelta() < 1 || m_pcCfg->getEOISEIQuantThresholdDelta() > (63 - pcSlice->getSliceQp()), "When eoi_pic_quant_object_flag is equal to 1, the value of eoi_quant_threshold_delta shall be in the range of 1 to 63 - PicQuant, inclusive");
+            }
+            else
+            {
+              CHECK(m_pcCfg->getEOISEIQuantThresholdDelta() < 1 || m_pcCfg->getEOISEIQuantThresholdDelta() > (pcSlice->getSPS()->getQpBDOffset(ChannelType::LUMA) + pcSlice->getSliceQp()), "When eoi_pic_quant_object_flag is equal to 0, the value of eoi_quant_threshold_delta shall be in the range of 1 to QpBdOffset + PicQuant, inclusive");
+            }
+          }
+#endif
         }
         pcSlice->setPicHeader( pcPic->cs->picHeader );
         pcSlice->setNalUnitLayerId( m_pcEncLib->getLayerId() );
@@ -4714,6 +4740,14 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           m_seiEncoder.initSEIGreenMetadataInfo(seiGreenMetadataInfo, m_featureCounter, m_SEIGreenQualityMetrics, m_SEIGreenComplexityMetrics);
           leadingSeiMessages.push_back(seiGreenMetadataInfo);
         }
+#if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
+        else if (seiGreenMetadataInfo->m_greenMetadataType == 2)   // Attenuation map signaling
+        {
+          m_seiEncoder.initSEIGreenMetadataInfo(seiGreenMetadataInfo, m_featureCounter, m_SEIGreenQualityMetrics,
+                                                m_SEIGreenComplexityMetrics);
+          leadingSeiMessages.push_back(seiGreenMetadataInfo);
+        }
+#endif 
       }
 #endif
       

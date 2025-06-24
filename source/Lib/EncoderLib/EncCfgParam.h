@@ -89,6 +89,9 @@ public:
   int                            numVerificationSubstreams = 1;
   std::vector<std::vector<bool>> refSubstreamFlag;
 #endif
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+  bool                      implicitAssociationModeFlag = false;
+#endif
 };
 #endif
 }

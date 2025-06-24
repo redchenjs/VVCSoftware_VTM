@@ -2403,6 +2403,13 @@ Specifies the quota of GPM merge candidates in full RD checking.
 Specifies the base value of the quantization parameter (QP).
 \\
 
+\Option{PPSInitialQPOffset} &
+%\ShortOption{\None} &
+\Default{0} &
+Specifies a QP offset added when coding the initial QP value in the PPS.
+This parameter may be set to a value different from 0 to minimize the amount of bits used for coding the initial QP value in the slice or picture header.
+\\
+
 \Option{QPIncrementFrame (-qpif)} &
 %\ShortOption{\None} &
 \Default{Undefined} &
@@ -4370,6 +4377,7 @@ Specifies the type of metadata that is present in the SEI message.
 	-1 & Disabled \\
 	0 & Metadata for decoder complexity metrics \\
 	1 & Metadata enabling quality recovery after low-power encoding\\
+	2 & Metadata for display adaptation through the use of attenuation maps\\
 \end{tabular}
 \\
 \Option{SEIGreenMetadataPeriodType} &
@@ -4426,6 +4434,136 @@ Enables or disables sending of wPSNR metric.
 \Option{SEIXSDMetricTypeWSPSNR} &
 \Default{false} &
 Enables or disables sending of WS-PSNR metric.
+\\
+\Option{SEIGreenMetadataAMIFlags} &
+\Default{0} &
+Bitfield that specifies which parameters are needed to apply the attenuation map (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & Indicates that attenuation map information follows  \\
+	1 & Indicates that attenuation map information is defined globally for all the listed attenuation maps \\
+	2 & Indicates that the listed attenuation maps can be used to approximate other attenuation maps for other reduction rates \\
+	3 & Indicates that some preprocessing is required to use the listed attenuation maps \\
+	4 & Indicates that backlight scaling is required \\
+	5 & Indicates that video quality information is present \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIDisplayModel} &
+\Default{0} &
+Bitfield that specifies the display models for which the application of attenuation maps may be used (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & Attenuation maps may be used for backlit displays  \\
+	1 & Attenuation maps may be used for emissive displays  \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIApproximationModel} &
+\Default{0} &
+Specifies the model used to extrapolate the attenuation map samples for another energy reduction rate (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & Linear scaling should be used to generate additional attenuation maps  \\
+	1 & Bilinear interpolation should be used to generate additional attenuation maps \\
+	2 & Lanczos interpolation should be used to generate additional attenuation maps  \\
+	3 & Bicubic interpolation should be used to generate additional attenuation maps \\
+	4 & User defined process \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIMapNumber} &
+\Default{0} &
+Specifies the number of auxiliary pictures of type AUX_ALPHA in the CVS. It corresponds to the number of attenuation maps (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMILayerId} &
+\Default{0} &
+Specifies the identifier of the decoded layer for the attenuation map of index i (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIOlsNumber} &
+\Default{0} &
+Specifies the number of output layer sets to which the attenuation map of index i belongs (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIOlsId} &
+\Default{0} &
+Specifies the identifier of the output layer set of index j for the attenuation map of index i (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIEnergyReductionRate} &
+\Default{0} &
+Specifies the expected energy savings rate when the video is displayed after applying the attenuation map of index i (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIVideoQualityMetricType} &
+\Default{0} &
+Specifies the quality metric which was considered to inform of the reduction of the video quality due to the application of the attenuation map of index i (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & PSNR  \\
+	1 & SSIM \\
+	2 & wPSNR  \\
+	3 & WS-PSNR \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIVideoQualityLevel} &
+\Default{0} &
+Indicates the expected video quality when the video is rendered on a display after application of the attenuation map of index i (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIMaxValue} &
+\Default{0} &
+Indicates the maximum value of the attenuation map of index i (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIAttenuationUseIdc} &
+\Default{0} &
+Specifies the use of the attenuation map sample values of the decoded auxiliary picture of index i (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & The attenuation map sample values should be substracted from the associated primary picture sample values  \\
+	1 & The attenuation map sample values should be multiplied to the associated primary picture sample values \\
+	2 & User defined process  \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIAttenuationCompIdc} &
+\Default{0} &
+Specifies on which colour component(s) of the associated primary picture the attenuation map of index i should be applied (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & The luma component of the attenuation map is applied to the luma component of the associated primary picture  \\
+	1 & The luma component of the attenuation map is applied to the luma and the chroma components of the associated primary picture  \\
+	2 & The luma component of the attenuation map is applied to the three RGB components of the associated primary picture  \\
+	3 & The luma component of the attenuation map is applied to the first component of the associated primary picture  \\
+	4 & The luma component of the attenuation map is applied to the second component of the associated primary picture  \\
+	5 & The luma component of the attenuation map is applied to the third component of the associated primary picture  \\
+	6 & User defined process  \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIPreprocessingFlag} &
+\Default{0} &
+Specifies whether some pre-upsampling is to be used on the attenuation map of index i (if SEIGreenMetadataType == 2).
+\\
+\Option{SEIGreenMetadataAMIPreprocessingType} &
+\Default{0} &
+Specifies the recommended type of the interpolation used to resample the attenuation map on index i (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & Bicubic interpolation should be used to resample the attenuation map sample values  \\
+	1 & Bilinear interpolation should be used to resample the attenuation map sample values   \\
+	2 & Lanczos interpolation should be used to resample the attenuation map sample values  \\
+	3 & User defined process  \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIPreprocessingScaleIdc} &
+\Default{0} &
+Specifies which scaling should be applied to the attenuation map of index i before applying it on the decoded picture (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & Scaling of $\frac{1}{255}$  \\
+	1 & User defined process  \\
+\end{tabular}
+\\
+\Option{SEIGreenMetadataAMIBacklightScalingIdc} &
+\Default{0} &
+Specifies the process to compute the scaling factor of the backlight of transmissive pixel displays, derived from the attenuation map of index i (if SEIGreenMetadataType == 2).
+\par
+\begin{tabular}{cp{0.35\textwidth}}
+	0 & Scaling by the ratio between maximum values before and after applying the attenuation map  \\
+	1 & User defined process  \\
+\end{tabular}
 \\
 \end{OptionTableNoShorthand}
 
@@ -6010,6 +6148,14 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Default{false} &
   Specifies the nnpfc_absent_input_pic_zero_flag of the \emph{i}-th neural network post-filter.
   \\
+  \Option{SEINNPFCInbandSeedFlag\emph{i}} &
+  \Default{false} &
+  Specifies the nnpfc_inband_seed_flag of the \emph{i}-th neural network post-filter.
+  \\
+  \Option{SEINNPFCSeed\emph{i}} &
+  \Default{0} &
+  Indicates the seed value used as input for the \emph{i}-th neural network post-filter.
+  \\
 \end{OptionTableNoShorthand}
 
 \begin{OptionTableNoShorthand}{Neural network post-filter activation}{tab:sei-nn-post-filter-activation}
@@ -6056,6 +6202,18 @@ Specifies sii_num_units_in_shutter_interval for single entry.If multiple entries
   \Option{SEINNPostFilterActivationPrompt} &
   \Default{""} &
   Specifies updated input prompt, if present.
+  \\
+  \Option{SEINNPostFilterActivationSelectedInputFlag} &
+  \Default{0} &
+  Specifies whether input pic shift is present or not.
+  \\
+  \Option{SEINNPostFilterActivationSeedUpdateFlag} &
+  \Default{false} &
+  Specifies whether seed update is present or not.
+  \\
+  \Option{SEINNPostFilterActivationSeed} &
+  \Default{0} &
+  Specifies updated seed, if present.
   \\
   \Option{SEINNPostFilterActivationNumInputPicShift} &
   \Default{0} &
@@ -6158,6 +6316,30 @@ Specifies the number of prefix bits for the \emph{i}-th SEI message present in p
 \Option{SEIPOPrefixByte\emph{i}} &
 \Default{0} &
 Specifies the \emph{i}-th prefix byte present in processing order SEI message.
+\\
+\Option{SEIPOComplexityInfoPresentFlag} &
+\Default{false} &
+Specifies whether complexity info is present (1) or not (0). Default value: 0.
+\\
+\Option{SEIPOParameterTypeIdc} &
+\Default{0} &
+Specifies type of parameters of the NNPFs (0) only integer, (1) integer or floating point, (2) binary only, (3) reserved. Default value: 0.
+\\
+\Option{SEIPOLog2ParameterBitLengthMinus3} &
+\Default{0} &
+0, 1, 2, and 3 means the NNPFs do not use parameters of bit length greater than 8, 16, 32, and 64, respectively. Default value: 0.
+\\
+\Option{SEIPONumParametersIdc} &
+\Default{0} &
+Specifies max number of parameters needed by NNPFs in the processing chain. Default value: 0.
+\\
+\Option{SEIPONumKmacOperationIdcg} &
+\Default{0} &
+When greater than 0 specifies that the max number of multiply-accumulate operations per sample of the NNPFs is less than or equal to po_num_kmac_operations_idc * 1000. ) means unknown. Default value: 0.
+\\
+\Option{SEIPOTotalKilobyteSize} &
+\Default{0} &
+When greater than 0 specifies a total size in kilobytes required to store the uncompressed parameters for NNPFs. 0 means unknown. Default value: 0.
 \\
 \end{OptionTableNoShorthand}
 
@@ -6612,6 +6794,45 @@ An example file can be found in cfg/sei_vui/object_mask_infos/intra/mask_info_0.
   \\
 \end{OptionTableNoShorthand}
 
+\begin{OptionTableNoShorthand}{AI Restrictions Usage SEI message encoder parameters}{tab:sei-aur}
+  \Option{SEIAUREnabled} &
+  \Default{false} &
+  Specifies whether AI restrictions usage SEI is generated or not.
+  \\
+  \Option{SEIAURCancelFlag} &
+  \Default{9} &
+  Specifies the value of cancellation flag.
+  \\
+  \Option{SEIAURPersistenceFlag} &
+  \Default{9} &
+  Specifies the value of persistence flag.
+  \\
+  \Option{SEIAURNumRestrictionsMinus1} &
+  \Default{9} &
+  Specifies the value of number of restrictions minus one.
+  \\
+  \Option{SEIAURRestrictions} &
+  \Default{""} &
+  List of restrictions that are applied.
+  0 : Do not use in any AI applications
+  1 : Do not use for AI training
+  2 : Do not use for generative AI
+  3 : Do not use for AI inference
+  \\
+  \Option{SEIAURContextPresentFlag} &
+  \Default{""} &
+  List of restriction context present flags.
+  1st bit : commercial use
+  2nd bit : non-commercial use
+  3rd bit : official / government use
+  4th bit : research and academic use
+  \\
+  \Option{SEIAURContext} &
+  \Default{""} &
+  List of restriction context. (Please put space in between values).
+  \\
+\end{OptionTableNoShorthand}
+
 \begin{OptionTableNoShorthand}{Generative face video enhancement SEI message encoder parameters}
 {tab:sei-gfve}
   \Option{--} &
@@ -6827,13 +7048,13 @@ An example file can be found in cfg/sei_vui/object_mask_infos/intra/mask_info_0.
   \Default{""} &
   Specifies a list of resampling ration indices for the regions.
   \\
-  \Option{SEIPRITargetRegionTopLeftX} &
+  \Option{SEIPRITargetRegionTopLeftInUnitsX} &
   \Default{""} &
-  Specifies a list of horizontal top left postions in units of luma samples for the regions in reconstructed target picture.
+  Specifies a list of horizontal top left postions in units for the regions in reconstructed target picture.
   \\
-  \Option{SEIPRITargetRegionTopLeftY} &
+  \Option{SEIPRITargetRegionTopLeftInUnitsY} &
   \Default{""} &
-  Specifies a list of vertical top left postions in units of luma samples for the regions in reconstructed target picture.
+  Specifies a list of vertical top left postions in units for the regions in reconstructed target picture.
   \\
 \end{OptionTableNoShorthand}
 
