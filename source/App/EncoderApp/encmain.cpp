@@ -76,6 +76,7 @@ static void printMacroSettings()
   }
 }
 
+#if !JVET_AM0280_DECODER_MEMORY_PRINT
 #ifdef __linux
 #include <cstdlib>
 #include <cstdio>
@@ -99,6 +100,7 @@ int getProcStatusValue(const char* key)
   fclose(file);
   return result;
 }
+#endif
 #endif
 
 // ====================================================================================================================

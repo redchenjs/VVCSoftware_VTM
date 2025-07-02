@@ -940,6 +940,30 @@ template<class T> inline void free(std::vector<T>& v)
   std::vector<T>().swap(v);
 }
 
+#if JVET_AM0280_DECODER_MEMORY_PRINT
+#ifdef __linux
+static inline int getProcStatusValue(const char* key)
+{
+  FILE* file = fopen("/proc/self/status", "r");
+  int result = -1;
+  char line[128];
+
+  int len = strlen(key);
+  while (fgets(line, 128, file) != nullptr)
+  {
+    if (strncmp(line, key, len) == 0)
+    {
+      result = atoi(line+len);
+      break;
+    }
+  }
+  fclose(file);
+  return result;
+}
+#endif
+#endif
+
+
 //CASE-BREAK for breakpoints
 #if defined ( _MSC_VER ) && defined ( _DEBUG )
 #define _CASE(_x) if(_x)
