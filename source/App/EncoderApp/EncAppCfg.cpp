@@ -6785,7 +6785,14 @@ void EncAppCfg::xPrintParameter()
   {
     msg(VERBOSE, "RPLofDepLayerInSH:%d ", m_rplOfDepLayerInSh);
   }
-  msg(VERBOSE, "TemporalFilter:%d/%d ", m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs);
+  if (m_gopBasedTemporalFilterEnabled)
+  {
+    msg(VERBOSE, "TemporalFilter:%d/%d ", m_gopBasedTemporalFilterPastRefs, m_gopBasedTemporalFilterFutureRefs);
+  }
+  else
+  {
+    msg(VERBOSE, "TemporalFilter:disabled ");
+  }
   msg(VERBOSE, "SEI CTI:%d ", m_ctiSEIEnabled);
   msg(VERBOSE, "BIM:%d ", m_bimEnabled);
   msg(VERBOSE, "SEI FGC:%d ", m_fgcSEIEnabled);
