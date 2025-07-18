@@ -179,15 +179,15 @@ void DeriveCtx::CtxSplit( const CodingStructure& cs, Partitioner& partitioner, u
   // get above depth
   const CodingUnit* cuAbove = cs.getCURestricted( pos.offset( 0, -1 ), pos, curSliceIdx, curTileIdx, partitioner.chType );
 
-  bool canSplit[6];
+  bool canSplit[NUMBER_SPLITS];
 
   if( _canSplit == nullptr )
   {
-    partitioner.canSplit( cs, canSplit[0], canSplit[1], canSplit[2], canSplit[3], canSplit[4], canSplit[5] );
+    partitioner.canSplit( cs, canSplit[NOSPLIT], canSplit[QTSPLIT], canSplit[BHSPLIT], canSplit[BVSPLIT], canSplit[THSPLIT], canSplit[TVSPLIT] );
   }
   else
   {
-    memcpy( canSplit, _canSplit, 6 * sizeof( bool ) );
+    memcpy( canSplit, _canSplit, NUMBER_SPLITS * sizeof( bool ) );
   }
 
   ///////////////////////
@@ -210,23 +210,23 @@ void DeriveCtx::CtxSplit( const CodingStructure& cs, Partitioner& partitioner, u
   }
 
   unsigned numSplit = 0;
-  if (canSplit[1])
+  if (canSplit[QTSPLIT])
   {
     numSplit += 2;
   }
-  if (canSplit[2])
+  if (canSplit[BHSPLIT])
   {
     numSplit += 1;
   }
-  if (canSplit[3])
+  if (canSplit[BVSPLIT])
   {
     numSplit += 1;
   }
-  if (canSplit[4])
+  if (canSplit[THSPLIT])
   {
     numSplit += 1;
   }
-  if (canSplit[5])
+  if (canSplit[TVSPLIT])
   {
     numSplit += 1;
   }
@@ -250,8 +250,8 @@ void DeriveCtx::CtxSplit( const CodingStructure& cs, Partitioner& partitioner, u
   ////////////////////////////
   ctxHv = 0;
 
-  const unsigned numHor = ( canSplit[2] ? 1 : 0 ) + ( canSplit[4] ? 1 : 0 );
-  const unsigned numVer = ( canSplit[3] ? 1 : 0 ) + ( canSplit[5] ? 1 : 0 );
+  const unsigned numHor = ( canSplit[BHSPLIT] ? 1 : 0 ) + ( canSplit[THSPLIT] ? 1 : 0 );
+  const unsigned numVer = ( canSplit[BVSPLIT] ? 1 : 0 ) + ( canSplit[TVSPLIT] ? 1 : 0 );
 
   if( numVer == numHor )
   {
