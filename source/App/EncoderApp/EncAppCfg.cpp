@@ -3016,6 +3016,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       m_frameRate              = frameRate;
       m_inputBitDepth.fill(inputBitDepth);
       m_chromaFormatIdc        = chromaFormat;
+      m_inputChromaFormatIDC   = chromaFormat;
       m_msbExtendedBitDepth    = m_inputBitDepth;
       if (m_writeVuiHrdFromY4m)
       {
