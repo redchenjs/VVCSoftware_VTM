@@ -457,6 +457,23 @@ template<class T> std::istream &SMultiValueInput<T>::readValues(std::istream &in
   return in;
 }
 
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+template<> uint8_t SMultiValueInput<uint8_t>::readValue(const char*& pStr, bool& bSuccess)
+{
+  uint32_t val = 0;
+  std::string s(pStr);
+  std::replace(s.begin(), s.end(), ',', ' ');   // make comma separated into space separated
+  std::istringstream iss(s);
+  iss >> std::hex >> val;
+  bSuccess = !iss.fail()                                  // check nothing has gone wrong
+             && !(val < minValIncl || val > maxValIncl)   // check value is within range
+             && (int) iss.tellg() != 0                    // check we've actually read something
+             && (iss.eof() || iss.peek() == ' ');         // check next character is a space, or eof
+  pStr += (iss.eof() ? s.size() : (std::size_t) iss.tellg());
+  return val;
+}
+#endif
+
 template<class T1, class T2> static inline std::istream &operator>>(std::istream &in, std::map<T1, T2> &map)
 {
   T1 key;
@@ -849,6 +866,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif
   SMultiValueInput<uint32_t> cfg_priSEIRegionLayerId(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<bool> cfg_priSEIRegionIsALayerFlag(0, 1, 0, std::numeric_limits<uint32_t>::max());
+#endif
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+  std::vector<SMultiValueInput<uint8_t>> cfg_ifmDataPayloadByteDataValuesList;
+  for (int i = 0; i < MAX_NUM_IMAGE_FORMAT_METADATA_SEI; i++)
+  { 
+    cfg_ifmDataPayloadByteDataValuesList.push_back(SMultiValueInput<uint8_t>(0, std::numeric_limits<uint8_t>::max(), 0, std::numeric_limits<uint32_t>::max()));   
+  }
 #endif
 
 #if GREEN_METADATA_SEI_AMI_ENABLED_WG03_N01464
@@ -2402,6 +2426,22 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     stringDesc << "SEITextDescriptionString" << i;
     opts.addOptions()(stringDesc.str(), m_SEITextDescriptionString[0], std::string(""), "Specifies the i-th text description information string");
   }
+
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+  opts.addOptions()("SEIIfmEnabled", m_ifmSeiEnabled, false, "Specifies if IFM metadata SEI is active");
+  opts.addOptions()("SEIIfmCancelFlag", m_ifmCancelFlag, false, "Specifies if IFM metadata SEI should be cancelled");
+  opts.addOptions()("SEIIfmPersistenceFlag", m_ifmPersistenceFlag, false, "Specifies that IFM metadata SEI persists beyond the scope of a single picture");  
+  opts.addOptions()("SEIIfmNumMetadataPayloads", m_ifmNumMetadataPayloads, 0u, "Number of IFM metadata payloads");
+  opts.addOptions()("SEIIfmfTypeId%d", m_ifmTypeId, 0, MAX_NUM_IMAGE_FORMAT_METADATA_SEI, "IFM metadata type id");
+  opts.addOptions()("SEIIfmUriPresentFlag%d", m_ifmUriPresentFlag, 0, MAX_NUM_IMAGE_FORMAT_METADATA_SEI, "IFM uri present flag");
+  for (int i = 0; i < MAX_NUM_IMAGE_FORMAT_METADATA_SEI; i++)
+  { 
+    std::ostringstream seiIfmDataName;
+    seiIfmDataName << "SEIIfmfData" << i;
+    opts.addOptions()(seiIfmDataName.str(), cfg_ifmDataPayloadByteDataValuesList[i], cfg_ifmDataPayloadByteDataValuesList[i], "IFM metadata");
+  }
+  opts.addOptions()("SEIIfmURI%d",    m_ifmDataUri, std::string(""), MAX_NUM_IMAGE_FORMAT_METADATA_SEI,  "URI from which to obtain IFM data when present flag = 1");
+#endif
 
   po::setDefaults(opts);
   po::ErrorReporter err;
@@ -4793,6 +4833,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif
   }
 #endif
+
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+  for (int i = 0; i < MAX_NUM_IMAGE_FORMAT_METADATA_SEI; i++)
+  { 
+    for (auto x: cfg_ifmDataPayloadByteDataValuesList[i].values)
+    {
+      m_ifmDataPayloadByte[i].push_back(x);
+    }
+  }
+#endif
+
 
   // check validity of input parameters
   if( xCheckParameter() )

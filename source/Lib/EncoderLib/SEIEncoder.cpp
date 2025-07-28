@@ -2405,4 +2405,23 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
 }
 #endif
 
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+void SEIEncoder::initSEIIfmMetadata(SEIIfmMetadata *sei)
+{
+  CHECK(!m_isInitialized, "Ifm metadata information SEI already initialized");
+  CHECK(sei == nullptr, "Need a SEIIfmMetadata for initialization (got nullptr)");
+
+  sei->m_persistenceFlag     = m_pcCfg->getIfmSEIPersistenceFlag();
+  sei->m_cancelFlag          = m_pcCfg->getIfmSEICancelFlag();
+  sei->m_numMetadataPayloads = m_pcCfg->getIfmNumMetadataPayloads();
+  for( int i = 0;i<sei->m_numMetadataPayloads;i++)
+  {
+    sei->m_typeId         .push_back( m_pcCfg->getIfmTypeId( i ) ); 
+    sei->m_uriPresentFlag .push_back( m_pcCfg->getIfmUriPresentFlag( i ) ); 
+    sei->m_dataPayloadByte.push_back( m_pcCfg->getIfmDataPayloadByte( i ) ); 
+    sei->m_dataUri        .push_back( m_pcCfg->getIfmDataUri( i ) ); 
+  }
+}
+#endif
+
 //! \}

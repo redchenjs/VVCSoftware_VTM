@@ -234,6 +234,11 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIPackedRegionsInfo(*static_cast<const SEIPackedRegionsInfo*>(&sei));
     break;
 #endif
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+  case SEI::PayloadType::IFM_METADATA:
+    xWriteSEIIfmMetadata(*static_cast<const SEIIfmMetadata*>(&sei));
+    break;
+#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -3220,6 +3225,42 @@ void SEIWriter::xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei)
         xWriteCode(sei.m_targetRegionTopLeftX[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_x[i]");
         xWriteCode(sei.m_targetRegionTopLeftY[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_y[i]");
 #endif
+      }
+    }
+  }
+}
+#endif
+
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+void SEIWriter::xWriteSEIIfmMetadata(const SEIIfmMetadata &sei)
+{
+  xWriteFlag(sei.m_cancelFlag, "ifm_cancel_flag");
+  if (!sei.m_cancelFlag)
+  {
+    xWriteFlag(sei.m_persistenceFlag, "ifm_persistence_flag");    
+    assert(sei.m_numMetadataPayloads > 0 && sei.m_numMetadataPayloads <= 63);
+    xWriteUvlc(sei.m_numMetadataPayloads - 1, "ifm_num_metadata_payloads_minus1");
+    for( int i=0; i<sei.m_numMetadataPayloads; i++ ) 
+    {
+      xWriteUvlc(sei.m_typeId[i], "ifm_type_id" );
+      xWriteFlag(sei.m_uriPresentFlag[i], "ifm_uri_present_flag");    
+      if( !sei.m_uriPresentFlag[i] ) 
+      {
+        assert(sei.m_dataPayloadByte[i].size() <= 131071);
+        int ifmPayloadLenMinus1 = ((int)sei.m_dataPayloadByte[i].size() ) - 1;
+        xWriteUvlc(ifmPayloadLenMinus1, "ifm_payload_len_minus1" );
+        for (auto& el: sei.m_dataPayloadByte[i])
+        {
+          xWriteCode( el , 8, "ifm_data_payload_byte");
+        }
+      }
+      else
+      {
+        while (!isByteAligned())
+        {
+          xWriteFlag(0, "ifm_bit_equal_to_zero");
+        }
+        xWriteString(sei.m_dataUri[i], "ifm_data_uri");
       }
     }
   }

@@ -1597,6 +1597,18 @@ void EncApp::xInitLibCfg( int layerIdx )
   }
 #endif
 #endif
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+  m_cEncLib.setIfmSEIEnabled                                    ( m_ifmSeiEnabled);
+  m_cEncLib.setIfmSEICancelFlag                                 ( m_ifmCancelFlag );
+  m_cEncLib.setIfmSEIPersistenceFlag                            ( m_ifmPersistenceFlag );
+  m_cEncLib.setIfmNumMetadataPayloads                           ( m_ifmNumMetadataPayloads );
+  for(int i =0 ;i< m_ifmNumMetadataPayloads; i++){
+    m_cEncLib.setIfmTypeId                                      ( i, m_ifmTypeId[i] );
+    m_cEncLib.setIfmUriPresentFlag                              ( i, m_ifmUriPresentFlag[i] );
+    m_cEncLib.setIfmDataPayloadByte                             ( i, m_ifmDataPayloadByte[i] );
+    m_cEncLib.setIfmDataUri                                     ( i, m_ifmDataUri[i] );
+  }
+#endif
   m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
   m_cEncLib.setPostFilterHintSEICancelFlag(m_postFilterHintSEICancelFlag);
   m_cEncLib.setPostFilterHintSEIPersistenceFlag(m_postFilterHintSEIPersistenceFlag);

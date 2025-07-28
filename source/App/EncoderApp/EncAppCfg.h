@@ -905,6 +905,16 @@ protected:
   uint32_t                   m_SEITextNumStringsMinus1;
   std::vector<std::string>   m_SEITextDescriptionStringLang;
   std::vector<std::string>   m_SEITextDescriptionString;
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+  bool                  m_ifmSeiEnabled;
+  bool                  m_ifmCancelFlag;
+  bool                  m_ifmPersistenceFlag;
+  uint32_t              m_ifmNumMetadataPayloads;
+  int                   m_ifmTypeId[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];    
+  int                   m_ifmUriPresentFlag[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];    
+  std::vector<uint8_t>  m_ifmDataPayloadByte[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];
+  std::string           m_ifmDataUri[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];
+#endif
 
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;

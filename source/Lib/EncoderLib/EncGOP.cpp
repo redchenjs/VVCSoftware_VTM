@@ -1191,6 +1191,14 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     seiMessages.push_back(aurSEI);
   }
 #endif 
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+  if (m_pcCfg->getIfmSEIEnabled())
+  {
+    SEIIfmMetadata *ifmSEI = new SEIIfmMetadata;
+    m_seiEncoder.initSEIIfmMetadata(ifmSEI);
+    seiMessages.push_back(ifmSEI);
+  }
+#endif
 }
 
 void EncGOP::xCreateGenerativeFaceVideoSEIMessages(SEIMessages& seiMessages)

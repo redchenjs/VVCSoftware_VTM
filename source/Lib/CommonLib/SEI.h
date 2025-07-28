@@ -117,6 +117,9 @@ public:
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     PACKED_REGIONS_INFO                     = 226,
 #endif
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+    IFM_METADATA                            = 227, // payload_type value TBD
+#endif
   };
 
   SEI() {}
@@ -1957,6 +1960,31 @@ public:
 #endif
   std::vector<uint32_t> m_regionLayerId;
   std::vector<uint8_t>  m_regionIsALayerFlag;
+};
+#endif
+
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+class SEIIfmMetadata : public SEI
+{
+public:
+  PayloadType payloadType() const { return PayloadType::IFM_METADATA; }
+
+  SEIIfmMetadata()
+  : m_persistenceFlag(false)
+  , m_cancelFlag(false)
+  , m_numMetadataPayloads(0)
+  {}
+  SEIIfmMetadata(const SEIIfmMetadata& sei);
+
+  virtual ~SEIIfmMetadata() {}
+  
+  bool                              m_persistenceFlag;
+  bool                              m_cancelFlag;
+  int                               m_numMetadataPayloads;
+  std::vector<int>                  m_typeId; 
+  std::vector<bool>                 m_uriPresentFlag; 
+  std::vector<std::vector<uint8_t>> m_dataPayloadByte; 
+  std::vector< std::string>         m_dataUri; 
 };
 #endif
 
