@@ -3118,6 +3118,7 @@ void Slice::freeScaledRefPicList( Picture *scaledRefPic[] )
     if( scaledRefPic[i] != nullptr )
     {
       scaledRefPic[i]->destroy();
+      delete scaledRefPic[i];
       scaledRefPic[i] = nullptr;
     }
   }
