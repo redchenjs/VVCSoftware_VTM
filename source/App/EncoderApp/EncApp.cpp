@@ -1602,7 +1602,8 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setIfmSEICancelFlag                                 ( m_ifmCancelFlag );
   m_cEncLib.setIfmSEIPersistenceFlag                            ( m_ifmPersistenceFlag );
   m_cEncLib.setIfmNumMetadataPayloads                           ( m_ifmNumMetadataPayloads );
-  for(int i =0 ;i< m_ifmNumMetadataPayloads; i++){
+  for(int i =0 ;i< m_ifmNumMetadataPayloads; i++)
+  {
     m_cEncLib.setIfmTypeId                                      ( i, m_ifmTypeId[i] );
     m_cEncLib.setIfmUriPresentFlag                              ( i, m_ifmUriPresentFlag[i] );
     m_cEncLib.setIfmDataPayloadByte                             ( i, m_ifmDataPayloadByte[i] );

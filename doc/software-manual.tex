@@ -4068,6 +4068,7 @@ The table below lists the SEI messages defined for Version 1 and Range-Extension
   218 & Modality Information SEI messages        & Table \ref{tab:sei-modality-info}\\
   220/221/222 & Digitally Signed Content SEI messages        & Table \ref{tab:sei-dsc}\\
   226 & Packed Regions Info                      & Table \ref{tab:sei-pri}\\
+  227 & Image Format Metadata                    & Table \ref{tab:sei-ifm}\\
 \end{SEIListTable}
 %%
 %% SEI messages
@@ -7055,6 +7056,41 @@ An example file can be found in cfg/sei_vui/object_mask_infos/intra/mask_info_0.
   \Option{SEIPRITargetRegionTopLeftInUnitsY} &
   \Default{""} &
   Specifies a list of vertical top left postions in units for the regions in reconstructed target picture.
+  \\
+\end{OptionTableNoShorthand}
+
+\begin{OptionTableNoShorthand}{Image Format Metadata SEI message encoder parameters}{tab:sei-ifm}
+  \Option{SEIIfmEnabled} &
+  \Default{false} &
+  Specifies if IFM metadata SEI is active.
+  \\
+  \Option{SEIIfmCancelFlag} &
+  \Default{false} &
+  Specifies if IFM metadata SEI should be cancelled.
+  \\
+  \Option{SEIIfmPersistenceFlag} &
+  \Default{false} &
+  Specifies that IFM metadata SEI persists beyond the scope of a single picture.
+  \\
+  \Option{SEIIfmNumMetadataPayloads} &
+  \Default{0} &
+  Number of IFM metadata payloads.
+  \\
+  \Option{SEIIfmfTypeId\emph{i}} &
+  \Default{0} &
+  IFM metadata type id of the i-th payload (with i an integer between 0 and 15).
+  \\
+  \Option{SEIIfmUriPresentFlag\emph{i}} &
+  \Default{0} &
+  IFM uniform resource identifier present flag of the i-th payload (with i an integer between 0 and 15).
+  \\
+  \Option{SEIIfmfData\emph{i}} &
+  \Default{""} &
+  IFM metadata of the i-th payload (with i an integer between 0 and 15).
+  \\
+  \Option{SEIIfmURI\emph{i}} &
+  \Default{""} &
+  URI from which to obtain IFM data when present flag = 1 of the i-th payload (with i an integer between 0 and 15).
   \\
 \end{OptionTableNoShorthand}
 

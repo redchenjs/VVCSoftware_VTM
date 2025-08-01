@@ -458,18 +458,18 @@ template<class T> std::istream &SMultiValueInput<T>::readValues(std::istream &in
 }
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-template<> uint8_t SMultiValueInput<uint8_t>::readValue(const char*& pStr, bool& bSuccess)
+template<> uint8_t SMultiValueInput<uint8_t>::readValue(const char*& str, bool& success)
 {
   uint32_t val = 0;
-  std::string s(pStr);
+  std::string s(str);
   std::replace(s.begin(), s.end(), ',', ' ');   // make comma separated into space separated
   std::istringstream iss(s);
   iss >> std::hex >> val;
-  bSuccess = !iss.fail()                                  // check nothing has gone wrong
+  success = !iss.fail()                                  // check nothing has gone wrong
              && !(val < minValIncl || val > maxValIncl)   // check value is within range
              && (int) iss.tellg() != 0                    // check we've actually read something
              && (iss.eof() || iss.peek() == ' ');         // check next character is a space, or eof
-  pStr += (iss.eof() ? s.size() : (std::size_t) iss.tellg());
+  str += (iss.eof() ? s.size() : (std::size_t) iss.tellg());
   return val;
 }
 #endif

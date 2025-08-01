@@ -3238,7 +3238,7 @@ void SEIWriter::xWriteSEIIfmMetadata(const SEIIfmMetadata &sei)
   if (!sei.m_cancelFlag)
   {
     xWriteFlag(sei.m_persistenceFlag, "ifm_persistence_flag");    
-    assert(sei.m_numMetadataPayloads > 0 && sei.m_numMetadataPayloads <= 63);
+    CHECK(sei.m_numMetadataPayloads < 1 || sei.m_numMetadataPayloads > 63, "Number of IFM SEI payloads shall be in the range of 1 to 63");
     xWriteUvlc(sei.m_numMetadataPayloads - 1, "ifm_num_metadata_payloads_minus1");
     for( int i=0; i<sei.m_numMetadataPayloads; i++ ) 
     {
@@ -3246,7 +3246,7 @@ void SEIWriter::xWriteSEIIfmMetadata(const SEIIfmMetadata &sei)
       xWriteFlag(sei.m_uriPresentFlag[i], "ifm_uri_present_flag");    
       if( !sei.m_uriPresentFlag[i] ) 
       {
-        assert(sei.m_dataPayloadByte[i].size() <= 131071);
+        CHECK(sei.m_dataPayloadByte[i].size() > 131071, "IFM SEI payload size shall be less than 131072");
         int ifmPayloadLenMinus1 = ((int)sei.m_dataPayloadByte[i].size() ) - 1;
         xWriteUvlc(ifmPayloadLenMinus1, "ifm_payload_len_minus1" );
         for (auto& el: sei.m_dataPayloadByte[i])
