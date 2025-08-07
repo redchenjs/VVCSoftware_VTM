@@ -2883,6 +2883,7 @@ bool DecLib::getMixedNaluTypesInPicFlag()
 bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDisplay )
 {
   m_apcSlicePilot->setPicHeader( &m_picHeader );
+  m_apcSlicePilot->setVPS( getVPS() );
   m_apcSlicePilot->initSlice(); // the slice pilot is an object to prepare for a new slice
                                 // it is not associated with picture, sps or pps structures.
 
