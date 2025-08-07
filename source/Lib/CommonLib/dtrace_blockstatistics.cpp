@@ -936,8 +936,8 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
       {
         if (tu.Y().valid())
         {
-          DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::Cbf_Y),
-                              tu.cbf[COMPONENT_Y]);
+          int cbf = tu.cbf[COMPONENT_Y] & (1 << tu.depth);
+          DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::Cbf_Y), cbf);
           DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::MTSIdx_Y),
                               to_underlying(tu.mtsIdx[COMPONENT_Y]));
         }
@@ -948,8 +948,10 @@ void writeAllData(const CodingStructure& cs, const UnitArea& ctuArea)
 
         if (!(!isChromaEnabled(cu.chromaFormat) || (cu.isSepTree() && isLuma(cu.chType))))
         {
-          DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cb), tu.cbf[COMPONENT_Cb]);
-          DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cr), tu.cbf[COMPONENT_Cr]);
+          int cbf = tu.cbf[COMPONENT_Cb] & (1 << tu.depth);
+          DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cb), cbf);
+          cbf = tu.cbf[COMPONENT_Cr] & (1 << tu.depth);
+          DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cr), cbf);
           DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_ALL, tu,
                                      GetBlockStatisticName(BlockStatistic::MTSIdx_Cb),
                                      to_underlying(tu.mtsIdx[COMPONENT_Cb]));
@@ -1194,14 +1196,17 @@ void writeAllCodedData(const CodingStructure & cs, const UnitArea & ctuArea)
         {
           if (tu.Y().valid())
           {
-            DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::Cbf_Y), tu.cbf[COMPONENT_Y]);
+            int cbf = tu.cbf[COMPONENT_Y] & (1 << tu.depth);
+            DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::Cbf_Y), cbf);
             DTRACE_BLOCK_SCALAR(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu,
                                 GetBlockStatisticName(BlockStatistic::MTSIdx_Y), to_underlying(tu.mtsIdx[COMPONENT_Y]));
           }
           if (!(!isChromaEnabled(cu.chromaFormat) || (cu.isSepTree() && isLuma(cu.chType))))
           {
-            DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cb), tu.cbf[COMPONENT_Cb]);
-            DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cr), tu.cbf[COMPONENT_Cr]);
+            int cbf = tu.cbf[COMPONENT_Cb] & (1 << tu.depth);
+            DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cb), cbf);
+            cbf = tu.cbf[COMPONENT_Cr] & (1 << tu.depth);
+            DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu, GetBlockStatisticName(BlockStatistic::Cbf_Cr), cbf);
             DTRACE_BLOCK_SCALAR_CHROMA(g_trace_ctx, D_BLOCK_STATISTICS_CODED, tu,
                                        GetBlockStatisticName(BlockStatistic::MTSIdx_Cb),
                                        to_underlying(tu.mtsIdx[COMPONENT_Cb]));
