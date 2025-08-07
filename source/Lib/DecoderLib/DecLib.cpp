@@ -54,7 +54,7 @@
 #include "CommonLib/dtrace_blockstatistics.h"
 #endif
 
-#if RExt__DECODER_DEBUG_TOOL_STATISTICS
+#if RExt__DECODER_DEBUG_STATISTICS || RExt__DECODER_DEBUG_TOOL_STATISTICS
 #include "CommonLib/CodingStatistics.h"
 #endif
 
@@ -4379,6 +4379,9 @@ bool DecLib::isNewPicture(std::ifstream *bitstreamFile, class InputByteStream *b
   bitstreamFile->seekg(location);
   bytestream->reset();
   CodingStatistics::SetStatistics(*backupStats);
+#if RExt__DECODER_DEBUG_TOOL_MAX_FRAME_STATS
+  CodingStatistics::UpdateMaxStat(backupStats);
+#endif
   delete backupStats;
 #else
   bitstreamFile->clear();
@@ -4470,6 +4473,9 @@ bool DecLib::isNewAccessUnit( bool newPicture, std::ifstream *bitstreamFile, cla
   bitstreamFile->seekg(location);
   bytestream->reset();
   CodingStatistics::SetStatistics(*backupStats);
+#if RExt__DECODER_DEBUG_TOOL_MAX_FRAME_STATS
+  CodingStatistics::UpdateMaxStat(backupStats);
+#endif
   delete backupStats;
 #else
   bitstreamFile->clear();

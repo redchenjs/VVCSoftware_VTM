@@ -56,6 +56,10 @@
 #include "SEIEncoder.h"
 #include "SEIwrite.h"
 
+#if RExt__DECODER_DEBUG_STATISTICS || RExt__DECODER_DEBUG_TOOL_STATISTICS
+#include "CommonLib/CodingStatistics.h"
+#endif
+
 
  //! \ingroup SubpicMergeApp
  //! \{
