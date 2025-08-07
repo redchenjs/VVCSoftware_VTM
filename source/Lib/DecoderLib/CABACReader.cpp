@@ -783,7 +783,7 @@ PartSplit CABACReader::split_cu_mode( CodingStructure& cs, Partitioner &partitio
   bool canNo, canQt, canBh, canBv, canTh, canTv;
   partitioner.canSplit( cs, canNo, canQt, canBh, canBv, canTh, canTv );
 
-  bool canSpl[6] = { canNo, canQt, canBh, canBv, canTh, canTv };
+  EnumArray<bool, SplitType> canSpl = { canNo, canQt, canBh, canBv, canTh, canTv };
 
   unsigned ctxSplit = 0, ctxQtSplit = 0, ctxBttHV = 0, ctxBttH12 = 0, ctxBttV12;
   DeriveCtx::CtxSplit( cs, partitioner, ctxSplit, ctxQtSplit, ctxBttHV, ctxBttH12, ctxBttV12, canSpl );
