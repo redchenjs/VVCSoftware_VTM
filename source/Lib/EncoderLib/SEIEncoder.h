@@ -122,6 +122,9 @@ public:
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void initSEIPackedRegionsInfo(SEIPackedRegionsInfo *sei);
 #endif
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+  void initSEIImageFormatMetadata(SEIImageFormatMetadata *sei);
+#endif
 
 private:
   EncCfg* m_pcCfg;

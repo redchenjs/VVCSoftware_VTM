@@ -496,6 +496,9 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   { SEI::PayloadType::PACKED_REGIONS_INFO, "Packed regions info" },
 #endif
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+  { SEI::PayloadType::IMAGE_FORMAT_METADATA, "Image format metadata" },
+#endif
 };
 
 const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
@@ -1398,5 +1401,21 @@ SEIPackedRegionsInfo::SEIPackedRegionsInfo(SEIPackedRegionsInfo& sei)
   m_targetRegionTopLeftX = sei.m_targetRegionTopLeftX;
   m_targetRegionTopLeftY = sei.m_targetRegionTopLeftY;
 #endif
+}
+#endif
+
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+SEIImageFormatMetadata::SEIImageFormatMetadata(const SEIImageFormatMetadata& sei)
+{
+  m_persistenceFlag      = sei.m_persistenceFlag;
+  m_cancelFlag           = sei.m_cancelFlag;
+  m_numMetadataPayloads  = sei.m_numMetadataPayloads;
+  for(int i = 0;i<m_numMetadataPayloads;i++)
+  {
+    m_typeId[i]          = sei.m_typeId[i]; 
+    m_uriPresentFlag[i]  = sei.m_uriPresentFlag[i]; 
+    m_dataPayloadByte[i] = sei.m_dataPayloadByte[i]; 
+    m_dataUri[i]         = sei.m_dataUri[i]; 
+  }
 }
 #endif

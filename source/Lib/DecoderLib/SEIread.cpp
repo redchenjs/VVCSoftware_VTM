@@ -602,6 +602,12 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParsePackedRegionsInfo((SEIPackedRegionsInfo &) *sei, nuh_layer_id, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+    case SEI::PayloadType::IMAGE_FORMAT_METADATA:
+      sei = new SEIImageFormatMetadata();
+      xParseSEIImageFormatMetadata((SEIImageFormatMetadata &) *sei, payloadSize, pDecodedMessageOutputStream);
+      break;
+#endif
     default:
       for (uint32_t i = 0; i < payloadSize; i++)
       {
@@ -5502,6 +5508,55 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
       std::sort(tmpVec.begin(), tmpVec.end());
       auto it = std::unique(tmpVec.begin(), tmpVec.end());
       CHECK(it != tmpVec.end(), "pri_region_id values must be unique");
+    }
+  }
+}
+#endif
+
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+void SEIReader::xParseSEIImageFormatMetadata(SEIImageFormatMetadata & sei,uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream)
+{
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payLoadSize);
+  uint32_t val;
+
+  sei_read_flag(pDecodedMessageOutputStream, val, "ifm_cancel_flag");
+  sei.m_cancelFlag = val != 0;
+  if (!sei.m_cancelFlag)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "ifm_persistence_flag");
+    sei.m_persistenceFlag = val != 0;
+    sei_read_uvlc(pDecodedMessageOutputStream, val, "ifm_num_metadata_payloads_minus1");    
+    sei.m_numMetadataPayloads = val + 1;    
+    sei.m_typeId         .resize( sei.m_numMetadataPayloads, 0 );
+    sei.m_uriPresentFlag .resize( sei.m_numMetadataPayloads, false );
+    sei.m_dataPayloadByte.resize( sei.m_numMetadataPayloads, {} );
+    sei.m_dataUri        .resize( sei.m_numMetadataPayloads, "" ); 
+    for( int i=0; i<sei.m_numMetadataPayloads; i++ ) 
+    {      
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "ifm_type_id");    
+      sei.m_typeId[i] = val;
+      sei_read_flag(pDecodedMessageOutputStream, val, "ifm_uri_present_flag");    
+      sei.m_uriPresentFlag[i] = val != 0;        
+      if( !sei.m_uriPresentFlag[i] ) 
+      {
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "ifm_payload_len_minus1");    
+        int ifmPayloadLen = val + 1;            
+        sei.m_dataPayloadByte[i].resize( ifmPayloadLen, 0 );
+        for (uint32_t j = 0; j < ifmPayloadLen; j++)
+        {
+          sei_read_code(pDecodedMessageOutputStream, 8, val, "ifm_data_payload_byte");
+          sei.m_dataPayloadByte[i][j] = val;
+        }
+      }
+      else
+      {
+        while (!isByteAligned())
+        {
+          sei_read_flag( pDecodedMessageOutputStream, val, "ifm_bit_equal_to_zero");
+          CHECK (val != 0, "ifm_bit_equal_to_zero not equal to zero");
+        }
+        sei_read_string(pDecodedMessageOutputStream, sei.m_dataUri[i], "ifm_data_uri");
+      }
     }
   }
 }

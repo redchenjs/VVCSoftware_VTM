@@ -86,6 +86,8 @@
 
 #define JVET_AL0056_EOI_SEI_QUANT_CONSTRAINT              1 // JVET-AL0056: On the encoder optimization information SEI message
 
+#define JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI             1 //< Use Image Format Metadata (IFM) SEI message
+
 //########### place macros to be be kept below this line ###############
 
 #define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1

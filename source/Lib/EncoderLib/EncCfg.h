@@ -1093,6 +1093,16 @@ protected:
   std::vector<bool>  m_aurSEIContextPresentFlag;
   std::vector<uint32_t>  m_aurSEIContext;
 #endif
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+  bool                  m_ifmSeiEnabled;
+  bool                  m_ifmCancelFlag;
+  bool                  m_ifmPersistenceFlag;
+  int                   m_ifmNumMetadataPayloads;
+  int                   m_ifmTypeId[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];    
+  int                   m_ifmUriPresentFlag[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];    
+  std::vector<uint8_t>  m_ifmDataPayloadByte[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];
+  std::string           m_ifmDataUri[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];
+#endif
 
   //====== Weighted Prediction ========
   bool      m_useWeightedPred;       //< Use of Weighting Prediction (P_SLICE)
@@ -3243,6 +3253,24 @@ public:
   void     setPriSEIRegionIsALayerFlag(std::vector<bool>& b)              { m_priSEIRegionIsALayerFlag = b; }
   bool     getPriSEIRegionIsALayerFlag(int i)                             { return m_priSEIRegionIsALayerFlag[i]; }
 #endif
+#endif
+#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
+  bool                        getIfmSEIEnabled() const { return m_ifmSeiEnabled; }
+  void                        setIfmSEIEnabled(bool b) { m_ifmSeiEnabled = b;    }
+  bool                        getIfmSEICancelFlag() const { return m_ifmCancelFlag; }
+  void                        setIfmSEICancelFlag(bool b) { m_ifmCancelFlag = b;    }
+  bool                        getIfmSEIPersistenceFlag() const { return m_ifmPersistenceFlag; }
+  void                        setIfmSEIPersistenceFlag(bool b) { m_ifmPersistenceFlag = b;    }
+  int                         getIfmNumMetadataPayloads() const { return m_ifmNumMetadataPayloads; }
+  void                        setIfmNumMetadataPayloads(int v) { m_ifmNumMetadataPayloads = v;    }
+  int                         getIfmTypeId(int index) const { return m_ifmTypeId[index]; }
+  void                        setIfmTypeId(int index, int v) { m_ifmTypeId[index] = v;   }
+  bool                        getIfmUriPresentFlag(int index) const { return m_ifmUriPresentFlag[index]; }
+  void                        setIfmUriPresentFlag(int index, bool b) { m_ifmUriPresentFlag[index] = b;  }  
+  const std::vector<uint8_t>& getIfmDataPayloadByte(int index) const { return m_ifmDataPayloadByte[index]; }
+  void                        setIfmDataPayloadByte(int index, std::vector<uint8_t>& v) { m_ifmDataPayloadByte[index] = v;  }
+  std::string                 getIfmDataUri(int index) const { return m_ifmDataUri[index]; }
+  void                        setIfmDataUri(int index, std::string s) { m_ifmDataUri[index] = s;  }
 #endif
 
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }
