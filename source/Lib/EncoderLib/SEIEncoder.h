@@ -123,7 +123,7 @@ public:
   void initSEIPackedRegionsInfo(SEIPackedRegionsInfo *sei);
 #endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-  void initSEIIfmMetadata(SEIIfmMetadata *sei);
+  void initSEIImageFormatMetadata(SEIImageFormatMetadata *sei);
 #endif
 
 private:

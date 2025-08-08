@@ -235,8 +235,8 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     break;
 #endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-  case SEI::PayloadType::IFM_METADATA:
-    xWriteSEIIfmMetadata(*static_cast<const SEIIfmMetadata*>(&sei));
+  case SEI::PayloadType::IMAGE_FORMAT_METADATA:
+    xWriteSEIImageFormatMetadata(*static_cast<const SEIImageFormatMetadata*>(&sei));
     break;
 #endif
   default:
@@ -3232,7 +3232,7 @@ void SEIWriter::xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei)
 #endif
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-void SEIWriter::xWriteSEIIfmMetadata(const SEIIfmMetadata &sei)
+void SEIWriter::xWriteSEIImageFormatMetadata(const SEIImageFormatMetadata &sei)
 {
   xWriteFlag(sei.m_cancelFlag, "ifm_cancel_flag");
   if (!sei.m_cancelFlag)

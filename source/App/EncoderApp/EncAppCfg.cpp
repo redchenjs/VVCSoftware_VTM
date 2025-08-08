@@ -2428,19 +2428,19 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   }
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-  opts.addOptions()("SEIIfmEnabled", m_ifmSeiEnabled, false, "Specifies if IFM metadata SEI is active");
-  opts.addOptions()("SEIIfmCancelFlag", m_ifmCancelFlag, false, "Specifies if IFM metadata SEI should be cancelled");
-  opts.addOptions()("SEIIfmPersistenceFlag", m_ifmPersistenceFlag, false, "Specifies that IFM metadata SEI persists beyond the scope of a single picture");  
-  opts.addOptions()("SEIIfmNumMetadataPayloads", m_ifmNumMetadataPayloads, 0u, "Number of IFM metadata payloads");
-  opts.addOptions()("SEIIfmfTypeId%d", m_ifmTypeId, 0, MAX_NUM_IMAGE_FORMAT_METADATA_SEI, "IFM metadata type id");
-  opts.addOptions()("SEIIfmUriPresentFlag%d", m_ifmUriPresentFlag, 0, MAX_NUM_IMAGE_FORMAT_METADATA_SEI, "IFM uri present flag");
+  opts.addOptions()("SEIIfmEnabled", m_ifmSeiEnabled, false, "Specifies if image format metadata SEI is active");
+  opts.addOptions()("SEIIfmCancelFlag", m_ifmCancelFlag, false, "Specifies if image format metadata SEI should be cancelled");
+  opts.addOptions()("SEIIfmPersistenceFlag", m_ifmPersistenceFlag, false, "Specifies that image format metadata SEI persists beyond the scope of a single picture");  
+  opts.addOptions()("SEIIfmNumMetadataPayloads", m_ifmNumMetadataPayloads, 0u, "Number of image format metadata SEI payloads");
+  opts.addOptions()("SEIIfmfTypeId%d", m_ifmTypeId, 0, MAX_NUM_IMAGE_FORMAT_METADATA_SEI, "Image format metadata SEI type id");
+  opts.addOptions()("SEIIfmUriPresentFlag%d", m_ifmUriPresentFlag, 0, MAX_NUM_IMAGE_FORMAT_METADATA_SEI, "Image format metadata uri present flag");
   for (int i = 0; i < MAX_NUM_IMAGE_FORMAT_METADATA_SEI; i++)
   { 
     std::ostringstream seiIfmDataName;
     seiIfmDataName << "SEIIfmfData" << i;
-    opts.addOptions()(seiIfmDataName.str(), cfg_ifmDataPayloadByteDataValuesList[i], cfg_ifmDataPayloadByteDataValuesList[i], "IFM metadata");
+    opts.addOptions()(seiIfmDataName.str(), cfg_ifmDataPayloadByteDataValuesList[i], cfg_ifmDataPayloadByteDataValuesList[i], "Image format metadata SEI data");
   }
-  opts.addOptions()("SEIIfmURI%d",    m_ifmDataUri, std::string(""), MAX_NUM_IMAGE_FORMAT_METADATA_SEI,  "URI from which to obtain IFM data when present flag = 1");
+  opts.addOptions()("SEIIfmURI%d",    m_ifmDataUri, std::string(""), MAX_NUM_IMAGE_FORMAT_METADATA_SEI,  "URI from which to obtain Image format metadata data when present flag = 1");
 #endif
 
   po::setDefaults(opts);

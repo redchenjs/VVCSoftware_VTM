@@ -1194,8 +1194,8 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   if (m_pcCfg->getIfmSEIEnabled())
   {
-    SEIIfmMetadata *ifmSEI = new SEIIfmMetadata;
-    m_seiEncoder.initSEIIfmMetadata(ifmSEI);
+    SEIImageFormatMetadata *ifmSEI = new SEIImageFormatMetadata;
+    m_seiEncoder.initSEIImageFormatMetadata(ifmSEI);
     seiMessages.push_back(ifmSEI);
   }
 #endif

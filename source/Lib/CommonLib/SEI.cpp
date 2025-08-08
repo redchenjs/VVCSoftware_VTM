@@ -497,7 +497,7 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::PACKED_REGIONS_INFO, "Packed regions info" },
 #endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-  { SEI::PayloadType::IFM_METADATA, "Ifm metadata information" },
+  { SEI::PayloadType::IMAGE_FORMAT_METADATA, "Image format metadata" },
 #endif
 };
 
@@ -1405,7 +1405,7 @@ SEIPackedRegionsInfo::SEIPackedRegionsInfo(SEIPackedRegionsInfo& sei)
 #endif
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-SEIIfmMetadata::SEIIfmMetadata(const SEIIfmMetadata& sei)
+SEIImageFormatMetadata::SEIImageFormatMetadata(const SEIImageFormatMetadata& sei)
 {
   m_persistenceFlag      = sei.m_persistenceFlag;
   m_cancelFlag           = sei.m_cancelFlag;

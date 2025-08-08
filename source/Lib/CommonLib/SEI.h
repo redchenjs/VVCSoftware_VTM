@@ -118,7 +118,7 @@ public:
     PACKED_REGIONS_INFO                     = 226,
 #endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-    IFM_METADATA                            = 227, // payload_type value TBD
+    IMAGE_FORMAT_METADATA                   = 227,
 #endif
   };
 
@@ -1964,19 +1964,19 @@ public:
 #endif
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-class SEIIfmMetadata : public SEI
+class SEIImageFormatMetadata : public SEI
 {
 public:
-  PayloadType payloadType() const { return PayloadType::IFM_METADATA; }
+  PayloadType payloadType() const { return PayloadType::IMAGE_FORMAT_METADATA; }
 
-  SEIIfmMetadata()
+  SEIImageFormatMetadata()
   : m_persistenceFlag(false)
   , m_cancelFlag(false)
   , m_numMetadataPayloads(0)
   {}
-  SEIIfmMetadata(const SEIIfmMetadata& sei);
+  SEIImageFormatMetadata(const SEIImageFormatMetadata& sei);
 
-  virtual ~SEIIfmMetadata() {}
+  virtual ~SEIImageFormatMetadata() {}
   
   bool                              m_persistenceFlag;
   bool                              m_cancelFlag;

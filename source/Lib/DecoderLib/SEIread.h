@@ -140,7 +140,7 @@ protected:
   void xParsePackedRegionsInfo(SEIPackedRegionsInfo &sei, const uint32_t nuhLayerId, uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream);
 #endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-  void xParseSEIIfmMetadata(SEIIfmMetadata & sei,uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream);
+  void xParseSEIImageFormatMetadata(SEIImageFormatMetadata & sei,uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream);
 #endif
 
   void sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName);

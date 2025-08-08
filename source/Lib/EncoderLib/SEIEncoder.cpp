@@ -2406,10 +2406,10 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
 #endif
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-void SEIEncoder::initSEIIfmMetadata(SEIIfmMetadata *sei)
+void SEIEncoder::initSEIImageFormatMetadata(SEIImageFormatMetadata *sei)
 {
-  CHECK(!m_isInitialized, "Ifm metadata information SEI already initialized");
-  CHECK(sei == nullptr, "Need a SEIIfmMetadata for initialization (got nullptr)");
+  CHECK(!m_isInitialized, "Image format metadata SEI already initialized");
+  CHECK(sei == nullptr, "Need a SEIImageFormatMetadata for initialization (got nullptr)");
 
   sei->m_persistenceFlag     = m_pcCfg->getIfmSEIPersistenceFlag();
   sei->m_cancelFlag          = m_pcCfg->getIfmSEICancelFlag();

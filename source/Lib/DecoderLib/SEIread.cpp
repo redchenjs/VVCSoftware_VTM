@@ -603,9 +603,9 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       break;
 #endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-    case SEI::PayloadType::IFM_METADATA:
-      sei = new SEIIfmMetadata();
-      xParseSEIIfmMetadata((SEIIfmMetadata &) *sei, payloadSize, pDecodedMessageOutputStream);
+    case SEI::PayloadType::IMAGE_FORMAT_METADATA:
+      sei = new SEIImageFormatMetadata();
+      xParseSEIImageFormatMetadata((SEIImageFormatMetadata &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
     default:
@@ -5514,7 +5514,7 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
 #endif
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
-void SEIReader::xParseSEIIfmMetadata(SEIIfmMetadata & sei,uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream)
+void SEIReader::xParseSEIImageFormatMetadata(SEIImageFormatMetadata & sei,uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payLoadSize);
   uint32_t val;
