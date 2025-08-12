@@ -80,6 +80,9 @@ public:
   virtual ~CfgSEIDigitallySignedContent(){};
 
   bool                      enabled = false;
+#if  JVET_AK0206_DSC_SEI_ID
+  int dscId = 0;
+#endif
   std::string               privateKeyFile;
   std::string               publicKeyUri;
   bool                      keyIdEnabled = false;

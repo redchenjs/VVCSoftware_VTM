@@ -5216,6 +5216,10 @@ double SEIReader::xParseSEIPupilCoordinate(std::ostream *pOS, double refCoordina
 void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   unsigned int val;
+#if JVET_AK0206_DSC_SEI_ID
+  sei_read_code(pDecodedMessageOutputStream, 8, val, "dsci_id");
+  sei.dsci_id = val;
+#endif
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dsci_hash_method_type");
   sei.dsciHashMethodType = val;
   sei_read_string(pDecodedMessageOutputStream, sei.dsciKeySourceUri, "twci_key_source_uri");
@@ -5265,6 +5269,10 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
 void SEIReader::xParseSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   unsigned int val;
+#if JVET_AK0206_DSC_SEI_ID
+  sei_read_code(pDecodedMessageOutputStream, 8, val, "dscs_id");
+  sei.dscs_id = val;
+#endif
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dscs_verification_substream_id");
   sei.dscsVerificationSubstreamId = val;
 }
@@ -5272,6 +5280,10 @@ void SEIReader::xParseSEIDigitallySignedContentSelection(SEIDigitallySignedConte
 void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedContentVerification &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
 {
   unsigned int val;
+#if JVET_AK0206_DSC_SEI_ID
+  sei_read_code(pDecodedMessageOutputStream, 8, val, "dscv_id");
+  sei.dscv_id = val;
+#endif
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dscv_verification_substream_id");
   sei.dscvVerificationSubstreamId = val;
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dscv_signature_length_in_octets_minus1");
