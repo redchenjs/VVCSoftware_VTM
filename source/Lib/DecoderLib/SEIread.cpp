@@ -5218,7 +5218,7 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
   unsigned int val;
 #if JVET_AK0206_DSC_SEI_ID
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dsci_id");
-  sei.dsci_id = val;
+  sei.dsciId = val;
 #endif
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dsci_hash_method_type");
   sei.dsciHashMethodType = val;
@@ -5271,7 +5271,7 @@ void SEIReader::xParseSEIDigitallySignedContentSelection(SEIDigitallySignedConte
   unsigned int val;
 #if JVET_AK0206_DSC_SEI_ID
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dscs_id");
-  sei.dscs_id = val;
+  sei.dscsId = val;
 #endif
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dscs_verification_substream_id");
   sei.dscsVerificationSubstreamId = val;
@@ -5282,7 +5282,7 @@ void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedCo
   unsigned int val;
 #if JVET_AK0206_DSC_SEI_ID
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dscv_id");
-  sei.dscv_id = val;
+  sei.dscvId = val;
 #endif
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dscv_verification_substream_id");
   sei.dscvVerificationSubstreamId = val;

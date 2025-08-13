@@ -66,7 +66,7 @@ class SEIDigitallySignedContentInitialization: public SEI
 {
 public:
 #if JVET_AK0206_DSC_SEI_ID
-  int8_t       dsci_id                       = 0;
+  int8_t       dsciId                        = 0;
 #endif
   int8_t       dsciHashMethodType            = 0;
   std::string  dsciKeySourceUri;
@@ -97,7 +97,7 @@ class SEIDigitallySignedContentSelection: public SEI
 {
 public:
 #if JVET_AK0206_DSC_SEI_ID
-  int8_t       dscs_id = 0;
+  int8_t       dscsId = 0;
 #endif
   int32_t      dscsVerificationSubstreamId = 0;
 
@@ -115,7 +115,7 @@ class SEIDigitallySignedContentVerification: public SEI
 {
 public:
 #if JVET_AK0206_DSC_SEI_ID
-  int8_t               dscv_id = 0;
+  int8_t               dscvId = 0;
 #endif
   int32_t              dscvVerificationSubstreamId = 0;
   int32_t              dscvSignatureLengthInOctets = 0;

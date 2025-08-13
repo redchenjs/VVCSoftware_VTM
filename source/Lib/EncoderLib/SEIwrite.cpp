@@ -3090,7 +3090,7 @@ double SEIWriter::xWriteSEIPupilCoordinate(double coordinate, double refCoordina
 void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitallySignedContentInitialization &sei)
 {
 #if JVET_AK0206_DSC_SEI_ID
-  xWriteCode(sei.dsci_id, 8, "dsci_id");
+  xWriteCode(sei.dsciId, 8, "dsci_id");
 #endif
   xWriteCode(sei.dsciHashMethodType, 8, "dsci_hash_method_type");
   xWriteString(sei.dsciKeySourceUri, "dsci_key_source_uri");
@@ -3130,7 +3130,7 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
 void SEIWriter::xWriteSEIDigitallySignedContentSelection(const SEIDigitallySignedContentSelection &sei)
 {
 #if JVET_AK0206_DSC_SEI_ID
-  xWriteCode(sei.dscs_id, 8, "dscs_id");
+  xWriteCode(sei.dscsId, 8, "dscs_id");
 #endif
   xWriteUvlc(sei.dscsVerificationSubstreamId, "dscs_verification_substream_id");
 }
@@ -3138,7 +3138,7 @@ void SEIWriter::xWriteSEIDigitallySignedContentSelection(const SEIDigitallySigne
 void SEIWriter::xWriteSEIDigitallySignedContentVerification(const SEIDigitallySignedContentVerification &sei)
 {
 #if JVET_AK0206_DSC_SEI_ID
-  xWriteCode(sei.dscv_id, 8, "dscv_id");
+  xWriteCode(sei.dscvId, 8, "dscv_id");
 #endif
   xWriteUvlc(sei.dscvVerificationSubstreamId, "dscv_verification_substream_id");
   CHECK (sei.dscvSignatureLengthInOctets < 1, "Length of signature has to be greater than zero");
