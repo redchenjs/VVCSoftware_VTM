@@ -4766,9 +4766,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 #if JVET_AJ0151_DSC_SEI
 
       m_totalPicsCoded++;
-      const int skip = m_pcCfg->getFrameSkip() ? m_pcCfg->getFrameSkip() : 1;
-      const int lastPic =(m_pcCfg->getFramesToBeEncoded() / skip) - 1;
-      const bool isLastPicture = ( m_totalPicsCoded > lastPic);
+      const bool isLastPicture = ( m_totalPicsCoded >= m_pcCfg->getFramesToBeEncoded() );
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
       bool writeLayerWiseDSCV = false;
       if (m_pcEncLib->getVPS() != NULL && m_pcEncLib->getVPS()->getMaxLayers() > 1)
