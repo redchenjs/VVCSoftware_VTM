@@ -46,6 +46,7 @@
 #include "UnitPartitioner.h"
 
 #include <bitset>
+#include <optional>
 
 
 struct CoeffCodingContext
@@ -586,7 +587,8 @@ public:
 
 namespace DeriveCtx
 {
-void     CtxSplit     ( const CodingStructure& cs, Partitioner& partitioner, unsigned& ctxSpl, unsigned& ctxQt, unsigned& ctxHv, unsigned& ctxHorBt, unsigned& ctxVerBt, bool* canSplit = nullptr );
+void     CtxSplit     ( const CodingStructure& cs, Partitioner& partitioner, unsigned& ctxSpl, unsigned& ctxQt, unsigned& ctxHv,
+  unsigned& ctxHorBt, unsigned& ctxVerBt, std::optional<EnumArray<bool, SplitType>>&& canSplit = std::nullopt );
 unsigned CtxModeConsFlag( const CodingStructure& cs, Partitioner& partitioner );
 unsigned CtxQtCbf     ( const ComponentID compID, const bool prevCbf = false, const int ispIdx = 0 );
 unsigned CtxInterDir  ( const PredictionUnit& pu );

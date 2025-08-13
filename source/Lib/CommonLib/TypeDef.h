@@ -460,6 +460,17 @@ enum class BdpcmMode : uint8_t
   VER
 };
 
+enum class SplitType : uint8_t
+{
+  NOSPLIT = 0,
+  QTSPLIT = 1,
+  BHSPLIT = 2,
+  BVSPLIT = 3,
+  THSPLIT = 4,
+  TVSPLIT = 5,
+  NUM
+};
+
 /// supported slice type
 enum SliceType
 {
