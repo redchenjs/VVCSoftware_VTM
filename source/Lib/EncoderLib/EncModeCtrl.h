@@ -597,22 +597,6 @@ void forceRemoveTTV()
   }
 }
 
-void forceRemoveBTV()
-{
-  int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++)
-  {
-    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-
-    if (etm.type == ETM_SPLIT_BT_V)
-    {
-      m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
-      j--;
-      n--;
-    }
-  }
-}
-
 void forceRemoveQT()
 {
   int n = (int)m_ComprCUCtxList.back().testModes.size();
@@ -621,72 +605,6 @@ void forceRemoveQT()
     const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
 
     if (etm.type == ETM_SPLIT_QT)
-    {
-      m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
-      j--;
-      n--;
-    }
-  }
-}
-
-void forceRemoveHT()
-{
-  int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++)
-  {
-    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-
-    if (etm.type == ETM_SPLIT_BT_H || etm.type == ETM_SPLIT_TT_H)
-    {
-      m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
-      j--;
-      n--;
-    }
-  }
-}
-
-void forceRemoveQTHT()
-{
-  int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++)
-  {
-    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-
-    if (etm.type == ETM_SPLIT_QT || etm.type == ETM_SPLIT_BT_H || etm.type == ETM_SPLIT_TT_H)
-    {
-      m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
-      j--;
-      n--;
-    }
-  }
-}
-
-void forceRemoveAllSplit()
-{
-  int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++)
-  {
-    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-
-    if (etm.type == ETM_SPLIT_QT || etm.type == ETM_SPLIT_BT_H || etm.type == ETM_SPLIT_BT_V
-        || etm.type == ETM_SPLIT_TT_H || etm.type == ETM_SPLIT_TT_V)
-    {
-      m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
-      j--;
-      n--;
-    }
-  }
-}
-
-void forceQTonlyMode()
-{
-  // remove all split except QT
-  int n = (int)m_ComprCUCtxList.back().testModes.size();
-  for (int j = 0; j < n; j++)
-  {
-    const EncTestMode etm = m_ComprCUCtxList.back().testModes[j];
-
-    if (etm.type != ETM_SPLIT_QT)
     {
       m_ComprCUCtxList.back().testModes.erase(m_ComprCUCtxList.back().testModes.begin() + j);
       j--;
