@@ -92,6 +92,7 @@
 
 #define JVET_AL0222_DSC_START_END                         1 // add start and end flags to DSC SEI messages
 
+#define JVET_AM0164_DSC_SYNTAX                            1 // Increase lenght of dscv_signature_length_in_octets_minus1 and move dsci_key_source_uri syntax element
 
 //########### place macros to be be kept below this line ###############
 
