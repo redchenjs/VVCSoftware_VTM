@@ -5263,6 +5263,10 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
   sei_read_flag(pDecodedMessageOutputStream, val, "dsci_vss_implicit_association_mode_flag");
   sei.dsciVSSImplicitAssociationModeFlag = (val!=0);
 #endif
+#if JVET_AL0222_DSC_START_END
+  sei_read_flag(pDecodedMessageOutputStream, val, "dsci_signed_content_start_flag");
+  sei.dsciSignedContentStartFlag = (val!=0);
+#endif
 }
 
 void SEIReader::xParseSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
@@ -5293,6 +5297,11 @@ void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedCo
     sei_read_code(pDecodedMessageOutputStream, 8, val, "dscv_signature");
     sei.dscvSignature[i] = val;
   }
+#if JVET_AL0222_DSC_START_END
+  sei_read_flag(pDecodedMessageOutputStream, val, "dsci_signed_content_end_flag");
+  sei.dscvSignedContentEndFlag = (val!=0);
+#endif
+
 }
 
 #if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI

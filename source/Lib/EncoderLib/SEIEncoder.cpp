@@ -2263,7 +2263,11 @@ void SEIEncoder::initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnh
   }
 }
 #if JVET_AJ0151_DSC_SEI
+#if JVET_AL0222_DSC_START_END
+void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei, bool startFlag)
+#else
 void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei)
+#endif
 {
 #if JVET_AK0206_DSC_SEI_ID
   sei->dsciId = m_pcCfg->getDigitallySignedContentSEICfg().dscId;
@@ -2281,6 +2285,9 @@ void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedC
 #endif
   sei->dsciUseKeyRegisterIdxFlag = m_pcCfg->getDigitallySignedContentSEICfg().keyIdEnabled;
   sei->dsciKeyRegisterIdx = m_pcCfg->getDigitallySignedContentSEICfg().keyId;
+#if JVET_AL0222_DSC_START_END
+  sei->dsciSignedContentStartFlag = startFlag;
+#endif
 }
 void SEIEncoder::initSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection *sei, int substream)
 {
@@ -2289,7 +2296,11 @@ void SEIEncoder::initSEIDigitallySignedContentSelection(SEIDigitallySignedConten
 #endif
   sei->dscsVerificationSubstreamId = substream;
 }
+#if JVET_AL0222_DSC_START_END
+void SEIEncoder::initSEIDigitallySignedContentVerification(SEIDigitallySignedContentVerification *sei, int32_t substream, const std::vector<uint8_t> &signature, bool endFlag)
+#else
 void SEIEncoder::initSEIDigitallySignedContentVerification(SEIDigitallySignedContentVerification *sei, int32_t substream, const std::vector<uint8_t> &signature)
+#endif
 {
 #if JVET_AK0206_DSC_SEI_ID
   sei->dscvId = m_pcCfg->getDigitallySignedContentSEICfg().dscId;
@@ -2297,6 +2308,9 @@ void SEIEncoder::initSEIDigitallySignedContentVerification(SEIDigitallySignedCon
   sei->dscvVerificationSubstreamId = substream;
   sei->dscvSignatureLengthInOctets = (int32_t) signature.size();
   sei->dscvSignature = signature;
+#if JVET_AL0222_DSC_START_END
+  sei->dscvSignedContentEndFlag = endFlag;
+#endif
 }
 #endif
 
