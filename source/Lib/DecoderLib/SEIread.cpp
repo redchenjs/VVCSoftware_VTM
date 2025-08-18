@@ -5218,25 +5218,7 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
   unsigned int val;
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dsci_hash_method_type");
   sei.dsciHashMethodType = val;
-  sei_read_string(pDecodedMessageOutputStream, sei.dsciKeySourceUri, "twci_key_source_uri");
-  sei_read_uvlc(pDecodedMessageOutputStream, val, "dsci_num_verification_substreams_minus1");
-  sei.dsciNumVerificationSubstreams = val + 1;
-#if  JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
-  sei.dsciRefSubstreamFlag.resize(sei.dsciNumVerificationSubstreams);
-  for (int i = 1; i < sei.dsciNumVerificationSubstreams; i++)
-  {
-    sei.dsciRefSubstreamFlag[i].resize(i);
-    for (int j = 0; j < i; j++)
-    {
-      sei_read_flag(pDecodedMessageOutputStream, val, "dsci_ref_substream_flag");
-      sei.dsciRefSubstreamFlag[i][j] = (val!=0);
-    }
-  }
-#endif
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
-  sei_read_flag(pDecodedMessageOutputStream, val, "dsci_vss_implicit_association_mode_flag");
-  sei.dsciVSSImplicitAssociationModeFlag = (val!=0);
-#endif
+  sei_read_string(pDecodedMessageOutputStream, sei.dsciKeySourceUri, "dsci_key_source_uri");
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dsci_key_retrieval_mode_idc");
   sei.dsciKeyRetrievalModeIdc = val;
   if (sei.dsciKeyRetrievalModeIdc == 1)
@@ -5258,8 +5240,25 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
       sei_read_code(pDecodedMessageOutputStream, 8, val, "dsci_content_uuid");
       sei.dsciContentUuid[i] = val;
     }
-
   }
+  sei_read_uvlc(pDecodedMessageOutputStream, val, "dsci_num_verification_substreams_minus1");
+  sei.dsciNumVerificationSubstreams = val + 1;
+#if  JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+  sei.dsciRefSubstreamFlag.resize(sei.dsciNumVerificationSubstreams);
+  for (int i = 1; i < sei.dsciNumVerificationSubstreams; i++)
+  {
+    sei.dsciRefSubstreamFlag[i].resize(i);
+    for (int j = 0; j < i; j++)
+    {
+      sei_read_flag(pDecodedMessageOutputStream, val, "dsci_ref_substream_flag");
+      sei.dsciRefSubstreamFlag[i][j] = (val!=0);
+    }
+  }
+#endif
+#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
+  sei_read_flag(pDecodedMessageOutputStream, val, "dsci_vss_implicit_association_mode_flag");
+  sei.dsciVSSImplicitAssociationModeFlag = (val!=0);
+#endif
 }
 
 void SEIReader::xParseSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
