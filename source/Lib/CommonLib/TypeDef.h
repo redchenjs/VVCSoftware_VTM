@@ -90,6 +90,9 @@
 
 #define JVET_AK0206_DSC_SEI_ID                            1 // JVET-AK0206 Add ID to DSC SEI messages
 
+#define JVET_AL0222_DSC_START_END                         1 // add start and end flags to DSC SEI messages
+
+
 //########### place macros to be be kept below this line ###############
 
 #define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1
