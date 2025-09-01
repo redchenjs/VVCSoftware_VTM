@@ -92,6 +92,7 @@
 
 #define JVET_AL0222_DSC_START_END                         1 // add start and end flags to DSC SEI messages
 
+#define JVET_AM0334_GFV_CHROMA_KEY                        1 // update to GFV SEI chroma key syntax
 
 //########### place macros to be be kept below this line ###############
 

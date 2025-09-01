@@ -4297,7 +4297,11 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
   bool       valueSignFlag;
   uint32_t   id;
   uint32_t   cnt;
+#if JVET_AM0334_GFV_CHROMA_KEY
+  uint32_t   fusionPicFlag;
+#else
   uint32_t   drivePicFusionFlag;
+#endif
   uint32_t   lowConfidenceFaceParameterFlag;
   bool       coordinatePresentFlag;
   uint32_t   coordinateQuantizationFactor;
@@ -4310,8 +4314,10 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
   uint32_t   numMatrixType;
   sei.m_chromaKeyValuePresentFlag.resize(3);
   sei.m_chromaKeyValue.resize(3);
+#if !JVET_AM0334_GFV_CHROMA_KEY
   sei.m_chromaKeyThrPresentFlag.resize(2);
   sei.m_chromaKeyThrValue.resize(2);    
+#endif
   std::vector<double>      coordinateX;
   std::vector<double>      coordinateY;
   std::vector<double>      coordinateZ;
@@ -4365,6 +4371,11 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
     sei.m_chromaKeyInfoPresentFlag = val;   
     if (sei.m_chromaKeyInfoPresentFlag)
     {
+#if JVET_AM0334_GFV_CHROMA_KEY
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_chroma_key_purpose_idc");
+      sei.m_chromaKeyPurposeIdc = val;
+      CHECK(sei.m_chromaKeyPurposeIdc > 2, "Chroma key purpose idc shall be in the range 0 to 2, inclusive");
+#endif
       for (uint32_t chromac = 0; chromac < 3; chromac++)
       {
         sei_read_flag(pDecodedMessageOutputStream, val, "gfv_chroma_key_value_present_flag[c]");
@@ -4402,6 +4413,28 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
         }
         (*pDecodedMessageOutputStream) << "\n";
       }
+#if JVET_AM0334_GFV_CHROMA_KEY
+      sei_read_flag(pDecodedMessageOutputStream, val, "gfv_chroma_key_thr_present_flag");
+      sei.m_chromaKeyThrPresentFlag = val;
+      if (sei.m_chromaKeyThrPresentFlag)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 8, val, "gfv_chroma_key_thr_lower");
+        sei.m_chromaKeyThrLower = val;
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_chroma_key_thr_upper_delta_minus1");
+        sei.m_chromaKeyThrUpperDeltaMinus1 = val;
+        CHECK(sei.m_chromaKeyThrUpperDeltaMinus1 > 255, "The value of gfv_chroma_key_thr_upper_delta_minus1 shall be in the range of 0 to 255, inclusive");
+      }
+      else
+      {
+        sei.m_chromaKeyThrLower = 48;
+        sei.m_chromaKeyThrUpperDeltaMinus1 = 26;
+      }
+      if (pDecodedMessageOutputStream)
+      {
+        (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfv_chroma_key_thr_lower" << ": " << (sei.m_chromaKeyThrLower) << "\n";
+        (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfv_chroma_key_thr_upper_delta_minus1" << ": " << (sei.m_chromaKeyThrUpperDeltaMinus1) << "\n";
+      }
+#else
       for (uint32_t chromai = 0; chromai < 2; chromai++)
       {
         sei_read_flag(pDecodedMessageOutputStream, val, "gfv_chroma_key_thr_present_flag[i]");
@@ -4425,12 +4458,20 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
         }
         (*pDecodedMessageOutputStream) << "\n";
       }
+#endif
     }
   }
+#if JVET_AM0334_GFV_CHROMA_KEY
+  else if (cnt == 0)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, fusionPicFlag, "gfv_fusion_pic_flag");
+  }
+#else
   else
   {
     sei_read_flag(pDecodedMessageOutputStream, drivePicFusionFlag, "gfv_drive_picture_fusion_flag");
   }
+#endif
   sei_read_flag(pDecodedMessageOutputStream, lowConfidenceFaceParameterFlag, "gfv_low_confidence_face_parameter_flag");
   sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_present_flag");
   coordinatePresentFlag = val;

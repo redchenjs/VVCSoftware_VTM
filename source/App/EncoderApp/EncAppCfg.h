@@ -1195,11 +1195,21 @@ protected:
   std::string                          m_generativeFaceVideoSEINNTagURI;
   std::string                          m_generativeFaceVideoSEINNURI;
   bool                                 m_generativeFaceVideoSEIChromaKeyInfoPresentFlag;
+#if JVET_AM0334_GFV_CHROMA_KEY
+  uint32_t                             m_generativeFaceVideoSEIChromaKeyPurposeIdc;
+#endif
   std::vector<bool>                    m_generativeFaceVideoSEIChromaKeyValuePresentFlag;
   std::vector<uint32_t>                m_generativeFaceVideoSEIChromaKeyValue;
+#if JVET_AM0334_GFV_CHROMA_KEY
+  bool                                 m_generativeFaceVideoSEIChromaKeyThrPresentFlag;
+  uint32_t                             m_generativeFaceVideoSEIChromaKeyThrLower;
+  uint32_t                             m_generativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1;
+  std::vector<bool>                    m_generativeFaceVideoSEIFusionPicFlag;
+#else
   std::vector<bool>                    m_generativeFaceVideoSEIChromaKeyThrPresentFlag;
   std::vector<uint32_t>                m_generativeFaceVideoSEIChromaKeyThrValue;
   std::vector<bool>                    m_generativeFaceVideoSEIDrivePicFusionFlag;
+#endif
   std::vector<uint32_t>                m_generativeFaceVideoSEIId;
   std::vector<uint32_t>                m_generativeFaceVideoSEICnt;
   std::vector<bool>                    m_generativeFaceVideoSEILowConfidenceFaceParameterFlag;

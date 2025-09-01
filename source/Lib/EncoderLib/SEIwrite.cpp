@@ -2518,6 +2518,9 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
     xWriteFlag(sei.m_chromaKeyInfoPresentFlag, "gfv_chroma_key_info_presentFlag");
     if (sei.m_chromaKeyInfoPresentFlag)
     {
+#if JVET_AM0334_GFV_CHROMA_KEY
+      xWriteUvlc(sei.m_chromaKeyPurposeIdc, "gfv_chroma_key_purpose_idc");
+#endif
       for (uint32_t chromac = 0; chromac < 3; chromac++)
       {
         xWriteFlag(sei.m_chromaKeyValuePresentFlag[chromac], "gfv_chroma_key_value_present_flag[c]");
@@ -2526,6 +2529,14 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
           xWriteCode(sei.m_chromaKeyValue[chromac], 8, "gfv_chroma_key_value[chromac]");
         }
       }
+#if JVET_AM0334_GFV_CHROMA_KEY
+      xWriteFlag(sei.m_chromaKeyThrPresentFlag, "gfv_chroma_key_thr_present_flag");
+      if (sei.m_chromaKeyThrPresentFlag)
+      {
+        xWriteCode(sei.m_chromaKeyThrLower, 8, "gfv_chroma_key_thr_lower");
+        xWriteUvlc(sei.m_chromaKeyThrUpperDeltaMinus1, "gfv_chroma_key_thr_upper_delta_minus1");
+      }
+#else
       for (uint32_t chromai = 0; chromai < 2; chromai++)
       {
         xWriteFlag(sei.m_chromaKeyThrPresentFlag[chromai], "gfv_chroma_key_thr_present_flag[i]");
@@ -2534,12 +2545,20 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
           xWriteUvlc(sei.m_chromaKeyThrValue[chromai], "gfv_chroma_key_thr_value[i]");
         }
       }
+#endif
     }
   }
+#if JVET_AM0334_GFV_CHROMA_KEY
+  else if (sei.m_cnt == 0)
+  {
+    xWriteFlag(sei.m_fusionPicFlag, "gfv_fusion_pic_flag");
+  }
+#else
   else
   {
     xWriteFlag(sei.m_drivePicFusionFlag, "gfv_drive_picture_fusion_flag");
   }
+#endif
   xWriteFlag(sei.m_lowConfidenceFaceParameterFlag, "gfv_low_confidence_face_parameter_flag");
   xWriteFlag(sei.m_coordinatePresentFlag, "gfv_coordinate_present_flag");
   if (sei.m_coordinatePresentFlag)

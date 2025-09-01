@@ -1284,11 +1284,20 @@ SEIGenerativeFaceVideo::SEIGenerativeFaceVideo(const SEIGenerativeFaceVideo & se
   m_nnTagURI = sei.m_nnTagURI;
   m_nnURI = sei.m_nnURI;
   m_chromaKeyInfoPresentFlag = sei.m_chromaKeyInfoPresentFlag;
+#if JVET_AM0334_GFV_CHROMA_KEY
+  m_chromaKeyPurposeIdc = sei.m_chromaKeyPurposeIdc;
+#endif
   m_chromaKeyValuePresentFlag = sei.m_chromaKeyValuePresentFlag;
   m_chromaKeyValue = sei.m_chromaKeyValue;
   m_chromaKeyThrPresentFlag = sei.m_chromaKeyThrPresentFlag;
+#if JVET_AM0334_GFV_CHROMA_KEY
+  m_chromaKeyThrLower = sei.m_chromaKeyThrLower;
+  m_chromaKeyThrUpperDeltaMinus1 = sei.m_chromaKeyThrUpperDeltaMinus1;
+  m_fusionPicFlag = sei.m_fusionPicFlag;
+#else
   m_chromaKeyThrValue = sei.m_chromaKeyThrValue;
   m_drivePicFusionFlag = sei.m_drivePicFusionFlag;
+#endif
   m_lowConfidenceFaceParameterFlag = sei.m_lowConfidenceFaceParameterFlag;
   m_coordinatePresentFlag = sei.m_coordinatePresentFlag;
   m_coordinateQuantizationFactor = sei.m_coordinateQuantizationFactor;
