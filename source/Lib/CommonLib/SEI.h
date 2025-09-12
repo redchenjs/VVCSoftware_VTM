@@ -266,6 +266,9 @@ public:
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
     case SEI::PayloadType::OBJECT_MASK_INFO:
     case SEI::PayloadType::MODALITY_INFORMATION:
+#if JVET_AK0281_AUR_SEI_IN_SPO_SEI
+    case SEI::PayloadType::AI_USAGE_RESTRICTIONS:
+#endif
      return true;
     default:
       return false;

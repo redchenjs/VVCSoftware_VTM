@@ -827,6 +827,15 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
         break;
       }
+#if JVET_AK0281_AUR_SEI_IN_SPO_SEI
+      case SEI::PayloadType::AI_USAGE_RESTRICTIONS:
+      {
+        SEIAIUsageRestrictions* sei = new SEIAIUsageRestrictions;
+        initSEIAIUsageRestrictions(sei);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+#endif
       default:
       {
         msg(ERROR, "not support in sei processing order SEI\n");
