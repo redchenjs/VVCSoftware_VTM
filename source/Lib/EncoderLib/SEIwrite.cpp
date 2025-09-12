@@ -3171,7 +3171,11 @@ void SEIWriter::xWriteSEIAIUsageRestrictions(const SEIAIUsageRestrictions &sei)
       xWriteFlag(sei.m_contextPresentFlag[i], "aur_context_present_flag");
       if (sei.m_contextPresentFlag[i])
       {
+#if JVET_AL0058_AUR_CONTEXT
+        xWriteCode(sei.m_context[i], 16, "aur_context");
+#else
         xWriteUvlc(sei.m_context[i], "aur_context");
+#endif
       }
     }
   }

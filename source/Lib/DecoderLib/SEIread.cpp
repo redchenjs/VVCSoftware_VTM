@@ -5328,7 +5328,11 @@ void SEIReader::xParseSEIAIUsageRestrictions(SEIAIUsageRestrictions& sei, uint32
       sei.m_contextPresentFlag[i] = val;
       if (sei.m_contextPresentFlag[i])
       {
+#if JVET_AL0058_AUR_CONTEXT
+        sei_read_code(pDecodedMessageOutputStream, 16, val, "aur_context");
+#else
         sei_read_uvlc(pDecodedMessageOutputStream, val, "aur_context");
+#endif
         sei.m_context[i] = val;
       }
     }
