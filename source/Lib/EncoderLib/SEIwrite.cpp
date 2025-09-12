@@ -3173,6 +3173,9 @@ void SEIWriter::xWriteSEIAIUsageRestrictions(const SEIAIUsageRestrictions &sei)
       {
         xWriteUvlc(sei.m_context[i], "aur_context");
       }
+#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
+      xWriteFlag(sei.m_exclusionFlag[i], "aur_sei_exclusion_flag");
+#endif
     }
   }
 }
