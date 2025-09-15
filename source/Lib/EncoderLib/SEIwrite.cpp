@@ -1750,9 +1750,17 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
   xWriteCode(sei.m_posForHumanViewingIdc, 2, "po_for_human_viewing_idc");
   xWriteCode(sei.m_posForMachineAnalysisIdc, 2, "po_for_machine_analysis_idc");
   xWriteCode(0, 4, "po_reserved_zero_4bits");
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  xWriteCode(sei.m_posNumMinus1, 7, "po_num_sei_message_minus1");
+#else
   xWriteCode(sei.m_posNumMinus2, 7, "po_num_sei_message_minus2");
+#endif
   xWriteFlag(sei.m_posBreadthFirstFlag, "po_breadth_first_flag");
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  for (uint32_t i = 0; i < ( sei.m_posNumMinus1 + 1 ); i++)
+#else
   for (uint32_t i = 0; i < ( sei.m_posNumMinus2 + 2 ); i++)
+#endif
   {
     xWriteFlag(sei.m_posWrappingFlag[i], "po_sei_wrapping_flag[i]");
     xWriteFlag(sei.m_posImportanceFlag[i], "po_sei_importance_flag[i]");
@@ -1764,7 +1772,11 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
     xWriteCode(sei.m_posProcessingOrder[i], 8, "po_sei_processing_order[i]");
   }
 
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  for (uint32_t i = 0; i < ( sei.m_posNumMinus1 + 1 ); i++)
+#else
   for (uint32_t i = 0; i < ( sei.m_posNumMinus2 + 2 ); i++)
+#endif
   {
     if (sei.m_posPrefixFlag[i])
     {

@@ -879,7 +879,11 @@ protected:
   uint32_t              m_poSEIId;
   uint32_t              m_poSEIForHumanViewingIdc;
   uint32_t              m_poSEIForMachineAnalysisIdc;
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  uint32_t              m_poSEINumMinus1;
+#else
   uint32_t              m_poSEINumMinus2;
+#endif
   bool                  m_poSEIBreadthFirstFlag;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;

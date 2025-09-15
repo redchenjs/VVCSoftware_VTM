@@ -840,11 +840,20 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
   sei_read_code(decodedMessageOutputStream, 2, val, "po_for_machine_analysis_idc");
   sei.m_posForMachineAnalysisIdc = val;
   sei_read_code(decodedMessageOutputStream, 4, val, "po_reserved_zero_4bits");  // Decoders shall allow any value of po_reserved_zero_4bits in the range of 0 to 15, inclusive
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  sei_read_code(decodedMessageOutputStream, 7, val, "po_sei_num_minus1");
+  sei.m_posNumMinus1 = val;
+#else
   sei_read_code(decodedMessageOutputStream, 7, val, "po_sei_num_minus2");
   sei.m_posNumMinus2 = val;
+#endif
   sei_read_flag(decodedMessageOutputStream, val, "po_breadth_first_flag");
   sei.m_posBreadthFirstFlag = val;
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  numMaxSeiMessages = sei.m_posNumMinus1 + 1;
+#else
   numMaxSeiMessages = sei.m_posNumMinus2 + 2;
+#endif
   sei.m_posPrefixFlag.resize(numMaxSeiMessages);
   sei.m_posPayloadType.resize(numMaxSeiMessages);
   sei.m_posProcessingOrder.resize(numMaxSeiMessages);
@@ -922,10 +931,20 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
     sei_read_uvlc( decodedMessageOutputStream, val, "po_total_kilobyte_size" );
     sei.m_posTotalKilobyteSize = val;
   }
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  if (!NNPFAFound && sei.m_posComplexityInfoPresentFlag)
+  {
+    msg(WARNING, "When no NNPFs are present in a processing chain and po_complexity_info_present_flag is equal to 1, complexity paramaters shall be ignored");
+  }
+#endif
 #endif
 
   // The following code generates subchain indices from the syntax. It can be used for testing and verification of the syntax, but is not otherwise needed in VTM.
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  uint32_t numProcStgs = sei.m_posNumMinus1 + 1;
+#else
   uint32_t numProcStgs = sei.m_posNumMinus2 + 2;
+#endif
   std::vector<uint32_t> seiTypeIdx;
   for (uint32_t j = 0; j < numProcStgs; j++)
   {
