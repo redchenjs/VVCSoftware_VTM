@@ -62,6 +62,8 @@
 
 #define JVET_AL0324_AL0070_PRI_SEI                        1 // JVET-AL0324 & JVET-AL0070 miscellaneous changes in PRI SEI message
 
+#define JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE              1 // JVET-AL0066: Add sample tolerance value to OMI SEI
+
 #define JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS              1 // JVET_AL0301: Add constraints to matrix_coeffs
 
 #define JVET_AL0123_AL0310_EOI                            1 // JVET-AL0123 & JVET-AL0310 EOI SEI signalling changes 

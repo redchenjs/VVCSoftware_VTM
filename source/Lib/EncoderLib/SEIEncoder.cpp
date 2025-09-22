@@ -1112,6 +1112,9 @@ void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* se
 
     readTokenValueAndValidate<uint32_t>(seiObjMask->m_hdr.m_maskIdLengthMinus1, failed, fic, "SEIOmiMaskIdLengthMinus1",uint32_t(0), uint32_t(255));
     readTokenValueAndValidate<uint32_t>(seiObjMask->m_hdr.m_maskSampleValueLengthMinus8, failed, fic,"SEIOmiMaskSampleValueLengthMinus8", uint32_t(0), uint32_t(8));
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+    readTokenValue(seiObjMask->m_hdr.m_tolerancePresentFlag, failed, fic,"SEIOmiTolerancePresentFlag");
+#endif
     readTokenValue(seiObjMask->m_hdr.m_maskConfidenceInfoPresentFlag, failed, fic,"SEIOmiMaskConfidenceInfoPresentFlag");
     if (seiObjMask->m_hdr.m_maskConfidenceInfoPresentFlag)
     {
@@ -1135,6 +1138,9 @@ void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* se
     uint32_t objMaskInfoCnt = 0;
     seiObjMask->m_maskPicUpdateFlag.resize(seiObjMask->m_hdr.m_numAuxPicLayerMinus1 + 1);
     seiObjMask->m_numMaskInPic.resize(seiObjMask->m_hdr.m_numAuxPicLayerMinus1 + 1);
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+    seiObjMask->m_auxSampleTolerance.resize(seiObjMask->m_hdr.m_numAuxPicLayerMinus1 + 1);
+#endif
     for (uint32_t i = 0; i <= seiObjMask->m_hdr.m_numAuxPicLayerMinus1; i++)
     {
       std::string cfgMaskPicUpdateFlagStr = "SEIOmiMaskPicUpdateFlag[" + std::to_string(i) + "]";
@@ -1144,6 +1150,14 @@ void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* se
         std::string cfgNumMaskInPicStr = "SEIOmiNumMaskInPic[" + std::to_string(i) + "]";
         readTokenValueAndValidate<uint32_t>(seiObjMask->m_numMaskInPic[i], failed, fic, cfgNumMaskInPicStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskIdLengthMinus1 + 1)) - 1));
         seiObjMask->m_objectMaskInfos.resize(objMaskInfoCnt + seiObjMask->m_numMaskInPic[i]);
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+        if (seiObjMask->m_hdr.m_tolerancePresentFlag)
+        {
+          std::string cfgAuxSampleToleranceStr = "SEIOmiAuxSampleTolerance[" + std::to_string(i) + "]";
+          readTokenValueAndValidate<uint32_t>(seiObjMask->m_auxSampleTolerance[i], failed, fic, cfgAuxSampleToleranceStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskSampleValueLengthMinus8 + 8)) - 1));
+        }
+        uint32_t prevAuxSampleValue = 0;
+#endif
         for (uint32_t j = 0; j < seiObjMask->m_numMaskInPic[i]; j++)
         {
           SEIObjectMaskInfos::ObjectMaskInfo& omi = seiObjMask->m_objectMaskInfos[objMaskInfoCnt];
@@ -1153,6 +1167,15 @@ void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* se
           readTokenValueAndValidate<uint32_t>(omi.maskId, failed, fic, cfgMaskIdStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskIdLengthMinus1 + 1)) - 1));
           readTokenValue(omi.maskNew, failed, fic, cfgMaskNewStr.c_str());
           readTokenValueAndValidate<uint32_t>(omi.auxSampleValue, failed, fic, cfgAuxSampleValueStr.c_str(), uint32_t(0), uint32_t((1 << (seiObjMask->m_hdr.m_maskSampleValueLengthMinus8 + 8)) - 1));
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+          if (j > 0)
+          {
+            uint32_t omiAuxSampleRangeDeltaMin = !seiObjMask->m_hdr.m_tolerancePresentFlag ? 0 : seiObjMask->m_auxSampleTolerance[i];
+            uint32_t omiAuxSampleRangeDeltaMax = (!seiObjMask->m_hdr.m_tolerancePresentFlag || seiObjMask->m_auxSampleTolerance[i] == 0) ? 1 : seiObjMask->m_auxSampleTolerance[i];
+            CHECK((omi.auxSampleValue - omiAuxSampleRangeDeltaMin) < (prevAuxSampleValue + omiAuxSampleRangeDeltaMax), "It is a requirement of bitstream conformance that omi_aux_sample_value[ i ][ j ] - OmiAuxSampleRangeDeltaMin[ i ] shall be greater than or equal to omi_aux_sample_value[ i ][ j - 1 ] + OmiAuxSampleRangeDeltaMax[ i ]");
+          }
+          prevAuxSampleValue = omi.auxSampleValue;
+#endif
           std::string cfgMaskBoundingBoxPresentFlagStr = "SEIOmiBoundingBoxPresentFlag[" + std::to_string(i) + "][" + std::to_string(j) + "]";
           readTokenValue(omi.maskBoundingBoxPresentFlag, failed, fic, cfgMaskBoundingBoxPresentFlagStr.c_str());
           if (omi.maskBoundingBoxPresentFlag)

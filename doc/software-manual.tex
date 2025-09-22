@@ -6625,6 +6625,14 @@ Specifies the prefix of input Object Mask Information file. Prefix is completed 
 The contents of the file are a list of the SEI message's syntax element names (in decoding order) immediately followed by a `:' and then the associated value.
 An example file can be found in cfg/sei_vui/object_mask_infos/intra/mask_info_0.txt
 \\
+\Option{SEIOmiTolerancePresentFlag} &
+\Default{false} &
+If true, indicates that omi_aux_sample_tolerance syntax element is present.
+\\
+\Option{SEIOmiAuxSampleTolerance[i]} &
+\Default{0} &
+Specifies a tolerance range for mapping of decoded sample values of the i-th auxiliary picture to object masks.
+\\
 \end{OptionTableNoShorthand}
 
 

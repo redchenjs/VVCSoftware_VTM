@@ -2195,6 +2195,10 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
     sei.m_hdr.m_maskIdLengthMinus1 = val;
     sei_read_uvlc(pDecodedMessageOutputStream, val, "omi_mask_sample_value_length_minus8");
     sei.m_hdr.m_maskSampleValueLengthMinus8 = val;
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+    sei_read_flag(pDecodedMessageOutputStream, val, "omi_tolerance_present_flag");
+    sei.m_hdr.m_tolerancePresentFlag = val;
+#endif
     sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_confidence_info_present_flag");
     sei.m_hdr.m_maskConfidenceInfoPresentFlag = val;
     if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
@@ -2238,6 +2242,9 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
     }
     sei.m_maskPicUpdateFlag.resize(sei.m_hdr.m_numAuxPicLayerMinus1 + 1);
     sei.m_numMaskInPic.resize(sei.m_hdr.m_numAuxPicLayerMinus1 + 1);
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+    sei.m_auxSampleTolerance.resize(sei.m_hdr.m_numAuxPicLayerMinus1 + 1);
+#endif
     for (uint32_t i = 0; i <= sei.m_hdr.m_numAuxPicLayerMinus1; i++)
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_pic_update_flag[i]");
@@ -2246,6 +2253,15 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
       {
         sei_read_uvlc(pDecodedMessageOutputStream, val, "omi_num_mask_in_pic[i]");
         sei.m_numMaskInPic[i] = val;
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+        sei.m_auxSampleTolerance[i] = 0;
+        if (sei.m_hdr.m_tolerancePresentFlag)
+        {
+          sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskSampleValueLengthMinus8 + 8, val, "omi_aux_sample_tolerance[i]");
+          sei.m_auxSampleTolerance[i] = val;
+        }
+        uint32_t prevAuxSampleValue = 0;
+#endif
         for (uint32_t j = 0; j < sei.m_numMaskInPic[i]; j++)
         {
           SEIObjectMaskInfos::ObjectMaskInfo objMaskInfo;
@@ -2255,6 +2271,15 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
           objMaskInfo.maskNew = val;
           sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskSampleValueLengthMinus8 + 8, val, "omi_aux_sample_value[i][j]");
           objMaskInfo.auxSampleValue = val;
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+          if (j > 0)
+          {
+            uint32_t omiAuxSampleRangeDeltaMin = !sei.m_hdr.m_tolerancePresentFlag ? 0 : sei.m_auxSampleTolerance[i];
+            uint32_t omiAuxSampleRangeDeltaMax = (!sei.m_hdr.m_tolerancePresentFlag || sei.m_auxSampleTolerance[i] == 0) ? 1 : sei.m_auxSampleTolerance[i];
+            CHECK((objMaskInfo.auxSampleValue - omiAuxSampleRangeDeltaMin) < (prevAuxSampleValue + omiAuxSampleRangeDeltaMax), "It is a requirement of bitstream conformance that omi_aux_sample_value[ i ][ j ] - OmiAuxSampleRangeDeltaMin[ i ] shall be greater than or equal to omi_aux_sample_value[ i ][ j - 1 ] + OmiAuxSampleRangeDeltaMax[ i ]");
+          }
+          prevAuxSampleValue = objMaskInfo.auxSampleValue;
+#endif
           sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_bounding_box_present_flag[i][j]");
           objMaskInfo.maskBoundingBoxPresentFlag = val;
           if (objMaskInfo.maskBoundingBoxPresentFlag)
