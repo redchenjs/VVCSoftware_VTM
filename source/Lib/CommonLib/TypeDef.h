@@ -58,6 +58,8 @@
 
 #define JVET_AM0280_DECODER_MEMORY_PRINT                  1 // JVET-AM0280: Decoder memory print
 
+#define JVET_AL0058_AUR_CONTEXT                           1 // JVET-AL0058: Change aur_context to fixed length
+
 #define JVET_AL0067_OMI_SEI_CONSTRAINTS                   1 // JVET-AL0067: On the OMI SEI
 
 #define JVET_AL0324_AL0070_PRI_SEI                        1 // JVET-AL0324 & JVET-AL0070 miscellaneous changes in PRI SEI message
