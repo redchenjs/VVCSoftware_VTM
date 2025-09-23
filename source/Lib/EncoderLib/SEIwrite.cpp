@@ -3102,7 +3102,9 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
   xWriteCode(sei.dsciId, 8, "dsci_id");
 #endif
   xWriteCode(sei.dsciHashMethodType, 8, "dsci_hash_method_type");
+#if !JVET_AM0164_DSC_SYNTAX
   xWriteString(sei.dsciKeySourceUri, "dsci_key_source_uri");
+#endif
   xWriteUvlc(sei.dsciKeyRetrievalModeIdc, "dsci_key_retrieval_mode_idc");
   if (sei.dsciKeyRetrievalModeIdc == 1)
   {
@@ -3137,6 +3139,13 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
 #if JVET_AL0222_DSC_START_END
   xWriteFlag(sei.dsciSignedContentStartFlag, "dsci_signed_content_start_flag");
 #endif
+#if JVET_AM0164_DSC_SYNTAX
+  while (!isByteAligned())
+  {
+    xWriteFlag(0, "dsci_alignment_zero_bit");
+  }
+  xWriteString(sei.dsciKeySourceUri, "dsci_key_source_uri");
+#endif
 }
 
 void SEIWriter::xWriteSEIDigitallySignedContentSelection(const SEIDigitallySignedContentSelection &sei)
@@ -3144,7 +3153,11 @@ void SEIWriter::xWriteSEIDigitallySignedContentSelection(const SEIDigitallySigne
 #if JVET_AK0206_DSC_SEI_ID
   xWriteCode(sei.dscsId, 8, "dscs_id");
 #endif
+#if JVET_AM0164_DSC_SYNTAX
+  xWriteCode(sei.dscsVerificationSubstreamId, 8, "dscs_verification_substream_id");
+#else
   xWriteUvlc(sei.dscsVerificationSubstreamId, "dscs_verification_substream_id");
+#endif
 }
 
 void SEIWriter::xWriteSEIDigitallySignedContentVerification(const SEIDigitallySignedContentVerification &sei)
@@ -3152,10 +3165,17 @@ void SEIWriter::xWriteSEIDigitallySignedContentVerification(const SEIDigitallySi
 #if JVET_AK0206_DSC_SEI_ID
   xWriteCode(sei.dscvId, 8, "dscv_id");
 #endif
+#if JVET_AM0164_DSC_SYNTAX
+  xWriteCode(sei.dscvVerificationSubstreamId, 8, "dscv_verification_substream_id");
+  CHECK (sei.dscvSignatureLengthInOctets < 1, "Length of signature has to be greater than zero");
+  xWriteCode(sei.dscvSignatureLengthInOctets - 1, 24, "dscv_signature_length_in_octets_minus1");
+  CHECK (sei.dscvSignatureLengthInOctets != sei.dscvSignature.size(), "Signature length incosistent");
+#else
   xWriteUvlc(sei.dscvVerificationSubstreamId, "dscv_verification_substream_id");
   CHECK (sei.dscvSignatureLengthInOctets < 1, "Length of signature has to be greater than zero");
   xWriteUvlc(sei.dscvSignatureLengthInOctets - 1, "dscv_signature_length_in_octets_minus1");
   CHECK (sei.dscvSignatureLengthInOctets != sei.dscvSignature.size(), "Signature length incosistent");
+#endif
   for (int i=0; i< sei.dscvSignature.size(); i++)
   {
     xWriteCode(sei.dscvSignature[i], 8, "dscv_signature");
