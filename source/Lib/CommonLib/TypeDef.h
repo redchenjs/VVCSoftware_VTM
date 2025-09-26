@@ -82,6 +82,8 @@
 
 #define JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION          1 // dsci_vss_implicit_association_mode_flag
 
+#define JVET_AM0118_DSC_FOR_SEI                           1 // Digital signing of selected SEI messages
+
 #define JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION            1 // add fg_pic_width_in_luma_samples and fg_pic_height_in_luma_samples to the extension of FGC SEI
 
 #define JVET_AK0326_NNPF_SEED                             1 // JVET-AK0326: seed value for NNPFC and NNPFA SEI messages

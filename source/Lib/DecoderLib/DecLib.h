@@ -264,6 +264,9 @@ public:
 #endif // GDR_LEAK_TEST
 
 #if JVET_AJ0151_DSC_SEI
+#if JVET_AM0118_DSC_FOR_SEI
+  void xInitDscSubstreamManager(SEIMessages &SEIs);
+#endif
   void xStoreNALUnitForSignature(InputNALUnit &nalu);
 #if JVET_AK0206_DSC_SEI_ID
   void xProcessStoredNALUnitsForSignature(uint8_t dscId, int substreamId);

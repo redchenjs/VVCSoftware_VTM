@@ -2335,6 +2335,11 @@ void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedC
 #if JVET_AL0222_DSC_START_END
   sei->dsciSignedContentStartFlag = startFlag;
 #endif
+#if JVET_AM0118_DSC_FOR_SEI
+  sei->dsciSEISigningFlag = m_pcCfg->getDigitallySignedContentSEICfg().signAURSEI ||
+                            m_pcCfg->getDigitallySignedContentSEICfg().signGFVSEI ||
+                            m_pcCfg->getDigitallySignedContentSEICfg().signGFVESEI;
+#endif
 }
 void SEIEncoder::initSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection *sei, int substream)
 {

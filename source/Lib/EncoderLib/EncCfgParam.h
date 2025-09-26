@@ -95,6 +95,11 @@ public:
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   bool                      implicitAssociationModeFlag = false;
 #endif
+#if JVET_AM0118_DSC_FOR_SEI
+  bool                      signAURSEI = false;
+  bool                      signGFVSEI = false;
+  bool                      signGFVESEI = false;
+#endif
 };
 #endif
 }

@@ -85,6 +85,9 @@ public:
 #if JVET_AL0222_DSC_START_END
   bool         dsciSignedContentStartFlag    = false;
 #endif
+#if JVET_AM0118_DSC_FOR_SEI
+  bool         dsciSEISigningFlag            = false;
+#endif
 public:
   SEIDigitallySignedContentInitialization()
   {};
@@ -226,12 +229,20 @@ private:
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   bool m_implicitAssociationModeFlag = false;
 #endif
+#if JVET_AM0118_DSC_FOR_SEI
+  bool m_seiSigningFlag = false;
+#endif
 
 public:
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   bool getDscAssociationModeFlag(){return m_implicitAssociationModeFlag;}
+#if JVET_AM0118_DSC_FOR_SEI
+  bool getSeiSigningFlag(){return m_seiSigningFlag;}
+  void initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid, const std::vector<std::vector<bool>> &refFlags, bool implicitAssociationFlag, bool seiSigningFlag);
+#else
   void initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid, const std::vector<std::vector<bool>> &refFlags, bool implicitAssociationFlag);
+#endif
 #else
   void initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid, const std::vector<std::vector<bool>> &refFlags);
 #endif

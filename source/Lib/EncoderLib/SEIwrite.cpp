@@ -3158,6 +3158,9 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
 #if JVET_AL0222_DSC_START_END
   xWriteFlag(sei.dsciSignedContentStartFlag, "dsci_signed_content_start_flag");
 #endif
+#if JVET_AM0118_DSC_FOR_SEI
+  xWriteFlag(sei.dsciSEISigningFlag, "dsci_sei_signing_flag");
+#endif
 #if JVET_AM0164_DSC_SYNTAX
   while (!isByteAligned())
   {
