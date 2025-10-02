@@ -3,6 +3,7 @@ SEIOmiPersistenceFlag: 0
 SEIOmiNumAuxPicLayerMinus1: 0
 SEIOmiMaskIdLengthMinus1: 3
 SEIOmiMaskSampleValueLengthMinus8: 2
+SEIOmiTolerancePresentFlag: 1
 SEIOmiMaskConfidenceInfoPresentFlag: 1
 SEIOmiMaskConfidenceLengthMinus1: 3
 SEIOmiMaskDepthInfoPresentFlag: 1
@@ -14,6 +15,7 @@ SEIOmiMaskLabelLanguage: English
 
 SEIOmiMaskPicUpdateFlag[0]: 1
 SEIOmiNumMaskInPic[0]: 5
+SEIOmiAuxSampleTolerance[0]: 6
 
 SEIOmiMaskId[0][0]: 0
 SEIOmiMaskNew[0][0]: 0

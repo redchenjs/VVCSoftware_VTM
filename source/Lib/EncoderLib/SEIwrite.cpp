@@ -942,6 +942,9 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
     xWriteUvlc((uint32_t) sei.m_hdr.m_numAuxPicLayerMinus1, "omi_num_aux_pic_layer_minus1");
     xWriteUvlc((uint32_t) sei.m_hdr.m_maskIdLengthMinus1, "omi_mask_id_length_minus1");
     xWriteUvlc((uint32_t) sei.m_hdr.m_maskSampleValueLengthMinus8, "omi_mask_sample_value_length_minus8");
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+    xWriteFlag(sei.m_hdr.m_tolerancePresentFlag, "omi_tolerance_present_flag");
+#endif
     xWriteFlag(sei.m_hdr.m_maskConfidenceInfoPresentFlag, "omi_mask_confidence_info_present_flag");
     if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
     {
@@ -981,6 +984,12 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
       if (sei.m_maskPicUpdateFlag[i])
       {
         xWriteUvlc((uint32_t) sei.m_numMaskInPic[i], "omi_num_mask_in_pic[i]");
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+        if (sei.m_hdr.m_tolerancePresentFlag)
+        {
+          xWriteCode(sei.m_auxSampleTolerance[i], sei.m_hdr.m_maskSampleValueLengthMinus8 + 8, "omi_aux_sample_tolerance[i]");
+        }
+#endif
         for (uint32_t j = 0; j < sei.m_numMaskInPic[i]; j++)
         {
           xWriteCode(sei.m_objectMaskInfos[maskCnt].maskId, sei.m_hdr.m_maskIdLengthMinus1 + 1, "omi_mask_id[i][j]");
@@ -3112,7 +3121,9 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
   xWriteCode(sei.dsciId, 8, "dsci_id");
 #endif
   xWriteCode(sei.dsciHashMethodType, 8, "dsci_hash_method_type");
+#if !JVET_AM0164_DSC_SYNTAX
   xWriteString(sei.dsciKeySourceUri, "dsci_key_source_uri");
+#endif
   xWriteUvlc(sei.dsciKeyRetrievalModeIdc, "dsci_key_retrieval_mode_idc");
   if (sei.dsciKeyRetrievalModeIdc == 1)
   {
@@ -3147,6 +3158,13 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
 #if JVET_AL0222_DSC_START_END
   xWriteFlag(sei.dsciSignedContentStartFlag, "dsci_signed_content_start_flag");
 #endif
+#if JVET_AM0164_DSC_SYNTAX
+  while (!isByteAligned())
+  {
+    xWriteFlag(0, "dsci_alignment_zero_bit");
+  }
+  xWriteString(sei.dsciKeySourceUri, "dsci_key_source_uri");
+#endif
 }
 
 void SEIWriter::xWriteSEIDigitallySignedContentSelection(const SEIDigitallySignedContentSelection &sei)
@@ -3154,7 +3172,11 @@ void SEIWriter::xWriteSEIDigitallySignedContentSelection(const SEIDigitallySigne
 #if JVET_AK0206_DSC_SEI_ID
   xWriteCode(sei.dscsId, 8, "dscs_id");
 #endif
+#if JVET_AM0164_DSC_SYNTAX
+  xWriteCode(sei.dscsVerificationSubstreamId, 8, "dscs_verification_substream_id");
+#else
   xWriteUvlc(sei.dscsVerificationSubstreamId, "dscs_verification_substream_id");
+#endif
 }
 
 void SEIWriter::xWriteSEIDigitallySignedContentVerification(const SEIDigitallySignedContentVerification &sei)
@@ -3162,10 +3184,17 @@ void SEIWriter::xWriteSEIDigitallySignedContentVerification(const SEIDigitallySi
 #if JVET_AK0206_DSC_SEI_ID
   xWriteCode(sei.dscvId, 8, "dscv_id");
 #endif
+#if JVET_AM0164_DSC_SYNTAX
+  xWriteCode(sei.dscvVerificationSubstreamId, 8, "dscv_verification_substream_id");
+  CHECK (sei.dscvSignatureLengthInOctets < 1, "Length of signature has to be greater than zero");
+  xWriteCode(sei.dscvSignatureLengthInOctets - 1, 24, "dscv_signature_length_in_octets_minus1");
+  CHECK (sei.dscvSignatureLengthInOctets != sei.dscvSignature.size(), "Signature length incosistent");
+#else
   xWriteUvlc(sei.dscvVerificationSubstreamId, "dscv_verification_substream_id");
   CHECK (sei.dscvSignatureLengthInOctets < 1, "Length of signature has to be greater than zero");
   xWriteUvlc(sei.dscvSignatureLengthInOctets - 1, "dscv_signature_length_in_octets_minus1");
   CHECK (sei.dscvSignatureLengthInOctets != sei.dscvSignature.size(), "Signature length incosistent");
+#endif
   for (int i=0; i< sei.dscvSignature.size(); i++)
   {
     xWriteCode(sei.dscvSignature[i], 8, "dscv_signature");
@@ -3190,7 +3219,11 @@ void SEIWriter::xWriteSEIAIUsageRestrictions(const SEIAIUsageRestrictions &sei)
       xWriteFlag(sei.m_contextPresentFlag[i], "aur_context_present_flag");
       if (sei.m_contextPresentFlag[i])
       {
+#if JVET_AL0058_AUR_CONTEXT
+        xWriteCode(sei.m_context[i], 16, "aur_context");
+#else
         xWriteUvlc(sei.m_context[i], "aur_context");
+#endif
       }
     }
   }

@@ -92,6 +92,9 @@ private:
 
   SEIObjectMaskInfos::ObjectMaskInfoHeader m_omiHeader;   ///< OMI header
   std::vector<std::vector<std::pair<uint32_t, SEIObjectMaskInfos::ObjectMaskInfo>>> m_omiMasks;
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+  std::vector<uint32_t> m_auxSampleTolerance;
+#endif
 
 private:
   bool  xIsNaluWithinTargetDecLayerIdSet( const InputNALUnit* nalu ) const; ///< check whether given Nalu is within targetDecLayerIdSet

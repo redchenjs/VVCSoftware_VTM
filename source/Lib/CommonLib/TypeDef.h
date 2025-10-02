@@ -58,9 +58,13 @@
 
 #define JVET_AM0280_DECODER_MEMORY_PRINT                  1 // JVET-AM0280: Decoder memory print
 
+#define JVET_AL0058_AUR_CONTEXT                           1 // JVET-AL0058: Change aur_context to fixed length
+
 #define JVET_AL0067_OMI_SEI_CONSTRAINTS                   1 // JVET-AL0067: On the OMI SEI
 
 #define JVET_AL0324_AL0070_PRI_SEI                        1 // JVET-AL0324 & JVET-AL0070 miscellaneous changes in PRI SEI message
+
+#define JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE              1 // JVET-AL0066: Add sample tolerance value to OMI SEI
 
 #define JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS              1 // JVET_AL0301: Add constraints to matrix_coeffs
 
@@ -93,6 +97,8 @@
 #define JVET_AL0222_DSC_START_END                         1 // add start and end flags to DSC SEI messages
 
 #define JVET_AM0334_GFV_CHROMA_KEY                        1 // update to GFV SEI chroma key syntax
+
+#define JVET_AM0164_DSC_SYNTAX                            1 // Increase lenght of dscv_signature_length_in_octets_minus1 and move dsci_key_source_uri syntax element
 
 //########### place macros to be be kept below this line ###############
 
