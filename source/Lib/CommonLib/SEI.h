@@ -1389,6 +1389,9 @@ public:
     uint32_t    m_numAuxPicLayerMinus1;
     uint32_t    m_maskIdLengthMinus1;
     uint32_t    m_maskSampleValueLengthMinus8;
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+    bool        m_tolerancePresentFlag;
+#endif
     bool        m_maskConfidenceInfoPresentFlag;
     uint32_t    m_maskConfidenceLengthMinus1;   // Only valid if m_maskConfidenceInfoPresentFlag
     bool        m_maskDepthInfoPresentFlag;
@@ -1402,6 +1405,9 @@ public:
   ObjectMaskInfoHeader        m_hdr;
   std::vector<uint32_t>       m_maskPicUpdateFlag; // No masks exist in the initial stage.
   std::vector<uint32_t>       m_numMaskInPic;
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+  std::vector<uint32_t>       m_auxSampleTolerance;
+#endif
   std::vector<ObjectMaskInfo> m_objectMaskInfos;   // The ObjectMaskInfo objects have unique maskId in m_objectMaskInfos list.
 };
 
@@ -1714,11 +1720,21 @@ public:
   std::string    m_nnTagURI;
   std::string    m_nnURI;
   bool                    m_chromaKeyInfoPresentFlag; 
+#if JVET_AM0334_GFV_CHROMA_KEY
+  uint32_t                m_chromaKeyPurposeIdc;
+#endif
   std::vector<bool>       m_chromaKeyValuePresentFlag;
   std::vector<uint32_t>   m_chromaKeyValue; 
+#if JVET_AM0334_GFV_CHROMA_KEY
+  bool                    m_chromaKeyThrPresentFlag; 
+  uint32_t                m_chromaKeyThrLower;
+  uint32_t                m_chromaKeyThrUpperDeltaMinus1;
+  bool                    m_fusionPicFlag;
+#else
   std::vector<bool>       m_chromaKeyThrPresentFlag; 
   std::vector<uint32_t>   m_chromaKeyThrValue;
   bool       m_drivePicFusionFlag;
+#endif
   uint32_t   m_id;
   uint32_t   m_cnt;
   bool   m_lowConfidenceFaceParameterFlag;

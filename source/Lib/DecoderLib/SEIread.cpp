@@ -2195,6 +2195,10 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
     sei.m_hdr.m_maskIdLengthMinus1 = val;
     sei_read_uvlc(pDecodedMessageOutputStream, val, "omi_mask_sample_value_length_minus8");
     sei.m_hdr.m_maskSampleValueLengthMinus8 = val;
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+    sei_read_flag(pDecodedMessageOutputStream, val, "omi_tolerance_present_flag");
+    sei.m_hdr.m_tolerancePresentFlag = val;
+#endif
     sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_confidence_info_present_flag");
     sei.m_hdr.m_maskConfidenceInfoPresentFlag = val;
     if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
@@ -2238,6 +2242,9 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
     }
     sei.m_maskPicUpdateFlag.resize(sei.m_hdr.m_numAuxPicLayerMinus1 + 1);
     sei.m_numMaskInPic.resize(sei.m_hdr.m_numAuxPicLayerMinus1 + 1);
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+    sei.m_auxSampleTolerance.resize(sei.m_hdr.m_numAuxPicLayerMinus1 + 1);
+#endif
     for (uint32_t i = 0; i <= sei.m_hdr.m_numAuxPicLayerMinus1; i++)
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_pic_update_flag[i]");
@@ -2246,6 +2253,15 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
       {
         sei_read_uvlc(pDecodedMessageOutputStream, val, "omi_num_mask_in_pic[i]");
         sei.m_numMaskInPic[i] = val;
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+        sei.m_auxSampleTolerance[i] = 0;
+        if (sei.m_hdr.m_tolerancePresentFlag)
+        {
+          sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskSampleValueLengthMinus8 + 8, val, "omi_aux_sample_tolerance[i]");
+          sei.m_auxSampleTolerance[i] = val;
+        }
+        uint32_t prevAuxSampleValue = 0;
+#endif
         for (uint32_t j = 0; j < sei.m_numMaskInPic[i]; j++)
         {
           SEIObjectMaskInfos::ObjectMaskInfo objMaskInfo;
@@ -2255,6 +2271,15 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
           objMaskInfo.maskNew = val;
           sei_read_code(pDecodedMessageOutputStream, sei.m_hdr.m_maskSampleValueLengthMinus8 + 8, val, "omi_aux_sample_value[i][j]");
           objMaskInfo.auxSampleValue = val;
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+          if (j > 0)
+          {
+            uint32_t omiAuxSampleRangeDeltaMin = !sei.m_hdr.m_tolerancePresentFlag ? 0 : sei.m_auxSampleTolerance[i];
+            uint32_t omiAuxSampleRangeDeltaMax = (!sei.m_hdr.m_tolerancePresentFlag || sei.m_auxSampleTolerance[i] == 0) ? 1 : sei.m_auxSampleTolerance[i];
+            CHECK((objMaskInfo.auxSampleValue - omiAuxSampleRangeDeltaMin) < (prevAuxSampleValue + omiAuxSampleRangeDeltaMax), "It is a requirement of bitstream conformance that omi_aux_sample_value[ i ][ j ] - OmiAuxSampleRangeDeltaMin[ i ] shall be greater than or equal to omi_aux_sample_value[ i ][ j - 1 ] + OmiAuxSampleRangeDeltaMax[ i ]");
+          }
+          prevAuxSampleValue = objMaskInfo.auxSampleValue;
+#endif
           sei_read_flag(pDecodedMessageOutputStream, val, "omi_mask_bounding_box_present_flag[i][j]");
           objMaskInfo.maskBoundingBoxPresentFlag = val;
           if (objMaskInfo.maskBoundingBoxPresentFlag)
@@ -4297,7 +4322,11 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
   bool       valueSignFlag;
   uint32_t   id;
   uint32_t   cnt;
+#if JVET_AM0334_GFV_CHROMA_KEY
+  uint32_t   fusionPicFlag;
+#else
   uint32_t   drivePicFusionFlag;
+#endif
   uint32_t   lowConfidenceFaceParameterFlag;
   bool       coordinatePresentFlag;
   uint32_t   coordinateQuantizationFactor;
@@ -4310,8 +4339,10 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
   uint32_t   numMatrixType;
   sei.m_chromaKeyValuePresentFlag.resize(3);
   sei.m_chromaKeyValue.resize(3);
+#if !JVET_AM0334_GFV_CHROMA_KEY
   sei.m_chromaKeyThrPresentFlag.resize(2);
   sei.m_chromaKeyThrValue.resize(2);    
+#endif
   std::vector<double>      coordinateX;
   std::vector<double>      coordinateY;
   std::vector<double>      coordinateZ;
@@ -4365,6 +4396,11 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
     sei.m_chromaKeyInfoPresentFlag = val;   
     if (sei.m_chromaKeyInfoPresentFlag)
     {
+#if JVET_AM0334_GFV_CHROMA_KEY
+      sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_chroma_key_purpose_idc");
+      sei.m_chromaKeyPurposeIdc = val;
+      CHECK(sei.m_chromaKeyPurposeIdc > 2, "Chroma key purpose idc shall be in the range 0 to 2, inclusive");
+#endif
       for (uint32_t chromac = 0; chromac < 3; chromac++)
       {
         sei_read_flag(pDecodedMessageOutputStream, val, "gfv_chroma_key_value_present_flag[c]");
@@ -4402,6 +4438,28 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
         }
         (*pDecodedMessageOutputStream) << "\n";
       }
+#if JVET_AM0334_GFV_CHROMA_KEY
+      sei_read_flag(pDecodedMessageOutputStream, val, "gfv_chroma_key_thr_present_flag");
+      sei.m_chromaKeyThrPresentFlag = val;
+      if (sei.m_chromaKeyThrPresentFlag)
+      {
+        sei_read_code(pDecodedMessageOutputStream, 8, val, "gfv_chroma_key_thr_lower");
+        sei.m_chromaKeyThrLower = val;
+        sei_read_uvlc(pDecodedMessageOutputStream, val, "gfv_chroma_key_thr_upper_delta_minus1");
+        sei.m_chromaKeyThrUpperDeltaMinus1 = val;
+        CHECK(sei.m_chromaKeyThrUpperDeltaMinus1 > 255, "The value of gfv_chroma_key_thr_upper_delta_minus1 shall be in the range of 0 to 255, inclusive");
+      }
+      else
+      {
+        sei.m_chromaKeyThrLower = 48;
+        sei.m_chromaKeyThrUpperDeltaMinus1 = 26;
+      }
+      if (pDecodedMessageOutputStream)
+      {
+        (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfv_chroma_key_thr_lower" << ": " << (sei.m_chromaKeyThrLower) << "\n";
+        (*pDecodedMessageOutputStream) << "  " << std::setw(55) << "gfv_chroma_key_thr_upper_delta_minus1" << ": " << (sei.m_chromaKeyThrUpperDeltaMinus1) << "\n";
+      }
+#else
       for (uint32_t chromai = 0; chromai < 2; chromai++)
       {
         sei_read_flag(pDecodedMessageOutputStream, val, "gfv_chroma_key_thr_present_flag[i]");
@@ -4425,12 +4483,20 @@ void SEIReader::xParseSEIGenerativeFaceVideo(SEIGenerativeFaceVideo & sei, uint3
         }
         (*pDecodedMessageOutputStream) << "\n";
       }
+#endif
     }
   }
+#if JVET_AM0334_GFV_CHROMA_KEY
+  else if (cnt == 0)
+  {
+    sei_read_flag(pDecodedMessageOutputStream, fusionPicFlag, "gfv_fusion_pic_flag");
+  }
+#else
   else
   {
     sei_read_flag(pDecodedMessageOutputStream, drivePicFusionFlag, "gfv_drive_picture_fusion_flag");
   }
+#endif
   sei_read_flag(pDecodedMessageOutputStream, lowConfidenceFaceParameterFlag, "gfv_low_confidence_face_parameter_flag");
   sei_read_flag(pDecodedMessageOutputStream, val, "gfv_coordinate_present_flag");
   coordinatePresentFlag = val;
@@ -5222,7 +5288,9 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
 #endif
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dsci_hash_method_type");
   sei.dsciHashMethodType = val;
+#if !JVET_AM0164_DSC_SYNTAX
   sei_read_string(pDecodedMessageOutputStream, sei.dsciKeySourceUri, "dsci_key_source_uri");
+#endif
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dsci_key_retrieval_mode_idc");
   sei.dsciKeyRetrievalModeIdc = val;
   if (sei.dsciKeyRetrievalModeIdc == 1)
@@ -5267,6 +5335,14 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
   sei_read_flag(pDecodedMessageOutputStream, val, "dsci_signed_content_start_flag");
   sei.dsciSignedContentStartFlag = (val!=0);
 #endif
+#if JVET_AM0164_DSC_SYNTAX
+  while (!isByteAligned())
+  {
+    sei_read_flag(pDecodedMessageOutputStream, val, "dsci_alignment_zero_bit");
+    CHECK(val!=0, "dsci_alignment_zero_bit not equal to zero")
+  }
+  sei_read_string(pDecodedMessageOutputStream, sei.dsciKeySourceUri, "twci_key_source_uri");
+#endif
 }
 
 void SEIReader::xParseSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
@@ -5276,7 +5352,11 @@ void SEIReader::xParseSEIDigitallySignedContentSelection(SEIDigitallySignedConte
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dscs_id");
   sei.dscsId = val;
 #endif
+#if JVET_AM0164_DSC_SYNTAX
+  sei_read_code(pDecodedMessageOutputStream, 8, val, "dscs_verification_substream_id");
+#else
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dscs_verification_substream_id");
+#endif
   sei.dscsVerificationSubstreamId = val;
 }
 
@@ -5287,10 +5367,17 @@ void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedCo
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dscv_id");
   sei.dscvId = val;
 #endif
+#if JVET_AM0164_DSC_SYNTAX
+  sei_read_code(pDecodedMessageOutputStream, 8, val, "dscv_verification_substream_id");
+  sei.dscvVerificationSubstreamId = val;
+  sei_read_code(pDecodedMessageOutputStream, 24, val, "dscv_signature_length_in_octets_minus1");
+  sei.dscvSignatureLengthInOctets = val + 1;
+#else
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dscv_verification_substream_id");
   sei.dscvVerificationSubstreamId = val;
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dscv_signature_length_in_octets_minus1");
   sei.dscvSignatureLengthInOctets = val + 1;
+#endif
   sei.dscvSignature.resize(sei.dscvSignatureLengthInOctets);
   for (int i=0; i< sei.dscvSignature.size(); i++)
   {
@@ -5331,7 +5418,11 @@ void SEIReader::xParseSEIAIUsageRestrictions(SEIAIUsageRestrictions& sei, uint32
       sei.m_contextPresentFlag[i] = val;
       if (sei.m_contextPresentFlag[i])
       {
+#if JVET_AL0058_AUR_CONTEXT
+        sei_read_code(pDecodedMessageOutputStream, 16, val, "aur_context");
+#else
         sei_read_uvlc(pDecodedMessageOutputStream, val, "aur_context");
+#endif
         sei.m_context[i] = val;
       }
 #if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG

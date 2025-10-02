@@ -942,6 +942,9 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
     xWriteUvlc((uint32_t) sei.m_hdr.m_numAuxPicLayerMinus1, "omi_num_aux_pic_layer_minus1");
     xWriteUvlc((uint32_t) sei.m_hdr.m_maskIdLengthMinus1, "omi_mask_id_length_minus1");
     xWriteUvlc((uint32_t) sei.m_hdr.m_maskSampleValueLengthMinus8, "omi_mask_sample_value_length_minus8");
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+    xWriteFlag(sei.m_hdr.m_tolerancePresentFlag, "omi_tolerance_present_flag");
+#endif
     xWriteFlag(sei.m_hdr.m_maskConfidenceInfoPresentFlag, "omi_mask_confidence_info_present_flag");
     if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
     {
@@ -981,6 +984,12 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
       if (sei.m_maskPicUpdateFlag[i])
       {
         xWriteUvlc((uint32_t) sei.m_numMaskInPic[i], "omi_num_mask_in_pic[i]");
+#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
+        if (sei.m_hdr.m_tolerancePresentFlag)
+        {
+          xWriteCode(sei.m_auxSampleTolerance[i], sei.m_hdr.m_maskSampleValueLengthMinus8 + 8, "omi_aux_sample_tolerance[i]");
+        }
+#endif
         for (uint32_t j = 0; j < sei.m_numMaskInPic[i]; j++)
         {
           xWriteCode(sei.m_objectMaskInfos[maskCnt].maskId, sei.m_hdr.m_maskIdLengthMinus1 + 1, "omi_mask_id[i][j]");
@@ -2518,6 +2527,9 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
     xWriteFlag(sei.m_chromaKeyInfoPresentFlag, "gfv_chroma_key_info_presentFlag");
     if (sei.m_chromaKeyInfoPresentFlag)
     {
+#if JVET_AM0334_GFV_CHROMA_KEY
+      xWriteUvlc(sei.m_chromaKeyPurposeIdc, "gfv_chroma_key_purpose_idc");
+#endif
       for (uint32_t chromac = 0; chromac < 3; chromac++)
       {
         xWriteFlag(sei.m_chromaKeyValuePresentFlag[chromac], "gfv_chroma_key_value_present_flag[c]");
@@ -2526,6 +2538,14 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
           xWriteCode(sei.m_chromaKeyValue[chromac], 8, "gfv_chroma_key_value[chromac]");
         }
       }
+#if JVET_AM0334_GFV_CHROMA_KEY
+      xWriteFlag(sei.m_chromaKeyThrPresentFlag, "gfv_chroma_key_thr_present_flag");
+      if (sei.m_chromaKeyThrPresentFlag)
+      {
+        xWriteCode(sei.m_chromaKeyThrLower, 8, "gfv_chroma_key_thr_lower");
+        xWriteUvlc(sei.m_chromaKeyThrUpperDeltaMinus1, "gfv_chroma_key_thr_upper_delta_minus1");
+      }
+#else
       for (uint32_t chromai = 0; chromai < 2; chromai++)
       {
         xWriteFlag(sei.m_chromaKeyThrPresentFlag[chromai], "gfv_chroma_key_thr_present_flag[i]");
@@ -2534,12 +2554,20 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
           xWriteUvlc(sei.m_chromaKeyThrValue[chromai], "gfv_chroma_key_thr_value[i]");
         }
       }
+#endif
     }
   }
+#if JVET_AM0334_GFV_CHROMA_KEY
+  else if (sei.m_cnt == 0)
+  {
+    xWriteFlag(sei.m_fusionPicFlag, "gfv_fusion_pic_flag");
+  }
+#else
   else
   {
     xWriteFlag(sei.m_drivePicFusionFlag, "gfv_drive_picture_fusion_flag");
   }
+#endif
   xWriteFlag(sei.m_lowConfidenceFaceParameterFlag, "gfv_low_confidence_face_parameter_flag");
   xWriteFlag(sei.m_coordinatePresentFlag, "gfv_coordinate_present_flag");
   if (sei.m_coordinatePresentFlag)
@@ -3093,7 +3121,9 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
   xWriteCode(sei.dsciId, 8, "dsci_id");
 #endif
   xWriteCode(sei.dsciHashMethodType, 8, "dsci_hash_method_type");
+#if !JVET_AM0164_DSC_SYNTAX
   xWriteString(sei.dsciKeySourceUri, "dsci_key_source_uri");
+#endif
   xWriteUvlc(sei.dsciKeyRetrievalModeIdc, "dsci_key_retrieval_mode_idc");
   if (sei.dsciKeyRetrievalModeIdc == 1)
   {
@@ -3128,6 +3158,13 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
 #if JVET_AL0222_DSC_START_END
   xWriteFlag(sei.dsciSignedContentStartFlag, "dsci_signed_content_start_flag");
 #endif
+#if JVET_AM0164_DSC_SYNTAX
+  while (!isByteAligned())
+  {
+    xWriteFlag(0, "dsci_alignment_zero_bit");
+  }
+  xWriteString(sei.dsciKeySourceUri, "dsci_key_source_uri");
+#endif
 }
 
 void SEIWriter::xWriteSEIDigitallySignedContentSelection(const SEIDigitallySignedContentSelection &sei)
@@ -3135,7 +3172,11 @@ void SEIWriter::xWriteSEIDigitallySignedContentSelection(const SEIDigitallySigne
 #if JVET_AK0206_DSC_SEI_ID
   xWriteCode(sei.dscsId, 8, "dscs_id");
 #endif
+#if JVET_AM0164_DSC_SYNTAX
+  xWriteCode(sei.dscsVerificationSubstreamId, 8, "dscs_verification_substream_id");
+#else
   xWriteUvlc(sei.dscsVerificationSubstreamId, "dscs_verification_substream_id");
+#endif
 }
 
 void SEIWriter::xWriteSEIDigitallySignedContentVerification(const SEIDigitallySignedContentVerification &sei)
@@ -3143,10 +3184,17 @@ void SEIWriter::xWriteSEIDigitallySignedContentVerification(const SEIDigitallySi
 #if JVET_AK0206_DSC_SEI_ID
   xWriteCode(sei.dscvId, 8, "dscv_id");
 #endif
+#if JVET_AM0164_DSC_SYNTAX
+  xWriteCode(sei.dscvVerificationSubstreamId, 8, "dscv_verification_substream_id");
+  CHECK (sei.dscvSignatureLengthInOctets < 1, "Length of signature has to be greater than zero");
+  xWriteCode(sei.dscvSignatureLengthInOctets - 1, 24, "dscv_signature_length_in_octets_minus1");
+  CHECK (sei.dscvSignatureLengthInOctets != sei.dscvSignature.size(), "Signature length incosistent");
+#else
   xWriteUvlc(sei.dscvVerificationSubstreamId, "dscv_verification_substream_id");
   CHECK (sei.dscvSignatureLengthInOctets < 1, "Length of signature has to be greater than zero");
   xWriteUvlc(sei.dscvSignatureLengthInOctets - 1, "dscv_signature_length_in_octets_minus1");
   CHECK (sei.dscvSignatureLengthInOctets != sei.dscvSignature.size(), "Signature length incosistent");
+#endif
   for (int i=0; i< sei.dscvSignature.size(); i++)
   {
     xWriteCode(sei.dscvSignature[i], 8, "dscv_signature");
@@ -3171,7 +3219,11 @@ void SEIWriter::xWriteSEIAIUsageRestrictions(const SEIAIUsageRestrictions &sei)
       xWriteFlag(sei.m_contextPresentFlag[i], "aur_context_present_flag");
       if (sei.m_contextPresentFlag[i])
       {
+#if JVET_AL0058_AUR_CONTEXT
+        xWriteCode(sei.m_context[i], 16, "aur_context");
+#else
         xWriteUvlc(sei.m_context[i], "aur_context");
+#endif
       }
 #if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
       xWriteFlag(sei.m_exclusionFlag[i], "aur_sei_exclusion_flag");
