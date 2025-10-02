@@ -1683,6 +1683,9 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setAURSEIRestrictions                                (m_aurSEIRestrictions);
   m_cEncLib.setAURSEIContextPresentFlag                          (m_aurSEIContextPresentFlag);
   m_cEncLib.setAURSEIContext                                     (m_aurSEIContext);
+#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
+  m_cEncLib.setAURSEIExclusionFlag                               (m_aurSEIExclusionFlag);
+#endif
 #endif 
 #if JVET_O0756_CALCULATE_HDRMETRICS
   for (int i=0; i<hdrtoolslib::NB_REF_WHITE; i++)

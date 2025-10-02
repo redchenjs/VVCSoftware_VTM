@@ -98,6 +98,8 @@
 
 #define JVET_AL0222_DSC_START_END                         1 // add start and end flags to DSC SEI messages
 
+#define JVET_AM0117_AUR_SEI_EXCLUSION_FLAG                1 // JVET-AM0117: On the AI usage restrictions SEI message
+
 #define JVET_AM0334_GFV_CHROMA_KEY                        1 // update to GFV SEI chroma key syntax
 
 #define JVET_AM0164_DSC_SYNTAX                            1 // Increase lenght of dscv_signature_length_in_octets_minus1 and move dsci_key_source_uri syntax element

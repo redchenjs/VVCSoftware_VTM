@@ -1092,6 +1092,9 @@ protected:
   std::vector<uint32_t>  m_aurSEIRestrictions;
   std::vector<bool>  m_aurSEIContextPresentFlag;
   std::vector<uint32_t>  m_aurSEIContext;
+#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
+  std::vector<bool>  m_aurSEIExclusionFlag;
+#endif
 #endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   bool                  m_ifmSeiEnabled;
@@ -3187,6 +3190,10 @@ public:
   bool         getAURSEIContextPresentFlag(uint32_t idx) const { return m_aurSEIContextPresentFlag[idx]; }
   void         setAURSEIContext(std::vector<uint32_t> b) { m_aurSEIContext = b; }
   uint32_t     getAURSEIContext(uint32_t idx) const { return m_aurSEIContext[idx]; }
+#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
+  void         setAURSEIExclusionFlag(std::vector<bool> b) { m_aurSEIExclusionFlag = b; }
+  bool         getAURSEIExclusionFlag(uint32_t idx) const { return m_aurSEIExclusionFlag[idx]; }
+#endif
 #endif
 
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI

@@ -5407,6 +5407,9 @@ void SEIReader::xParseSEIAIUsageRestrictions(SEIAIUsageRestrictions& sei, uint32
     sei.m_restrictions.resize(sei.m_numRestrictionsMinus1 + 1);
     sei.m_contextPresentFlag.resize(sei.m_numRestrictionsMinus1 + 1);
     sei.m_context.resize(sei.m_numRestrictionsMinus1 + 1);
+#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
+    sei.m_exclusionFlag.resize(sei.m_numRestrictionsMinus1 + 1);
+#endif
     for (uint32_t i = 0; i <= sei.m_numRestrictionsMinus1; i++)
     {
       sei_read_uvlc(pDecodedMessageOutputStream, val, "aur_restriction");
@@ -5422,6 +5425,10 @@ void SEIReader::xParseSEIAIUsageRestrictions(SEIAIUsageRestrictions& sei, uint32
 #endif
         sei.m_context[i] = val;
       }
+#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
+      sei_read_flag(pDecodedMessageOutputStream, val, "aur_sei_exclusion_flag");
+      sei.m_exclusionFlag[i] = val;
+#endif
     }
   }
 }

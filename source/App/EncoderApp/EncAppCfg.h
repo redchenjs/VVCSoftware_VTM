@@ -1293,6 +1293,9 @@ protected:
   std::vector<uint32_t>  m_aurSEIRestrictions;
   std::vector<bool>      m_aurSEIContextPresentFlag;
   std::vector<uint32_t>  m_aurSEIContext;
+#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
+  std::vector<bool>      m_aurSEIExclusionFlag;
+#endif
 #endif
 
 #if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
