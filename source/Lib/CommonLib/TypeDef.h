@@ -88,6 +88,8 @@
 
 #define JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI             1 // Implementation of AI-usage restrictions SEI message
 
+#define JVET_AK0281_AUR_SEI_IN_SPO_SEI                    1 // AUR SEI message in SPO SEI message
+
 #define JVET_AL0056_EOI_SEI_QUANT_CONSTRAINT              1 // JVET-AL0056: On the encoder optimization information SEI message
 
 #define JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI             1 //< Use Image Format Metadata (IFM) SEI message
