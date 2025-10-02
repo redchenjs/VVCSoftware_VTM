@@ -4290,6 +4290,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     uint16_t prefixByteIdx = 0;
     bool NNPFCFound = false;
     bool NNPFAFound = false;
+#if JVET_AK0055_SPO_SEI_CONSTRAINT
+    std::vector<int> erpIndices, gcmpIndices, rwpIndices, fpaIndices;
+#endif
     for (uint32_t i = 0; i < (m_poSEINumMinus2 + 2); i++)
     {
       m_poSEIPrefixFlag[i] =      cfg_poSEIPrefixFlag.values[i];
@@ -4314,6 +4317,41 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       NNPFCFound = NNPFCFound || (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
       NNPFAFound = NNPFAFound || (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
       CHECK(!NNPFCFound && NNPFAFound, "NNPFA payload type found before NNPFC payload type in SPO SEI");
+#if JVET_AK0055_SPO_SEI_CONSTRAINT
+      if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::EQUIRECTANGULAR_PROJECTION)
+      {
+        CHECK(gcmpIndices.empty(), "ERP and GCMP SEI messages cannot coexist");
+        erpIndices.push_back(i);
+      }
+      else if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::GENERALIZED_CUBEMAP_PROJECTION)
+      {
+        CHECK(erpIndices.empty(), "ERP and GCMP SEI messages cannot coexist");
+        gcmpIndices.push_back(i);
+      }
+      else if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::REGION_WISE_PACKING)
+      {
+        rwpIndices.push_back(i);
+      }
+      else if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::FRAME_PACKING)
+      {
+        fpaIndices.push_back(i);
+      }
+      m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
+      if (m_poSEIPrefixFlag[i])
+      {
+        m_poSEINumOfPrefixBits[i] = cfg_poSEINumofPrefixBits.values[i];
+        m_poSEIPrefixByte[i].resize((cfg_poSEINumofPrefixBits.values[i] + 7) >> 3);
+        for (uint32_t j = 0; j < (uint32_t)m_poSEIPrefixByte[i].size(); j++)
+        {
+          m_poSEIPrefixByte[i][j] = (uint8_t) cfg_poSEIPrefixByte.values[prefixByteIdx++];
+        }
+      }
+      else
+      {
+        cfg_poSEINumofPrefixBits.values[i] = 0;
+        m_poSEINumOfPrefixBits[i] = 0;
+      }
+#endif
       m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
       if (m_poSEIPrefixFlag[i])
       {
@@ -4354,6 +4392,66 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
     CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
+#if JVET_AK0055_SPO_SEI_CONSTRAINT
+    if (!rwpIndices.empty())
+    {
+      CHECK(!erpIndices.empty() || !gcmpIndices.empty(), "If RWP is present, at least one of ERP or GCMP must be present");
+      for (int rwpIdx : rwpIndices)
+      {
+        for (int erpIdx : erpIndices)
+        {
+          CHECK(rwpIdx < erpIdx, "ERP must come after RWP");
+        }
+        for (int gcmpIdx : gcmpIndices)
+        {
+          CHECK(rwpIdx < gcmpIdx, "GCMP must come after RWP");
+        }
+      }
+    }
+
+    if (!fpaIndices.empty())
+    {
+      for (int fpaIdx : fpaIndices)
+      {
+        for (int erpIdx : erpIndices)
+        {
+          CHECK(fpaIdx < erpIdx, "ERP must come after FPA");
+        }
+        for (int gcmpIdx : gcmpIndices)
+        {
+          CHECK(fpaIdx < gcmpIdx, "GCMP must come after FPA");
+        }
+      }
+    }
+
+    if (!rwpIndices.empty() && !fpaIndices.empty() && !erpIndices.empty())
+    {
+      for (int rwpIdx : rwpIndices)
+      {
+        for (int fpaIdx : fpaIndices)
+        {
+          for (int erpIdx : erpIndices)
+          {
+            CHECK(rwpIdx < fpaIdx && fpaIdx < erpIdx, "Order must be: RWP < FPA < ERP");
+          }
+        }
+      }
+    }
+
+    if (!rwpIndices.empty() && !fpaIndices.empty() && !gcmpIndices.empty())
+    {
+      for (int rwpIdx : rwpIndices)
+      {
+        for (int fpaIdx : fpaIndices)
+        {
+          for (int gcmpIdx : gcmpIndices)
+          {
+            CHECK(rwpIdx < fpaIdx && fpaIdx < gcmpIdx, "Order must be: RWP < FPA < GCMP");
+          }
+        }
+      }
+    }
+#endif
 #if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
     if (!NNPFAFound && m_nnPostFilterSEIActivationEnabled && m_nnPostFilterSEIActivationSelectedInputFlag)
     {
