@@ -6680,6 +6680,10 @@ Specifies a tolerance range for mapping of decoded sample values of the i-th aux
   \\ \Option{SEIGenerativeFaceVideoChromaKeyInfoPresentFlag} &
   \Default{0} &
    When present, equal to 1 indicates that the syntax elements gfv_chroma_key_value_present_flag[c] and gfv_chroma_key_thr_present_flag[i] are present and the syntax elements and gfv_chroma_key_value[c] and gfv_chroma_key_thr_value[i] might be present.
+  \\
+  \Option{SEIGenerativeFaceVideoChromaKeyPurpose idc} &
+  \Default{0} &
+   Specifies the chroma key purpose: unspecified (0), background (1), face recongnition (2).
   \\  \Option{SEIGenerativeFaceVideoChromaKeyValuePresentFlag} &
   \Default{``''} &
    When present, equal to 1 indicates that the syntax element gfv_chroma_key_value[c] is present.
@@ -6690,15 +6694,19 @@ Specifies a tolerance range for mapping of decoded sample values of the i-th aux
   \\
   \Option{SEIGenerativeFaceVideoChromaKeyThrPresentFlag} &
   \Default{``''} &
-   When present, equal to 1 indicates that the syntax element gfv_chroma_thr_value[ i ] is present.
+   When present, equal to 1 indicates that the syntax element gfv_chroma_thr_lower and gfv_chroma_thr_upper_delta_minus1 are present.
   \\
-  \Option{SEIGenerativeFaceVideoChromaKeyThrValue} &
+  \Option{SEIGenerativeFaceVideoChromaKeyThrLower} &
   \Default{``''} &
-   When present, specifies the i-th chroma key threshold value.  
+   When present, specifies the chroma key lower threshold value.  
   \\
-  \Option{SEIGenerativeFaceVideoDrivePicFusionFlag} &
+  \Option{SEIGenerativeFaceVideoChromaKeyThrUpperDeltaMinus1} &
   \Default{``''} &
-  When present, equal to 1 indicates the current decoded picture, which corresponds to a driving picture that may be used for fusion, may be input to GenerativeNN( ). gfv_drive_pic_fusion_flag equal to 0 indicates the current decoded picture should not be input to GenerativeNN( ). List of fusion flags  with the corresponding number of specified SEIGenerativeFaceVideoNumber. 
+   When present, specifies the chroma key upper threshold value.
+  \\
+  \Option{SEIGenerativeFaceVideoFusionPicFlag} &
+  \Default{``''} &
+  When present, equal to 1 indicates the current decoded picture, which corresponds to a driving picture that may be used for fusion, may be input to GenerativeNN( ). gfv_fusion_pic_flag equal to 0 indicates the current decoded picture should not be input to GenerativeNN( ). List of fusion flags  with the corresponding number of specified SEIGenerativeFaceVideoNumber. 
   \\
   \Option{SEIGenerativeFaceVideoLowConfidenceFaceParameterFlag} &
   \Default{``''} &

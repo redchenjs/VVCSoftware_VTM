@@ -2078,10 +2078,15 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
   sei->m_nnTagURI = m_pcCfg->getGenerativeFaceVideoSEINNTagURI();
   sei->m_nnURI = m_pcCfg->getGenerativeFaceVideoSEINNURI();  
   sei->m_chromaKeyInfoPresentFlag = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyInfoPresentFlag();
+#if JVET_AM0334_GFV_CHROMA_KEY
+  sei->m_chromaKeyPurposeIdc = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyPurposeIdc();
+#endif
   sei->m_chromaKeyValuePresentFlag.resize(3);
   sei->m_chromaKeyValue.resize(3);
+#if !JVET_AM0334_GFV_CHROMA_KEY
   sei->m_chromaKeyThrPresentFlag.resize(2);
   sei->m_chromaKeyThrValue.resize(2);
+#endif
   if(sei->m_chromaKeyInfoPresentFlag)
   {
     for (uint32_t chromac = 0; chromac < 3; chromac++)
@@ -2092,6 +2097,11 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
         sei->m_chromaKeyValue[chromac] = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyValue(chromac);
       }
     }
+#if JVET_AM0334_GFV_CHROMA_KEY
+    sei->m_chromaKeyThrPresentFlag = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyThrPresentFlag();
+    sei->m_chromaKeyThrLower = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyThrLower();
+    sei->m_chromaKeyThrUpperDeltaMinus1 = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1();
+#else
     for (uint32_t chromai = 0; chromai < 2; chromai++)
     {
       sei->m_chromaKeyThrPresentFlag[chromai] = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyThrPresentFlag(chromai);
@@ -2100,12 +2110,17 @@ void SEIEncoder::initSEIGenerativeFaceVideo(SEIGenerativeFaceVideo *sei, int cur
         sei->m_chromaKeyThrValue[chromai] = m_pcCfg->getGenerativeFaceVideoSEIChromaKeyThrValue(chromai);
       }
     }
+#endif
   }
   sei->m_payloadFilename = m_pcCfg->getGenerativeFaceVideoSEIPayloadFilename();
   sei->m_currentid = currframeindex;
   sei->m_id = m_pcCfg->getGenerativeFaceVideoSEIId(sei->m_currentid);
   sei->m_cnt = m_pcCfg->getGenerativeFaceVideoSEICnt(sei->m_currentid);
+#if JVET_AM0334_GFV_CHROMA_KEY
+  sei->m_fusionPicFlag = m_pcCfg->getGenerativeFaceVideoSEIFusionPicFlag(sei->m_currentid);
+#else
   sei->m_drivePicFusionFlag = m_pcCfg->getGenerativeFaceVideoSEIDrivePicFusionFlag(sei->m_currentid);
+#endif
   sei->m_lowConfidenceFaceParameterFlag = m_pcCfg->getGenerativeFaceVideoSEILowConfidenceFaceParameterFlag(sei->m_currentid);
   sei->m_coordinatePresentFlag = m_pcCfg->getGenerativeFaceVideoSEICoordinatePresentFlag(sei->m_currentid);
   sei->m_coordinateQuantizationFactor = m_pcCfg->getGenerativeFaceVideoSEICoordinateQuantizationFactor(sei->m_currentid);

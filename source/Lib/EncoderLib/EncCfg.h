@@ -1271,11 +1271,21 @@ protected:
   std::string                          m_generativeFaceVideoSEINNTagURI;
   std::string                          m_generativeFaceVideoSEINNURI;
   bool                                 m_generativeFaceVideoSEIChromaKeyInfoPresentFlag;
+#if JVET_AM0334_GFV_CHROMA_KEY
+  uint32_t                             m_generativeFaceVideoSEIChromaKeyPurposeIdc;
+#endif
   std::vector<bool>                    m_generativeFaceVideoSEIChromaKeyValuePresentFlag;
   std::vector<uint32_t>                m_generativeFaceVideoSEIChromaKeyValue;
+#if JVET_AM0334_GFV_CHROMA_KEY
+  bool                                 m_generativeFaceVideoSEIChromaKeyThrPresentFlag;
+  uint32_t                             m_generativeFaceVideoSEIChromaKeyThrLower;
+  uint32_t                             m_generativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1;
+  std::vector<bool>                    m_generativeFaceVideoSEIFusionPicFlag;
+#else
   std::vector<bool>                    m_generativeFaceVideoSEIChromaKeyThrPresentFlag;
   std::vector<uint32_t>                m_generativeFaceVideoSEIChromaKeyThrValue;
   std::vector<bool>                    m_generativeFaceVideoSEIDrivePicFusionFlag;
+#endif
   std::vector<uint32_t>                m_generativeFaceVideoSEIId;
   std::vector<uint32_t>                m_generativeFaceVideoSEICnt;
   std::vector<bool>                    m_generativeFaceVideoSEILowConfidenceFaceParameterFlag;
@@ -3611,16 +3621,31 @@ public:
   const std::string getGenerativeFaceVideoSEINNURI()                                const { return m_generativeFaceVideoSEINNURI; }
   void              setGenerativeFaceVideoSEIChromaKeyInfoPresentFlag(bool ChromaKeyInfoPresentFlag)                        { m_generativeFaceVideoSEIChromaKeyInfoPresentFlag = ChromaKeyInfoPresentFlag; }
   bool              getGenerativeFaceVideoSEIChromaKeyInfoPresentFlag()                                               const { return m_generativeFaceVideoSEIChromaKeyInfoPresentFlag; }
+#if JVET_AM0334_GFV_CHROMA_KEY
+  void              setGenerativeFaceVideoSEIChromaKeyPurposeIdc(bool idc)                                                  { m_generativeFaceVideoSEIChromaKeyPurposeIdc = idc; }
+  uint32_t          getGenerativeFaceVideoSEIChromaKeyPurposeIdc()                                                    const { return m_generativeFaceVideoSEIChromaKeyPurposeIdc; }
+#endif
   void              setGenerativeFaceVideoSEIChromaKeyValuePresentFlag(const std::vector<bool>& ChromaKeyValuePresentFlag)  { m_generativeFaceVideoSEIChromaKeyValuePresentFlag = ChromaKeyValuePresentFlag; }
   bool              getGenerativeFaceVideoSEIChromaKeyValuePresentFlag(int c)                                         const { return m_generativeFaceVideoSEIChromaKeyValuePresentFlag[c]; }
   void              setGenerativeFaceVideoSEIChromaKeyValue(const std::vector<uint32_t>& ChromaKeyValue)                    { m_generativeFaceVideoSEIChromaKeyValue = ChromaKeyValue; }
   uint32_t          getGenerativeFaceVideoSEIChromaKeyValue(uint32_t c)                                               const { return m_generativeFaceVideoSEIChromaKeyValue[c]; }  
+#if JVET_AM0334_GFV_CHROMA_KEY
+  void              setGenerativeFaceVideoSEIChromaKeyThrPresentFlag(bool ChromaKeyThrPresentFlag)                          { m_generativeFaceVideoSEIChromaKeyThrPresentFlag = ChromaKeyThrPresentFlag; }
+  bool              getGenerativeFaceVideoSEIChromaKeyThrPresentFlag()                                                const { return m_generativeFaceVideoSEIChromaKeyThrPresentFlag; }
+  void              setGenerativeFaceVideoSEIChromaKeyThrLower(uint32_t ChromaKeyThrValue)                                  { m_generativeFaceVideoSEIChromaKeyThrLower = ChromaKeyThrValue; }
+  uint32_t          getGenerativeFaceVideoSEIChromaKeyThrLower()                                                      const { return m_generativeFaceVideoSEIChromaKeyThrLower; }
+  void              setGenerativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1(uint32_t ChromaKeyThrValue)                       { m_generativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1 = ChromaKeyThrValue; }
+  uint32_t          getGenerativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1()                                           const { return m_generativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1; }
+  void              setGenerativeFaceVideoSEIFusionPicFlag(const std::vector<bool>& FusionPicFlag)                          { m_generativeFaceVideoSEIFusionPicFlag = FusionPicFlag; }
+  bool              getGenerativeFaceVideoSEIFusionPicFlag(int idx)                                                   const { return m_generativeFaceVideoSEIFusionPicFlag[idx]; }
+#else
   void              setGenerativeFaceVideoSEIChromaKeyThrPresentFlag(const std::vector<bool>& ChromaKeyThrPresentFlag)      { m_generativeFaceVideoSEIChromaKeyThrPresentFlag = ChromaKeyThrPresentFlag; }
   bool              getGenerativeFaceVideoSEIChromaKeyThrPresentFlag(int i)                                           const { return m_generativeFaceVideoSEIChromaKeyThrPresentFlag[i]; }
   void              setGenerativeFaceVideoSEIChromaKeyThrValue(const std::vector<uint32_t>& ChromaKeyThrValue)              { m_generativeFaceVideoSEIChromaKeyThrValue = ChromaKeyThrValue; }
   uint32_t          getGenerativeFaceVideoSEIChromaKeyThrValue(uint32_t i)                                            const { return m_generativeFaceVideoSEIChromaKeyThrValue[i]; }
   void              setGenerativeFaceVideoSEIDrivePicFusionFlag(const std::vector<bool>& DrivePicFusionFlag)  { m_generativeFaceVideoSEIDrivePicFusionFlag = DrivePicFusionFlag; }
   bool              getGenerativeFaceVideoSEIDrivePicFusionFlag(int idx)            const { return m_generativeFaceVideoSEIDrivePicFusionFlag[idx]; }
+#endif
   void              setGenerativeFaceVideoSEIId(const std::vector<uint32_t>& id)          { m_generativeFaceVideoSEIId = id; }
   uint32_t          getGenerativeFaceVideoSEIId(int idx)                            const { return m_generativeFaceVideoSEIId[idx]; }
   void              setGenerativeFaceVideoSEICnt(const std::vector<uint32_t>& cnt)        { m_generativeFaceVideoSEICnt = cnt; }
