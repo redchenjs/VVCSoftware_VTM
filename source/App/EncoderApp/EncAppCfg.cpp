@@ -1672,6 +1672,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEIDSCSignAURSEI", m_cfgDigitallySignedContentSEI.signAURSEI, false, "Enable signing of AUR SEI for Digitally Signed Content SEI messages")
 ("SEIDSCSignGFVSEI", m_cfgDigitallySignedContentSEI.signGFVSEI, false, "Enable signing of GFV SEI for Digitally Signed Content SEI messages")
 ("SEIDSCSignGFVESEI", m_cfgDigitallySignedContentSEI.signGFVESEI, false, "Enable signing of GFVE SEI for Digitally Signed Content SEI messages")
+("SEIDSCSignNNPFCSEI", m_cfgDigitallySignedContentSEI.signNNPFCSEI, false, "Enable signing of NNPFC SEI for Digitally Signed Content SEI messages")
+("SEIDSCSignNNPFASEI", m_cfgDigitallySignedContentSEI.signNNPFASEI, false, "Enable signing of NNPFA SEI for Digitally Signed Content SEI messages")
 #endif
 #endif
 #if ENABLE_TRACING

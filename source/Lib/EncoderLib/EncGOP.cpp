@@ -607,7 +607,9 @@ void EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages
 #if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
     if (m_pcCfg->getDigitallySignedContentSEICfg().enabled && ((m_pcCfg->getDigitallySignedContentSEICfg().signAURSEI && (*sei)->payloadType() == SEI::PayloadType::AI_USAGE_RESTRICTIONS) ||
                                                                (m_pcCfg->getDigitallySignedContentSEICfg().signGFVSEI && (*sei)->payloadType() == SEI::PayloadType::GENERATIVE_FACE_VIDEO) ||
-                                                               (m_pcCfg->getDigitallySignedContentSEICfg().signGFVESEI && (*sei)->payloadType() == SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT)))
+                                                               (m_pcCfg->getDigitallySignedContentSEICfg().signGFVESEI && (*sei)->payloadType() == SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT) ||
+                                                               (m_pcCfg->getDigitallySignedContentSEICfg().signNNPFCSEI && (*sei)->payloadType() == SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS) ||
+                                                               (m_pcCfg->getDigitallySignedContentSEICfg().signNNPFASEI && (*sei)->payloadType() == SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION)))
     {
       SEIDigitallySignedContentSelection *sei = new SEIDigitallySignedContentSelection;
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
@@ -4204,7 +4206,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 #if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
 #if JVET_AM0118_DSC_FOR_SEI
-        m_dscSubstreamManager.initDscSubstreamManager(dscCfg.numVerificationSubstreams, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid, dscCfg.refSubstreamFlag, dscCfg.implicitAssociationModeFlag, dscCfg.signAURSEI || dscCfg.signGFVSEI || dscCfg.signGFVESEI);
+        m_dscSubstreamManager.initDscSubstreamManager(dscCfg.numVerificationSubstreams, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid, dscCfg.refSubstreamFlag, dscCfg.implicitAssociationModeFlag, dscCfg.signAURSEI || dscCfg.signGFVSEI || dscCfg.signGFVESEI || dscCfg.signNNPFCSEI || dscCfg.signNNPFASEI);
 #else
         m_dscSubstreamManager.initDscSubstreamManager(dscCfg.numVerificationSubstreams, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid, dscCfg.refSubstreamFlag, dscCfg.implicitAssociationModeFlag);
 #endif

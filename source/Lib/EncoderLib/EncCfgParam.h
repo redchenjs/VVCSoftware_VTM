@@ -99,6 +99,8 @@ public:
   bool                      signAURSEI = false;
   bool                      signGFVSEI = false;
   bool                      signGFVESEI = false;
+  bool                      signNNPFCSEI = false;
+  bool                      signNNPFASEI = false;
 #endif
 };
 #endif

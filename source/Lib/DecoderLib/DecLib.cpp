@@ -747,7 +747,7 @@ void DecLib::xInitDscSubstreamManager(SEIMessages &SEIs)
   {
     if (dscInitSEIs.size()>1)
     {
-      printf ("Warming: received more than one Digitally Signed Content Initialization SEI message at a time. Using first only.\n");
+      printf ("Warning: received more than one Digitally Signed Content Initialization SEI message at a time. Using first only.\n");
     }
     SEIDigitallySignedContentInitialization* dsci = (SEIDigitallySignedContentInitialization*) dscInitSEIs.front();
     if (m_dscSubstreamManagerMap[dsci->dsciId].isVerificationActive())
