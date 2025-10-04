@@ -64,6 +64,9 @@ InputBitstream::InputBitstream()
 InputBitstream::InputBitstream(const InputBitstream &src)
   : m_fifo(src.m_fifo)
   , m_emulationPreventionByteLocation(src.m_emulationPreventionByteLocation)
+#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+  , m_origFifo(src.m_origFifo)
+#endif
   , m_fifoIdx(src.m_fifoIdx)
   , m_numHeldBits(src.m_numHeldBits)
   , m_heldBits(src.m_heldBits)

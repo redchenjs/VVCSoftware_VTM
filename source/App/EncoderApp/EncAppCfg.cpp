@@ -1668,6 +1668,13 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif
 ("SEIDSCKeyIDEnabled", m_cfgDigitallySignedContentSEI.keyIdEnabled, false, "Enable using a key ID addition to URI of public key of Digitally Signed Content SEI messages")
 ("SEIDSCKeyID", m_cfgDigitallySignedContentSEI.keyId, 0 , "Public Key ID for Digitally Signed Content SEI messages (if enabled)")
+#if JVET_AM0118_DSC_FOR_SEI
+("SEIDSCSignAURSEI", m_cfgDigitallySignedContentSEI.signAURSEI, false, "Enable signing of AUR SEI for Digitally Signed Content SEI messages")
+("SEIDSCSignGFVSEI", m_cfgDigitallySignedContentSEI.signGFVSEI, false, "Enable signing of GFV SEI for Digitally Signed Content SEI messages")
+("SEIDSCSignGFVESEI", m_cfgDigitallySignedContentSEI.signGFVESEI, false, "Enable signing of GFVE SEI for Digitally Signed Content SEI messages")
+("SEIDSCSignNNPFCSEI", m_cfgDigitallySignedContentSEI.signNNPFCSEI, false, "Enable signing of NNPFC SEI for Digitally Signed Content SEI messages")
+("SEIDSCSignNNPFASEI", m_cfgDigitallySignedContentSEI.signNNPFASEI, false, "Enable signing of NNPFA SEI for Digitally Signed Content SEI messages")
+#endif
 #endif
 #if ENABLE_TRACING
 ("TraceChannelsList", bTracingChannelsList, false, "List all available tracing channels")
