@@ -1004,7 +1004,11 @@ protected:
   uint32_t              m_poSEIId;
   uint32_t              m_poSEIForHumanViewingIdc;
   uint32_t              m_poSEIForMachineAnalysisIdc;
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  uint32_t              m_poSEINumMinus1;
+#else
   uint32_t              m_poSEINumMinus2;
+#endif
   bool                  m_poSEIBreadthFirstFlag;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
@@ -3108,8 +3112,13 @@ public:
   uint32_t getPoSEIForHumanViewingIdc()                              { return m_poSEIForHumanViewingIdc; }
   void     setPoSEIForMachineAnalysisIdc(uint32_t i)                 { m_poSEIForMachineAnalysisIdc = i; }
   uint32_t getPoSEIForMachineAnalysisIdc()                           { return m_poSEIForMachineAnalysisIdc; }
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  void     setPoSEINumMinus1(uint32_t i)                             { m_poSEINumMinus1 = i; }
+  uint32_t getPoSEINumMinus1()                                       { return m_poSEINumMinus1; }
+#else
   void     setPoSEINumMinus2(uint32_t i)                             { m_poSEINumMinus2 = i; }
   uint32_t getPoSEINumMinus2()                                       { return m_poSEINumMinus2; }
+#endif
   void     setPoSEIBreadthFirstFlag(bool b)                          { m_poSEIBreadthFirstFlag = b; }
   bool     getPoSEIBreadthFirstFlag()                                { return m_poSEIBreadthFirstFlag; }
   void     setPoSEIWrappingFlag(const std::vector<bool>& b)          { m_poSEIWrappingFlag = b; }

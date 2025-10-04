@@ -1523,7 +1523,11 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setmSptiSEIDirectionFlag(m_sptiDirectionFlag);
   }
 
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  m_cEncLib.setPoSEINumMinus1                                    (m_poSEINumMinus1);
+#else
   m_cEncLib.setPoSEINumMinus2                                    (m_poSEINumMinus2);
+#endif
   m_cEncLib.setPoSEIBreadthFirstFlag                             (m_poSEIBreadthFirstFlag);
   m_cEncLib.setPoSEIWrappingFlag                                 (m_poSEIWrappingFlag);
   m_cEncLib.setPoSEIImportanceFlag                               (m_poSEIImportanceFlag);

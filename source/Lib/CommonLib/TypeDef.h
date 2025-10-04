@@ -106,6 +106,8 @@
 
 #define JVET_AM0164_DSC_SYNTAX                            1 // Increase lenght of dscv_signature_length_in_octets_minus1 and move dsci_key_source_uri syntax element
 
+#define JVET_AM0121_SPO_SEI_CONSTRAINTS                   1 // JVET-AM0121: On the SEI processing order SEI message
+
 //########### place macros to be be kept below this line ###############
 
 #define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1

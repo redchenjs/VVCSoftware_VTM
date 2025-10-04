@@ -639,7 +639,11 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   seiProcessingOrderInfo->m_posId               = m_pcCfg->getPoSEIId();
   seiProcessingOrderInfo->m_posForHumanViewingIdc    = m_pcCfg->getPoSEIForHumanViewingIdc();
   seiProcessingOrderInfo->m_posForMachineAnalysisIdc = m_pcCfg->getPoSEIForMachineAnalysisIdc();
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  seiProcessingOrderInfo->m_posNumMinus1        = m_pcCfg->getPoSEINumMinus1();
+#else
   seiProcessingOrderInfo->m_posNumMinus2        = m_pcCfg->getPoSEINumMinus2();
+#endif
   seiProcessingOrderInfo->m_posBreadthFirstFlag = m_pcCfg->getPoSEIBreadthFirstFlag();
   seiProcessingOrderInfo->m_posWrappingFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posImportanceFlag.resize(m_pcCfg->getPoSEIPayloadTypeSize());
@@ -649,7 +653,11 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   seiProcessingOrderInfo->m_posProcessingOrder.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posNumBitsInPrefix.resize(m_pcCfg->getPoSEIPayloadTypeSize());
   seiProcessingOrderInfo->m_posPrefixByte.resize(m_pcCfg->getPoSEIPayloadTypeSize());
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus1() + 1); i++)
+#else
   for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus2() + 2); i++)
+#endif
   {
     seiProcessingOrderInfo->m_posWrappingFlag[i] = m_pcCfg->getPoSEIWrappingFlag(i);
     seiProcessingOrderInfo->m_posImportanceFlag[i] = m_pcCfg->getPoSEIImportanceFlag(i);
@@ -677,7 +685,11 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
   seiProcessingOrderNesting->m_ponWrapSeiMessages.clear();
   seiProcessingOrderNesting->m_ponTargetPoId.push_back((uint8_t)seiProcessingOrderInfo->m_posId);
   uint32_t ponNumSeis = 0;
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+  for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus1() + 1); i++)
+#else
   for (uint32_t i = 0; i < (m_pcCfg->getPoSEINumMinus2() + 2); i++)
+#endif
   {
     if (seiProcessingOrderInfo->m_posWrappingFlag[i])
     {
@@ -832,6 +844,15 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
       {
         SEIAIUsageRestrictions* sei = new SEIAIUsageRestrictions;
         initSEIAIUsageRestrictions(sei);
+        seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
+        break;
+      }
+#endif
+#if JVET_AM0121_SPO_SEI_CONSTRAINTS
+      case SEI::PayloadType::PACKED_REGIONS_INFO:
+      {
+        SEIPackedRegionsInfo* sei = new SEIPackedRegionsInfo;
+        initSEIPackedRegionsInfo(sei);
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
         break;
       }
