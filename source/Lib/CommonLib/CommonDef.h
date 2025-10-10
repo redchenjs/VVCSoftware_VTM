@@ -943,7 +943,6 @@ template<class T> inline void free(std::vector<T>& v)
   std::vector<T>().swap(v);
 }
 
-#if JVET_AM0280_DECODER_MEMORY_PRINT
 #ifdef __linux
 static inline int getProcStatusValue(const char* key)
 {
@@ -963,7 +962,6 @@ static inline int getProcStatusValue(const char* key)
   fclose(file);
   return result;
 }
-#endif
 #endif
 
 

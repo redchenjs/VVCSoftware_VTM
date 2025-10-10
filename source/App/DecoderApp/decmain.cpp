@@ -110,13 +110,11 @@ int main(int argc, char* argv[])
   }
 #endif
 
-#if JVET_AM0280_DECODER_MEMORY_PRINT
 #ifdef __linux
   int vm = getProcStatusValue("VmPeak:");
   int rm = getProcStatusValue("VmHWM:");
   printf("\nMemory Usage: VmPeak= %d KB ( %.1f GiB ),  VmHWM= %d KB ( %.1f GiB )\n", vm, (double) vm / (1024 * 1024),
          rm, (double) rm / (1024 * 1024));
-#endif
 #endif
 
   // ending time
