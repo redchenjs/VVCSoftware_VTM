@@ -2313,17 +2313,10 @@ void SEIReader::xParseSEIObjectMaskInfos(SEIObjectMaskInfos& sei, uint32_t paylo
             objMaskInfo.maskTop = val;
             sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_left[i][j]");
             objMaskInfo.maskLeft = val;
-#if JVET_AL0067_OMI_SEI_CONSTRAINTS
             sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_width_minus1[i][j]");
             objMaskInfo.maskWidth = val + 1;
             sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_height_minus1[i][j]");
             objMaskInfo.maskHeight = val + 1;
-#else
-            sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_width[i][j]");
-            objMaskInfo.maskWidth = val;
-            sei_read_code(pDecodedMessageOutputStream, 16, val, "omi_mask_height[i][j]");
-            objMaskInfo.maskHeight = val;
-#endif
           }
           if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
           {

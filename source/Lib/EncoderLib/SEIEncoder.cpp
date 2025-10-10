@@ -1216,13 +1216,8 @@ void SEIEncoder::readObjectMaskInfoSEI(std::istream& fic, SEIObjectMaskInfos* se
             std::string cfgMaskHeightStr = "SEIOmiMaskHeight[" + std::to_string(i) + "][" + std::to_string(j) + "]";
             readTokenValueAndValidate(omi.maskTop, failed, fic, cfgMaskTopStr.c_str(), uint32_t(0), uint32_t(0xffff));
             readTokenValueAndValidate(omi.maskLeft, failed, fic, cfgMaskLeftStr.c_str(), uint32_t(0), uint32_t(0xffff));
-#if JVET_AL0067_OMI_SEI_CONSTRAINTS
             readTokenValueAndValidate(omi.maskWidth, failed, fic, cfgMaskWidthStr.c_str(), uint32_t(1),uint32_t(0x10000));
             readTokenValueAndValidate(omi.maskHeight, failed, fic, cfgMaskHeightStr.c_str(), uint32_t(1),uint32_t(0x10000));
-#else
-            readTokenValueAndValidate(omi.maskWidth, failed, fic, cfgMaskWidthStr.c_str(), uint32_t(0),uint32_t(0xffff));
-            readTokenValueAndValidate(omi.maskHeight, failed, fic, cfgMaskHeightStr.c_str(), uint32_t(0),uint32_t(0xffff));
-#endif
           }
           if (seiObjMask->m_hdr.m_maskConfidenceInfoPresentFlag)
           {
