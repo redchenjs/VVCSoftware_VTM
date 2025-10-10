@@ -854,9 +854,7 @@ protected:
   std::string           m_nnPostFilterSEIActivationPrompt;
   bool                  m_nnPostFilterSEIActivationSeedUpdateFlag;
   uint32_t              m_nnPostFilterSEIActivationSeed;
-#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
   bool                  m_nnPostFilterSEIActivationSelectedInputFlag;
-#endif
   uint32_t              m_nnPostFilterSEIActivationNumInputPicShift;
 
   bool                  m_poSEIEnabled;

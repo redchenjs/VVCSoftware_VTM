@@ -1614,9 +1614,7 @@ public:
     , m_prompt("")
     , m_seedUpdateFlag(false)
     , m_seed(0)
-#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
     , m_selectedInputFlag(false)
-#endif
     , m_numInputPicShift(0)
 {}
   SEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation& sei);
@@ -1634,9 +1632,7 @@ public:
   std::string    m_prompt;
   bool           m_seedUpdateFlag;
   uint32_t       m_seed;
-#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
   bool           m_selectedInputFlag;
-#endif
   uint32_t       m_numInputPicShift;
 };
 

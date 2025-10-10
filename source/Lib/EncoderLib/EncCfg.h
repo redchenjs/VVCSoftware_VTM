@@ -815,9 +815,7 @@ protected:
   std::string             m_nnPostFilterSEIActivationPrompt;
   bool                    m_nnPostFilterSEIActivationSeedUpdateFlag;
   uint32_t                m_nnPostFilterSEIActivationSeed;
-#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
   bool                    m_nnPostFilterSEIActivationSelectedInputFlag;
-#endif
   uint32_t                m_nnPostFilterSEIActivationNumInputPicShift;
 
   // Encoder Optimization Information SEI
@@ -2372,10 +2370,8 @@ public:
   bool        getNnPostFilterSEIActivationSeedUpdateFlag() const                                                        { return m_nnPostFilterSEIActivationSeedUpdateFlag; }
   void        setNnPostFilterSEIActivationSeed(uint32_t seed)                                                           { m_nnPostFilterSEIActivationSeed = seed; }
   uint32_t    getNnPostFilterSEIActivationSeed() const                                                                  { return m_nnPostFilterSEIActivationSeed; }
-#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
   void        setNnPostFilterSEIActivationSelectedInputFlag(uint32_t selectedInputFlag)                                 { m_nnPostFilterSEIActivationSelectedInputFlag = selectedInputFlag; }
   bool        getNnPostFilterSEIActivationSelectedInputFlag() const                                                     { return m_nnPostFilterSEIActivationSelectedInputFlag; }
-#endif 
   void        setNnPostFilterSEIActivationNumInputPicShift(uint32_t numInputPicShift)                                   { m_nnPostFilterSEIActivationNumInputPicShift = numInputPicShift; }
   uint32_t    getNnPostFilterSEIActivationNumInputPicShift() const                                                      { return m_nnPostFilterSEIActivationNumInputPicShift; }
 

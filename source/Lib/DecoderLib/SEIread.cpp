@@ -3908,7 +3908,6 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
         sei_read_code(pDecodedMessageOutputStream, 16, val, "nnpfa_seed");
         sei.m_seed = val;
       }
-#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfa_selected_input_flag");
       sei.m_selectedInputFlag = val;
       if (sei.m_selectedInputFlag)
@@ -3916,10 +3915,6 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
         sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfa_num_input_pic_shift");
         sei.m_numInputPicShift = val;
       }
-#else
-      sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfa_num_input_pic_shift");
-      sei.m_numInputPicShift = val;
-#endif
     }
   }
 }
