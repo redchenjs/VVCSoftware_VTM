@@ -239,20 +239,14 @@ private:
 #if JVET_AJ0151_DSC_SEI
   void xAddToSubstream(int substreamId, OutputNALUnit &nalu);
 
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   DscSubstreamManager& m_dscSubstreamManager;
-#else
-  DscSubstreamManager m_dscSubstreamManager;
-#endif
   int                 m_totalPicsCoded = 0;
   int                 m_prevPicTemporalId = 0;
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   int                 m_dscSubstreamId = 0;
-#endif
 #endif
 
 public:
-#if JVET_AJ0151_DSC_SEI && JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AJ0151_DSC_SEI
   EncGOP(DscSubstreamManager* dscSubstreamManager);
 #else
   EncGOP();
@@ -305,9 +299,7 @@ public:
                        const BitDepths &bitDepths, int layerId);
   uint64_t  preLoopFilterPicAndCalcDist( Picture* pcPic );
   EncSlice*  getSliceEncoder()   { return m_pcSliceEncoder; }
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   SEIEncoder& getSEIEncoder()    { return m_seiEncoder; };
-#endif
   NalUnitType getNalUnitType( int pocCurr, int lastIdr, bool isField );
   void arrangeCompositeReference(Slice* pcSlice, PicList& rcListPic, int pocCurr);
   void updateCompositeReference(Slice* pcSlice, PicList& rcListPic, int pocCurr);
@@ -385,7 +377,7 @@ protected:
   void xUpdateDuInfoSEI(SEIMessages& duInfoSeiMessages, SEIPictureTiming* pt);
   void xCreateScalableNestingSEI(SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t>& subpicIDs, uint16_t maxSubpicIdInPic);
   void xWriteSEI (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId);
-#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+#if JVET_AJ0151_DSC_SEI
   void xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId, bool signSEI = false);
 #else
   void xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId);

@@ -44,9 +44,7 @@
 #include "Analyze.h"
 #include "libmd5/MD5.h"
 #include "CommonLib/SEI.h"
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 #include "CommonLib/SEIPackedRegionsInfoProcess.h"
-#endif
 #include "CommonLib/NAL.h"
 #include "NALwrite.h"
 
@@ -68,7 +66,7 @@
 // ====================================================================================================================
 // Constructor / destructor / initialization / destroy
 // ====================================================================================================================
-#if JVET_AJ0151_DSC_SEI && JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AJ0151_DSC_SEI
 EncGOP::EncGOP(DscSubstreamManager* dscSubstreamManager) : m_dscSubstreamManager(*dscSubstreamManager)
 #else
 EncGOP::EncGOP()
@@ -389,11 +387,7 @@ int EncGOP::xWriteSPS( AccessUnit &accessUnit, const SPS *sps, const int layerId
   CHECK( nalu.m_temporalId, "The value of TemporalId of SPS NAL units shall be equal to 0" );
   m_HLSWriter->codeSPS( sps );
 #if JVET_AJ0151_DSC_SEI
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   xAddToSubstream(m_dscSubstreamId, nalu);
-#else
-  xAddToSubstream(0, nalu);
-#endif
 #endif
   accessUnit.push_back(new NALUnitEBSP(nalu));
   return (int) (accessUnit.back()->m_nalUnitData.str().size()) * 8;
@@ -408,11 +402,7 @@ int EncGOP::xWritePPS( AccessUnit &accessUnit, const PPS *pps, const int layerId
   CHECK( nalu.m_temporalId < accessUnit.temporalId, "TemporalId shall be greater than or equal to the TemporalId of the layer access unit containing the NAL unit" );
   m_HLSWriter->codePPS( pps );
 #if JVET_AJ0151_DSC_SEI
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   xAddToSubstream(m_dscSubstreamId, nalu);
-#else
-  xAddToSubstream(0, nalu);
-#endif
 #endif
   accessUnit.push_back(new NALUnitEBSP(nalu));
   return (int)(accessUnit.back()->m_nalUnitData.str().size()) * 8;
@@ -436,11 +426,7 @@ int EncGOP::xWriteAPS( AccessUnit &accessUnit, APS *aps, const int layerId, cons
 
   m_HLSWriter->codeAPS(aps);
 #if JVET_AJ0151_DSC_SEI
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   xAddToSubstream(m_dscSubstreamId, nalu);
-#else
-  xAddToSubstream(0, nalu);
-#endif
 #endif
   accessUnit.push_back(new NALUnitEBSP(nalu));
   return (int)(accessUnit.back()->m_nalUnitData.str().size()) * 8;
@@ -524,11 +510,7 @@ int EncGOP::xWritePicHeader( AccessUnit &accessUnit, PicHeader *picHeader )
   nalu.m_nuhLayerId = m_pcEncLib->getLayerId();
   m_HLSWriter->codePictureHeader( picHeader, true );
 #if JVET_AJ0151_DSC_SEI
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   xAddToSubstream(m_dscSubstreamId, nalu);
-#else
-  xAddToSubstream(0, nalu);
-#endif
 #endif
   accessUnit.push_back(new NALUnitEBSP(nalu));
   return (int)(accessUnit.back()->m_nalUnitData.str().size()) * 8;
@@ -587,7 +569,7 @@ void EncGOP::xWriteSEI (NalUnitType naluType, SEIMessages& seiMessages, AccessUn
   auPos++;
 }
 
-#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+#if JVET_AJ0151_DSC_SEI
 void EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId, bool signSEI)
 #else
 void EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId)
@@ -604,7 +586,7 @@ void EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages
     SEIMessages tmpMessages;
     tmpMessages.push_back(*sei);
     OutputNALUnit nalu( naluType, m_pcEncLib->getLayerId(), temporalId );
-#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+#if JVET_AJ0151_DSC_SEI
     if (m_pcCfg->getDigitallySignedContentSEICfg().enabled && ((m_pcCfg->getDigitallySignedContentSEICfg().signAURSEI && (*sei)->payloadType() == SEI::PayloadType::AI_USAGE_RESTRICTIONS) ||
                                                                (m_pcCfg->getDigitallySignedContentSEICfg().signGFVSEI && (*sei)->payloadType() == SEI::PayloadType::GENERATIVE_FACE_VIDEO) ||
                                                                (m_pcCfg->getDigitallySignedContentSEICfg().signGFVESEI && (*sei)->payloadType() == SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT) ||
@@ -612,11 +594,7 @@ void EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages
                                                                (m_pcCfg->getDigitallySignedContentSEICfg().signNNPFASEI && (*sei)->payloadType() == SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION)))
     {
       SEIDigitallySignedContentSelection *sei = new SEIDigitallySignedContentSelection;
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
       m_seiEncoder.initSEIDigitallySignedContentSelection(sei, m_dscSubstreamId);
-#else
-      m_seiEncoder.initSEIDigitallySignedContentSelection(sei, 0);
-#endif
       tmpMessages.insert(tmpMessages.begin(), sei);
       m_seiWriter.writeSEImessages(nalu.m_bitstream, tmpMessages, *m_HRD, false, temporalId);
       if (signSEI)
@@ -791,7 +769,7 @@ void EncGOP::xWriteTrailingSEIMessages (SEIMessages& seiMessages, AccessUnit &ac
 {
   // Note: using accessUnit.end() works only as long as this function is called after slice coding and before EOS/EOB NAL units
   AccessUnit::iterator pos = accessUnit.end();
-#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+#if JVET_AJ0151_DSC_SEI
   xWriteSEISeparately(NAL_UNIT_SUFFIX_SEI, seiMessages, accessUnit, pos, temporalId, true);
 #else
   xWriteSEISeparately(NAL_UNIT_SUFFIX_SEI, seiMessages, accessUnit, pos, temporalId);
@@ -1060,29 +1038,19 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
     seiMessages.push_back(seiProcessingOrderNesting);
   }
 #if JVET_AJ0151_DSC_SEI
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   if (m_pcCfg->getDigitallySignedContentSEICfg().enabled && m_dscSubstreamId == 0)
-#else
-  if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
-#endif
   {
     SEIDigitallySignedContentInitialization *sei = new SEIDigitallySignedContentInitialization;
-#if JVET_AL0222_DSC_START_END
     m_seiEncoder.initSEIDigitallySignedContentInitialization(sei, m_first);
-#else
-    m_seiEncoder.initSEIDigitallySignedContentInitialization(sei);
-#endif
     seiMessages.push_back(sei);
   }
 #endif
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   if (m_pcCfg->getPriSEIEnabled())
   {
     SEIPackedRegionsInfo *seiPackedRegionsInfo = new SEIPackedRegionsInfo;
     m_seiEncoder.initSEIPackedRegionsInfo(seiPackedRegionsInfo);
     seiMessages.push_back(seiPackedRegionsInfo);
   }
-#endif
 }
 
 void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, Slice *slice)
@@ -1213,30 +1181,22 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
   if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
   {
     SEIDigitallySignedContentSelection *sei = new SEIDigitallySignedContentSelection;
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
     m_seiEncoder.initSEIDigitallySignedContentSelection(sei, m_dscSubstreamId);
-#else
-    m_seiEncoder.initSEIDigitallySignedContentSelection(sei, 0);
-#endif
     seiMessages.push_back(sei);
   }
 #endif
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   if (m_pcCfg->getAURSEIEnabled())
   {
     SEIAIUsageRestrictions *aurSEI = new SEIAIUsageRestrictions;
     m_seiEncoder.initSEIAIUsageRestrictions(aurSEI);
     seiMessages.push_back(aurSEI);
   }
-#endif 
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   if (m_pcCfg->getIfmSEIEnabled())
   {
     SEIImageFormatMetadata *ifmSEI = new SEIImageFormatMetadata;
     m_seiEncoder.initSEIImageFormatMetadata(ifmSEI);
     seiMessages.push_back(ifmSEI);
   }
-#endif
 }
 
 void EncGOP::xCreateGenerativeFaceVideoSEIMessages(SEIMessages& seiMessages)
@@ -2710,7 +2670,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
     }
 #endif
 
-#if JVET_AJ0151_DSC_SEI && JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AJ0151_DSC_SEI
     if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
     {
       m_dscSubstreamId = m_pcEncLib->getVPS() == nullptr ? 0 : m_pcEncLib->getVPS()->getGeneralLayerIdx(m_pcEncLib->getLayerId());
@@ -2729,17 +2689,9 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
     const bool isCurrentFrameFiltered = m_pcCfg->getGopBasedTemporalFilterEnabled() || m_pcCfg->getBIM();
     const bool isFgFiltered = m_pcCfg->getFilmGrainAnalysisEnabled() && m_pcCfg->getFilmGrainExternalDenoised().empty();
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     pcPic->createTempBuffers(pcPic->cs->pps->pcv->maxCUWidth, isCurrentFrameFiltered, m_pcEncLib->isResChangeInClvsEnabled() || m_pcEncLib->getPriSEIEnabled(), false, isFgFiltered);
-#else
-    pcPic->createTempBuffers(pcPic->cs->pps->pcv->maxCUWidth, isCurrentFrameFiltered, m_pcEncLib->isResChangeInClvsEnabled(), false, isFgFiltered);
-#endif
     pcPic->getTrueOrigBuf().copyFrom(pcPic->getOrigBuf());
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     if (m_pcEncLib->isResChangeInClvsEnabled() || m_pcEncLib->getPriSEIEnabled())
-#else
-    if (m_pcEncLib->isResChangeInClvsEnabled())
-#endif
     {
       pcPic->M_BUFS(0, PIC_TRUE_ORIGINAL_INPUT).copyFrom(pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT));
     }
@@ -2768,13 +2720,11 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         Picture::rescalePicture(scalingRatio, pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT), curScalingWindow, pcPic->M_BUFS(0, PIC_ORIGINAL), pps->getScalingWindow(), chromaFormatIdc, sps.getBitDepths(), true, true,
           sps.getHorCollocatedChromaFlag(), sps.getVerCollocatedChromaFlag());
       }
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
       else if (m_pcEncLib->getPriSEIEnabled())
       {
         m_pcEncLib->getTemporalFilter().filter(&pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT), pocCurr);
         m_pcEncLib->getPriProcess().packRegions(pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT),  m_pcEncLib->getLayerId(), pcPic->M_BUFS(0, PIC_ORIGINAL), *pcPic->cs->sps);
       }
-#endif
       else
       {
         m_pcEncLib->getTemporalFilter().filter(&pcPic->M_BUFS(0, PIC_ORIGINAL), pocCurr);
@@ -4168,13 +4118,8 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
       }
 #if JVET_AJ0151_DSC_SEI
 
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
       // Before writing the NAL units of an RAP, write trailing TWC verification SEIs of previous picture when single layer is used. Multi-layer case is handled along with last picture handling.
       const bool writeDSCverification = !m_seqFirst && pcSlice->isIRAP() && (m_pcEncLib->getVPS() == nullptr || m_pcEncLib->getVPS()->getMaxLayers() == 1);
-#else
-      // Before writing the NAL units of an RAP, write trailing TWC verification SEIs of previous picture
-      const bool writeDSCverification = !m_seqFirst && pcSlice->isIRAP();
-#endif
       if (writeDSCverification)
       {
         if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
@@ -4183,39 +4128,19 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           std::vector<uint8_t> signature;
           m_dscSubstreamManager.signSubstream(0, signature);
           SEIDigitallySignedContentVerification *sei = new SEIDigitallySignedContentVerification;
-#if JVET_AL0222_DSC_START_END
           m_seiEncoder.initSEIDigitallySignedContentVerification(sei, 0, signature, false);
-#else
-          m_seiEncoder.initSEIDigitallySignedContentVerification(sei, 0, signature);
-#endif
           twcSeiMessages.push_back(sei);
           xWriteTrailingSEIMessages(twcSeiMessages, accessUnit, m_prevPicTemporalId);
         }
       }
       m_prevPicTemporalId = pcSlice->getTLayer();
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
       if (writePS && m_pcCfg->getDigitallySignedContentSEICfg().enabled && m_dscSubstreamId == 0)
-#else
-      if (writePS && m_pcCfg->getDigitallySignedContentSEICfg().enabled)
-#endif
       {
         std::array<uint8_t,16> contentUuid = {
           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         };
         const EncCfgParam::CfgSEIDigitallySignedContent &dscCfg = m_pcCfg->getDigitallySignedContentSEICfg();
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
-#if JVET_AM0118_DSC_FOR_SEI
         m_dscSubstreamManager.initDscSubstreamManager(dscCfg.numVerificationSubstreams, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid, dscCfg.refSubstreamFlag, dscCfg.implicitAssociationModeFlag, dscCfg.signAURSEI || dscCfg.signGFVSEI || dscCfg.signGFVESEI || dscCfg.signNNPFCSEI || dscCfg.signNNPFASEI);
-#else
-        m_dscSubstreamManager.initDscSubstreamManager(dscCfg.numVerificationSubstreams, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid, dscCfg.refSubstreamFlag, dscCfg.implicitAssociationModeFlag);
-#endif
-#else
-        m_dscSubstreamManager.initDscSubstreamManager(dscCfg.numVerificationSubstreams, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid, dscCfg.refSubstreamFlag);
-#endif
-#else
-        m_dscSubstreamManager.initDscSubstreamManager(1, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid);
-#endif
         m_dscSubstreamManager.initSignature(dscCfg.privateKeyFile);
       }
 #endif
@@ -4536,7 +4461,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
             CHECK(pcSlice->getPictureHeaderInSliceHeader() == false, "PH shall be present in SH, when pic_header_in_slice_header_constraint_flag is equal to 1");
           }
 
-#if JVET_AL0056_EOI_SEI_QUANT_CONSTRAINT
           if (m_pcCfg->getEOISEIEnabled() && !m_pcCfg->getEOISEICancelFlag() && (m_pcCfg->getEOISEIType() & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) && (m_pcCfg->getEOISEIObjectBasedIdc() & EOI_OBJECT_BASED::COARSER_QUANTIZATION))
           {
             if (m_pcCfg->getEOISEIPicQuantObjectFlag())
@@ -4548,7 +4472,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
               CHECK(m_pcCfg->getEOISEIQuantThresholdDelta() < 1 || m_pcCfg->getEOISEIQuantThresholdDelta() > (pcSlice->getSPS()->getQpBDOffset(ChannelType::LUMA) + pcSlice->getSliceQp()), "When eoi_pic_quant_object_flag is equal to 0, the value of eoi_quant_threshold_delta shall be in the range of 1 to QpBdOffset + PicQuant, inclusive");
             }
           }
-#endif
         }
         pcSlice->setPicHeader( pcPic->cs->picHeader );
         pcSlice->setNalUnitLayerId( m_pcEncLib->getLayerId() );
@@ -4616,7 +4539,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           false;   // used to ensure current NALU is not written more than once to the NALU list.
         xAttachSliceDataToNalUnit(nalu, pcBitstreamRedirect);
 #if JVET_AJ0151_DSC_SEI
-#if JVET_AM0118_DSC_FOR_SEI
         // Add selected prefix SEI messages to DSC substream before slice NAL units
         if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
         {
@@ -4624,12 +4546,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           AccessUnit::iterator itNalu = dummyAu.begin();
           xWriteSEISeparately(NAL_UNIT_PREFIX_SEI, leadingSeiMessages, dummyAu, itNalu, pcSlice->getTLayer(), true);
         }
-#endif
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
         xAddToSubstream(m_dscSubstreamId, nalu);
-#else
-        xAddToSubstream(0, nalu);
-#endif
 #endif
         accessUnit.push_back(new NALUnitEBSP(nalu));
         actualTotalBits += uint32_t(accessUnit.back()->m_nalUnitData.str().size()) * 8;
@@ -4822,7 +4739,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
 
       m_totalPicsCoded++;
       const bool isLastPicture = ( m_totalPicsCoded >= m_pcCfg->getFramesToBeEncoded() );
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
       bool writeLayerWiseDSCV = false;
       if (m_pcEncLib->getVPS() != NULL && m_pcEncLib->getVPS()->getMaxLayers() > 1)
       {
@@ -4843,43 +4759,20 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         writeLayerWiseDSCV = getNalUnitType(pocNext, pocLast, false) >= NAL_UNIT_CODED_SLICE_IDR_W_RADL && getNalUnitType(pocNext, pocLast, false) <= NAL_UNIT_CODED_SLICE_CRA;
       }
       if (isLastPicture || writeLayerWiseDSCV)
-#else
-      if (isLastPicture)
-#endif
       {
         if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
         {
           SEIMessages twcSeiMessages;
           std::vector<uint8_t> signature;
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
           m_dscSubstreamManager.signSubstream(m_dscSubstreamId, signature);
-#else
-          m_dscSubstreamManager.signSubstream(0, signature);
-#endif
           SEIDigitallySignedContentVerification *sei = new SEIDigitallySignedContentVerification;
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
-#if JVET_AL0222_DSC_START_END
           m_seiEncoder.initSEIDigitallySignedContentVerification(sei, m_dscSubstreamId, signature, true);
-#else
-          m_seiEncoder.initSEIDigitallySignedContentVerification(sei, m_dscSubstreamId, signature);
-#endif
-#else
-#if JVET_AL0222_DSC_START_END
-          m_seiEncoder.initSEIDigitallySignedContentVerification(sei, 0, signature, true);
-#else
-          m_seiEncoder.initSEIDigitallySignedContentVerification(sei, 0, signature);
-#endif
-#endif
           twcSeiMessages.push_back(sei);
           xWriteTrailingSEIMessages(twcSeiMessages, accessUnit, pcSlice->getTLayer());
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
           if (isLastPicture && m_dscSubstreamId == (m_pcCfg->getDigitallySignedContentSEICfg().numVerificationSubstreams - 1))
           {
             m_dscSubstreamManager.uninitDscSubstreamManager();
           }
-#else
-          m_dscSubstreamManager.uninitDscSubstreamManager();
-#endif
         }
       }
 #endif

@@ -165,15 +165,9 @@ protected:
   void xWriteSEIDigitallySignedContentSelection(const SEIDigitallySignedContentSelection &sei);
   void xWriteSEIDigitallySignedContentVerification(const SEIDigitallySignedContentVerification &sei);
 #endif
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   void xWriteSEIAIUsageRestrictions(const SEIAIUsageRestrictions &sei);
-#endif 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei);
-#endif
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   void xWriteSEIImageFormatMetadata(const SEIImageFormatMetadata &sei);
-#endif
 protected:
   HRD m_nestingHrd;
 };

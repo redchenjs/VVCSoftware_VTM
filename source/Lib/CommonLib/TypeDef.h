@@ -56,67 +56,8 @@
 
 //########### place macros to be removed in next cycle below this line ###############
 
-#define JVET_AM0280_DECODER_MEMORY_PRINT                  1 // JVET-AM0280: Decoder memory print
-
-#define JVET_AL0058_AUR_CONTEXT                           1 // JVET-AL0058: Change aur_context to fixed length
-
-#define JVET_AL0067_OMI_SEI_CONSTRAINTS                   1 // JVET-AL0067: On the OMI SEI
-
-#define JVET_AL0324_AL0070_PRI_SEI                        1 // JVET-AL0324 & JVET-AL0070 miscellaneous changes in PRI SEI message
-
-#define JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE              1 // JVET-AL0066: Add sample tolerance value to OMI SEI
-
-#define JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS              1 // JVET_AL0301: Add constraints to matrix_coeffs
-
-#define JVET_AL0123_AL0310_EOI                            1 // JVET-AL0123 & JVET-AL0310 EOI SEI signalling changes 
-
-#define JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG                  1 // JVET-AJ0183: Add source picture flag to EOI SEI message
-
-#define JVET_AJ0105_SPO_COMPLEXITY_INFO                   1 // JVET-AJ0105: Add signalling about complexity information in SPO SEI message
-
-#define JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI        1
-
-#define JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG           1 // Signal flags for substreams to indicate substream dependency
-
-#define JVET_AK0055_SPO_SEI_CONSTRAINT                    1 // Add FPA, RWP, ERP, GCMP constraints
-
-#define JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION          1 // dsci_vss_implicit_association_mode_flag
-
-#define JVET_AM0118_DSC_FOR_SEI                           1 // Digital signing of selected SEI messages
-
-#define JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION            1 // add fg_pic_width_in_luma_samples and fg_pic_height_in_luma_samples to the extension of FGC SEI
-
-#define JVET_AK0326_NNPF_SEED                             1 // JVET-AK0326: seed value for NNPFC and NNPFA SEI messages
-
-#define JVET_AI0070_BYTE_ALIGNMENT                        1 // JVET-AI0070: byte alignment in NNPFC SEI message
-
-#define JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI             1 // Implementation of AI-usage restrictions SEI message
-
-#define JVET_AK0281_AUR_SEI_IN_SPO_SEI                    1 // AUR SEI message in SPO SEI message
-
-#define JVET_AL0056_EOI_SEI_QUANT_CONSTRAINT              1 // JVET-AL0056: On the encoder optimization information SEI message
-
-#define JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI             1 //< Use Image Format Metadata (IFM) SEI message
-
-#define JVET_AK0206_DSC_SEI_ID                            1 // JVET-AK0206 Add ID to DSC SEI messages
-
-#define JVET_AL0222_DSC_START_END                         1 // add start and end flags to DSC SEI messages
-
-#define JVET_AM0117_AUR_SEI_EXCLUSION_FLAG                1 // JVET-AM0117: On the AI usage restrictions SEI message
-
-#define JVET_AM0334_GFV_CHROMA_KEY                        1 // update to GFV SEI chroma key syntax
-
-#define JVET_AM0164_DSC_SYNTAX                            1 // Increase lenght of dscv_signature_length_in_octets_minus1 and move dsci_key_source_uri syntax element
-
-#define JVET_AM0121_SPO_SEI_CONSTRAINTS                   1 // JVET-AM0121: On the SEI processing order SEI message
 
 //########### place macros to be be kept below this line ###############
-
-#define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1
-#define JVET_AJ0114_NNPFA_NUM_PIC_SHIFT   1
-#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
-#define JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG   1
-#endif
 
 #ifndef JVET_AJ0151_DSC_SEI
 #define JVET_AJ0151_DSC_SEI   1                      // Digitally signed content signing and verification (requires OpenSSL v3)
@@ -917,7 +858,6 @@ enum POST_FILTER_MODE
   URI = 1
 };
 
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
 enum AUR_CONTEXT
 {
   AUR_UNDEFINED = 0,
@@ -933,7 +873,6 @@ enum AUR_RESTICTION
   AUR_GERNERATIVE,
   AUR_INFERENCE,
 };
-#endif
 
 struct Fraction
 {

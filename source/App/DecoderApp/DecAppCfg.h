@@ -84,9 +84,7 @@ protected:
 #if JVET_S0257_DUMP_360SEI_MESSAGE
   std::string   m_outputDecoded360SEIMessagesFilename;   ///< filename to output decoded 360 SEI messages to.
 #endif
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   std::string   m_packedRegionsInfoSEIFileName;       ///< packed regions file name
-#endif
 
   std::string   m_shutterIntervalPostFileName;        ///< output Post Filtering file name
 

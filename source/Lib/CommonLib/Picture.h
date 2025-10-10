@@ -84,11 +84,9 @@ struct Picture : public UnitArea
   PelStorage*               m_grainBuf;
   void              createGrainSynthesizer(bool firstPictureInSequence, SEIFilmGrainSynthesizer* grainCharacteristics, PelStorage* grainBuf, int width, int height, ChromaFormat fmt, int bitDepth);
   PelUnitBuf        getDisplayBufFG       (bool wrap = false);
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
   bool              filmGrainAfterUpscale();
   PelUnitBuf        getDisplayBufFGUpscaled(const SPS& sps, const PPS& pps, int outputChoice, ChromaFormat format,
                                             int upscaleFilterForDisplay, int maxWidth, int maxHeight, bool wrap = false );
-#endif
 
   SEIColourTransformApply* m_colourTranfParams;
   PelStorage*              m_invColourTransfBuf;

@@ -555,20 +555,12 @@ protected:
   bool     m_eoiSEIPicQuantObjectFlag;
   bool m_eoiSEITemporalResamplingTypeFlag;
   uint32_t m_eoiSEINumIntPics;
-#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
   bool     m_eoiSEISrcPicFlag;;
-#endif
   bool     m_eoiSEIOrigPicDimensionsFlag;
-#if JVET_AL0123_AL0310_EOI
   uint32_t m_eoiSEIOrigPicWidthMinus1;
   uint32_t m_eoiSEIOrigPicHeightMinus1;
   uint32_t m_eoiSEISpatialHorResamplingTypeIdc;
   uint32_t m_eoiSEISpatialVerResamplingTypeIdc;
-#else
-  uint32_t m_eoiSEIOrigPicWidth;
-  uint32_t m_eoiSEIOrigPicHeight;
-  bool m_eoiSEISpatialResamplingTypeFlag;
-#endif
   uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
 
@@ -850,40 +842,26 @@ protected:
   std::string           m_nnPostFilterSEICharacteristicsPrompt[MAX_NUM_NN_POST_FILTERS];
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AK0326_NNPF_SEED
   bool                  m_nnPostFilterSEICharacteristicsInbandSeedFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsSeed[MAX_NUM_NN_POST_FILTERS];
-#endif
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
   bool                    m_nnPostFilterSEIActivationNoPrevCLVSFlag;
   bool                    m_nnPostFilterSEIActivationNoFollCLVSFlag;
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
   bool                  m_nnPostFilterSEIActivationPromptUpdateFlag;
   std::string           m_nnPostFilterSEIActivationPrompt;
-#endif
-#if JVET_AK0326_NNPF_SEED
   bool                  m_nnPostFilterSEIActivationSeedUpdateFlag;
   uint32_t              m_nnPostFilterSEIActivationSeed;
-#endif
-#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
-#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
   bool                  m_nnPostFilterSEIActivationSelectedInputFlag;
-#endif
   uint32_t              m_nnPostFilterSEIActivationNumInputPicShift;
-#endif 
 
   bool                  m_poSEIEnabled;
   uint32_t              m_poSEIId;
   uint32_t              m_poSEIForHumanViewingIdc;
   uint32_t              m_poSEIForMachineAnalysisIdc;
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
   uint32_t              m_poSEINumMinus1;
-#else
-  uint32_t              m_poSEINumMinus2;
-#endif
   bool                  m_poSEIBreadthFirstFlag;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
@@ -893,14 +871,12 @@ protected:
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   std::vector<uint16_t>  m_poSEINumOfPrefixBits;
   std::vector<std::vector<uint8_t>> m_poSEIPrefixByte;
-#if JVET_AJ0105_SPO_COMPLEXITY_INFO
   bool                  m_poSEIComplexityInfoPresentFlag;
   uint32_t              m_poSEIParameterTypeIdc;
   uint32_t              m_poSEILog2ParameterBitLengthMinus3;
   uint32_t              m_poSEINumParametersIdc;
   uint32_t              m_poSEINumKmacOperationIdc;
   uint32_t              m_poSEITotalKilobyteSize;
-#endif
 
   uint32_t                   m_SEITextDescriptionID;
   bool                       m_SEITextCancelFlag;
@@ -909,7 +885,6 @@ protected:
   uint32_t                   m_SEITextNumStringsMinus1;
   std::vector<std::string>   m_SEITextDescriptionStringLang;
   std::vector<std::string>   m_SEITextDescriptionString;
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   bool                  m_ifmSeiEnabled;
   bool                  m_ifmCancelFlag;
   bool                  m_ifmPersistenceFlag;
@@ -918,7 +893,6 @@ protected:
   int                   m_ifmUriPresentFlag[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];    
   std::vector<uint8_t>  m_ifmDataPayloadByte[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];
   std::string           m_ifmDataUri[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];
-#endif
 
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
@@ -1199,21 +1173,13 @@ protected:
   std::string                          m_generativeFaceVideoSEINNTagURI;
   std::string                          m_generativeFaceVideoSEINNURI;
   bool                                 m_generativeFaceVideoSEIChromaKeyInfoPresentFlag;
-#if JVET_AM0334_GFV_CHROMA_KEY
   uint32_t                             m_generativeFaceVideoSEIChromaKeyPurposeIdc;
-#endif
   std::vector<bool>                    m_generativeFaceVideoSEIChromaKeyValuePresentFlag;
   std::vector<uint32_t>                m_generativeFaceVideoSEIChromaKeyValue;
-#if JVET_AM0334_GFV_CHROMA_KEY
   bool                                 m_generativeFaceVideoSEIChromaKeyThrPresentFlag;
   uint32_t                             m_generativeFaceVideoSEIChromaKeyThrLower;
   uint32_t                             m_generativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1;
   std::vector<bool>                    m_generativeFaceVideoSEIFusionPicFlag;
-#else
-  std::vector<bool>                    m_generativeFaceVideoSEIChromaKeyThrPresentFlag;
-  std::vector<uint32_t>                m_generativeFaceVideoSEIChromaKeyThrValue;
-  std::vector<bool>                    m_generativeFaceVideoSEIDrivePicFusionFlag;
-#endif
   std::vector<uint32_t>                m_generativeFaceVideoSEIId;
   std::vector<uint32_t>                m_generativeFaceVideoSEICnt;
   std::vector<bool>                    m_generativeFaceVideoSEILowConfidenceFaceParameterFlag;
@@ -1289,7 +1255,6 @@ protected:
   bool        m_calculateHdrMetrics;
 #endif
 
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   bool        m_aurSEIEnabled;
   bool        m_aurSEICancelFlag;
   bool        m_aurSEIPersistenceFlag;
@@ -1297,19 +1262,13 @@ protected:
   std::vector<uint32_t>  m_aurSEIRestrictions;
   std::vector<bool>      m_aurSEIContextPresentFlag;
   std::vector<uint32_t>  m_aurSEIContext;
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   std::vector<bool>      m_aurSEIExclusionFlag;
-#endif
-#endif
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   bool     m_priSEIEnabled;
   bool     m_priSEICancelFlag;
   bool     m_priSEIPersistenceFlag;
   uint32_t m_priSEINumRegionsMinus1;
-#if JVET_AL0324_AL0070_PRI_SEI
   bool     m_priSEIMultilayerFlag;
-#endif
   bool     m_priSEIUseMaxDimensionsFlag;
   uint32_t m_priSEILog2UnitSize;
   uint32_t m_priSEIRegionSizeLenMinus1;
@@ -1324,26 +1283,15 @@ protected:
   std::vector<uint32_t> m_priSEIResamplingHeightNumMinus1;
   std::vector<uint32_t> m_priSEIResamplingHeightDenomMinus1;
   std::vector<uint32_t> m_priSEIRegionId;
-#if JVET_AL0324_AL0070_PRI_SEI
   std::vector<uint32_t> m_priSEIRegionLayerId;
   std::vector<bool>     m_priSEIRegionIsALayerFlag;
-#endif
   std::vector<uint32_t> m_priSEIRegionTopLeftInUnitsX;
   std::vector<uint32_t> m_priSEIRegionTopLeftInUnitsY;
   std::vector<uint32_t> m_priSEIRegionWidthInUnitsMinus1;
   std::vector<uint32_t> m_priSEIRegionHeightInUnitsMinus1;
   std::vector<uint32_t> m_priSEIResamplingRatioIdx;
-#if JVET_AL0324_AL0070_PRI_SEI
   std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsX;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsY;
-#else
-  std::vector<uint32_t> m_priSEITargetRegionTopLeftX;
-  std::vector<uint32_t> m_priSEITargetRegionTopLeftY;
-  bool     m_priSEIMultilayerFlag;
-  std::vector<uint32_t> m_priSEIRegionLayerId;
-  std::vector<bool>     m_priSEIRegionIsALayerFlag;
-#endif
-#endif
 
   // internal member functions
   bool  xCheckParameter ();                                   ///< check validity of configuration values

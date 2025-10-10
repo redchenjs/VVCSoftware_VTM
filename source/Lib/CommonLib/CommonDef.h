@@ -581,9 +581,7 @@ static constexpr double SII_PF_W2 =                                       0.6; /
 static constexpr double SII_PF_W1 =                                       0.4; // weight for previous picture , it must be equal to 1.0 - SII_PF_W2
 static const uint32_t MAX_GFV_ID =                                 0xfffffffe; // Maximum supported GFV_id
 static const uint32_t MAX_GFVE_ID =                                 0xfffffffe; // Maximum supported GFVE_id
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
 static const uint32_t MAX_NUM_IMAGE_FORMAT_METADATA_SEI =                  16; // Max num of image format metadata SEI
-#endif
 // ====================================================================================================================
 // Macro functions
 // ====================================================================================================================
@@ -943,7 +941,6 @@ template<class T> inline void free(std::vector<T>& v)
   std::vector<T>().swap(v);
 }
 
-#if JVET_AM0280_DECODER_MEMORY_PRINT
 #ifdef __linux
 static inline int getProcStatusValue(const char* key)
 {
@@ -963,7 +960,6 @@ static inline int getProcStatusValue(const char* key)
   fclose(file);
   return result;
 }
-#endif
 #endif
 
 

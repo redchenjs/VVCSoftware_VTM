@@ -322,12 +322,8 @@ bool Slice::getRapPicFlag() const
 void Slice::sortPicList(PicList &picList)
 {
   picList.sort([](Picture *const &a, Picture *const &b) {
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     // process higher layers first to be able to resolve dependent layers when flushing
     return a->getPOC() < b->getPOC() || (a->getPOC() == b->getPOC() && a->layerId > b->layerId);
-#else
-    return a->getPOC() < b->getPOC() || (a->getPOC() == b->getPOC() && a->layerId < b->layerId);
-#endif
   });
 }
 

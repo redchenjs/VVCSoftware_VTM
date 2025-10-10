@@ -60,9 +60,7 @@
 #include "EncTemporalFilter.h"
 
 #include "CommonLib/SEINeuralNetworkPostFiltering.h"
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 #include "CommonLib/SEIPackedRegionsInfoProcess.h"
-#endif
 
 class EncLibCommon;
 
@@ -145,9 +143,7 @@ private:
   EncTemporalFilter         m_temporalFilterForFG;
   SEINeuralNetworkPostFiltering m_nnPostFiltering;
   EncType                   m_encType;
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   SEIPackedRegionsInfoProcess m_priProcess;
-#endif
 public:
   SPS*                      getSPS( int spsId ) { return m_spsMap.getPS( spsId ); };
   APS**                     getApss() { return m_apss; }
@@ -215,9 +211,7 @@ public:
   void setGMFAFile(std::string b){m_GMFAFile = b;}
 #endif
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   SEIPackedRegionsInfoProcess& getPriProcess() { return m_priProcess; }
-#endif
 
   void selectReferencePictureList(Slice *slice, int pocCurr, int gopId, int ltPoc);
 

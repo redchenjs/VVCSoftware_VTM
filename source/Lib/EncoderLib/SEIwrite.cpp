@@ -224,21 +224,15 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIDigitallySignedContentVerification(*static_cast<const SEIDigitallySignedContentVerification *>(&sei));
     break;
 #endif
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   case SEI::PayloadType::AI_USAGE_RESTRICTIONS:
     xWriteSEIAIUsageRestrictions(*static_cast<const SEIAIUsageRestrictions *>(&sei));
     break;
-#endif 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   case SEI::PayloadType::PACKED_REGIONS_INFO:
     xWriteSEIPackedRegionsInfo(*static_cast<const SEIPackedRegionsInfo*>(&sei));
     break;
-#endif
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   case SEI::PayloadType::IMAGE_FORMAT_METADATA:
     xWriteSEIImageFormatMetadata(*static_cast<const SEIImageFormatMetadata*>(&sei));
     break;
-#endif
   default:
     THROW("Trying to write unhandled SEI message");
     break;
@@ -942,9 +936,7 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
     xWriteUvlc((uint32_t) sei.m_hdr.m_numAuxPicLayerMinus1, "omi_num_aux_pic_layer_minus1");
     xWriteUvlc((uint32_t) sei.m_hdr.m_maskIdLengthMinus1, "omi_mask_id_length_minus1");
     xWriteUvlc((uint32_t) sei.m_hdr.m_maskSampleValueLengthMinus8, "omi_mask_sample_value_length_minus8");
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
     xWriteFlag(sei.m_hdr.m_tolerancePresentFlag, "omi_tolerance_present_flag");
-#endif
     xWriteFlag(sei.m_hdr.m_maskConfidenceInfoPresentFlag, "omi_mask_confidence_info_present_flag");
     if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
     {
@@ -984,12 +976,10 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
       if (sei.m_maskPicUpdateFlag[i])
       {
         xWriteUvlc((uint32_t) sei.m_numMaskInPic[i], "omi_num_mask_in_pic[i]");
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
         if (sei.m_hdr.m_tolerancePresentFlag)
         {
           xWriteCode(sei.m_auxSampleTolerance[i], sei.m_hdr.m_maskSampleValueLengthMinus8 + 8, "omi_aux_sample_tolerance[i]");
         }
-#endif
         for (uint32_t j = 0; j < sei.m_numMaskInPic[i]; j++)
         {
           xWriteCode(sei.m_objectMaskInfos[maskCnt].maskId, sei.m_hdr.m_maskIdLengthMinus1 + 1, "omi_mask_id[i][j]");
@@ -1000,13 +990,8 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
           {
             xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskTop, 16, "omi_mask_top[i][j]");
             xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskLeft, 16, "omi_mask_left[i][j]");
-#if JVET_AL0067_OMI_SEI_CONSTRAINTS
             xWriteCode((uint32_t) (sei.m_objectMaskInfos[maskCnt].maskWidth - 1), 16, "omi_mask_width_minus1[i][j]");
             xWriteCode((uint32_t) (sei.m_objectMaskInfos[maskCnt].maskHeight - 1), 16, "omi_mask_height_minus1[i][j]");
-#else
-            xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskWidth, 16, "omi_mask_width[i][j]");
-            xWriteCode((uint32_t) sei.m_objectMaskInfos[maskCnt].maskHeight, 16, "omi_mask_height[i][j]");
-#endif
           }
           if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
           {
@@ -1563,12 +1548,10 @@ void SEIWriter::xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacterist
       xWriteFlag(sei.m_filmGrainFullRangeFlag,                "fg_full_range_flag");
       xWriteCode(sei.m_filmGrainColourPrimaries, 8,           "fg_colour_primaries");
       xWriteCode(sei.m_filmGrainTransferCharacteristics, 8,   "fg_transfer_characteristics");
-#if JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS
       CHECK((sei.m_filmGrainMatrixCoeffs == 0 || sei.m_filmGrainMatrixCoeffs == 16 || sei.m_filmGrainMatrixCoeffs == 17) && !(sei.m_filmGrainBitDepthLumaMinus8 == sei.m_filmGrainBitDepthChromaMinus8),
         "fg_matrix_coeffs shall not be equal to 0, 16, or 17 unless fg_bit_depth_luma_minus8 is equal to fg_bit_depth_chroma_minus8")
       CHECK(sei.m_filmGrainMatrixCoeffs == 8 && !(sei.m_filmGrainBitDepthLumaMinus8 == sei.m_filmGrainBitDepthChromaMinus8 || sei.m_filmGrainBitDepthLumaMinus8 + 1 == sei.m_filmGrainBitDepthChromaMinus8),
         "fg_matrix_coeffs shall not be equal to 8 unless fg_bit_depth_chroma_minus8 is equal to fg_bit_depth_luma_minus8 or fg_bit_depth_luma_minus8 + 1")
-#endif
       xWriteCode(sei.m_filmGrainMatrixCoeffs, 8,              "fg_matrix_coeffs");
     }
     xWriteCode(sei.m_blendingModeId, 2,                       "fg_blending_mode_id");
@@ -1605,7 +1588,6 @@ void SEIWriter::xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacterist
     } // for c
     xWriteFlag(sei.m_filmGrainCharacteristicsPersistenceFlag, "fg_characteristics_persistence_flag");
   } // cancel flag
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
   if (sei.m_spatialResolutionPresentFlag)
   {
     // SEI payload extension bits
@@ -1618,7 +1600,6 @@ void SEIWriter::xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacterist
       xWriteFlag(0,                                           "payload_bit_equal_to_zero");
     }
   }
-#endif
 }
 
 void SEIWriter::xWriteSEIContentLightLevelInfo(const SEIContentLightLevelInfo& sei)
@@ -1750,17 +1731,9 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
   xWriteCode(sei.m_posForHumanViewingIdc, 2, "po_for_human_viewing_idc");
   xWriteCode(sei.m_posForMachineAnalysisIdc, 2, "po_for_machine_analysis_idc");
   xWriteCode(0, 4, "po_reserved_zero_4bits");
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
   xWriteCode(sei.m_posNumMinus1, 7, "po_num_sei_message_minus1");
-#else
-  xWriteCode(sei.m_posNumMinus2, 7, "po_num_sei_message_minus2");
-#endif
   xWriteFlag(sei.m_posBreadthFirstFlag, "po_breadth_first_flag");
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
   for (uint32_t i = 0; i < ( sei.m_posNumMinus1 + 1 ); i++)
-#else
-  for (uint32_t i = 0; i < ( sei.m_posNumMinus2 + 2 ); i++)
-#endif
   {
     xWriteFlag(sei.m_posWrappingFlag[i], "po_sei_wrapping_flag[i]");
     xWriteFlag(sei.m_posImportanceFlag[i], "po_sei_importance_flag[i]");
@@ -1772,11 +1745,7 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
     xWriteCode(sei.m_posProcessingOrder[i], 8, "po_sei_processing_order[i]");
   }
 
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
   for (uint32_t i = 0; i < ( sei.m_posNumMinus1 + 1 ); i++)
-#else
-  for (uint32_t i = 0; i < ( sei.m_posNumMinus2 + 2 ); i++)
-#endif
   {
     if (sei.m_posPrefixFlag[i])
     {
@@ -1795,7 +1764,6 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
       }
     }
   }
-#if JVET_AJ0105_SPO_COMPLEXITY_INFO
   xWriteFlag(sei.m_posComplexityInfoPresentFlag, "po_complexity_info_present_flag");
   if (sei.m_posComplexityInfoPresentFlag)
   {
@@ -1808,7 +1776,6 @@ void SEIWriter::xWriteSEIProcessingOrder(OutputBitstream& bs, const SEIProcessin
     xWriteUvlc(sei.m_posNumKmacOperationIdc, "po_num_kmac_operation_idc");
     xWriteUvlc(sei.m_posTotalKilobyteSize, "po_total_kilobyte_size");
   }
-#endif
 }
 
 void SEIWriter::xWriteSEIProcessingOrderNesting(OutputBitstream& bs, const SEIProcessingOrderNesting& sei)
@@ -2129,7 +2096,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteString(sei.m_prompt, "nnpfc_prompt");
       }
     }
-#if JVET_AK0326_NNPF_SEED
     if ((sei.m_auxInpIdc & 4) > 0)
     {
       xWriteFlag(sei.m_inbandSeedFlag, "nnpfc_inband_seed_flag");
@@ -2138,7 +2104,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteCode(sei.m_seed, 16, "nnpfc_seed");
       }
     }
-#endif
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     if (sei.m_inpFormatIdc == 1)
     {
@@ -2250,12 +2215,10 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteFlag(sei.m_applicationPurposeTagUriPresentFlag, "nnpfc_application_purpose_tag_uri_present_flag");
         if ( sei.m_applicationPurposeTagUriPresentFlag )
         {
-#if JVET_AI0070_BYTE_ALIGNMENT
           while (!isByteAligned())
           {
             xWriteFlag(0, "nnpfc_metadata_alignment_zero_bit");
           }
-#endif
           xWriteString(sei.m_applicationPurposeTagUri, "nnpfc_application_purpose_tag_uri"); 
         }
       }
@@ -2305,7 +2268,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
     {
       xWriteFlag(sei.m_outputFlag[i], "nnpfa_output_flag");
     }
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE  
     xWriteFlag(sei.m_promptUpdateFlag, "nnpfa_prompt_update_flag");
     if (sei.m_promptUpdateFlag)
     {
@@ -2315,25 +2277,16 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
       }
       xWriteString(sei.m_prompt, "nnpfa_prompt");
     }
-#endif
-#if JVET_AK0326_NNPF_SEED
     xWriteFlag(sei.m_seedUpdateFlag, "nnpfa_seed_update_flag");
     if (sei.m_seedUpdateFlag)
     {
       xWriteCode(sei.m_seed, 16, "nnpfa_seed");
     }
-#endif
-#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
-#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
     xWriteFlag(sei.m_selectedInputFlag, "nnpfa_selected_input_flag");
     if (sei.m_selectedInputFlag)
     {
       xWriteUvlc((uint32_t)sei.m_numInputPicShift, "nnpfa_num_input_pic_shift");
     }
-#else
-    xWriteUvlc((uint32_t)sei.m_numInputPicShift, "nnpfa_num_input_pic_shift");
-#endif
-#endif 
 
   }
 }
@@ -2407,35 +2360,24 @@ void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInf
     {
       xWriteFlag(sei.m_temporalResamplingTypeFlag, "eoi_temporal_resampling_type_flag");
       xWriteUvlc(sei.m_numIntPics, "eoi_num_int_pics");
-#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
       if (sei.m_temporalResamplingTypeFlag && sei.m_numIntPics > 0)
       {
         xWriteFlag(sei.m_srcPicFlag, "eoi_src_pic_flag");
       }
-#endif
     }
     if ((sei.m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)
     {
       xWriteFlag(sei.m_origPicDimensionsFlag, "eoi_orig_pic_dimensions_flag");
       if (sei.m_origPicDimensionsFlag)
       {
-#if JVET_AL0123_AL0310_EOI
         xWriteCode(sei.m_origPicWidthMinus1, 16, "eoi_orig_pic_width_minus1");
         xWriteCode(sei.m_origPicHeightMinus1, 16, "eoi_orig_pic_height_minus1");
-#else
-        xWriteCode(sei.m_origPicWidth, 16, "eoi_orig_pic_width");
-        xWriteCode(sei.m_origPicHeight, 16, "eoi_orig_pic_height");
-#endif
       }
       else
       {
-#if JVET_AL0123_AL0310_EOI
         CHECK(sei.m_spatialHorResamplingTypeIdc == 0 && sei.m_spatialVerResamplingTypeIdc == 0, "When eoi_spatial_hor_resampling_type_idc and eoi_spatial_ver_resampling_type_idc are present, their values shall not be both equal to 0.");
         xWriteCode(sei.m_spatialHorResamplingTypeIdc, 2, "eoi_spatial_hor_resampling_type_idc");
         xWriteCode(sei.m_spatialVerResamplingTypeIdc, 2, "eoi_spatial_ver_resampling_type_idc");
-#else
-        xWriteFlag(sei.m_spatialResamplingTypeFlag, "eoi_spatial_resampling_type_flag");
-#endif
       }
     }
     if ((sei.m_type & EOI_OptimizationType::PRIVACY_PROTECTION_OPTIMIZATION) != 0)
@@ -2539,9 +2481,7 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
     xWriteFlag(sei.m_chromaKeyInfoPresentFlag, "gfv_chroma_key_info_presentFlag");
     if (sei.m_chromaKeyInfoPresentFlag)
     {
-#if JVET_AM0334_GFV_CHROMA_KEY
       xWriteUvlc(sei.m_chromaKeyPurposeIdc, "gfv_chroma_key_purpose_idc");
-#endif
       for (uint32_t chromac = 0; chromac < 3; chromac++)
       {
         xWriteFlag(sei.m_chromaKeyValuePresentFlag[chromac], "gfv_chroma_key_value_present_flag[c]");
@@ -2550,36 +2490,18 @@ void SEIWriter::xWriteSEIGenerativeFaceVideo(const SEIGenerativeFaceVideo &sei)
           xWriteCode(sei.m_chromaKeyValue[chromac], 8, "gfv_chroma_key_value[chromac]");
         }
       }
-#if JVET_AM0334_GFV_CHROMA_KEY
       xWriteFlag(sei.m_chromaKeyThrPresentFlag, "gfv_chroma_key_thr_present_flag");
       if (sei.m_chromaKeyThrPresentFlag)
       {
         xWriteCode(sei.m_chromaKeyThrLower, 8, "gfv_chroma_key_thr_lower");
         xWriteUvlc(sei.m_chromaKeyThrUpperDeltaMinus1, "gfv_chroma_key_thr_upper_delta_minus1");
       }
-#else
-      for (uint32_t chromai = 0; chromai < 2; chromai++)
-      {
-        xWriteFlag(sei.m_chromaKeyThrPresentFlag[chromai], "gfv_chroma_key_thr_present_flag[i]");
-        if (sei.m_chromaKeyThrPresentFlag[chromai])
-        {
-          xWriteUvlc(sei.m_chromaKeyThrValue[chromai], "gfv_chroma_key_thr_value[i]");
-        }
-      }
-#endif
     }
   }
-#if JVET_AM0334_GFV_CHROMA_KEY
   else if (sei.m_cnt == 0)
   {
     xWriteFlag(sei.m_fusionPicFlag, "gfv_fusion_pic_flag");
   }
-#else
-  else
-  {
-    xWriteFlag(sei.m_drivePicFusionFlag, "gfv_drive_picture_fusion_flag");
-  }
-#endif
   xWriteFlag(sei.m_lowConfidenceFaceParameterFlag, "gfv_low_confidence_face_parameter_flag");
   xWriteFlag(sei.m_coordinatePresentFlag, "gfv_coordinate_present_flag");
   if (sei.m_coordinatePresentFlag)
@@ -3129,13 +3051,8 @@ double SEIWriter::xWriteSEIPupilCoordinate(double coordinate, double refCoordina
 #if JVET_AJ0151_DSC_SEI
 void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitallySignedContentInitialization &sei)
 {
-#if JVET_AK0206_DSC_SEI_ID
   xWriteCode(sei.dsciId, 8, "dsci_id");
-#endif
   xWriteCode(sei.dsciHashMethodType, 8, "dsci_hash_method_type");
-#if !JVET_AM0164_DSC_SYNTAX
-  xWriteString(sei.dsciKeySourceUri, "dsci_key_source_uri");
-#endif
   xWriteUvlc(sei.dsciKeyRetrievalModeIdc, "dsci_key_retrieval_mode_idc");
   if (sei.dsciKeyRetrievalModeIdc == 1)
   {
@@ -3155,7 +3072,6 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
   }
   CHECK (sei.dsciNumVerificationSubstreams < 1, "Number of DSC verification substreams has to be greater than zero");
   xWriteUvlc(sei.dsciNumVerificationSubstreams - 1, "dsci_num_verification_substreams_minus1");
-#if  JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   for (int i = 1; i < sei.dsciNumVerificationSubstreams; i++)
   {
     for (int j = 0; j < i; j++)
@@ -3163,64 +3079,37 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
       xWriteFlag(sei.dsciRefSubstreamFlag[i][j], "dsci_ref_substream_flag");
     }
   }
-#endif
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   xWriteFlag(sei.dsciVSSImplicitAssociationModeFlag, "dsci_vss_implicit_association_mode_flag");
-#endif
-#if JVET_AL0222_DSC_START_END
   xWriteFlag(sei.dsciSignedContentStartFlag, "dsci_signed_content_start_flag");
-#endif
-#if JVET_AM0118_DSC_FOR_SEI
   xWriteFlag(sei.dsciSEISigningFlag, "dsci_sei_signing_flag");
-#endif
-#if JVET_AM0164_DSC_SYNTAX
   while (!isByteAligned())
   {
     xWriteFlag(0, "dsci_alignment_zero_bit");
   }
   xWriteString(sei.dsciKeySourceUri, "dsci_key_source_uri");
-#endif
 }
 
 void SEIWriter::xWriteSEIDigitallySignedContentSelection(const SEIDigitallySignedContentSelection &sei)
 {
-#if JVET_AK0206_DSC_SEI_ID
   xWriteCode(sei.dscsId, 8, "dscs_id");
-#endif
-#if JVET_AM0164_DSC_SYNTAX
   xWriteCode(sei.dscsVerificationSubstreamId, 8, "dscs_verification_substream_id");
-#else
-  xWriteUvlc(sei.dscsVerificationSubstreamId, "dscs_verification_substream_id");
-#endif
 }
 
 void SEIWriter::xWriteSEIDigitallySignedContentVerification(const SEIDigitallySignedContentVerification &sei)
 {
-#if JVET_AK0206_DSC_SEI_ID
   xWriteCode(sei.dscvId, 8, "dscv_id");
-#endif
-#if JVET_AM0164_DSC_SYNTAX
   xWriteCode(sei.dscvVerificationSubstreamId, 8, "dscv_verification_substream_id");
   CHECK (sei.dscvSignatureLengthInOctets < 1, "Length of signature has to be greater than zero");
   xWriteCode(sei.dscvSignatureLengthInOctets - 1, 24, "dscv_signature_length_in_octets_minus1");
   CHECK (sei.dscvSignatureLengthInOctets != sei.dscvSignature.size(), "Signature length incosistent");
-#else
-  xWriteUvlc(sei.dscvVerificationSubstreamId, "dscv_verification_substream_id");
-  CHECK (sei.dscvSignatureLengthInOctets < 1, "Length of signature has to be greater than zero");
-  xWriteUvlc(sei.dscvSignatureLengthInOctets - 1, "dscv_signature_length_in_octets_minus1");
-  CHECK (sei.dscvSignatureLengthInOctets != sei.dscvSignature.size(), "Signature length incosistent");
-#endif
   for (int i=0; i< sei.dscvSignature.size(); i++)
   {
     xWriteCode(sei.dscvSignature[i], 8, "dscv_signature");
   }
-#if JVET_AL0222_DSC_START_END
   xWriteFlag(sei.dscvSignedContentEndFlag, "dsci_signed_content_end_flag");
-#endif
 }
 #endif
 
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
 void SEIWriter::xWriteSEIAIUsageRestrictions(const SEIAIUsageRestrictions &sei)
 {
   xWriteFlag(sei.m_cancelFlag, "aur_cancel_flag");
@@ -3234,21 +3123,13 @@ void SEIWriter::xWriteSEIAIUsageRestrictions(const SEIAIUsageRestrictions &sei)
       xWriteFlag(sei.m_contextPresentFlag[i], "aur_context_present_flag");
       if (sei.m_contextPresentFlag[i])
       {
-#if JVET_AL0058_AUR_CONTEXT
         xWriteCode(sei.m_context[i], 16, "aur_context");
-#else
-        xWriteUvlc(sei.m_context[i], "aur_context");
-#endif
       }
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
       xWriteFlag(sei.m_exclusionFlag[i], "aur_sei_exclusion_flag");
-#endif
     }
   }
 }
-#endif
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 void SEIWriter::xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei)
 {
   xWriteFlag(sei.m_cancelFlag, "pri_cancel_flag");
@@ -3303,20 +3184,13 @@ void SEIWriter::xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei)
       }
       if (sei.m_targetPicParamsPresentFlag)
       {
-#if JVET_AL0324_AL0070_PRI_SEI
         xWriteCode(sei.m_targetRegionTopLeftInUnitsX[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_in_units_x[i]");
         xWriteCode(sei.m_targetRegionTopLeftInUnitsY[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_in_units_y[i]");
-#else
-        xWriteCode(sei.m_targetRegionTopLeftX[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_x[i]");
-        xWriteCode(sei.m_targetRegionTopLeftY[i], sei.m_regionSizeLenMinus1 + 1, "pri_target_region_top_left_y[i]");
-#endif
       }
     }
   }
 }
-#endif
 
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
 void SEIWriter::xWriteSEIImageFormatMetadata(const SEIImageFormatMetadata &sei)
 {
   xWriteFlag(sei.m_cancelFlag, "ifm_cancel_flag");
@@ -3350,6 +3224,5 @@ void SEIWriter::xWriteSEIImageFormatMetadata(const SEIImageFormatMetadata &sei)
     }
   }
 }
-#endif
 
 //! \}

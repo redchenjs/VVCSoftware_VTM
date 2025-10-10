@@ -686,22 +686,14 @@ Picture* DecLib::xGetNewPicBuffer( const SPS &sps, const PPS &pps, const uint32_
   for(auto * p: m_cListPic)
   {
     pcPic = p;  // workaround because range-based for-loops don't work with existing variables
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     if ( pcPic->reconstructed == false && ! pcPic->neededForOutput && pcPic->layerId == layerId )
-#else
-    if ( pcPic->reconstructed == false && ! pcPic->neededForOutput )
-#endif
     {
       pcPic->neededForOutput = false;
       bBufferIsAvailable = true;
       break;
     }
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     if( ! pcPic->referenced  && ! pcPic->neededForOutput && pcPic->layerId == layerId )
-#else
-    if( ! pcPic->referenced  && ! pcPic->neededForOutput )
-#endif
     {
       pcPic->neededForOutput = false;
       pcPic->reconstructed = false;
@@ -739,7 +731,6 @@ Picture* DecLib::xGetNewPicBuffer( const SPS &sps, const PPS &pps, const uint32_
 }
 
 #if JVET_AJ0151_DSC_SEI
-#if JVET_AM0118_DSC_FOR_SEI
 void DecLib::xInitDscSubstreamManager(SEIMessages &SEIs)
 {
   SEIMessages dscInitSEIs = getSeisByType( SEIs, SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION);
@@ -754,44 +745,14 @@ void DecLib::xInitDscSubstreamManager(SEIMessages &SEIs)
     {
       return;
     }
-#if JVET_AK0206_DSC_SEI_ID
     m_dscSubstreamManagerMap[dsci->dsciId].initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
-#if JVET_AM0118_DSC_FOR_SEI
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag, dsci->dsciSEISigningFlag);
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag);
-#endif
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
-#endif
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid);
-#endif
     if (!m_dscSubstreamManagerMap[dsci->dsciId].initVerificator(m_keyStoreDir, m_trustStoreDir))
     {
       printf("Error: Cannot initialize Digitally Signed Content verification\n");
     }
-#else
-    m_dscSubstreamManager.initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag);
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
-#endif
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid);
-#endif
-    if (!m_dscSubstreamManager.initVerificator(m_keyStoreDir, m_trustStoreDir))
-    {
-      printf("Error: Cannot initialize Digitally Signed Content verification\n");
-    }
-#endif
   }
 }
-#endif
 
 void DecLib::xStoreNALUnitForSignature(InputNALUnit &nalu)
 {
@@ -807,44 +768,23 @@ void DecLib::xStoreNALUnitForSignature(InputNALUnit &nalu)
   nalu.getBitstream().clearOrigFifo();
 }
 
-#if JVET_AK0206_DSC_SEI_ID
 void DecLib::xProcessStoredNALUnitsForSignature(uint8_t dscId, int substreamId)
-#else
-void DecLib::xProcessStoredNALUnitsForSignature(int substreamId)
-#endif
 {
-#if JVET_AK0206_DSC_SEI_ID
   if (m_dscSubstreamManagerMap.find(dscId) == m_dscSubstreamManagerMap.end())
   {
     printf ("DSC ID %i not initialized, ignoring DSC selection for this ID", dscId);
     return;
   }
-#endif
-#if JVET_AK0206_DSC_SEI_ID
   const bool verificationActive = m_dscSubstreamManagerMap[dscId].isVerificationActive();
-#else
-  const bool verificationActive = m_dscSubstreamManager.isVerificationActive();
-#endif
   for (auto nalu: m_signedContentNalUnitBuffer)
   {
     if (verificationActive)
     {
-#if JVET_AK0206_DSC_SEI_ID
       m_dscSubstreamManagerMap[dscId].addToSubstream(substreamId, (char*)nalu.data, nalu.length);
-#else
-      m_dscSubstreamManager.addToSubstream(substreamId, (char*)nalu.data, nalu.length);
-#endif
     }
-#if !JVET_AK0206_DSC_SEI_ID
-    delete[] (nalu.data);
-#endif
   }
-#if !JVET_AK0206_DSC_SEI_ID
-  m_signedContentNalUnitBuffer.clear();
-#endif
 }
 
-#if JVET_AK0206_DSC_SEI_ID
 void DecLib::xClearStoredNALUnitsForSignature()
 {
   for (auto nalu: m_signedContentNalUnitBuffer)
@@ -853,7 +793,6 @@ void DecLib::xClearStoredNALUnitsForSignature()
   }
   m_signedContentNalUnitBuffer.clear();
 }
-#endif
 #endif
 
 void DecLib::executeLoopFilters()
@@ -2289,7 +2228,6 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     m_pcPic->createColourTransfProcessor(m_firstPictureInSequence, &m_colourTranfParams, &m_invColourTransfBuf,
                                          pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(),
                                          sps->getChromaFormatIdc(), sps->getBitDepth(ChannelType::LUMA));
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     SEIMessages packedRegionsInfoSEIs = getSeisByType(m_SEIs, SEI::PayloadType::PACKED_REGIONS_INFO);
     if (!packedRegionsInfoSEIs.empty())
     {
@@ -2299,7 +2237,6 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
         m_priProcess.init(*sei, *sps, pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples());
       }
     }
-#endif
     m_firstPictureInSequence = false;
     m_pcPic->createTempBuffers( m_pcPic->cs->pps->pcv->maxCUWidth, false, false, true, false );
     m_pcPic->cs->createTemporaryCsData((bool)m_pcPic->cs->sps->getPLTMode());
@@ -2774,7 +2711,7 @@ void DecLib::xParsePrefixSEImessages()
 #if JVET_S0257_DUMP_360SEI_MESSAGE
     m_seiCfgDump.write360SeiDump( m_decoded360SeiDumpFileName, m_SEIs, sps );
 #endif
-#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+#if JVET_AJ0151_DSC_SEI
     if ((*newSEI)->payloadType() == SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION && (next(newSEI) != m_SEIs.end()))
     {
       xInitDscSubstreamManager(m_SEIs);
@@ -3347,60 +3284,12 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
 
   // actual decoding starts here
   xActivateParameterSets( nalu );
-#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+#if JVET_AJ0151_DSC_SEI
   xStoreNALUnitForSignature(nalu);
 #endif
 #if JVET_AJ0151_DSC_SEI
-#if JVET_AM0118_DSC_FOR_SEI
   xInitDscSubstreamManager(m_pcPic->SEIs);
-#else
-  SEIMessages dscInitSEIs = getSeisByType( m_pcPic->SEIs, SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_INITIALIZATION);
-  if (!dscInitSEIs.empty())
-  {
-    if (dscInitSEIs.size()>1)
-    {
-      printf ("Warming: received more than one Digitally Signed Content Initialization SEI message at a time. Using first only.\n");
-    }
-    SEIDigitallySignedContentInitialization* dsci = (SEIDigitallySignedContentInitialization*) dscInitSEIs.front();
-#if JVET_AK0206_DSC_SEI_ID
-    m_dscSubstreamManagerMap[dsci->dsciId].initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
-#if JVET_AM0118_DSC_FOR_SEI
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag, dsci->dsciSEISigningFlag);
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag);
-#endif
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
-#endif
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid);
-#endif
-    if (!m_dscSubstreamManagerMap[dsci->dsciId].initVerificator(m_keyStoreDir, m_trustStoreDir))
-    {
-      printf("Error: Cannot initialize Digitally Signed Content verification\n");
-    }
-#else
-    m_dscSubstreamManager.initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag);
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
-#endif
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid);
-#endif
-    if (!m_dscSubstreamManager.initVerificator(m_keyStoreDir, m_trustStoreDir))
-    {
-      printf("Error: Cannot initialize Digitally Signed Content verification\n");
-    }
-#endif
-  }
-#endif
   SEIMessages dscSelectionSEIs = getSeisByType(m_pcPic->SEIs, SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION);
-#if JVET_AK0206_DSC_SEI_ID
   // iterate over all DSC IDs for which a initialization was received
   for (auto& [dscId, dscSubstreamManager]: m_dscSubstreamManagerMap)
   {
@@ -3426,48 +3315,15 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     else
     {
       // inference of substream ID
-#if !JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
-      const int32_t dscsVSSID = 0;
-#else
       int32_t dscsVSSID = 0;
       if( m_dscSubstreamManagerMap[dscId].getDscAssociationModeFlag() )
       {
         dscsVSSID = vps->getMaxLayers()*nalu.m_nuhLayerId + nalu.m_temporalId;
       }
-#endif
       xProcessStoredNALUnitsForSignature(dscId, dscsVSSID);
     }
     xClearStoredNALUnitsForSignature();
   }
-#else
-  if (!dscSelectionSEIs.empty())
-  {
-    if (dscSelectionSEIs.size()>1)
-    {
-      printf ("Warming: received more than one Digitally Signed Content Selection SEI message at a time. Using first only.\n");
-    }
-    SEIDigitallySignedContentSelection* dscs = (SEIDigitallySignedContentSelection*) dscSelectionSEIs.front();
-    xProcessStoredNALUnitsForSignature(dscs->dscsVerificationSubstreamId);
-  }
-  else
-  {
-    // process as substream 0, when no selection SEI is received
-    // todo: multiples slices
-#if !JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
-    xProcessStoredNALUnitsForSignature(0);
-#else
-    if(m_dscSubstreamManager.getDscAssociationModeFlag())
-    {
-      int32_t dscsVSSID = vps->getMaxLayers()*nalu.m_nuhLayerId + nalu.m_temporalId;
-      xProcessStoredNALUnitsForSignature(dscsVSSID);
-    }
-    else
-    {
-      xProcessStoredNALUnitsForSignature(0);
-    }
-#endif
-  }
-#endif
 #endif
 
   m_firstSliceInSequence[nalu.m_nuhLayerId] = false;
@@ -3586,7 +3442,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     printf("-lmcs_chroma : %d\n", picHeader->getLmcsChromaResidualScaleFlag() ? 1 : 0);
 #endif
 
-#if JVET_AL0056_EOI_SEI_QUANT_CONSTRAINT
     SEIMessages eoiSEIs = getSeisByType(m_pcPic->SEIs, SEI::PayloadType::ENCODER_OPTIMIZATION_INFO);
     if (!eoiSEIs.empty())
     {
@@ -3603,7 +3458,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
         }
       }
     }
-#endif
   }
   pcSlice->getPic()->sliceSubpicIdx.push_back(pps->getSubPicIdxFromSubPicId(pcSlice->getSliceSubPicId()));
   pcSlice->checkCRA(pcSlice->getRpl(REF_PIC_LIST_0), pcSlice->getRpl(REF_PIC_LIST_1), m_pocCRA[nalu.m_nuhLayerId],
@@ -4194,7 +4048,7 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
 #if JVET_S0257_DUMP_360SEI_MESSAGE
       m_seiCfgDump.write360SeiDump(m_decoded360SeiDumpFileName, m_pcPic->SEIs, sps);
 #endif
-#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+#if JVET_AJ0151_DSC_SEI
       if ((*newSEI)->payloadType() == SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION && (next(newSEI) != m_pcPic->SEIs.end()))
       {
         auto dscsSei = reinterpret_cast<SEIDigitallySignedContentSelection*>(*newSEI);
@@ -4224,7 +4078,6 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
         for (auto dscvsei:dscVerifySEIs)
         {
           SEIDigitallySignedContentVerification *sei = (SEIDigitallySignedContentVerification*) dscvsei;
-#if JVET_AK0206_DSC_SEI_ID
           const uint8_t dscId = sei->dscvId;
           if (m_dscSubstreamManagerMap.find(dscId) != m_dscSubstreamManagerMap.end())
           {
@@ -4234,9 +4087,6 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
           {
             printf ("Received DSC verification SEI message for ID %i without previous DSC initialization", dscId);
           }
-#else
-          m_dscSubstreamManager.verifySubstream(sei->dscvVerificationSubstreamId, sei->dscvSignature );
-#endif
         }
       }
 
@@ -4257,9 +4107,6 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
   case NAL_UNIT_CODED_SLICE_RADL:
   case NAL_UNIT_CODED_SLICE_RASL:
 #if JVET_AJ0151_DSC_SEI
-#if !JVET_AM0118_DSC_FOR_SEI
-    xStoreNALUnitForSignature(nalu);
-#endif
 #endif
     ret = xDecodeSlice(nalu, iSkipFrame, iPOCLastDisplay);
     return ret;

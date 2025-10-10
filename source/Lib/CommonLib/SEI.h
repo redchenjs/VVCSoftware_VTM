@@ -111,15 +111,9 @@ public:
     DIGITALLY_SIGNED_CONTENT_VERIFICATION   = 222,
     GENERATIVE_FACE_VIDEO                   = 223,
     GENERATIVE_FACE_VIDEO_ENHANCEMENT       = 224,
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
     AI_USAGE_RESTRICTIONS                   = 225,   
-#endif
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     PACKED_REGIONS_INFO                     = 226,
-#endif
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
     IMAGE_FORMAT_METADATA                   = 227,
-#endif
   };
 
   SEI() {}
@@ -219,11 +213,7 @@ public:
   uint32_t               m_posId;
   uint32_t               m_posForHumanViewingIdc;
   uint32_t               m_posForMachineAnalysisIdc;
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
   uint32_t               m_posNumMinus1;
-#else
-  uint32_t               m_posNumMinus2;
-#endif
   bool                   m_posBreadthFirstFlag;
   std::vector<bool>      m_posWrappingFlag;
   std::vector<bool>      m_posImportanceFlag;
@@ -234,14 +224,12 @@ public:
   std::vector<uint16_t>   m_posProcessingOrder;
   std::vector<uint16_t>  m_posNumBitsInPrefix;
   std::vector<std::vector<uint8_t>> m_posPrefixByte;
-#if JVET_AJ0105_SPO_COMPLEXITY_INFO
   bool                   m_posComplexityInfoPresentFlag;
   uint32_t               m_posParameterTypeIdc;
   uint32_t               m_posLog2ParameterBitLengthMinus3;
   uint32_t               m_posNumParametersIdc;
   uint32_t               m_posNumKmacOperationIdc;
   uint32_t               m_posTotalKilobyteSize;
-#endif
   static bool checkWrappingSEIPayloadType(SEI::PayloadType const payloadType)
   {
     switch (payloadType)
@@ -270,12 +258,8 @@ public:
     case SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION:
     case SEI::PayloadType::OBJECT_MASK_INFO:
     case SEI::PayloadType::MODALITY_INFORMATION:
-#if JVET_AK0281_AUR_SEI_IN_SPO_SEI
     case SEI::PayloadType::AI_USAGE_RESTRICTIONS:
-#endif
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
     case SEI::PayloadType::PACKED_REGIONS_INFO:
-#endif
      return true;
     default:
       return false;
@@ -1096,11 +1080,9 @@ public:
   CompModel m_compModel[MAX_NUM_COMPONENT];
   bool      m_filmGrainCharacteristicsPersistenceFlag;
 
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
   bool      m_spatialResolutionPresentFlag;
   int       m_picWidthInLumaSamples;
   int       m_picHeightInLumaSamples;
-#endif
 };
 
 class SEIContentLightLevelInfo : public SEI
@@ -1399,9 +1381,7 @@ public:
     uint32_t    m_numAuxPicLayerMinus1;
     uint32_t    m_maskIdLengthMinus1;
     uint32_t    m_maskSampleValueLengthMinus8;
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
     bool        m_tolerancePresentFlag;
-#endif
     bool        m_maskConfidenceInfoPresentFlag;
     uint32_t    m_maskConfidenceLengthMinus1;   // Only valid if m_maskConfidenceInfoPresentFlag
     bool        m_maskDepthInfoPresentFlag;
@@ -1415,9 +1395,7 @@ public:
   ObjectMaskInfoHeader        m_hdr;
   std::vector<uint32_t>       m_maskPicUpdateFlag; // No masks exist in the initial stage.
   std::vector<uint32_t>       m_numMaskInPic;
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
   std::vector<uint32_t>       m_auxSampleTolerance;
-#endif
   std::vector<ObjectMaskInfo> m_objectMaskInfos;   // The ObjectMaskInfo objects have unique maskId in m_objectMaskInfos list.
 };
 
@@ -1530,10 +1508,8 @@ public:
     , m_prompt("")
     , m_absentInputPicZeroFlag(false)
     , m_numInpPicsInOutputTensor(0)
-#if JVET_AK0326_NNPF_SEED
     , m_inbandSeedFlag(false)
     , m_seed(0)
-#endif
   {}
   SEINeuralNetworkPostFilterCharacteristics(const SEINeuralNetworkPostFilterCharacteristics& sei);
 
@@ -1619,10 +1595,8 @@ public:
   std::vector<bool> m_inputPicOutputFlag;
   bool           m_absentInputPicZeroFlag;
   uint32_t       m_numInpPicsInOutputTensor;
-#if JVET_AK0326_NNPF_SEED
   bool           m_inbandSeedFlag;
   uint32_t       m_seed;
-#endif
 };
 
 class SEINeuralNetworkPostFilterActivation : public SEI
@@ -1636,20 +1610,12 @@ public:
     , m_noPrevCLVSFlag(false)
     , m_noFollCLVSFlag(false)
     , m_persistenceFlag(false)
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
     , m_promptUpdateFlag(false)
     , m_prompt("")
-#endif
-#if JVET_AK0326_NNPF_SEED
     , m_seedUpdateFlag(false)
     , m_seed(0)
-#endif
-#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
-#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
     , m_selectedInputFlag(false)
-#endif
     , m_numInputPicShift(0)
-#endif 
 {}
   SEINeuralNetworkPostFilterActivation(const SEINeuralNetworkPostFilterActivation& sei);
 
@@ -1662,20 +1628,12 @@ public:
   bool           m_noFollCLVSFlag;
   bool           m_persistenceFlag;
   std::vector<bool> m_outputFlag;
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
   bool           m_promptUpdateFlag;
   std::string    m_prompt;
-#endif
-#if JVET_AK0326_NNPF_SEED
   bool           m_seedUpdateFlag;
   uint32_t       m_seed;
-#endif
-#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
-#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
   bool           m_selectedInputFlag;
-#endif
   uint32_t       m_numInputPicShift;
-#endif 
 };
 
 class SEIPostFilterHint : public SEI
@@ -1730,21 +1688,13 @@ public:
   std::string    m_nnTagURI;
   std::string    m_nnURI;
   bool                    m_chromaKeyInfoPresentFlag; 
-#if JVET_AM0334_GFV_CHROMA_KEY
   uint32_t                m_chromaKeyPurposeIdc;
-#endif
   std::vector<bool>       m_chromaKeyValuePresentFlag;
   std::vector<uint32_t>   m_chromaKeyValue; 
-#if JVET_AM0334_GFV_CHROMA_KEY
   bool                    m_chromaKeyThrPresentFlag; 
   uint32_t                m_chromaKeyThrLower;
   uint32_t                m_chromaKeyThrUpperDeltaMinus1;
   bool                    m_fusionPicFlag;
-#else
-  std::vector<bool>       m_chromaKeyThrPresentFlag; 
-  std::vector<uint32_t>   m_chromaKeyThrValue;
-  bool       m_drivePicFusionFlag;
-#endif
   uint32_t   m_id;
   uint32_t   m_cnt;
   bool   m_lowConfidenceFaceParameterFlag;
@@ -1828,21 +1778,13 @@ public:
     , m_quantThresholdDelta(0)
     , m_picQuantObjectFlag(false)
     , m_temporalResamplingTypeFlag(false)
-#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
     , m_srcPicFlag(false)
-#endif
     , m_numIntPics(0)
     , m_origPicDimensionsFlag(false)
-#if JVET_AL0123_AL0310_EOI
     , m_origPicWidthMinus1(0)
     , m_origPicHeightMinus1(0)
     , m_spatialHorResamplingTypeIdc(0)
     , m_spatialVerResamplingTypeIdc(0)
-#else
-    , m_origPicWidth(0)
-    , m_origPicHeight(0)
-    , m_spatialResamplingTypeFlag(false)
-#endif
     , m_privacyProtectionTypeIdc(0)
     , m_privacyProtectedInfoType(0)
   {}
@@ -1859,21 +1801,13 @@ public:
   uint32_t m_quantThresholdDelta;
   bool     m_picQuantObjectFlag;
   bool     m_temporalResamplingTypeFlag;
-#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
   bool     m_srcPicFlag;
-#endif
   uint32_t m_numIntPics;
   bool     m_origPicDimensionsFlag;
-#if JVET_AL0123_AL0310_EOI
   uint32_t m_origPicWidthMinus1;
   uint32_t m_origPicHeightMinus1;
   bool     m_spatialHorResamplingTypeIdc;
   bool     m_spatialVerResamplingTypeIdc;
-#else
-  uint32_t m_origPicWidth;
-  uint32_t m_origPicHeight;
-  bool     m_spatialResamplingTypeFlag;
-#endif
   uint32_t m_privacyProtectionTypeIdc;
   uint32_t m_privacyProtectedInfoType;
 
@@ -1908,7 +1842,6 @@ public:
   uint8_t          m_miMaxWavelengthExponentPlus15;  
 };
 
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
 class SEIAIUsageRestrictions : public SEI
 {
 public:
@@ -1927,13 +1860,9 @@ public:
   std::vector<uint32_t> m_restrictions;
   std::vector<bool>     m_contextPresentFlag;
   std::vector<uint32_t> m_context;
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   std::vector<bool>     m_exclusionFlag;
-#endif
 };
-#endif
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 class SEIPackedRegionsInfo : public SEI
 {
 public:
@@ -1980,19 +1909,12 @@ public:
   std::vector<uint32_t> m_regionWidthInUnitsMinus1;
   std::vector<uint32_t> m_regionHeightInUnitsMinus1;
   std::vector<uint32_t> m_resamplingRatioIdx;
-#if JVET_AL0324_AL0070_PRI_SEI
   std::vector<uint32_t> m_targetRegionTopLeftInUnitsX;
   std::vector<uint32_t> m_targetRegionTopLeftInUnitsY;
-#else
-  std::vector<uint32_t> m_targetRegionTopLeftX;
-  std::vector<uint32_t> m_targetRegionTopLeftY;
-#endif
   std::vector<uint32_t> m_regionLayerId;
   std::vector<uint8_t>  m_regionIsALayerFlag;
 };
-#endif
 
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
 class SEIImageFormatMetadata : public SEI
 {
 public:
@@ -2015,7 +1937,6 @@ public:
   std::vector<std::vector<uint8_t>> m_dataPayloadByte; 
   std::vector< std::string>         m_dataUri; 
 };
-#endif
 
 //! \}
 

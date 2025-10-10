@@ -155,7 +155,6 @@ uint32_t DecApp::decode()
     }
   }
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   if (!m_packedRegionsInfoSEIFileName.empty())
   {
     std::ofstream ofile(m_packedRegionsInfoSEIFileName.c_str());
@@ -165,7 +164,6 @@ uint32_t DecApp::decode()
       exit(EXIT_FAILURE);
     }
   }
-#endif
 
   // main decoder loop
   bool loopFiltered[MAX_VPS_LAYERS] = { false };
@@ -1142,7 +1140,6 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         {
           const Window &conf = pcPic->getConformanceWindow();
           ChromaFormat  chromaFormatIdc = pcPic->m_chromaFormatIdc;
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
           if (m_cDecLib.getPriProcess().m_enabled && m_cDecLib.getPriProcess().m_layerId == pcPic->layerId
             && m_cDecLib.getPriProcess().m_targetPicWidth > 0 && m_cDecLib.getPriProcess().m_targetPicHeight > 0)
           {
@@ -1155,9 +1152,6 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
               m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
           }
           else if( m_upscaledOutput )
-#else
-          if( m_upscaledOutput )
-#endif
           {
             const SPS* sps = pcPic->cs->sps;
             m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
@@ -1184,7 +1178,6 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
           ChromaFormat  chromaFormatIdc    = sps->getChromaFormatIdc();
           if (m_upscaledOutput)
           {
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
             if (pcPic->filmGrainAfterUpscale())
             {
               const Window& confSps = sps->getConformanceWindow();
@@ -1204,11 +1197,6 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
                 *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
                 m_upscaledOutput, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight);
             }
-#else
-            m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
-              *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
-              m_upscaledOutput, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight);
-#endif
           }
           else
           {
@@ -1273,12 +1261,10 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
         {
           xOutputObjectMaskInfos(pcPic);
         }
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
         if (!m_packedRegionsInfoSEIFileName.empty())
         {
           xOutputPackedRegionsInfo(pcPic);
         }
-#endif
         // update POC of display order
         m_iPOCLastDisplay = pcPic->getPOC();
 
@@ -1404,7 +1390,6 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
           {
             const Window &conf = pcPic->getConformanceWindow();
             ChromaFormat  chromaFormatIdc = pcPic->m_chromaFormatIdc;
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
             if (m_cDecLib.getPriProcess().m_enabled && m_cDecLib.getPriProcess().m_layerId == pcPic->layerId
               && m_cDecLib.getPriProcess().m_targetPicWidth > 0 && m_cDecLib.getPriProcess().m_targetPicHeight > 0)
             {
@@ -1418,9 +1403,6 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
                 m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
             }
             else if( m_upscaledOutput )
-#else
-            if( m_upscaledOutput )
-#endif
             {
               const SPS* sps = pcPic->cs->sps;
               m_cVideoIOYuvReconFile[pcPic->layerId].writeUpscaledPicture(
@@ -1447,7 +1429,6 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
             ChromaFormat  chromaFormatIdc = sps->getChromaFormatIdc();
             if (m_upscaledOutput)
             {
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
               if (pcPic->filmGrainAfterUpscale())
               {
                 const Window& confSps = sps->getConformanceWindow();
@@ -1467,11 +1448,6 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
                   *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
                   m_upscaledOutput, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight);
               }
-#else
-              m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
-                *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
-                m_upscaledOutput, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight);
-#endif
             }
             else
             {
@@ -1534,12 +1510,10 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
           {
             xOutputObjectMaskInfos(pcPic);
           }
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
           if (!m_packedRegionsInfoSEIFileName.empty())
           {
             xOutputPackedRegionsInfo(pcPic);
           }
-#endif
         // update POC of display order
         m_iPOCLastDisplay = pcPic->getPOC();
 
@@ -1737,9 +1711,7 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
     if (seiObjectMaskInfo.m_hdr.m_cancelFlag)
     {
       m_omiMasks.clear();
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
       m_auxSampleTolerance.clear();
-#endif
     }
     else
     {
@@ -1748,9 +1720,7 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
         CHECK(m_omiHeader.m_numAuxPicLayerMinus1 != seiObjectMaskInfo.m_hdr.m_numAuxPicLayerMinus1, "The value of omi_num_aux_pic_layer_minus1 should be consistent within the CLVS.")
         CHECK(m_omiHeader.m_maskIdLengthMinus1 != seiObjectMaskInfo.m_hdr.m_maskIdLengthMinus1, "The value of omi_mask_id_length_minus1 should be consistent within the CLVS.")
         CHECK(m_omiHeader.m_maskSampleValueLengthMinus8 != seiObjectMaskInfo.m_hdr.m_maskSampleValueLengthMinus8,"The value of omi_mask_sample_value_length_minus8 should be consistent within the CLVS.")
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
         CHECK(m_omiHeader.m_tolerancePresentFlag != seiObjectMaskInfo.m_hdr.m_tolerancePresentFlag,"Tolerance present flag should be consistent within the CLVS.");
-#endif
         CHECK(m_omiHeader.m_maskConfidenceInfoPresentFlag != seiObjectMaskInfo.m_hdr.m_maskConfidenceInfoPresentFlag,"Confidence info present flag should be consistent within the CLVS.");
         if (m_omiHeader.m_maskConfidenceInfoPresentFlag)
         {
@@ -1804,9 +1774,7 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
           }
         }
       }
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
       m_auxSampleTolerance = seiObjectMaskInfo.m_auxSampleTolerance;
-#endif
     }
   }
   if ((!objectMaskInfoSEIs.empty() && !m_omiMasks.empty()) || (objectMaskInfoSEIs.empty() && m_omiHeader.m_persistenceFlag))
@@ -1827,9 +1795,7 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
         fprintf(fpPersist, "OMI AuxPicLayer Num = %d\n", m_omiHeader.m_numAuxPicLayerMinus1 + 1);
         fprintf(fpPersist, "OMI MaskId Length = %d\n", m_omiHeader.m_maskIdLengthMinus1 + 1);
         fprintf(fpPersist, "OMI MaskSampleValue Length = %d\n", m_omiHeader.m_maskSampleValueLengthMinus8 + 8);
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
         fprintf(fpPersist, "OMI Tolerance Present = %d\n", m_omiHeader.m_tolerancePresentFlag);
-#endif
         fprintf(fpPersist, "OMI MaskConf Present = %d\n", m_omiHeader.m_maskConfidenceInfoPresentFlag);
         if (m_omiHeader.m_maskConfidenceInfoPresentFlag)
         {
@@ -1854,15 +1820,11 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
         for (int layerIdx = 0; layerIdx < m_omiMasks.size(); layerIdx++)
         {
           fprintf(fpPersist, "[Auxiliary Layer-%d]\n", layerIdx);
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
           fprintf(fpPersist, "MaskNumInPic[%d]: %d\n", layerIdx, (int)m_omiMasks[layerIdx].size());
           if (m_omiHeader.m_tolerancePresentFlag)
           {
             fprintf(fpPersist, "AuxSampleTolerance[%d]: %d\n\n", layerIdx, (int)m_auxSampleTolerance[layerIdx]);
           }
-#else
-          fprintf(fpPersist, "MaskNumInPic[%d]: %d\n\n", layerIdx, (int)m_omiMasks[layerIdx].size());
-#endif
 
           for (int maskIdx = 0; maskIdx < m_omiMasks[layerIdx].size(); maskIdx++)
           {
@@ -1898,7 +1860,6 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
   }
 }
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 void DecApp::xOutputPackedRegionsInfo(Picture* pcPic)
 {
   SEIMessages seis = getSeisByType(pcPic->SEIs, SEI::PayloadType::PACKED_REGIONS_INFO);
@@ -1944,19 +1905,13 @@ void DecApp::xOutputPackedRegionsInfo(Picture* pcPic)
       xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingRatioIdx :", sei.m_resamplingRatioIdx);
       if (sei.m_targetPicParamsPresentFlag)
       {
-#if JVET_AL0324_AL0070_PRI_SEI
         xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftInUnitsX :", sei.m_targetRegionTopLeftInUnitsX);
         xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftInUnitsY :", sei.m_targetRegionTopLeftInUnitsY);
-#else
-        xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftX :", sei.m_targetRegionTopLeftX);
-        xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftY :", sei.m_targetRegionTopLeftY);
-#endif
       }
       fclose(fp);
     }
   }
 }
-#endif
 
 /** \param nalu Input nalu to check whether its LayerId is within targetDecLayerIdSet
  */

@@ -65,29 +65,19 @@ typedef enum : uint32_t
 class SEIDigitallySignedContentInitialization: public SEI
 {
 public:
-#if JVET_AK0206_DSC_SEI_ID
   int8_t       dsciId                        = 0;
-#endif
   int8_t       dsciHashMethodType            = 0;
   std::string  dsciKeySourceUri;
   int8_t       dsciNumVerificationSubstreams = 0;
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   std::vector<std::vector<bool>> dsciRefSubstreamFlag;
-#endif
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   bool         dsciVSSImplicitAssociationModeFlag = false;
-#endif
   int8_t       dsciKeyRetrievalModeIdc       = 0;
   bool         dsciUseKeyRegisterIdxFlag     = false;
   int32_t      dsciKeyRegisterIdx            = 0;
   bool         dsciContentUuidPresentFlag    = false;
   std::array<uint8_t, 16> dsciContentUuid = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-#if JVET_AL0222_DSC_START_END
   bool         dsciSignedContentStartFlag    = false;
-#endif
-#if JVET_AM0118_DSC_FOR_SEI
   bool         dsciSEISigningFlag            = false;
-#endif
 public:
   SEIDigitallySignedContentInitialization()
   {};
@@ -101,9 +91,7 @@ public:
 class SEIDigitallySignedContentSelection: public SEI
 {
 public:
-#if JVET_AK0206_DSC_SEI_ID
   int8_t       dscsId = 0;
-#endif
   int32_t      dscsVerificationSubstreamId = 0;
 
 public:
@@ -119,15 +107,11 @@ public:
 class SEIDigitallySignedContentVerification: public SEI
 {
 public:
-#if JVET_AK0206_DSC_SEI_ID
   int8_t               dscvId = 0;
-#endif
   int32_t              dscvVerificationSubstreamId = 0;
   int32_t              dscvSignatureLengthInOctets = 0;
   std::vector<uint8_t> dscvSignature;
-#if JVET_AL0222_DSC_START_END
   bool                 dscvSignedContentEndFlag    = false;
-#endif
 
 public:
   SEIDigitallySignedContentVerification()
@@ -223,32 +207,14 @@ private:
 
   bool    m_sigInitialized = false;
 
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   std::vector<std::vector<bool>> m_refSubstreamFlag;
-#endif
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   bool m_implicitAssociationModeFlag = false;
-#endif
-#if JVET_AM0118_DSC_FOR_SEI
   bool m_seiSigningFlag = false;
-#endif
 
 public:
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   bool getDscAssociationModeFlag(){return m_implicitAssociationModeFlag;}
-#if JVET_AM0118_DSC_FOR_SEI
   bool getSeiSigningFlag(){return m_seiSigningFlag;}
   void initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid, const std::vector<std::vector<bool>> &refFlags, bool implicitAssociationFlag, bool seiSigningFlag);
-#else
-  void initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid, const std::vector<std::vector<bool>> &refFlags, bool implicitAssociationFlag);
-#endif
-#else
-  void initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid, const std::vector<std::vector<bool>> &refFlags);
-#endif
-#else
-  void initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid);
-#endif
 
   void initSignature   (const std::string &privKeyFile);
   bool initVerificator (const std::string &keyStoreDir, const std::string &trustStoreDir);

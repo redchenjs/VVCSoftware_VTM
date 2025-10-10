@@ -799,10 +799,8 @@ protected:
   std::string             m_nnPostFilterSEICharacteristicsPrompt[MAX_NUM_NN_POST_FILTERS];
   std::vector<bool>       m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                    m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AK0326_NNPF_SEED
   bool                    m_nnPostFilterSEICharacteristicsInbandSeedFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t                m_nnPostFilterSEICharacteristicsSeed[MAX_NUM_NN_POST_FILTERS];
-#endif
 
   bool                    m_nnPostFilterSEIActivationEnabled;
   bool                    m_nnPostFilterSEIActivationUseSuffixSEI;
@@ -813,20 +811,12 @@ protected:
   bool                    m_nnPostFilterSEIActivationNoFollCLVSFlag;
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputflag;
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
   bool                    m_nnPostFilterSEIActivationPromptUpdateFlag;
   std::string             m_nnPostFilterSEIActivationPrompt;
-#endif
-#if JVET_AK0326_NNPF_SEED
   bool                    m_nnPostFilterSEIActivationSeedUpdateFlag;
   uint32_t                m_nnPostFilterSEIActivationSeed;
-#endif
-#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
-#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
   bool                    m_nnPostFilterSEIActivationSelectedInputFlag;
-#endif
   uint32_t                m_nnPostFilterSEIActivationNumInputPicShift;
-#endif
 
   // Encoder Optimization Information SEI
   bool  m_eoiSEIEnabled;
@@ -840,20 +830,12 @@ protected:
   bool     m_eoiSEIPicQuantObjectFlag;
   bool m_eoiSEITemporalResamplingTypeFlag;
   uint32_t m_eoiSEINumIntPics;
-#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
   bool     m_eoiSEISrcPicFlag; ;
-#endif
   bool     m_eoiSEIOrigPicDimensionsFlag;
-#if JVET_AL0123_AL0310_EOI
   uint32_t m_eoiSEIOrigPicWidthMinus1;
   uint32_t m_eoiSEIOrigPicHeightMinus1;
   uint32_t m_eoiSEISpatialHorResamplingTypeIdc;
   uint32_t m_eoiSEISpatialVerResamplingTypeIdc;
-#else
-  uint32_t m_eoiSEIOrigPicWidth;
-  uint32_t m_eoiSEIOrigPicHeight;
-  bool m_eoiSEISpatialResamplingTypeFlag;
-#endif
   uint32_t m_eoiSEIPrivacyProtectionTypeIdc;
   uint32_t m_eoiSEIPrivacyProtectedInfoType;
 
@@ -889,11 +871,9 @@ protected:
   uint8_t   m_fgcSEIIntensityIntervalLowerBound   [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES];
   uint8_t   m_fgcSEIIntensityIntervalUpperBound   [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES];
   uint32_t  m_fgcSEICompModelValue                [MAX_NUM_COMPONENT][MAX_NUM_INTENSITIES][MAX_NUM_MODEL_VALUES];
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
   bool      m_fgcSEISpatialResolutionPresentFlag;
   int       m_fgcSEIPicWidthInLumaSamples;
   int       m_fgcSEIPicHeightInLumaSamples;
-#endif
 // cll SEI
   bool      m_cllSEIEnabled;
   uint16_t  m_cllSEIMaxContentLevel;
@@ -1004,11 +984,7 @@ protected:
   uint32_t              m_poSEIId;
   uint32_t              m_poSEIForHumanViewingIdc;
   uint32_t              m_poSEIForMachineAnalysisIdc;
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
   uint32_t              m_poSEINumMinus1;
-#else
-  uint32_t              m_poSEINumMinus2;
-#endif
   bool                  m_poSEIBreadthFirstFlag;
   std::vector<bool>     m_poSEIWrappingFlag;
   std::vector<bool>     m_poSEIImportanceFlag;
@@ -1017,14 +993,12 @@ protected:
   std::vector<uint16_t> m_poSEIPayloadType;
   std::vector<uint16_t>  m_poSEIProcessingOrder;
   std::vector<uint16_t> m_poSEINumOfPrefixBits;
-#if JVET_AJ0105_SPO_COMPLEXITY_INFO
   bool                  m_poSEIComplexityInfoPresentFlag;
   uint32_t              m_poSEIParameterTypeIdc;
   uint32_t              m_poSEILog2ParameterBitLengthMinus3;
   uint32_t              m_poSEINumParametersIdc;
   uint32_t              m_poSEINumKmacOperationIdc;
   uint32_t              m_poSEITotalKilobyteSize;
-#endif
   std::vector<std::vector<uint8_t>>  m_poSEIPrefixByte;
   bool                 m_postFilterHintSEIEnabled;
   bool                 m_postFilterHintSEICancelFlag;
@@ -1043,14 +1017,11 @@ protected:
   std::vector<std::string> m_textSEIDescriptionStringLang;
   std::vector<std::string> m_textSEIDescriptionString;
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   bool     m_priSEIEnabled;
   bool     m_priSEICancelFlag;
   bool     m_priSEIPersistenceFlag;
   uint32_t m_priSEINumRegionsMinus1;
-#if JVET_AL0324_AL0070_PRI_SEI
   bool     m_priSEIMultilayerFlag;
-#endif
   bool     m_priSEIUseMaxDimensionsFlag;
   uint32_t m_priSEILog2UnitSize;
   uint32_t m_priSEIRegionSizeLenMinus1;
@@ -1065,30 +1036,18 @@ protected:
   std::vector<uint32_t> m_priSEIResamplingHeightNumMinus1;
   std::vector<uint32_t> m_priSEIResamplingHeightDenomMinus1;
   std::vector<uint32_t> m_priSEIRegionId;
-#if JVET_AL0324_AL0070_PRI_SEI
   std::vector<uint32_t> m_priSEIRegionLayerId;
   std::vector<bool>     m_priSEIRegionIsALayerFlag;
-#endif
   std::vector<uint32_t> m_priSEIRegionTopLeftInUnitsX;
   std::vector<uint32_t> m_priSEIRegionTopLeftInUnitsY;
   std::vector<uint32_t> m_priSEIRegionWidthInUnitsMinus1;
   std::vector<uint32_t> m_priSEIRegionHeightInUnitsMinus1;
   std::vector<uint32_t> m_priSEIResamplingRatioIdx;
-#if JVET_AL0324_AL0070_PRI_SEI
   std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsX;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsY;
-#else
-  std::vector<uint32_t> m_priSEITargetRegionTopLeftX;
-  std::vector<uint32_t> m_priSEITargetRegionTopLeftY;
-  bool                  m_priSEIMultilayerFlag;
-  std::vector<uint32_t> m_priSEIRegionLayerId;
-  std::vector<bool>     m_priSEIRegionIsALayerFlag;
-#endif
-#endif
 
   bool      m_constrainedRaslEncoding;
 
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   bool  m_aurSEIEnabled;
   bool  m_aurSEICancelFlag;
   bool  m_aurSEIPersistenceFlag;
@@ -1096,11 +1055,7 @@ protected:
   std::vector<uint32_t>  m_aurSEIRestrictions;
   std::vector<bool>  m_aurSEIContextPresentFlag;
   std::vector<uint32_t>  m_aurSEIContext;
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   std::vector<bool>  m_aurSEIExclusionFlag;
-#endif
-#endif
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   bool                  m_ifmSeiEnabled;
   bool                  m_ifmCancelFlag;
   bool                  m_ifmPersistenceFlag;
@@ -1109,7 +1064,6 @@ protected:
   int                   m_ifmUriPresentFlag[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];    
   std::vector<uint8_t>  m_ifmDataPayloadByte[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];
   std::string           m_ifmDataUri[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];
-#endif
 
   //====== Weighted Prediction ========
   bool      m_useWeightedPred;       //< Use of Weighting Prediction (P_SLICE)
@@ -1278,21 +1232,13 @@ protected:
   std::string                          m_generativeFaceVideoSEINNTagURI;
   std::string                          m_generativeFaceVideoSEINNURI;
   bool                                 m_generativeFaceVideoSEIChromaKeyInfoPresentFlag;
-#if JVET_AM0334_GFV_CHROMA_KEY
   uint32_t                             m_generativeFaceVideoSEIChromaKeyPurposeIdc;
-#endif
   std::vector<bool>                    m_generativeFaceVideoSEIChromaKeyValuePresentFlag;
   std::vector<uint32_t>                m_generativeFaceVideoSEIChromaKeyValue;
-#if JVET_AM0334_GFV_CHROMA_KEY
   bool                                 m_generativeFaceVideoSEIChromaKeyThrPresentFlag;
   uint32_t                             m_generativeFaceVideoSEIChromaKeyThrLower;
   uint32_t                             m_generativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1;
   std::vector<bool>                    m_generativeFaceVideoSEIFusionPicFlag;
-#else
-  std::vector<bool>                    m_generativeFaceVideoSEIChromaKeyThrPresentFlag;
-  std::vector<uint32_t>                m_generativeFaceVideoSEIChromaKeyThrValue;
-  std::vector<bool>                    m_generativeFaceVideoSEIDrivePicFusionFlag;
-#endif
   std::vector<uint32_t>                m_generativeFaceVideoSEIId;
   std::vector<uint32_t>                m_generativeFaceVideoSEICnt;
   std::vector<bool>                    m_generativeFaceVideoSEILowConfidenceFaceParameterFlag;
@@ -2393,12 +2339,10 @@ public:
   const       std::vector<bool>& getNNPostFilterSEICharacteristicsInputPicOutputFlag(int filterIdx)         { return m_nnPostFilterSEICharacteristicsInputPicOutputFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(bool absentInputPicZeroFlag, int filterIdx)       { m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[filterIdx] = absentInputPicZeroFlag; }
   bool        getNNPostFilterSEICharacteristicsAbsentInputPicZeroFlag(int filterIdx) const                              { return m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[filterIdx]; }
-#if JVET_AK0326_NNPF_SEED
   void        setNNPostFilterSEICharacteristicsInbandSeedFlag(bool inbandSeedFlag, int filterIdx)                       { m_nnPostFilterSEICharacteristicsInbandSeedFlag[filterIdx] = inbandSeedFlag; }
   bool        getNNPostFilterSEICharacteristicsInbandSeedFlag(int filterIdx) const                                      { return m_nnPostFilterSEICharacteristicsInbandSeedFlag[filterIdx]; }
   void        setNNPostFilterSEICharacteristicsSeed(uint32_t seed, int filterIdx)                                       { m_nnPostFilterSEICharacteristicsSeed[filterIdx] = seed; }
   uint32_t    getNNPostFilterSEICharacteristicsSeed(int filterIdx) const                                                { return m_nnPostFilterSEICharacteristicsSeed[filterIdx]; }
-#endif
   void        setNnPostFilterSEIActivationEnabled(bool enabledFlag)                                                     { m_nnPostFilterSEIActivationEnabled = enabledFlag; }
   bool        getNnPostFilterSEIActivationEnabled() const                                                               { return m_nnPostFilterSEIActivationEnabled; }
   void        setNnPostFilterSEIActivationUseSuffixSEI(bool suffixFlag)                                                 { m_nnPostFilterSEIActivationUseSuffixSEI = suffixFlag; }
@@ -2418,26 +2362,18 @@ public:
   uint32_t    getNnPostFilterSEIActivationNumOutputEntries() const                                                      { return (uint32_t)m_nnPostFilterSEIActivationOutputflag.size(); }
   void        setNnPostFilterSEIActivationOutputFlag(std::vector<bool> value)                                           { m_nnPostFilterSEIActivationOutputflag = value; }
   const       std::vector<bool>& getNnPostFilterSEIActivationOutputFlag() const                                         { return m_nnPostFilterSEIActivationOutputflag; }
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
   void        setNnPostFilterSEIActivationPromptUpdateFlag(bool  promptUpdateFlag)                                      { m_nnPostFilterSEIActivationPromptUpdateFlag = promptUpdateFlag; }
   bool        getNnPostFilterSEIActivationPromptUpdateFlag() const                                                      { return m_nnPostFilterSEIActivationPromptUpdateFlag; }
   void        setNnPostFilterSEIActivationPrompt(std::string prompt)                                                    { m_nnPostFilterSEIActivationPrompt = prompt; }
   std::string getNnPostFilterSEIActivationPrompt() const                                                                { return m_nnPostFilterSEIActivationPrompt; }
-#endif
-#if JVET_AK0326_NNPF_SEED
   void        setNnPostFilterSEIActivationSeedUpdateFlag(bool seedUpdateFlag)                                           { m_nnPostFilterSEIActivationSeedUpdateFlag = seedUpdateFlag; }
   bool        getNnPostFilterSEIActivationSeedUpdateFlag() const                                                        { return m_nnPostFilterSEIActivationSeedUpdateFlag; }
   void        setNnPostFilterSEIActivationSeed(uint32_t seed)                                                           { m_nnPostFilterSEIActivationSeed = seed; }
   uint32_t    getNnPostFilterSEIActivationSeed() const                                                                  { return m_nnPostFilterSEIActivationSeed; }
-#endif
-#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
-#if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
   void        setNnPostFilterSEIActivationSelectedInputFlag(uint32_t selectedInputFlag)                                 { m_nnPostFilterSEIActivationSelectedInputFlag = selectedInputFlag; }
   bool        getNnPostFilterSEIActivationSelectedInputFlag() const                                                     { return m_nnPostFilterSEIActivationSelectedInputFlag; }
-#endif 
   void        setNnPostFilterSEIActivationNumInputPicShift(uint32_t numInputPicShift)                                   { m_nnPostFilterSEIActivationNumInputPicShift = numInputPicShift; }
   uint32_t    getNnPostFilterSEIActivationNumInputPicShift() const                                                      { return m_nnPostFilterSEIActivationNumInputPicShift; }
-#endif 
 
   void  setBufferingPeriodSEIEnabled(bool b)                         { m_bufferingPeriodSEIEnabled = b; }
   bool  getBufferingPeriodSEIEnabled() const                         { return m_bufferingPeriodSEIEnabled; }
@@ -2797,15 +2733,12 @@ public:
   bool getEOISEIPicQuantObjectFlag() const { return m_eoiSEIPicQuantObjectFlag; }
   void setEOISEITemporalResamplingTypeFlag(bool temporalResamplingTypeFlag) { m_eoiSEITemporalResamplingTypeFlag = temporalResamplingTypeFlag; }
   bool getEOISEITemporalResamplingTypeFlag() const { return m_eoiSEITemporalResamplingTypeFlag; }
-#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
   void setEOISEISrcPicFlag(bool srcPicFlag) { m_eoiSEISrcPicFlag = srcPicFlag; }
   bool getEOISEISrcPicFlag() const { return m_eoiSEISrcPicFlag; }
-#endif
   void setEOISEINumIntPics(uint32_t numIntPics) { m_eoiSEINumIntPics = numIntPics; }
   uint32_t getEOISEINumIntPics() const { return m_eoiSEINumIntPics; }
   void setEOISEIOrigPicDimensionsFlag(bool origPicDimensionsFlag) { m_eoiSEIOrigPicDimensionsFlag = origPicDimensionsFlag; }
   bool getEOISEIOrigPicDimensionsFlag() { return m_eoiSEIOrigPicDimensionsFlag; }
-#if JVET_AL0123_AL0310_EOI
   void setEOISEIOrigPicWidthMinus1(uint32_t origPicWidthMinus1) { m_eoiSEIOrigPicWidthMinus1 = origPicWidthMinus1; }
   uint32_t getEOISEIOrigPicWidthMinus1() { return m_eoiSEIOrigPicWidthMinus1; }
   void     setEOISEIOrigPicHeightMinus1(uint32_t origPicHeightMinus1) { m_eoiSEIOrigPicHeightMinus1 = origPicHeightMinus1; }
@@ -2814,14 +2747,6 @@ public:
   uint32_t getEOISEISpatialHorResamplingTypeIdc() const { return m_eoiSEISpatialHorResamplingTypeIdc; }
   void setEOISEISpatialVerResamplingTypeIdc(uint32_t spatialVerResamplingTypeIdc) { m_eoiSEISpatialVerResamplingTypeIdc = spatialVerResamplingTypeIdc; }
   uint32_t getEOISEISpatialVerResamplingTypeIdc() const { return m_eoiSEISpatialVerResamplingTypeIdc; }
-#else
-  void setEOISEIOrigPicWidth(uint32_t origPicWidth) { m_eoiSEIOrigPicWidth = origPicWidth; }
-  uint32_t getEOISEIOrigPicWidth() { return m_eoiSEIOrigPicWidth; }
-  void     setEOISEIOrigPicHeight(uint32_t origPicHeight) { m_eoiSEIOrigPicHeight = origPicHeight; }
-  uint32_t getEOISEIOrigPicHeight() { return m_eoiSEIOrigPicHeight; }
-  void setEOISEISpatialResamplingTypeFlag(bool spatialResamplingTypeFlag) { m_eoiSEISpatialResamplingTypeFlag = spatialResamplingTypeFlag; }
-  bool getEOISEISpatialResamplingTypeFlag() const { return m_eoiSEISpatialResamplingTypeFlag; }
-#endif
   void setEOISEIPrivacyProtectionTypeIdc(uint32_t privacyProtectionTypeIdc) { m_eoiSEIPrivacyProtectionTypeIdc = privacyProtectionTypeIdc; }
   uint32_t getEOISEIPrivacyProtectionTypeIdc() const { return m_eoiSEIPrivacyProtectionTypeIdc; }
   void setEOISEIPrivacyProtectedInfoType(uint32_t privacyProtectedInfoType) { m_eoiSEIPrivacyProtectedInfoType = privacyProtectedInfoType; }
@@ -2889,14 +2814,12 @@ public:
   uint8_t   getFGCSEIIntensityIntervalUpperBound(int index, int ctr)            { return m_fgcSEIIntensityIntervalUpperBound[index][ctr]; }
   void      setFGCSEICompModelValue             (uint32_t v, int index, int ctr, int modelCtr)  { m_fgcSEICompModelValue[index][ctr][modelCtr] = v; }
   uint32_t  getFGCSEICompModelValue             (int index, int ctr, int modelCtr)              { return m_fgcSEICompModelValue[index][ctr][modelCtr]; }
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
   void      setFGCSEISpatialResolutionPresentFlag(bool b)                       { m_fgcSEISpatialResolutionPresentFlag = b; }
   bool      getFGCSEISpatialResolutionPresentFlag()                             { return m_fgcSEISpatialResolutionPresentFlag; }
   void      setFGCSEIPicWidthInLumaSamples(int w)                               { m_fgcSEIPicWidthInLumaSamples = w; }
   int       getFGCSEIPicWidthInLumaSamples()                                    { return m_fgcSEIPicWidthInLumaSamples; }
   void      setFGCSEIPicHeightInLumaSamples(int w)                              { m_fgcSEIPicHeightInLumaSamples = w; }
   int       getFGCSEIPicHeightInLumaSamples()                                   { return m_fgcSEIPicHeightInLumaSamples; }
-#endif
   // cll SEI
   void  setCLLSEIEnabled(bool b)                                     { m_cllSEIEnabled = b; }
   bool  getCLLSEIEnabled()                                           { return m_cllSEIEnabled; }
@@ -3112,13 +3035,8 @@ public:
   uint32_t getPoSEIForHumanViewingIdc()                              { return m_poSEIForHumanViewingIdc; }
   void     setPoSEIForMachineAnalysisIdc(uint32_t i)                 { m_poSEIForMachineAnalysisIdc = i; }
   uint32_t getPoSEIForMachineAnalysisIdc()                           { return m_poSEIForMachineAnalysisIdc; }
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
   void     setPoSEINumMinus1(uint32_t i)                             { m_poSEINumMinus1 = i; }
   uint32_t getPoSEINumMinus1()                                       { return m_poSEINumMinus1; }
-#else
-  void     setPoSEINumMinus2(uint32_t i)                             { m_poSEINumMinus2 = i; }
-  uint32_t getPoSEINumMinus2()                                       { return m_poSEINumMinus2; }
-#endif
   void     setPoSEIBreadthFirstFlag(bool b)                          { m_poSEIBreadthFirstFlag = b; }
   bool     getPoSEIBreadthFirstFlag()                                { return m_poSEIBreadthFirstFlag; }
   void     setPoSEIWrappingFlag(const std::vector<bool>& b)          { m_poSEIWrappingFlag = b; }
@@ -3137,7 +3055,6 @@ public:
   uint16_t getPoSEINumOfPrefixBits(uint16_t idx)               const { return m_poSEINumOfPrefixBits[idx]; }
   uint32_t getPoSEIPayloadTypeSize()                           const { return (uint32_t)m_poSEIPayloadType.size(); }
   void     setPoSEIPrefixByte(const std::vector<std::vector<uint8_t>>& b) { m_poSEIPrefixByte = b; }
-#if JVET_AJ0105_SPO_COMPLEXITY_INFO
   void     setPoSEIComplexityInfoPresentFlag(bool b)                 { m_poSEIComplexityInfoPresentFlag = b; }
   bool     getPoSEIComplexityInfoPresentFlag()                       { return m_poSEIComplexityInfoPresentFlag; }
   void     setPoSEIParameterTypeIdc(uint32_t b)                      { m_poSEIParameterTypeIdc = b; }
@@ -3150,7 +3067,6 @@ public:
   uint32_t getPoSEINumKmacOperationIdc()                             { return m_poSEINumKmacOperationIdc; }
   void     setPoSEITotalKilobyteSize(uint32_t b)                     { m_poSEITotalKilobyteSize = b; }
   uint32_t getPoSEITotalKilobyteSize()                               { return m_poSEITotalKilobyteSize; }
-#endif
   std::vector<uint8_t>  getPoSEIPrefixByte(uint16_t idx)       const { return m_poSEIPrefixByte[idx]; }
   void     setPostFilterHintSEIEnabled(bool b) { m_postFilterHintSEIEnabled = b; }
   bool     getPostFilterHintSEIEnabled() { return m_postFilterHintSEIEnabled; }
@@ -3184,7 +3100,6 @@ public:
   std::string  getTextSEIDescriptionStringLang(int idx) const {return m_textSEIDescriptionStringLang[idx];}
   void         setTextSEIDescriptionString(const std::vector<std::string> b) {m_textSEIDescriptionString = b;}
   std::string  getTextSEIDescriptionString(int idx) const {return m_textSEIDescriptionString[idx];}
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   void         setAURSEIEnabled(bool b) { m_aurSEIEnabled = b; }
   bool         getAURSEIEnabled() const { return m_aurSEIEnabled; }
   void         setAURSEICancelFlag(bool b) { m_aurSEICancelFlag = b; }
@@ -3199,13 +3114,9 @@ public:
   bool         getAURSEIContextPresentFlag(uint32_t idx) const { return m_aurSEIContextPresentFlag[idx]; }
   void         setAURSEIContext(std::vector<uint32_t> b) { m_aurSEIContext = b; }
   uint32_t     getAURSEIContext(uint32_t idx) const { return m_aurSEIContext[idx]; }
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   void         setAURSEIExclusionFlag(std::vector<bool> b) { m_aurSEIExclusionFlag = b; }
   bool         getAURSEIExclusionFlag(uint32_t idx) const { return m_aurSEIExclusionFlag[idx]; }
-#endif
-#endif
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void     setPriSEIEnabled(bool b)                                       { m_priSEIEnabled = b; }
   bool     getPriSEIEnabled()                                             { return m_priSEIEnabled; }
   void     setPriSEICancelFlag(bool b)                                    { m_priSEICancelFlag = b; }
@@ -3214,10 +3125,8 @@ public:
   bool     getPriSEIPersistenceFlag()                                     { return m_priSEIPersistenceFlag; }
   void     setPriSEINumRegionsMinus1(uint32_t i)                          { m_priSEINumRegionsMinus1 = i; }
   uint32_t getPriSEINumRegionsMinus1()                                    { return m_priSEINumRegionsMinus1; }
-#if JVET_AL0324_AL0070_PRI_SEI
   void     setPriSEIMultilayerFlag(bool b)                                { m_priSEIMultilayerFlag = b; }
   bool     getPriSEIMultilayerFlag()                                      { return m_priSEIMultilayerFlag; }
-#endif
   void     setPriSEIUseMaxDimensionsFlag(bool b)                          { m_priSEIUseMaxDimensionsFlag = b; }
   bool     getPriSEIUseMaxDimensionsFlag()                                { return m_priSEIUseMaxDimensionsFlag; }
   void     setPriSEILog2UnitSize(uint32_t i)                              { m_priSEILog2UnitSize = i; }
@@ -3246,12 +3155,10 @@ public:
   uint32_t getPriSEIResamplingHeightDenomMinus1(int i)                    { return m_priSEIResamplingHeightDenomMinus1[i]; }
   void     setPriSEIRegionId(std::vector<uint32_t>& b)                    { m_priSEIRegionId = b; }
   uint32_t getPriSEIRegionId(int i)                                       { return m_priSEIRegionId[i]; }
-#if JVET_AL0324_AL0070_PRI_SEI
   void     setPriSEIRegionLayerId(std::vector<uint32_t>& b)               { m_priSEIRegionLayerId = b; }
   uint32_t getPriSEIRegionLayerId(int i)                                  { return m_priSEIRegionLayerId[i]; }
   void     setPriSEIRegionIsALayerFlag(std::vector<bool>& b)              { m_priSEIRegionIsALayerFlag = b; }
   uint32_t getPriSEIRegionIsALayerFlag(int i)                             { return m_priSEIRegionIsALayerFlag[i]; }
-#endif
   void     setPriSEIRegionTopLeftInUnitsX(std::vector<uint32_t>& b)       { m_priSEIRegionTopLeftInUnitsX = b; }
   uint32_t getPriSEIRegionTopLeftInUnitsX(int i)                          { return m_priSEIRegionTopLeftInUnitsX[i]; }
   void     setPriSEIRegionTopLeftInUnitsY(std::vector<uint32_t>& b)       { m_priSEIRegionTopLeftInUnitsY = b; }
@@ -3262,25 +3169,10 @@ public:
   uint32_t getPriSEIRegionHeightInUnitsMinus1(int i)                      { return m_priSEIRegionHeightInUnitsMinus1[i]; }
   void     setPriSEIResamplingRatioIdx(std::vector<uint32_t>& b)          { m_priSEIResamplingRatioIdx = b; }
   uint32_t getPriSEIResamplingRatioIdx(int i)                             { return m_priSEIResamplingRatioIdx[i]; }
-#if JVET_AL0324_AL0070_PRI_SEI
   void     setPriSEITargetRegionTopLeftInUnitsX(std::vector<uint32_t>& b) { m_priSEITargetRegionTopLeftInUnitsX = b; }
   uint32_t getPriSEITargetRegionTopLeftInUnitsX(int i) { return m_priSEITargetRegionTopLeftInUnitsX[i]; }
   void     setPriSEITargetRegionTopLeftInUnitsY(std::vector<uint32_t>& b) { m_priSEITargetRegionTopLeftInUnitsY = b; }
   uint32_t getPriSEITargetRegionTopLeftInUnitsY(int i) { return m_priSEITargetRegionTopLeftInUnitsY[i]; }
-#else
-  void     setPriSEITargetRegionTopLeftX(std::vector<uint32_t>& b)        { m_priSEITargetRegionTopLeftX = b; }
-  uint32_t getPriSEITargetRegionTopLeftX(int i)                           { return m_priSEITargetRegionTopLeftX[i]; }
-  void     setPriSEITargetRegionTopLeftY(std::vector<uint32_t>& b)        { m_priSEITargetRegionTopLeftY = b; }
-  uint32_t getPriSEITargetRegionTopLeftY(int i)                           { return m_priSEITargetRegionTopLeftY[i]; }
-  void     setPriSEIMultilayerFlag(bool b)                                { m_priSEIMultilayerFlag = b; }
-  bool     getPriSEIMultilayerFlag()                                      { return m_priSEIMultilayerFlag; }
-  void     setPriSEIRegionLayerId(std::vector<uint32_t>& b)               { m_priSEIRegionLayerId = b; }
-  uint32_t getPriSEIRegionLayerId(int i)                                  { return m_priSEIRegionLayerId[i]; }
-  void     setPriSEIRegionIsALayerFlag(std::vector<bool>& b)              { m_priSEIRegionIsALayerFlag = b; }
-  bool     getPriSEIRegionIsALayerFlag(int i)                             { return m_priSEIRegionIsALayerFlag[i]; }
-#endif
-#endif
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   bool                        getIfmSEIEnabled() const { return m_ifmSeiEnabled; }
   void                        setIfmSEIEnabled(bool b) { m_ifmSeiEnabled = b;    }
   bool                        getIfmSEICancelFlag() const { return m_ifmCancelFlag; }
@@ -3297,7 +3189,6 @@ public:
   void                        setIfmDataPayloadByte(int index, std::vector<uint8_t>& v) { m_ifmDataPayloadByte[index] = v;  }
   std::string                 getIfmDataUri(int index) const { return m_ifmDataUri[index]; }
   void                        setIfmDataUri(int index, std::string s) { m_ifmDataUri[index] = s;  }
-#endif
 
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }
   void         setWPBiPred            ( bool b )                     { m_useWeightedBiPred = b;    }
@@ -3637,15 +3528,12 @@ public:
   const std::string getGenerativeFaceVideoSEINNURI()                                const { return m_generativeFaceVideoSEINNURI; }
   void              setGenerativeFaceVideoSEIChromaKeyInfoPresentFlag(bool ChromaKeyInfoPresentFlag)                        { m_generativeFaceVideoSEIChromaKeyInfoPresentFlag = ChromaKeyInfoPresentFlag; }
   bool              getGenerativeFaceVideoSEIChromaKeyInfoPresentFlag()                                               const { return m_generativeFaceVideoSEIChromaKeyInfoPresentFlag; }
-#if JVET_AM0334_GFV_CHROMA_KEY
   void              setGenerativeFaceVideoSEIChromaKeyPurposeIdc(bool idc)                                                  { m_generativeFaceVideoSEIChromaKeyPurposeIdc = idc; }
   uint32_t          getGenerativeFaceVideoSEIChromaKeyPurposeIdc()                                                    const { return m_generativeFaceVideoSEIChromaKeyPurposeIdc; }
-#endif
   void              setGenerativeFaceVideoSEIChromaKeyValuePresentFlag(const std::vector<bool>& ChromaKeyValuePresentFlag)  { m_generativeFaceVideoSEIChromaKeyValuePresentFlag = ChromaKeyValuePresentFlag; }
   bool              getGenerativeFaceVideoSEIChromaKeyValuePresentFlag(int c)                                         const { return m_generativeFaceVideoSEIChromaKeyValuePresentFlag[c]; }
   void              setGenerativeFaceVideoSEIChromaKeyValue(const std::vector<uint32_t>& ChromaKeyValue)                    { m_generativeFaceVideoSEIChromaKeyValue = ChromaKeyValue; }
   uint32_t          getGenerativeFaceVideoSEIChromaKeyValue(uint32_t c)                                               const { return m_generativeFaceVideoSEIChromaKeyValue[c]; }  
-#if JVET_AM0334_GFV_CHROMA_KEY
   void              setGenerativeFaceVideoSEIChromaKeyThrPresentFlag(bool ChromaKeyThrPresentFlag)                          { m_generativeFaceVideoSEIChromaKeyThrPresentFlag = ChromaKeyThrPresentFlag; }
   bool              getGenerativeFaceVideoSEIChromaKeyThrPresentFlag()                                                const { return m_generativeFaceVideoSEIChromaKeyThrPresentFlag; }
   void              setGenerativeFaceVideoSEIChromaKeyThrLower(uint32_t ChromaKeyThrValue)                                  { m_generativeFaceVideoSEIChromaKeyThrLower = ChromaKeyThrValue; }
@@ -3654,14 +3542,6 @@ public:
   uint32_t          getGenerativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1()                                           const { return m_generativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1; }
   void              setGenerativeFaceVideoSEIFusionPicFlag(const std::vector<bool>& FusionPicFlag)                          { m_generativeFaceVideoSEIFusionPicFlag = FusionPicFlag; }
   bool              getGenerativeFaceVideoSEIFusionPicFlag(int idx)                                                   const { return m_generativeFaceVideoSEIFusionPicFlag[idx]; }
-#else
-  void              setGenerativeFaceVideoSEIChromaKeyThrPresentFlag(const std::vector<bool>& ChromaKeyThrPresentFlag)      { m_generativeFaceVideoSEIChromaKeyThrPresentFlag = ChromaKeyThrPresentFlag; }
-  bool              getGenerativeFaceVideoSEIChromaKeyThrPresentFlag(int i)                                           const { return m_generativeFaceVideoSEIChromaKeyThrPresentFlag[i]; }
-  void              setGenerativeFaceVideoSEIChromaKeyThrValue(const std::vector<uint32_t>& ChromaKeyThrValue)              { m_generativeFaceVideoSEIChromaKeyThrValue = ChromaKeyThrValue; }
-  uint32_t          getGenerativeFaceVideoSEIChromaKeyThrValue(uint32_t i)                                            const { return m_generativeFaceVideoSEIChromaKeyThrValue[i]; }
-  void              setGenerativeFaceVideoSEIDrivePicFusionFlag(const std::vector<bool>& DrivePicFusionFlag)  { m_generativeFaceVideoSEIDrivePicFusionFlag = DrivePicFusionFlag; }
-  bool              getGenerativeFaceVideoSEIDrivePicFusionFlag(int idx)            const { return m_generativeFaceVideoSEIDrivePicFusionFlag[idx]; }
-#endif
   void              setGenerativeFaceVideoSEIId(const std::vector<uint32_t>& id)          { m_generativeFaceVideoSEIId = id; }
   uint32_t          getGenerativeFaceVideoSEIId(int idx)                            const { return m_generativeFaceVideoSEIId[idx]; }
   void              setGenerativeFaceVideoSEICnt(const std::vector<uint32_t>& cnt)        { m_generativeFaceVideoSEICnt = cnt; }

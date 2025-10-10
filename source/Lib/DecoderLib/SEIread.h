@@ -133,15 +133,9 @@ protected:
   void xParseSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIDigitallySignedContentSelection     (SEIDigitallySignedContentSelection &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIDigitallySignedContentVerification  (SEIDigitallySignedContentVerification &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   void xParseSEIAIUsageRestrictions                 (SEIAIUsageRestrictions& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
-#endif
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void xParsePackedRegionsInfo(SEIPackedRegionsInfo &sei, const uint32_t nuhLayerId, uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream);
-#endif
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   void xParseSEIImageFormatMetadata(SEIImageFormatMetadata & sei,uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream);
-#endif
 
   void sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName);
   void sei_read_code(std::ostream *pOS, uint32_t length, uint32_t &ruiCode, const char *pSymbolName);
@@ -149,9 +143,7 @@ protected:
   void sei_read_svlc(std::ostream *pOS,                int&  ruiCode, const char *pSymbolName);
   void sei_read_flag(std::ostream *pOS,                uint32_t& ruiCode, const char *pSymbolName);
   void sei_read_string(std::ostream* os, std::string& code, const char* symbolName);
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
   bool xPayloadExtensionPresent();
-#endif
 
 protected:
   HRD m_nestedHrd;
