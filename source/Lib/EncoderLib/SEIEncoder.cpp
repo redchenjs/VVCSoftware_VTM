@@ -2340,12 +2340,8 @@ void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedC
 #if JVET_AK0206_DSC_SEI_ID
   sei->dsciId = m_pcCfg->getDigitallySignedContentSEICfg().dscId;
 #endif
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   sei->dsciNumVerificationSubstreams = m_pcCfg->getDigitallySignedContentSEICfg().numVerificationSubstreams;
   sei->dsciRefSubstreamFlag = m_pcCfg->getDigitallySignedContentSEICfg().refSubstreamFlag;
-#else
-  sei->dsciNumVerificationSubstreams = 1; //m_pcCfg->getMaxTempLayer();
-#endif
   sei->dsciHashMethodType = m_pcCfg->getDigitallySignedContentSEICfg().hashMethod;
   sei->dsciKeySourceUri = m_pcCfg->getDigitallySignedContentSEICfg().publicKeyUri;
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION  

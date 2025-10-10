@@ -58,7 +58,7 @@
 
 EncLib::EncLib(EncLibCommon *encLibCommon)
   : m_cListPic(encLibCommon->getPictureBuffer())
-#if JVET_AJ0151_DSC_SEI && JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
+#if JVET_AJ0151_DSC_SEI
   , m_cGOPEncoder(encLibCommon->getDscSubstreamManager())
 #endif
   , m_spsMap(encLibCommon->getSpsMap())

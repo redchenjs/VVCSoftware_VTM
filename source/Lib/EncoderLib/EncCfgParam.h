@@ -88,10 +88,8 @@ public:
   bool                      keyIdEnabled = false;
   int                       keyId = 0;
   int                       hashMethod = 0;
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   int                            numVerificationSubstreams = 1;
   std::vector<std::vector<bool>> refSubstreamFlag;
-#endif
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   bool                      implicitAssociationModeFlag = false;
 #endif

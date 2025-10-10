@@ -5340,7 +5340,6 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
   }
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dsci_num_verification_substreams_minus1");
   sei.dsciNumVerificationSubstreams = val + 1;
-#if  JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   sei.dsciRefSubstreamFlag.resize(sei.dsciNumVerificationSubstreams);
   for (int i = 1; i < sei.dsciNumVerificationSubstreams; i++)
   {
@@ -5351,7 +5350,6 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
       sei.dsciRefSubstreamFlag[i][j] = (val!=0);
     }
   }
-#endif
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   sei_read_flag(pDecodedMessageOutputStream, val, "dsci_vss_implicit_association_mode_flag");
   sei.dsciVSSImplicitAssociationModeFlag = (val!=0);

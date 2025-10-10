@@ -756,7 +756,6 @@ void DecLib::xInitDscSubstreamManager(SEIMessages &SEIs)
     }
 #if JVET_AK0206_DSC_SEI_ID
     m_dscSubstreamManagerMap[dsci->dsciId].initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
 #if JVET_AM0118_DSC_FOR_SEI
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag, dsci->dsciSEISigningFlag);
@@ -766,23 +765,16 @@ void DecLib::xInitDscSubstreamManager(SEIMessages &SEIs)
 #else
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
 #endif
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid);
-#endif
     if (!m_dscSubstreamManagerMap[dsci->dsciId].initVerificator(m_keyStoreDir, m_trustStoreDir))
     {
       printf("Error: Cannot initialize Digitally Signed Content verification\n");
     }
 #else
     m_dscSubstreamManager.initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag);
 #else
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
-#endif
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid);
 #endif
     if (!m_dscSubstreamManager.initVerificator(m_keyStoreDir, m_trustStoreDir))
     {
@@ -3364,7 +3356,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     SEIDigitallySignedContentInitialization* dsci = (SEIDigitallySignedContentInitialization*) dscInitSEIs.front();
 #if JVET_AK0206_DSC_SEI_ID
     m_dscSubstreamManagerMap[dsci->dsciId].initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
 #if JVET_AM0118_DSC_FOR_SEI
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag, dsci->dsciSEISigningFlag);
@@ -3374,23 +3365,16 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
 #else
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
 #endif
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid);
-#endif
     if (!m_dscSubstreamManagerMap[dsci->dsciId].initVerificator(m_keyStoreDir, m_trustStoreDir))
     {
       printf("Error: Cannot initialize Digitally Signed Content verification\n");
     }
 #else
     m_dscSubstreamManager.initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
-#if JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag);
 #else
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
-#endif
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid);
 #endif
     if (!m_dscSubstreamManager.initVerificator(m_keyStoreDir, m_trustStoreDir))
     {

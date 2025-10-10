@@ -3155,7 +3155,6 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
   }
   CHECK (sei.dsciNumVerificationSubstreams < 1, "Number of DSC verification substreams has to be greater than zero");
   xWriteUvlc(sei.dsciNumVerificationSubstreams - 1, "dsci_num_verification_substreams_minus1");
-#if  JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG
   for (int i = 1; i < sei.dsciNumVerificationSubstreams; i++)
   {
     for (int j = 0; j < i; j++)
@@ -3163,7 +3162,6 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
       xWriteFlag(sei.dsciRefSubstreamFlag[i][j], "dsci_ref_substream_flag");
     }
   }
-#endif
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   xWriteFlag(sei.dsciVSSImplicitAssociationModeFlag, "dsci_vss_implicit_association_mode_flag");
 #endif

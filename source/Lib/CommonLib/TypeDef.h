@@ -76,7 +76,6 @@
 
 #define JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI        1
 
-#define JVET_AK0287_DSCI_SEI_REF_SUBSTREAM_FLAG           1 // Signal flags for substreams to indicate substream dependency
 
 #define JVET_AK0055_SPO_SEI_CONSTRAINT                    1 // Add FPA, RWP, ERP, GCMP constraints
 
