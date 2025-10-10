@@ -2112,7 +2112,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteString(sei.m_prompt, "nnpfc_prompt");
       }
     }
-#if JVET_AK0326_NNPF_SEED
     if ((sei.m_auxInpIdc & 4) > 0)
     {
       xWriteFlag(sei.m_inbandSeedFlag, "nnpfc_inband_seed_flag");
@@ -2121,7 +2120,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteCode(sei.m_seed, 16, "nnpfc_seed");
       }
     }
-#endif
     xWriteUvlc(sei.m_inpOrderIdc, "nnpfc_inp_order_idc");
     if (sei.m_inpFormatIdc == 1)
     {
@@ -2299,13 +2297,11 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
       xWriteString(sei.m_prompt, "nnpfa_prompt");
     }
 #endif
-#if JVET_AK0326_NNPF_SEED
     xWriteFlag(sei.m_seedUpdateFlag, "nnpfa_seed_update_flag");
     if (sei.m_seedUpdateFlag)
     {
       xWriteCode(sei.m_seed, 16, "nnpfa_seed");
     }
-#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
 #if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
     xWriteFlag(sei.m_selectedInputFlag, "nnpfa_selected_input_flag");

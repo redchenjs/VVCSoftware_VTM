@@ -1055,10 +1055,8 @@ SEINeuralNetworkPostFilterCharacteristics::SEINeuralNetworkPostFilterCharacteris
   m_inbandPromptFlag = sei.m_inbandPromptFlag;
   m_prompt =  sei.m_prompt;
   m_inputPicOutputFlag = sei.m_inputPicOutputFlag;
-#if JVET_AK0326_NNPF_SEED
   m_inbandSeedFlag = sei.m_inbandSeedFlag;
   m_seed = sei.m_seed;
-#endif
 }
 
 bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetworkPostFilterCharacteristics& sei)
@@ -1126,13 +1124,9 @@ bool SEINeuralNetworkPostFilterCharacteristics::operator == (const SEINeuralNetw
   m_inbandPromptFlag == sei.m_inbandPromptFlag  &&
   m_prompt ==  sei.m_prompt  &&
   m_inputPicOutputFlag == sei.m_inputPicOutputFlag &&
-#if JVET_AK0326_NNPF_SEED
   m_payloadLength == sei.m_payloadLength &&
   m_inbandSeedFlag == sei.m_inbandSeedFlag &&
   m_seed == sei.m_seed;
-#else
-  m_payloadLength == sei.m_payloadLength;
-#endif
 
   if (m_payloadByte && sei.m_payloadByte && m_payloadLength == sei.m_payloadLength)
   {
@@ -1160,10 +1154,8 @@ SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   m_promptUpdateFlag = sei.m_promptUpdateFlag;
   m_prompt = sei.m_prompt;
 #endif
-#if JVET_AK0326_NNPF_SEED
   m_seedUpdateFlag = sei.m_seedUpdateFlag;
   m_seed = sei.m_seed;
-#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
 #if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
   m_selectedInputFlag = sei.m_selectedInputFlag;

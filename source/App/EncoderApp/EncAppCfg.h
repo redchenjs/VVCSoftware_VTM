@@ -842,10 +842,8 @@ protected:
   std::string           m_nnPostFilterSEICharacteristicsPrompt[MAX_NUM_NN_POST_FILTERS];
   std::vector<bool>     m_nnPostFilterSEICharacteristicsInputPicOutputFlag[MAX_NUM_NN_POST_FILTERS];
   bool                  m_nnPostFilterSEICharacteristicsAbsentInputPicZeroFlag[MAX_NUM_NN_POST_FILTERS];
-#if JVET_AK0326_NNPF_SEED
   bool                  m_nnPostFilterSEICharacteristicsInbandSeedFlag[MAX_NUM_NN_POST_FILTERS];
   uint32_t              m_nnPostFilterSEICharacteristicsSeed[MAX_NUM_NN_POST_FILTERS];
-#endif
   bool                    m_nnPostFilterSEIActivationCancelFlag;
   bool                    m_nnPostFilterSEIActivationTargetBaseFlag;
   bool                    m_nnPostFilterSEIActivationNoPrevCLVSFlag;
@@ -856,10 +854,8 @@ protected:
   bool                  m_nnPostFilterSEIActivationPromptUpdateFlag;
   std::string           m_nnPostFilterSEIActivationPrompt;
 #endif
-#if JVET_AK0326_NNPF_SEED
   bool                  m_nnPostFilterSEIActivationSeedUpdateFlag;
   uint32_t              m_nnPostFilterSEIActivationSeed;
-#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
 #if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
   bool                  m_nnPostFilterSEIActivationSelectedInputFlag;

@@ -3581,11 +3581,7 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
 
     sei_read_uvlc(pDecodedMessageOutputStream,val,"nnpfc_auxiliary_inp_idc");
     sei.m_auxInpIdc = val;
-#if JVET_AK0326_NNPF_SEED
     CHECK(val > 7, "The value of nnpfc_auxiliary_inp_idc shall be in the range of 0 to 7");
-#else
-    CHECK(val > 3, "The value of nnpfc_auxiliary_inp_idc shall be in the range of 0 to 3");
-#endif
     if ((sei.m_auxInpIdc & 2) > 0)
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_inband_prompt_flag");
@@ -3602,7 +3598,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei.m_prompt = valp;
       }
     }
-#if JVET_AK0326_NNPF_SEED
     if ((sei.m_auxInpIdc & 4) > 0)
     {
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_inband_seed_flag");
@@ -3613,7 +3608,6 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         sei.m_seed = val;
       }
     }
-#endif
     sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfc_inp_order_idc");
     sei.m_inpOrderIdc = val;
     CHECK(val > 3, "The value of nnpfc_inp_order_idc shall be in the range of 0 to 3");
@@ -3912,10 +3906,8 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
       sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_output_flag" );
       sei.m_outputFlag[i] = val;
     }
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE||JVET_AJ0114_NNPFA_NUM_PIC_SHIFT||JVET_AK0326_NNPF_SEED
     if (m_pcBitstream->getNumBitsLeft())
     {
-#endif 
 #if JVET_AJ0104_NNPFA_PROMPT_UPDATE
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfa_prompt_update_flag");
       sei.m_promptUpdateFlag = val;
@@ -3932,7 +3924,6 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
         CHECK(sei.m_prompt.empty(), "When present in the bitstream, nnpfa_prompt shall not be a null string");
       }
 #endif
-#if JVET_AK0326_NNPF_SEED
       sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_seed_update_flag" );
       sei.m_seedUpdateFlag = val;
       if (sei.m_seedUpdateFlag)
@@ -3940,7 +3931,6 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
         sei_read_code(pDecodedMessageOutputStream, 16, val, "nnpfa_seed");
         sei.m_seed = val;
       }
-#endif
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
 #if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfa_selected_input_flag");
