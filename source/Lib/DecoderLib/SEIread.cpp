@@ -918,7 +918,6 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
       }
     }
   }
-#if JVET_AJ0105_SPO_COMPLEXITY_INFO
   sei_read_flag(decodedMessageOutputStream, val, "po_complexity_info_present_flag");
   sei.m_posComplexityInfoPresentFlag = val;
   if (sei.m_posComplexityInfoPresentFlag)
@@ -942,7 +941,6 @@ void SEIReader::xParseSEIProcessingOrder(SEIProcessingOrderInfo& sei, const NalU
   {
     msg(WARNING, "When no NNPFs are present in a processing chain and po_complexity_info_present_flag is equal to 1, complexity paramaters shall be ignored");
   }
-#endif
 #endif
 
   // The following code generates subchain indices from the syntax. It can be used for testing and verification of the syntax, but is not otherwise needed in VTM.

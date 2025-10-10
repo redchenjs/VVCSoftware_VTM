@@ -64,7 +64,6 @@
 
 
 
-#define JVET_AJ0105_SPO_COMPLEXITY_INFO                   1 // JVET-AJ0105: Add signalling about complexity information in SPO SEI message
 
 #define JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI        1
 

@@ -1525,14 +1525,12 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPoSEIProcessingOrder                              (m_poSEIProcessingOrder);
   m_cEncLib.setPoSEINumOfPrefixBits                              (m_poSEINumOfPrefixBits);
   m_cEncLib.setPoSEIPrefixByte                                   (m_poSEIPrefixByte);
-#if JVET_AJ0105_SPO_COMPLEXITY_INFO
   m_cEncLib.setPoSEIComplexityInfoPresentFlag                    (m_poSEIComplexityInfoPresentFlag);
   m_cEncLib.setPoSEIParameterTypeIdc                             (m_poSEIParameterTypeIdc);
   m_cEncLib.setPoSEILog2ParameterBitLengthMinus3                 (m_poSEILog2ParameterBitLengthMinus3);
   m_cEncLib.setPoSEINumParametersIdc                             (m_poSEINumParametersIdc);
   m_cEncLib.setPoSEINumKmacOperationIdc                          (m_poSEINumKmacOperationIdc);
   m_cEncLib.setPoSEITotalKilobyteSize                            (m_poSEITotalKilobyteSize);
-#endif
 
   m_cEncLib.setTextDescriptionSEIId(m_SEITextDescriptionID);
   m_cEncLib.setTextSEICancelFlag(m_SEITextCancelFlag);
