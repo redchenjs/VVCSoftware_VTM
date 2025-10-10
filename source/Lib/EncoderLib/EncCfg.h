@@ -1048,9 +1048,7 @@ protected:
   bool     m_priSEICancelFlag;
   bool     m_priSEIPersistenceFlag;
   uint32_t m_priSEINumRegionsMinus1;
-#if JVET_AL0324_AL0070_PRI_SEI
   bool     m_priSEIMultilayerFlag;
-#endif
   bool     m_priSEIUseMaxDimensionsFlag;
   uint32_t m_priSEILog2UnitSize;
   uint32_t m_priSEIRegionSizeLenMinus1;
@@ -1065,25 +1063,15 @@ protected:
   std::vector<uint32_t> m_priSEIResamplingHeightNumMinus1;
   std::vector<uint32_t> m_priSEIResamplingHeightDenomMinus1;
   std::vector<uint32_t> m_priSEIRegionId;
-#if JVET_AL0324_AL0070_PRI_SEI
   std::vector<uint32_t> m_priSEIRegionLayerId;
   std::vector<bool>     m_priSEIRegionIsALayerFlag;
-#endif
   std::vector<uint32_t> m_priSEIRegionTopLeftInUnitsX;
   std::vector<uint32_t> m_priSEIRegionTopLeftInUnitsY;
   std::vector<uint32_t> m_priSEIRegionWidthInUnitsMinus1;
   std::vector<uint32_t> m_priSEIRegionHeightInUnitsMinus1;
   std::vector<uint32_t> m_priSEIResamplingRatioIdx;
-#if JVET_AL0324_AL0070_PRI_SEI
   std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsX;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsY;
-#else
-  std::vector<uint32_t> m_priSEITargetRegionTopLeftX;
-  std::vector<uint32_t> m_priSEITargetRegionTopLeftY;
-  bool                  m_priSEIMultilayerFlag;
-  std::vector<uint32_t> m_priSEIRegionLayerId;
-  std::vector<bool>     m_priSEIRegionIsALayerFlag;
-#endif
 #endif
 
   bool      m_constrainedRaslEncoding;
@@ -3214,10 +3202,8 @@ public:
   bool     getPriSEIPersistenceFlag()                                     { return m_priSEIPersistenceFlag; }
   void     setPriSEINumRegionsMinus1(uint32_t i)                          { m_priSEINumRegionsMinus1 = i; }
   uint32_t getPriSEINumRegionsMinus1()                                    { return m_priSEINumRegionsMinus1; }
-#if JVET_AL0324_AL0070_PRI_SEI
   void     setPriSEIMultilayerFlag(bool b)                                { m_priSEIMultilayerFlag = b; }
   bool     getPriSEIMultilayerFlag()                                      { return m_priSEIMultilayerFlag; }
-#endif
   void     setPriSEIUseMaxDimensionsFlag(bool b)                          { m_priSEIUseMaxDimensionsFlag = b; }
   bool     getPriSEIUseMaxDimensionsFlag()                                { return m_priSEIUseMaxDimensionsFlag; }
   void     setPriSEILog2UnitSize(uint32_t i)                              { m_priSEILog2UnitSize = i; }
@@ -3246,12 +3232,10 @@ public:
   uint32_t getPriSEIResamplingHeightDenomMinus1(int i)                    { return m_priSEIResamplingHeightDenomMinus1[i]; }
   void     setPriSEIRegionId(std::vector<uint32_t>& b)                    { m_priSEIRegionId = b; }
   uint32_t getPriSEIRegionId(int i)                                       { return m_priSEIRegionId[i]; }
-#if JVET_AL0324_AL0070_PRI_SEI
   void     setPriSEIRegionLayerId(std::vector<uint32_t>& b)               { m_priSEIRegionLayerId = b; }
   uint32_t getPriSEIRegionLayerId(int i)                                  { return m_priSEIRegionLayerId[i]; }
   void     setPriSEIRegionIsALayerFlag(std::vector<bool>& b)              { m_priSEIRegionIsALayerFlag = b; }
   uint32_t getPriSEIRegionIsALayerFlag(int i)                             { return m_priSEIRegionIsALayerFlag[i]; }
-#endif
   void     setPriSEIRegionTopLeftInUnitsX(std::vector<uint32_t>& b)       { m_priSEIRegionTopLeftInUnitsX = b; }
   uint32_t getPriSEIRegionTopLeftInUnitsX(int i)                          { return m_priSEIRegionTopLeftInUnitsX[i]; }
   void     setPriSEIRegionTopLeftInUnitsY(std::vector<uint32_t>& b)       { m_priSEIRegionTopLeftInUnitsY = b; }
@@ -3262,23 +3246,10 @@ public:
   uint32_t getPriSEIRegionHeightInUnitsMinus1(int i)                      { return m_priSEIRegionHeightInUnitsMinus1[i]; }
   void     setPriSEIResamplingRatioIdx(std::vector<uint32_t>& b)          { m_priSEIResamplingRatioIdx = b; }
   uint32_t getPriSEIResamplingRatioIdx(int i)                             { return m_priSEIResamplingRatioIdx[i]; }
-#if JVET_AL0324_AL0070_PRI_SEI
   void     setPriSEITargetRegionTopLeftInUnitsX(std::vector<uint32_t>& b) { m_priSEITargetRegionTopLeftInUnitsX = b; }
   uint32_t getPriSEITargetRegionTopLeftInUnitsX(int i) { return m_priSEITargetRegionTopLeftInUnitsX[i]; }
   void     setPriSEITargetRegionTopLeftInUnitsY(std::vector<uint32_t>& b) { m_priSEITargetRegionTopLeftInUnitsY = b; }
   uint32_t getPriSEITargetRegionTopLeftInUnitsY(int i) { return m_priSEITargetRegionTopLeftInUnitsY[i]; }
-#else
-  void     setPriSEITargetRegionTopLeftX(std::vector<uint32_t>& b)        { m_priSEITargetRegionTopLeftX = b; }
-  uint32_t getPriSEITargetRegionTopLeftX(int i)                           { return m_priSEITargetRegionTopLeftX[i]; }
-  void     setPriSEITargetRegionTopLeftY(std::vector<uint32_t>& b)        { m_priSEITargetRegionTopLeftY = b; }
-  uint32_t getPriSEITargetRegionTopLeftY(int i)                           { return m_priSEITargetRegionTopLeftY[i]; }
-  void     setPriSEIMultilayerFlag(bool b)                                { m_priSEIMultilayerFlag = b; }
-  bool     getPriSEIMultilayerFlag()                                      { return m_priSEIMultilayerFlag; }
-  void     setPriSEIRegionLayerId(std::vector<uint32_t>& b)               { m_priSEIRegionLayerId = b; }
-  uint32_t getPriSEIRegionLayerId(int i)                                  { return m_priSEIRegionLayerId[i]; }
-  void     setPriSEIRegionIsALayerFlag(std::vector<bool>& b)              { m_priSEIRegionIsALayerFlag = b; }
-  bool     getPriSEIRegionIsALayerFlag(int i)                             { return m_priSEIRegionIsALayerFlag[i]; }
-#endif
 #endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   bool                        getIfmSEIEnabled() const { return m_ifmSeiEnabled; }

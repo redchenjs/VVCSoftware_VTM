@@ -1384,9 +1384,7 @@ SEIPackedRegionsInfo::SEIPackedRegionsInfo(SEIPackedRegionsInfo& sei)
   m_cancelFlag = sei.m_cancelFlag;
   m_persistenceFlag = sei.m_persistenceFlag;
   m_numRegionsMinus1 = sei.m_numRegionsMinus1;
-#if JVET_AL0324_AL0070_PRI_SEI
   m_multilayerFlag = sei.m_multilayerFlag;
-#endif
   m_useMaxDimensionsFlag = sei.m_useMaxDimensionsFlag;
   m_log2UnitSize = sei.m_log2UnitSize;
   m_regionSizeLenMinus1 = sei.m_regionSizeLenMinus1;
@@ -1401,22 +1399,15 @@ SEIPackedRegionsInfo::SEIPackedRegionsInfo(SEIPackedRegionsInfo& sei)
   m_resamplingHeightNumMinus1 = sei.m_resamplingHeightNumMinus1;
   m_resamplingHeightDenomMinus1 = sei.m_resamplingHeightDenomMinus1;
   m_regionId = sei.m_regionId;
-#if JVET_AL0324_AL0070_PRI_SEI
   m_regionLayerId = sei.m_regionLayerId;
   m_regionIsALayerFlag = sei.m_regionIsALayerFlag;
-#endif
   m_regionTopLeftInUnitsX = sei.m_regionTopLeftInUnitsX;
   m_regionTopLeftInUnitsY = sei.m_regionTopLeftInUnitsY;
   m_regionWidthInUnitsMinus1 = sei.m_regionWidthInUnitsMinus1;
   m_regionHeightInUnitsMinus1 = sei.m_regionHeightInUnitsMinus1;
   m_resamplingRatioIdx = sei.m_resamplingRatioIdx;
-#if JVET_AL0324_AL0070_PRI_SEI
   m_targetRegionTopLeftInUnitsX = sei.m_targetRegionTopLeftInUnitsX;
   m_targetRegionTopLeftInUnitsY = sei.m_targetRegionTopLeftInUnitsY;
-#else
-  m_targetRegionTopLeftX = sei.m_targetRegionTopLeftX;
-  m_targetRegionTopLeftY = sei.m_targetRegionTopLeftY;
-#endif
 }
 #endif
 

@@ -1944,13 +1944,8 @@ void DecApp::xOutputPackedRegionsInfo(Picture* pcPic)
       xOutputPackedRegionsInfoVector(fp, "SEIPRIResamplingRatioIdx :", sei.m_resamplingRatioIdx);
       if (sei.m_targetPicParamsPresentFlag)
       {
-#if JVET_AL0324_AL0070_PRI_SEI
         xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftInUnitsX :", sei.m_targetRegionTopLeftInUnitsX);
         xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftInUnitsY :", sei.m_targetRegionTopLeftInUnitsY);
-#else
-        xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftX :", sei.m_targetRegionTopLeftX);
-        xOutputPackedRegionsInfoVector(fp, "SEIPRITargetRegionTopLeftY :", sei.m_targetRegionTopLeftY);
-#endif
       }
       fclose(fp);
     }

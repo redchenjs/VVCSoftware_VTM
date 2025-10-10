@@ -59,7 +59,6 @@
 
 
 
-#define JVET_AL0324_AL0070_PRI_SEI                        1 // JVET-AL0324 & JVET-AL0070 miscellaneous changes in PRI SEI message
 
 #define JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE              1 // JVET-AL0066: Add sample tolerance value to OMI SEI
 

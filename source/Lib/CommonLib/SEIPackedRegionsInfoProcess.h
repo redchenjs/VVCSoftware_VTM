@@ -72,9 +72,7 @@ public:
     , m_subHeightC(2)
     , m_priNumRegions(0)
     , m_multilayerFlag(false)
-#if JVET_AL0324_AL0070_PRI_SEI
     , m_priUseMaxDimensionsFlag(false)
-#endif
   {}
   ~SEIPackedRegionsInfoProcess() {}
   void init(SEIPackedRegionsInfo& sei, const SPS& sps, uint32_t picWidth, uint32_t picHeight);
@@ -98,9 +96,7 @@ public:
   uint32_t              m_subHeightC;
   uint32_t              m_priNumRegions;
   bool                  m_multilayerFlag;
-#if JVET_AL0324_AL0070_PRI_SEI
   bool                  m_priUseMaxDimensionsFlag;
-#endif
   std::vector<uint32_t> m_priRegionTopLeftX;
   std::vector<uint32_t> m_priRegionTopLeftY;
   std::vector<uint32_t> m_priRegionWidth;
