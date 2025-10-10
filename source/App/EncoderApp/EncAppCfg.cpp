@@ -2365,10 +2365,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationNoFollCLVSFlag", m_nnPostFilterSEIActivationNoFollCLVSFlag, false, "Specifies whether input pictures cannot (1) or can (0) originate from a following CLVS");
     opts.addOptions()("SEINNPostFilterActivationPersistenceFlag", m_nnPostFilterSEIActivationPersistenceFlag, false, "Specifies the persistence of the target neural-network post-processing filter for the current layer");
     opts.addOptions()("SEINNPostFilterActivationOutputFlag", cfg_nnPostFilterSEIActivationOutputFlagList, cfg_nnPostFilterSEIActivationOutputFlagList, "Specifies a list indicating whether the NNPF-generated picture that corresponds to the input picture having index InpIdx[i] is output or not");
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
     opts.addOptions()("SEINNPostFilterActivationPromptUpdateFlag", m_nnPostFilterSEIActivationPromptUpdateFlag, false, "Specifies that nnpfa_prompt syntax element is present and nnpfa_alignment_zero_bit syntax element may be present");
     opts.addOptions()("SEINNPostFilterActivationPrompt", m_nnPostFilterSEIActivationPrompt, std::string(""), "Specifies the text string prompt used as input for the target NNPF");
-#endif
     opts.addOptions()("SEINNPostFilterActivationSeedUpdateFlag", m_nnPostFilterSEIActivationSeedUpdateFlag, false, "Specifies the value of nnpfa_seed_update_flag in the Neural Network Post Filter Activation SEI message");
     opts.addOptions()("SEINNPostFilterActivationSeed", m_nnPostFilterSEIActivationSeed, 0u, "Specifies the seed value used as input for the target NNPF");
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
@@ -6422,12 +6420,10 @@ bool EncAppCfg::xCheckParameter()
   if (m_nnPostFilterSEIActivationEnabled)
   {
     xConfirmPara(m_nnPostFilterSEIActivationTargetId > MAX_NNPFA_ID, "SEINNPostFilterActivationTargetId must be in the range of 0 to 2^32-2");
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
     if (m_nnPostFilterSEIActivationPromptUpdateFlag)
     {
       xConfirmPara(m_nnPostFilterSEIActivationPrompt.empty(), "When present in the bitstream, SEINNPostFilterActivationPrompt shall not be a null string");
     }
-#endif
   }
 
   if (m_phaseIndicationSEIEnabledFullResolution)

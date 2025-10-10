@@ -850,10 +850,8 @@ protected:
   bool                    m_nnPostFilterSEIActivationNoFollCLVSFlag;
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputFlag;
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
   bool                  m_nnPostFilterSEIActivationPromptUpdateFlag;
   std::string           m_nnPostFilterSEIActivationPrompt;
-#endif
   bool                  m_nnPostFilterSEIActivationSeedUpdateFlag;
   uint32_t              m_nnPostFilterSEIActivationSeed;
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT

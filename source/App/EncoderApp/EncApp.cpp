@@ -1428,10 +1428,8 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setNnPostFilterSEIActivationNoFollCLVSFlag           (m_nnPostFilterSEIActivationNoFollCLVSFlag);
   m_cEncLib.setNnPostFilterSEIActivationPersistenceFlag          (m_nnPostFilterSEIActivationPersistenceFlag);
   m_cEncLib.setNnPostFilterSEIActivationOutputFlag               (m_nnPostFilterSEIActivationOutputFlag);
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
   m_cEncLib.setNnPostFilterSEIActivationPromptUpdateFlag         (m_nnPostFilterSEIActivationPromptUpdateFlag);
   m_cEncLib.setNnPostFilterSEIActivationPrompt                   (m_nnPostFilterSEIActivationPrompt);
-#endif
   m_cEncLib.setNnPostFilterSEIActivationSeedUpdateFlag           (m_nnPostFilterSEIActivationSeedUpdateFlag);
   if (m_cEncLib.getNnPostFilterSEIActivationSeedUpdateFlag())
   {

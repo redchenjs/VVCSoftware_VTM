@@ -3887,7 +3887,6 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
     }
     if (m_pcBitstream->getNumBitsLeft())
     {
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
       sei_read_flag(pDecodedMessageOutputStream, val, "nnpfa_prompt_update_flag");
       sei.m_promptUpdateFlag = val;
       if (sei.m_promptUpdateFlag)
@@ -3902,7 +3901,6 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
         sei.m_prompt = val2;
         CHECK(sei.m_prompt.empty(), "When present in the bitstream, nnpfa_prompt shall not be a null string");
       }
-#endif
       sei_read_flag( pDecodedMessageOutputStream, val, "nnpfa_seed_update_flag" );
       sei.m_seedUpdateFlag = val;
       if (sei.m_seedUpdateFlag)
@@ -3923,9 +3921,7 @@ void SEIReader::xParseSEINNPostFilterActivation(SEINeuralNetworkPostFilterActiva
       sei_read_uvlc(pDecodedMessageOutputStream, val, "nnpfa_num_input_pic_shift");
       sei.m_numInputPicShift = val;
 #endif
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE||JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
     }
-#endif 
 #endif 
   }
 }

@@ -811,10 +811,8 @@ protected:
   bool                    m_nnPostFilterSEIActivationNoFollCLVSFlag;
   bool                    m_nnPostFilterSEIActivationPersistenceFlag;
   std::vector<bool>       m_nnPostFilterSEIActivationOutputflag;
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
   bool                    m_nnPostFilterSEIActivationPromptUpdateFlag;
   std::string             m_nnPostFilterSEIActivationPrompt;
-#endif
   bool                    m_nnPostFilterSEIActivationSeedUpdateFlag;
   uint32_t                m_nnPostFilterSEIActivationSeed;
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
@@ -2368,12 +2366,10 @@ public:
   uint32_t    getNnPostFilterSEIActivationNumOutputEntries() const                                                      { return (uint32_t)m_nnPostFilterSEIActivationOutputflag.size(); }
   void        setNnPostFilterSEIActivationOutputFlag(std::vector<bool> value)                                           { m_nnPostFilterSEIActivationOutputflag = value; }
   const       std::vector<bool>& getNnPostFilterSEIActivationOutputFlag() const                                         { return m_nnPostFilterSEIActivationOutputflag; }
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
   void        setNnPostFilterSEIActivationPromptUpdateFlag(bool  promptUpdateFlag)                                      { m_nnPostFilterSEIActivationPromptUpdateFlag = promptUpdateFlag; }
   bool        getNnPostFilterSEIActivationPromptUpdateFlag() const                                                      { return m_nnPostFilterSEIActivationPromptUpdateFlag; }
   void        setNnPostFilterSEIActivationPrompt(std::string prompt)                                                    { m_nnPostFilterSEIActivationPrompt = prompt; }
   std::string getNnPostFilterSEIActivationPrompt() const                                                                { return m_nnPostFilterSEIActivationPrompt; }
-#endif
   void        setNnPostFilterSEIActivationSeedUpdateFlag(bool seedUpdateFlag)                                           { m_nnPostFilterSEIActivationSeedUpdateFlag = seedUpdateFlag; }
   bool        getNnPostFilterSEIActivationSeedUpdateFlag() const                                                        { return m_nnPostFilterSEIActivationSeedUpdateFlag; }
   void        setNnPostFilterSEIActivationSeed(uint32_t seed)                                                           { m_nnPostFilterSEIActivationSeed = seed; }

@@ -1142,10 +1142,8 @@ SEINeuralNetworkPostFilterActivation::SEINeuralNetworkPostFilterActivation(
   m_noPrevCLVSFlag = sei.m_noPrevCLVSFlag;
   m_noFollCLVSFlag = sei.m_noFollCLVSFlag;
   m_outputFlag = sei.m_outputFlag;
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE
   m_promptUpdateFlag = sei.m_promptUpdateFlag;
   m_prompt = sei.m_prompt;
-#endif
   m_seedUpdateFlag = sei.m_seedUpdateFlag;
   m_seed = sei.m_seed;
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT

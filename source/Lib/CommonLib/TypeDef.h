@@ -85,7 +85,6 @@
 
 //########### place macros to be be kept below this line ###############
 
-#define JVET_AJ0104_NNPFA_PROMPT_UPDATE   1
 #define JVET_AJ0114_NNPFA_NUM_PIC_SHIFT   1
 #if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
 #define JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG   1

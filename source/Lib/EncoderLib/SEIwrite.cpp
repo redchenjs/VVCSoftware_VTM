@@ -2268,7 +2268,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
     {
       xWriteFlag(sei.m_outputFlag[i], "nnpfa_output_flag");
     }
-#if JVET_AJ0104_NNPFA_PROMPT_UPDATE  
     xWriteFlag(sei.m_promptUpdateFlag, "nnpfa_prompt_update_flag");
     if (sei.m_promptUpdateFlag)
     {
@@ -2278,7 +2277,6 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterActivation(const SEINeuralNetwor
       }
       xWriteString(sei.m_prompt, "nnpfa_prompt");
     }
-#endif
     xWriteFlag(sei.m_seedUpdateFlag, "nnpfa_seed_update_flag");
     if (sei.m_seedUpdateFlag)
     {
