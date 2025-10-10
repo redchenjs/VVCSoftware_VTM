@@ -379,7 +379,7 @@ protected:
   void xUpdateDuInfoSEI(SEIMessages& duInfoSeiMessages, SEIPictureTiming* pt);
   void xCreateScalableNestingSEI(SEIMessages& seiMessages, SEIMessages& nestedSeiMessages, const std::vector<int> &targetOLSs, const std::vector<int> &targetLayers, const std::vector<uint16_t>& subpicIDs, uint16_t maxSubpicIdInPic);
   void xWriteSEI (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId);
-#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+#if JVET_AJ0151_DSC_SEI
   void xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId, bool signSEI = false);
 #else
   void xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId);

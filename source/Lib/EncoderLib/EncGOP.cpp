@@ -571,7 +571,7 @@ void EncGOP::xWriteSEI (NalUnitType naluType, SEIMessages& seiMessages, AccessUn
   auPos++;
 }
 
-#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+#if JVET_AJ0151_DSC_SEI
 void EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId, bool signSEI)
 #else
 void EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages, AccessUnit &accessUnit, AccessUnit::iterator &auPos, int temporalId)
@@ -588,7 +588,7 @@ void EncGOP::xWriteSEISeparately (NalUnitType naluType, SEIMessages& seiMessages
     SEIMessages tmpMessages;
     tmpMessages.push_back(*sei);
     OutputNALUnit nalu( naluType, m_pcEncLib->getLayerId(), temporalId );
-#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+#if JVET_AJ0151_DSC_SEI
     if (m_pcCfg->getDigitallySignedContentSEICfg().enabled && ((m_pcCfg->getDigitallySignedContentSEICfg().signAURSEI && (*sei)->payloadType() == SEI::PayloadType::AI_USAGE_RESTRICTIONS) ||
                                                                (m_pcCfg->getDigitallySignedContentSEICfg().signGFVSEI && (*sei)->payloadType() == SEI::PayloadType::GENERATIVE_FACE_VIDEO) ||
                                                                (m_pcCfg->getDigitallySignedContentSEICfg().signGFVESEI && (*sei)->payloadType() == SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT) ||
@@ -771,7 +771,7 @@ void EncGOP::xWriteTrailingSEIMessages (SEIMessages& seiMessages, AccessUnit &ac
 {
   // Note: using accessUnit.end() works only as long as this function is called after slice coding and before EOS/EOB NAL units
   AccessUnit::iterator pos = accessUnit.end();
-#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+#if JVET_AJ0151_DSC_SEI
   xWriteSEISeparately(NAL_UNIT_SUFFIX_SEI, seiMessages, accessUnit, pos, temporalId, true);
 #else
   xWriteSEISeparately(NAL_UNIT_SUFFIX_SEI, seiMessages, accessUnit, pos, temporalId);
@@ -4167,11 +4167,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
         };
         const EncCfgParam::CfgSEIDigitallySignedContent &dscCfg = m_pcCfg->getDigitallySignedContentSEICfg();
 #if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
-#if JVET_AM0118_DSC_FOR_SEI
         m_dscSubstreamManager.initDscSubstreamManager(dscCfg.numVerificationSubstreams, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid, dscCfg.refSubstreamFlag, dscCfg.implicitAssociationModeFlag, dscCfg.signAURSEI || dscCfg.signGFVSEI || dscCfg.signGFVESEI || dscCfg.signNNPFCSEI || dscCfg.signNNPFASEI);
-#else
-        m_dscSubstreamManager.initDscSubstreamManager(dscCfg.numVerificationSubstreams, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid, dscCfg.refSubstreamFlag, dscCfg.implicitAssociationModeFlag);
-#endif
 #else
         m_dscSubstreamManager.initDscSubstreamManager(dscCfg.numVerificationSubstreams, dscCfg.hashMethod, dscCfg.publicKeyUri , false, contentUuid, dscCfg.refSubstreamFlag);
 #endif
@@ -4575,7 +4571,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           false;   // used to ensure current NALU is not written more than once to the NALU list.
         xAttachSliceDataToNalUnit(nalu, pcBitstreamRedirect);
 #if JVET_AJ0151_DSC_SEI
-#if JVET_AM0118_DSC_FOR_SEI
         // Add selected prefix SEI messages to DSC substream before slice NAL units
         if (m_pcCfg->getDigitallySignedContentSEICfg().enabled)
         {
@@ -4583,7 +4578,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           AccessUnit::iterator itNalu = dummyAu.begin();
           xWriteSEISeparately(NAL_UNIT_PREFIX_SEI, leadingSeiMessages, dummyAu, itNalu, pcSlice->getTLayer(), true);
         }
-#endif
         xAddToSubstream(m_dscSubstreamId, nalu);
 #endif
         accessUnit.push_back(new NALUnitEBSP(nalu));

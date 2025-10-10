@@ -689,7 +689,7 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIGenerativeFaceVideoEnhancement;
       xParseSEIGenerativeFaceVideoEnhancement((SEIGenerativeFaceVideoEnhancement &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_AJ0151_DSC_SEI && JVET_AM0118_DSC_FOR_SEI
+#if JVET_AJ0151_DSC_SEI
     case SEI::PayloadType::DIGITALLY_SIGNED_CONTENT_SELECTION:
       sei = new SEIDigitallySignedContentSelection;
       xParseSEIDigitallySignedContentSelection((SEIDigitallySignedContentSelection &) *sei, payloadSize, pDecodedMessageOutputStream);
@@ -5358,10 +5358,8 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
   sei_read_flag(pDecodedMessageOutputStream, val, "dsci_signed_content_start_flag");
   sei.dsciSignedContentStartFlag = (val!=0);
 #endif
-#if JVET_AM0118_DSC_FOR_SEI
   sei_read_flag(pDecodedMessageOutputStream, val, "dsci_sei_signing_flag");
   sei.dsciSEISigningFlag = (val!=0);
-#endif
 #if JVET_AM0164_DSC_SYNTAX
   while (!isByteAligned())
   {
