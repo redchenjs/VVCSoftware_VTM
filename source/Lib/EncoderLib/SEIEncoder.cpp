@@ -2301,9 +2301,7 @@ void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedC
 void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei)
 #endif
 {
-#if JVET_AK0206_DSC_SEI_ID
   sei->dsciId = m_pcCfg->getDigitallySignedContentSEICfg().dscId;
-#endif
   sei->dsciNumVerificationSubstreams = m_pcCfg->getDigitallySignedContentSEICfg().numVerificationSubstreams;
   sei->dsciRefSubstreamFlag = m_pcCfg->getDigitallySignedContentSEICfg().refSubstreamFlag;
   sei->dsciHashMethodType = m_pcCfg->getDigitallySignedContentSEICfg().hashMethod;
@@ -2322,9 +2320,7 @@ void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedC
 }
 void SEIEncoder::initSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection *sei, int substream)
 {
-#if JVET_AK0206_DSC_SEI_ID
   sei->dscsId = m_pcCfg->getDigitallySignedContentSEICfg().dscId;
-#endif
   sei->dscsVerificationSubstreamId = substream;
 }
 #if JVET_AL0222_DSC_START_END
@@ -2333,9 +2329,7 @@ void SEIEncoder::initSEIDigitallySignedContentVerification(SEIDigitallySignedCon
 void SEIEncoder::initSEIDigitallySignedContentVerification(SEIDigitallySignedContentVerification *sei, int32_t substream, const std::vector<uint8_t> &signature)
 #endif
 {
-#if JVET_AK0206_DSC_SEI_ID
   sei->dscvId = m_pcCfg->getDigitallySignedContentSEICfg().dscId;
-#endif
   sei->dscvVerificationSubstreamId = substream;
   sei->dscvSignatureLengthInOctets = (int32_t) signature.size();
   sei->dscvSignature = signature;

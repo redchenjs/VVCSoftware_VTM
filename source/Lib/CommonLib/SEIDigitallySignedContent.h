@@ -65,9 +65,7 @@ typedef enum : uint32_t
 class SEIDigitallySignedContentInitialization: public SEI
 {
 public:
-#if JVET_AK0206_DSC_SEI_ID
   int8_t       dsciId                        = 0;
-#endif
   int8_t       dsciHashMethodType            = 0;
   std::string  dsciKeySourceUri;
   int8_t       dsciNumVerificationSubstreams = 0;
@@ -95,9 +93,7 @@ public:
 class SEIDigitallySignedContentSelection: public SEI
 {
 public:
-#if JVET_AK0206_DSC_SEI_ID
   int8_t       dscsId = 0;
-#endif
   int32_t      dscsVerificationSubstreamId = 0;
 
 public:
@@ -113,9 +109,7 @@ public:
 class SEIDigitallySignedContentVerification: public SEI
 {
 public:
-#if JVET_AK0206_DSC_SEI_ID
   int8_t               dscvId = 0;
-#endif
   int32_t              dscvVerificationSubstreamId = 0;
   int32_t              dscvSignatureLengthInOctets = 0;
   std::vector<uint8_t> dscvSignature;

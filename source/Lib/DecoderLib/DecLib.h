@@ -262,19 +262,11 @@ public:
 #if JVET_AJ0151_DSC_SEI
   void xInitDscSubstreamManager(SEIMessages &SEIs);
   void xStoreNALUnitForSignature(InputNALUnit &nalu);
-#if JVET_AK0206_DSC_SEI_ID
   void xProcessStoredNALUnitsForSignature(uint8_t dscId, int substreamId);
   void xClearStoredNALUnitsForSignature();
-#else
-  void xProcessStoredNALUnitsForSignature(int substream_id);
-#endif
 
   std::list<binNalUnit> m_signedContentNalUnitBuffer;
-#if JVET_AK0206_DSC_SEI_ID
   std::map<uint8_t, DscSubstreamManager>   m_dscSubstreamManagerMap;
-#else
-  DscSubstreamManager   m_dscSubstreamManager;
-#endif
 #endif
 
 public:

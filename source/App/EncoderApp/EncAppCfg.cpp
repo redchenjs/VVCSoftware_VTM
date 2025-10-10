@@ -1637,9 +1637,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 ("SEISPTIDirectionFlag", m_sptiDirectionFlag, false, "Indicates the direction of the signalled source picture intervals.")
 #if JVET_AJ0151_DSC_SEI
 ("SEIDSCEnabled", m_cfgDigitallySignedContentSEI.enabled, false, "Control generation of Digitally Signed Content SEI messages")
-#if JVET_AK0206_DSC_SEI_ID
 ("SEIDSCId", m_cfgDigitallySignedContentSEI.dscId, 0, "Identifying number of Digitally Signed Content SEI messages")
-#endif
 ("SEIDSCHashMethod", m_cfgDigitallySignedContentSEI.hashMethod, 0 , "Hash type to be used:\n"
                                                                      "\t0: SHA-1 (default)\n"
                                                                      "\t1: SHA-224\n"
