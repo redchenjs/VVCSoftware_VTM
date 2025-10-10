@@ -61,7 +61,6 @@
 
 
 
-#define JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS              1 // JVET_AL0301: Add constraints to matrix_coeffs
 
 #define JVET_AL0123_AL0310_EOI                            1 // JVET-AL0123 & JVET-AL0310 EOI SEI signalling changes 
 

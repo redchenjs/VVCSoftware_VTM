@@ -1554,12 +1554,10 @@ void SEIWriter::xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacterist
       xWriteFlag(sei.m_filmGrainFullRangeFlag,                "fg_full_range_flag");
       xWriteCode(sei.m_filmGrainColourPrimaries, 8,           "fg_colour_primaries");
       xWriteCode(sei.m_filmGrainTransferCharacteristics, 8,   "fg_transfer_characteristics");
-#if JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS
       CHECK((sei.m_filmGrainMatrixCoeffs == 0 || sei.m_filmGrainMatrixCoeffs == 16 || sei.m_filmGrainMatrixCoeffs == 17) && !(sei.m_filmGrainBitDepthLumaMinus8 == sei.m_filmGrainBitDepthChromaMinus8),
         "fg_matrix_coeffs shall not be equal to 0, 16, or 17 unless fg_bit_depth_luma_minus8 is equal to fg_bit_depth_chroma_minus8")
       CHECK(sei.m_filmGrainMatrixCoeffs == 8 && !(sei.m_filmGrainBitDepthLumaMinus8 == sei.m_filmGrainBitDepthChromaMinus8 || sei.m_filmGrainBitDepthLumaMinus8 + 1 == sei.m_filmGrainBitDepthChromaMinus8),
         "fg_matrix_coeffs shall not be equal to 8 unless fg_bit_depth_chroma_minus8 is equal to fg_bit_depth_luma_minus8 or fg_bit_depth_luma_minus8 + 1")
-#endif
       xWriteCode(sei.m_filmGrainMatrixCoeffs, 8,              "fg_matrix_coeffs");
     }
     xWriteCode(sei.m_blendingModeId, 2,                       "fg_blending_mode_id");

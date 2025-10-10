@@ -1147,10 +1147,8 @@ void  HLSyntaxReader::parseVUI(VUI* pcVUI, SPS *pcSPS)
     xReadCode(8, symbol, "vui_colour_primaries");                       pcVUI->setColourPrimaries(symbol);
     xReadCode(8, symbol, "vui_transfer_characteristics");               pcVUI->setTransferCharacteristics(symbol);
     xReadCode(8, symbol, "vui_matrix_coeffs");                          pcVUI->setMatrixCoefficients(symbol);
-#if JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS
     CHECK((symbol == 0 || symbol == 16 || symbol == 17) && pcSPS->getChromaFormatIdc() == ChromaFormat::_444,
       "vui_matrix_coeffs shall not be equal to 0, 16, or 17 when sps_chroma_format_idc is equal to 3");
-#endif
     xReadFlag(   symbol, "vui_full_range_flag");                    pcVUI->setVideoFullRangeFlag(symbol);
   }
 

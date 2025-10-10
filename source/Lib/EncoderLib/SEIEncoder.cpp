@@ -1872,10 +1872,8 @@ void SEIEncoder::initSEINeuralNetworkPostFilterCharacteristics(SEINeuralNetworkP
         sei->m_matrixCoeffs         = m_pcCfg->getNNPostFilterSEICharacteristicsMatrixCoeffs(filterIdx);
         CHECK(sei->m_matrixCoeffs == 0 && !(sei->m_outTensorBitDepthChromaMinus8 == sei->m_outTensorBitDepthLumaMinus8 && sei->m_outOrderIdc == 2 && outSubHeightC == 1 && outSubWidthC == 1),
           "nnpfc_matrix_coeffs shall not be equal to 0 unless the following conditions are true: nnpfc_out_tensor_chroma_bitdepth_minus8 is equal to nnpfc_out_tensor_luma_bitdepth_minus8, nnpfc_out_order_idc is equal to 2, outSubHeightC is equal to 1, and outSubWidthC is equal to 1");
-#if JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS
         CHECK((sei->m_matrixCoeffs == 16 || sei->m_matrixCoeffs == 17) && !(sei->m_outTensorBitDepthChromaMinus8 == sei->m_outTensorBitDepthLumaMinus8 && sei->m_outOrderIdc == 2 && outSubHeightC == 1 && outSubWidthC == 1),
           "nnpfc_matrix_coeffs shall not be equal to 16 or 17 unless the following conditions are true: nnpfc_out_tensor_chroma_bitdepth_minus8 is equal to nnpfc_out_tensor_luma_bitdepth_minus8, nnpfc_out_order_idc is equal to 2, outSubHeightC is equal to 1, and outSubWidthC is equal to 1");
-#endif
         CHECK(sei->m_matrixCoeffs == 8 && !((sei->m_outTensorBitDepthChromaMinus8 == sei->m_outTensorBitDepthLumaMinus8) || (sei->m_outTensorBitDepthChromaMinus8 == (sei->m_outTensorBitDepthLumaMinus8 + 1) && sei->m_outOrderIdc == 2 && outSubHeightC == 1 && outSubWidthC == 1)),
           "nnpfc_matrix_coeffs shall not be equal to 8 unless one of the following conditions is true: nnpfc_out_tensor_chroma_bitdepth_minus8 is equal to nnpfc_out_tensor_luma_bitdepth_minus8 or "
           "nnpfc_out_tensor_chroma_bitdepth_minus8 is equal to nnpfc_out_tensor_luma_bitdepth_minus8 + 1, nnpfc_out_order_idc is equal to 2, outSubHeightC is equal to 1, and outSubWidthC is equal to 1");
