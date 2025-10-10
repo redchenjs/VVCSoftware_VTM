@@ -4284,9 +4284,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     uint16_t prefixByteIdx = 0;
     bool NNPFCFound = false;
     bool NNPFAFound = false;
-#if JVET_AK0055_SPO_SEI_CONSTRAINT
     std::vector<int> erpIndices, gcmpIndices, rwpIndices, fpaIndices;
-#endif
 #if JVET_AM0121_SPO_SEI_CONSTRAINTS
     for (uint32_t i = 0; i < (m_poSEINumMinus1 + 1); i++)
 #else
@@ -4315,7 +4313,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       NNPFCFound = NNPFCFound || (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_CHARACTERISTICS);
       NNPFAFound = NNPFAFound || (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::NEURAL_NETWORK_POST_FILTER_ACTIVATION);
       CHECK(!NNPFCFound && NNPFAFound, "NNPFA payload type found before NNPFC payload type in SPO SEI");
-#if JVET_AK0055_SPO_SEI_CONSTRAINT
       if (m_poSEIPayloadType[i] == (uint16_t)SEI::PayloadType::EQUIRECTANGULAR_PROJECTION)
       {
         CHECK(gcmpIndices.empty(), "ERP and GCMP SEI messages cannot coexist");
@@ -4349,7 +4346,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         cfg_poSEINumofPrefixBits.values[i] = 0;
         m_poSEINumOfPrefixBits[i] = 0;
       }
-#endif
       m_poSEIProcessingOrder[i] = (uint16_t) cfg_poSEIProcessingOrder.values[i];
       if (m_poSEIPrefixFlag[i])
       {
@@ -4390,7 +4386,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
       }
     }
     CHECK(NNPFCFound && !NNPFAFound, "When SPO SEI contains NNPFC payload type it shall also contain NNPFA payload type");
-#if JVET_AK0055_SPO_SEI_CONSTRAINT
     if (!rwpIndices.empty())
     {
       CHECK(!erpIndices.empty() || !gcmpIndices.empty(), "If RWP is present, at least one of ERP or GCMP must be present");
@@ -4449,7 +4444,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         }
       }
     }
-#endif
 #if JVET_AM0121_SPO_SEI_CONSTRAINTS
     CHECK(!NNPFAFound && m_poSEIComplexityInfoPresentFlag , "When no NNPFs are present in a processing chain, po_complexity_info_present_flag shall be 0");
 #endif

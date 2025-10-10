@@ -67,7 +67,6 @@
 
 
 
-#define JVET_AK0055_SPO_SEI_CONSTRAINT                    1 // Add FPA, RWP, ERP, GCMP constraints
 
 #define JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION          1 // dsci_vss_implicit_association_mode_flag
 
