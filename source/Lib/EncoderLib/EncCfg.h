@@ -1068,7 +1068,6 @@ protected:
 #if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   std::vector<bool>  m_aurSEIExclusionFlag;
 #endif
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   bool                  m_ifmSeiEnabled;
   bool                  m_ifmCancelFlag;
   bool                  m_ifmPersistenceFlag;
@@ -1077,7 +1076,6 @@ protected:
   int                   m_ifmUriPresentFlag[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];    
   std::vector<uint8_t>  m_ifmDataPayloadByte[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];
   std::string           m_ifmDataUri[MAX_NUM_IMAGE_FORMAT_METADATA_SEI];
-#endif
 
   //====== Weighted Prediction ========
   bool      m_useWeightedPred;       //< Use of Weighting Prediction (P_SLICE)
@@ -3208,7 +3206,6 @@ public:
   uint32_t getPriSEITargetRegionTopLeftInUnitsX(int i) { return m_priSEITargetRegionTopLeftInUnitsX[i]; }
   void     setPriSEITargetRegionTopLeftInUnitsY(std::vector<uint32_t>& b) { m_priSEITargetRegionTopLeftInUnitsY = b; }
   uint32_t getPriSEITargetRegionTopLeftInUnitsY(int i) { return m_priSEITargetRegionTopLeftInUnitsY[i]; }
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   bool                        getIfmSEIEnabled() const { return m_ifmSeiEnabled; }
   void                        setIfmSEIEnabled(bool b) { m_ifmSeiEnabled = b;    }
   bool                        getIfmSEICancelFlag() const { return m_ifmCancelFlag; }
@@ -3225,7 +3222,6 @@ public:
   void                        setIfmDataPayloadByte(int index, std::vector<uint8_t>& v) { m_ifmDataPayloadByte[index] = v;  }
   std::string                 getIfmDataUri(int index) const { return m_ifmDataUri[index]; }
   void                        setIfmDataUri(int index, std::string s) { m_ifmDataUri[index] = s;  }
-#endif
 
   void         setUseWP               ( bool b )                     { m_useWeightedPred   = b;    }
   void         setWPBiPred            ( bool b )                     { m_useWeightedBiPred = b;    }

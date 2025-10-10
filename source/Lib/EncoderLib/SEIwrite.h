@@ -167,9 +167,7 @@ protected:
 #endif
   void xWriteSEIAIUsageRestrictions(const SEIAIUsageRestrictions &sei);
   void xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei);
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   void xWriteSEIImageFormatMetadata(const SEIImageFormatMetadata &sei);
-#endif
 protected:
   HRD m_nestingHrd;
 };

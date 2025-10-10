@@ -76,7 +76,6 @@
 
 
 
-#define JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI             1 //< Use Image Format Metadata (IFM) SEI message
 
 #define JVET_AK0206_DSC_SEI_ID                            1 // JVET-AK0206 Add ID to DSC SEI messages
 

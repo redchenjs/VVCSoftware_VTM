@@ -113,9 +113,7 @@ public:
     GENERATIVE_FACE_VIDEO_ENHANCEMENT       = 224,
     AI_USAGE_RESTRICTIONS                   = 225,   
     PACKED_REGIONS_INFO                     = 226,
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
     IMAGE_FORMAT_METADATA                   = 227,
-#endif
   };
 
   SEI() {}
@@ -1945,7 +1943,6 @@ public:
   std::vector<uint8_t>  m_regionIsALayerFlag;
 };
 
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
 class SEIImageFormatMetadata : public SEI
 {
 public:
@@ -1968,7 +1965,6 @@ public:
   std::vector<std::vector<uint8_t>> m_dataPayloadByte; 
   std::vector< std::string>         m_dataUri; 
 };
-#endif
 
 //! \}
 

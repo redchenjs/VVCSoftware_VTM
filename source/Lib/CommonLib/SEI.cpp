@@ -492,9 +492,7 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
   { SEI::PayloadType::GENERATIVE_FACE_VIDEO_ENHANCEMENT, "Generative face video enhancement" },
   { SEI::PayloadType::AI_USAGE_RESTRICTIONS, "AI usage restrictions" },
   { SEI::PayloadType::PACKED_REGIONS_INFO, "Packed regions info" },
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   { SEI::PayloadType::IMAGE_FORMAT_METADATA, "Image format metadata" },
-#endif
 };
 
 const char *SEI::getSEIMessageString(SEI::PayloadType payloadType)
@@ -1383,7 +1381,6 @@ SEIPackedRegionsInfo::SEIPackedRegionsInfo(SEIPackedRegionsInfo& sei)
   m_targetRegionTopLeftInUnitsY = sei.m_targetRegionTopLeftInUnitsY;
 }
 
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
 SEIImageFormatMetadata::SEIImageFormatMetadata(const SEIImageFormatMetadata& sei)
 {
   m_persistenceFlag      = sei.m_persistenceFlag;
@@ -1397,4 +1394,3 @@ SEIImageFormatMetadata::SEIImageFormatMetadata(const SEIImageFormatMetadata& sei
     m_dataUri[i]         = sei.m_dataUri[i]; 
   }
 }
-#endif

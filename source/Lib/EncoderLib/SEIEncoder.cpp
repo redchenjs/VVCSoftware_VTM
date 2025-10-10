@@ -2451,7 +2451,6 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
   }
 }
 
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
 void SEIEncoder::initSEIImageFormatMetadata(SEIImageFormatMetadata *sei)
 {
   CHECK(!m_isInitialized, "Image format metadata SEI already initialized");
@@ -2468,6 +2467,5 @@ void SEIEncoder::initSEIImageFormatMetadata(SEIImageFormatMetadata *sei)
     sei->m_dataUri        .push_back( m_pcCfg->getIfmDataUri( i ) ); 
   }
 }
-#endif
 
 //! \}

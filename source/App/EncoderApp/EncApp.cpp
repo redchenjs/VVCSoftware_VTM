@@ -1562,7 +1562,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPriSEIResamplingRatioIdx(m_priSEIResamplingRatioIdx);
   m_cEncLib.setPriSEITargetRegionTopLeftInUnitsX(m_priSEITargetRegionTopLeftInUnitsX);
   m_cEncLib.setPriSEITargetRegionTopLeftInUnitsY(m_priSEITargetRegionTopLeftInUnitsY);
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   m_cEncLib.setIfmSEIEnabled                                    ( m_ifmSeiEnabled);
   m_cEncLib.setIfmSEICancelFlag                                 ( m_ifmCancelFlag );
   m_cEncLib.setIfmSEIPersistenceFlag                            ( m_ifmPersistenceFlag );
@@ -1574,7 +1573,6 @@ void EncApp::xInitLibCfg( int layerIdx )
     m_cEncLib.setIfmDataPayloadByte                             ( i, m_ifmDataPayloadByte[i] );
     m_cEncLib.setIfmDataUri                                     ( i, m_ifmDataUri[i] );
   }
-#endif
   m_cEncLib.setPostFilterHintSEIEnabled(m_postFilterHintSEIEnabled);
   m_cEncLib.setPostFilterHintSEICancelFlag(m_postFilterHintSEICancelFlag);
   m_cEncLib.setPostFilterHintSEIPersistenceFlag(m_postFilterHintSEIPersistenceFlag);

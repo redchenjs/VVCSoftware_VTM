@@ -135,9 +135,7 @@ protected:
   void xParseSEIDigitallySignedContentVerification  (SEIDigitallySignedContentVerification &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream);
   void xParseSEIAIUsageRestrictions                 (SEIAIUsageRestrictions& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
   void xParsePackedRegionsInfo(SEIPackedRegionsInfo &sei, const uint32_t nuhLayerId, uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream);
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   void xParseSEIImageFormatMetadata(SEIImageFormatMetadata & sei,uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream);
-#endif
 
   void sei_read_scode(std::ostream *pOS, uint32_t length, int& code, const char *pSymbolName);
   void sei_read_code(std::ostream *pOS, uint32_t length, uint32_t &ruiCode, const char *pSymbolName);

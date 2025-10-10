@@ -126,9 +126,7 @@ public:
   void initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnhancement *sei, int currframeindex);
   void initSEIAIUsageRestrictions(SEIAIUsageRestrictions *sei);
   void initSEIPackedRegionsInfo(SEIPackedRegionsInfo *sei);
-#if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   void initSEIImageFormatMetadata(SEIImageFormatMetadata *sei);
-#endif
 
 private:
   EncCfg* m_pcCfg;
