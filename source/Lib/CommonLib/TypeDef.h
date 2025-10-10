@@ -82,7 +82,6 @@
 
 
 
-#define JVET_AM0121_SPO_SEI_CONSTRAINTS                   1 // JVET-AM0121: On the SEI processing order SEI message
 
 //########### place macros to be be kept below this line ###############
 

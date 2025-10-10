@@ -213,11 +213,7 @@ public:
   uint32_t               m_posId;
   uint32_t               m_posForHumanViewingIdc;
   uint32_t               m_posForMachineAnalysisIdc;
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
   uint32_t               m_posNumMinus1;
-#else
-  uint32_t               m_posNumMinus2;
-#endif
   bool                   m_posBreadthFirstFlag;
   std::vector<bool>      m_posWrappingFlag;
   std::vector<bool>      m_posImportanceFlag;
@@ -263,9 +259,7 @@ public:
     case SEI::PayloadType::OBJECT_MASK_INFO:
     case SEI::PayloadType::MODALITY_INFORMATION:
     case SEI::PayloadType::AI_USAGE_RESTRICTIONS:
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
     case SEI::PayloadType::PACKED_REGIONS_INFO:
-#endif
      return true;
     default:
       return false;

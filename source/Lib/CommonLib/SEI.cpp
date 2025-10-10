@@ -533,11 +533,7 @@ SEIProcessingOrderInfo::SEIProcessingOrderInfo(const SEIProcessingOrderInfo& sei
   m_posId = sei.m_posId;
   m_posForHumanViewingIdc = sei.m_posForHumanViewingIdc;
   m_posForMachineAnalysisIdc = sei.m_posForMachineAnalysisIdc;
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
   m_posNumMinus1 = sei.m_posNumMinus1;
-#else
-  m_posNumMinus2 = sei.m_posNumMinus2;
-#endif
   m_posBreadthFirstFlag = sei.m_posBreadthFirstFlag;
   m_posWrappingFlag = sei.m_posWrappingFlag;
   m_posImportanceFlag = sei.m_posImportanceFlag;

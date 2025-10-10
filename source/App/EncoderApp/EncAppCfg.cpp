@@ -1835,11 +1835,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPOId",                                         m_poSEIId,                                            0u, "Specifies the id of the SEI processing order SEI message")
   ("SEIPOForHumanViewingIdc",                         m_poSEIForHumanViewingIdc,                            0u, "Specifies the user viewing usage level of video resulting from processing chain specified by SPO SEI: optimal for human viewing (3), suitable (2), unsuitable (1), unknown (0, default)")
   ("SEIPOForMachineAnalysisIdc",                      m_poSEIForMachineAnalysisIdc,                         0u, "Specifies the machine analysis usage level of video resulting from processing chain specified by SPO SEI: optimal for machine analysis (3), suitable (2), unsuitable (1), unknown (0, default)")
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
   ("SEIPONumMinus1",                                  m_poSEINumMinus1,                                     0u, "Specifies the number of SEIs minus 1 in the SEI processing order SEI message")
-#else
-  ("SEIPONumMinus2",                                  m_poSEINumMinus2,                                     0u, "Specifies the number of SEIs minus 2 in the SEI processing order SEI message")
-#endif
   ("SEIPOBreadthFirstFlag",                           m_poSEIBreadthFirstFlag,                           false, "Specifies that breadth-first handling of processing chain is applied (1), or that either breadth-first or depth-first can be applied (0, default)")
   ("SEIPOWrappingFlag",                               cfg_poSEIWrappingFlag,             cfg_poSEIWrappingFlag, "Specifies whether a correspoding processing-order-nested SEI message exists or not")
   ("SEIPOImportanceIdc",                              cfg_poSEIImportanceIdc,           cfg_poSEIImportanceIdc, "Specifies degree of importance (0..3) for the SEI messages")
@@ -4215,21 +4211,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   if (m_poSEIEnabled)
   {
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
     CHECK(cfg_poSEIPayloadType.values.size() < 1, "there should be at least 1 SEIPOPayLoadType");
     CHECK(cfg_poSEIProcessingOrder.values.size() != cfg_poSEIPayloadType.values.size(), "the number of SEIPOPayLoadType should be equal to the number of SEIPOProcessingOrder");
     CHECK(cfg_poSEIPrefixFlag.values.size() < 1, "there should be at least 1 SEIPOPrefixFlag");
     CHECK(cfg_poSEIPayloadType.values.size() != m_poSEINumMinus1 + 1, "the number of SEIPOPayLoadType should be equal to the number of SEI messages");
     CHECK(cfg_poSEIWrappingFlag.values.size() != m_poSEINumMinus1 + 1, "the number of SEIPOWrappingFlag should be equal to the number of SEI messages");
     CHECK(cfg_poSEIImportanceIdc.values.size() != m_poSEINumMinus1 + 1, "the number of SEIImportanceIdc should be equal to the number of SEI messages");
-#else
-    CHECK(cfg_poSEIPayloadType.values.size() <= 1, "there should be at least 2 SEIPOPayLoadType");
-    CHECK(cfg_poSEIProcessingOrder.values.size() != cfg_poSEIPayloadType.values.size(), "the number of SEIPOPayLoadType should be equal to the number of SEIPOProcessingOrder");
-    CHECK(cfg_poSEIPrefixFlag.values.size() <= 1, "there should be at least 2 SEIPOPrefixFlag");
-    CHECK(cfg_poSEIPayloadType.values.size() != m_poSEINumMinus2 + 2, "the number of SEIPOPayLoadType should be equal to the number of SEI messages");
-    CHECK(cfg_poSEIWrappingFlag.values.size() != m_poSEINumMinus2 + 2, "the number of SEIPOWrappingFlag should be equal to the number of SEI messages");
-    CHECK(cfg_poSEIImportanceIdc.values.size() != m_poSEINumMinus2 + 2, "the number of SEIImportanceIdc should be equal to the number of SEI messages");
-#endif
     m_poSEIWrappingFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
     m_poSEIImportanceFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
     m_poSEIProcessingDegreeFlag.resize((uint32_t)cfg_poSEIPayloadType.values.size());
@@ -4242,11 +4229,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     bool NNPFCFound = false;
     bool NNPFAFound = false;
     std::vector<int> erpIndices, gcmpIndices, rwpIndices, fpaIndices;
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
     for (uint32_t i = 0; i < (m_poSEINumMinus1 + 1); i++)
-#else
-    for (uint32_t i = 0; i < (m_poSEINumMinus2 + 2); i++)
-#endif
     {
       m_poSEIPrefixFlag[i] =      cfg_poSEIPrefixFlag.values[i];
       m_poSEIWrappingFlag[i] = cfg_poSEIWrappingFlag.values[i];
@@ -4401,9 +4384,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         }
       }
     }
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
     CHECK(!NNPFAFound && m_poSEIComplexityInfoPresentFlag , "When no NNPFs are present in a processing chain, po_complexity_info_present_flag shall be 0");
-#endif
 #if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
     if (!NNPFAFound && m_nnPostFilterSEIActivationEnabled && m_nnPostFilterSEIActivationSelectedInputFlag)
     {
@@ -4412,11 +4393,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
 #endif
     // The following code generares sub-chain indices for conformance checking.
-#if JVET_AM0121_SPO_SEI_CONSTRAINTS
     uint32_t numProcStgs = m_poSEINumMinus1 + 1;
-#else
-    uint32_t numProcStgs = m_poSEINumMinus2 + 2;
-#endif
     std::vector<uint32_t> seiTypeIdx;
     for (uint32_t j = 0; j < numProcStgs; j++)
     {
