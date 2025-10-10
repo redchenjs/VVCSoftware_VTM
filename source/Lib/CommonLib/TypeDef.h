@@ -57,7 +57,6 @@
 //########### place macros to be removed in next cycle below this line ###############
 
 
-#define JVET_AL0058_AUR_CONTEXT                           1 // JVET-AL0058: Change aur_context to fixed length
 
 #define JVET_AL0067_OMI_SEI_CONSTRAINTS                   1 // JVET-AL0067: On the OMI SEI
 
