@@ -2387,7 +2387,6 @@ void SEIEncoder::initSEIAIUsageRestrictions(SEIAIUsageRestrictions *sei)
 }
 #endif 
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
 {
   CHECK(!m_isInitialized, "SEIPackedRegionsInfo already initialized");
@@ -2463,7 +2462,6 @@ void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
     sei->m_targetRegionTopLeftInUnitsY[i] = m_pcCfg->getPriSEITargetRegionTopLeftInUnitsY(i);
   }
 }
-#endif
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
 void SEIEncoder::initSEIImageFormatMetadata(SEIImageFormatMetadata *sei)

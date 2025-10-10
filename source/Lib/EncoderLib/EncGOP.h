@@ -299,9 +299,7 @@ public:
                        const BitDepths &bitDepths, int layerId);
   uint64_t  preLoopFilterPicAndCalcDist( Picture* pcPic );
   EncSlice*  getSliceEncoder()   { return m_pcSliceEncoder; }
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   SEIEncoder& getSEIEncoder()    { return m_seiEncoder; };
-#endif
   NalUnitType getNalUnitType( int pocCurr, int lastIdr, bool isField );
   void arrangeCompositeReference(Slice* pcSlice, PicList& rcListPic, int pocCurr);
   void updateCompositeReference(Slice* pcSlice, PicList& rcListPic, int pocCurr);

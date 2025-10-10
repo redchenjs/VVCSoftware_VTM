@@ -686,22 +686,14 @@ Picture* DecLib::xGetNewPicBuffer( const SPS &sps, const PPS &pps, const uint32_
   for(auto * p: m_cListPic)
   {
     pcPic = p;  // workaround because range-based for-loops don't work with existing variables
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     if ( pcPic->reconstructed == false && ! pcPic->neededForOutput && pcPic->layerId == layerId )
-#else
-    if ( pcPic->reconstructed == false && ! pcPic->neededForOutput )
-#endif
     {
       pcPic->neededForOutput = false;
       bBufferIsAvailable = true;
       break;
     }
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     if( ! pcPic->referenced  && ! pcPic->neededForOutput && pcPic->layerId == layerId )
-#else
-    if( ! pcPic->referenced  && ! pcPic->neededForOutput )
-#endif
     {
       pcPic->neededForOutput = false;
       pcPic->reconstructed = false;
@@ -2275,7 +2267,6 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
     m_pcPic->createColourTransfProcessor(m_firstPictureInSequence, &m_colourTranfParams, &m_invColourTransfBuf,
                                          pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples(),
                                          sps->getChromaFormatIdc(), sps->getBitDepth(ChannelType::LUMA));
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     SEIMessages packedRegionsInfoSEIs = getSeisByType(m_SEIs, SEI::PayloadType::PACKED_REGIONS_INFO);
     if (!packedRegionsInfoSEIs.empty())
     {
@@ -2285,7 +2276,6 @@ void DecLib::xActivateParameterSets( const InputNALUnit nalu )
         m_priProcess.init(*sei, *sps, pps->getPicWidthInLumaSamples(), pps->getPicHeightInLumaSamples());
       }
     }
-#endif
     m_firstPictureInSequence = false;
     m_pcPic->createTempBuffers( m_pcPic->cs->pps->pcv->maxCUWidth, false, false, true, false );
     m_pcPic->cs->createTemporaryCsData((bool)m_pcPic->cs->sps->getPLTMode());

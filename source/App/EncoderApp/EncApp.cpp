@@ -45,9 +45,7 @@
 #include "EncApp.h"
 #include "EncoderLib/AnnexBwrite.h"
 #include "EncoderLib/EncLibCommon.h"
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 #include "CommonLib/SEIPackedRegionsInfoProcess.h"
-#endif
 
 //! \ingroup EncoderApp
 //! \{
@@ -1542,7 +1540,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setTextSEIDescriptionString(m_SEITextDescriptionString);
 
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   m_cEncLib.setPriSEIEnabled(m_priSEIEnabled);
   m_cEncLib.setPriSEICancelFlag(m_priSEICancelFlag);
   m_cEncLib.setPriSEIPersistenceFlag(m_priSEIPersistenceFlag);
@@ -1571,7 +1568,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setPriSEIResamplingRatioIdx(m_priSEIResamplingRatioIdx);
   m_cEncLib.setPriSEITargetRegionTopLeftInUnitsX(m_priSEITargetRegionTopLeftInUnitsX);
   m_cEncLib.setPriSEITargetRegionTopLeftInUnitsY(m_priSEITargetRegionTopLeftInUnitsY);
-#endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   m_cEncLib.setIfmSEIEnabled                                    ( m_ifmSeiEnabled);
   m_cEncLib.setIfmSEICancelFlag                                 ( m_ifmCancelFlag );
@@ -2234,11 +2230,7 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
         }
         else
         {
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
           ppsID = ((sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) && !m_explicitScalingWindowEnabled) ? (m_resChangeInClvsEnabled || m_priSEIEnabled) ? (ENC_PPS_ID_RPR + layerId) : layerId : layerId;
-#else
-          ppsID = ((sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).width || sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get(COMPONENT_Y).height) && !m_explicitScalingWindowEnabled) ? m_resChangeInClvsEnabled ? (ENC_PPS_ID_RPR + layerId) : layerId : layerId;
-#endif
         }
         const PPS& pps = *m_cEncLib.getPPS(ppsID);
         if( (m_cEncLib.isResChangeInClvsEnabled() || m_upscaledOutputWidth || m_upscaledOutputHeight) && m_cEncLib.getUpscaledOutput() )
@@ -2248,7 +2240,6 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
                                                       m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay,
                                                       m_upscaledOutputWidth, m_upscaledOutputHeight);
         }
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
         else if (m_cEncLib.getPriSEIEnabled() && m_cEncLib.getPriSEITargetPicParamsPresentFlag())
         {
           PelStorage outPic;
@@ -2270,7 +2261,6 @@ void EncApp::xWriteOutput(int numEncoded, std::list<PelUnitBuf *> &recBufList)
             outPic.get(COMPONENT_Y).width, outPic.get(COMPONENT_Y).height, outPic, ipCSC,
             m_packedYUVMode, 0, 0, 0, 0, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range);
         }
-#endif
         else
         {
           Window confWindowPPS = pps.getConformanceWindow();

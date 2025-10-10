@@ -104,9 +104,7 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
 #if JVET_S0257_DUMP_360SEI_MESSAGE
   ("360DumpFile",               m_outputDecoded360SEIMessagesFilename, std::string(""), "When non empty, output decoded 360 SEI messages to the indicated file.\n")
 #endif
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   ("SEIPackedRegionsInfoFilename", m_packedRegionsInfoSEIFileName,     std::string(""), "Packed regions info output file name. If empty, no object information will be saved\n")
-#endif
   ("ClipOutputVideoToRec709Range",      m_clipOutputVideoToRec709Range,  false,   "If true then clip output video to the Rec. 709 Range on saving")
   ("PYUV",                      m_packedYUVMode,                       false,      "If true then output 10-bit and 12-bit YUV data as 5-byte and 3-byte (respectively) packed YUV data. Ignored for interlaced output.")
 #if ENABLE_TRACING

@@ -596,12 +596,10 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       xParseSEIAIUsageRestrictions((SEIAIUsageRestrictions &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
 #endif
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     case SEI::PayloadType::PACKED_REGIONS_INFO:
       sei = new SEIPackedRegionsInfo;
       xParsePackedRegionsInfo((SEIPackedRegionsInfo &) *sei, nuh_layer_id, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
     case SEI::PayloadType::IMAGE_FORMAT_METADATA:
       sei = new SEIImageFormatMetadata();
@@ -5420,7 +5418,6 @@ void SEIReader::xParseSEIAIUsageRestrictions(SEIAIUsageRestrictions& sei, uint32
 }
 #endif
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_t nuhLayerId, uint32_t payLoadSize, std::ostream* pDecodedMessageOutputStream)
 {
   output_sei_message_header(sei, pDecodedMessageOutputStream, payLoadSize);
@@ -5587,7 +5584,6 @@ void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_
     }
   }
 }
-#endif
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
 void SEIReader::xParseSEIImageFormatMetadata(SEIImageFormatMetadata & sei,uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream)

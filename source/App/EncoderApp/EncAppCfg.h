@@ -1292,7 +1292,6 @@ protected:
 #endif
 #endif
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   bool     m_priSEIEnabled;
   bool     m_priSEICancelFlag;
   bool     m_priSEIPersistenceFlag;
@@ -1321,7 +1320,6 @@ protected:
   std::vector<uint32_t> m_priSEIResamplingRatioIdx;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsX;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsY;
-#endif
 
   // internal member functions
   bool  xCheckParameter ();                                   ///< check validity of configuration values

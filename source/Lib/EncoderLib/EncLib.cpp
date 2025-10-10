@@ -44,9 +44,7 @@
 #include "CommonLib/CommonDef.h"
 #include "CommonLib/ChromaFormat.h"
 #include "EncLibCommon.h"
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 #include "CommonLib/SEIPackedRegionsInfoProcess.h"
-#endif
 #include "CommonLib/ProfileTierLevel.h"
 
 //! \ingroup EncoderLib
@@ -446,7 +444,6 @@ void EncLib::init(AUWriterIf *auWriterIf)
     }
   }
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   int packedRegionsWidth = 0;
   int packedRegionsHeight = 0;
   if (m_priSEIEnabled)
@@ -491,7 +488,6 @@ void EncLib::init(AUWriterIf *auWriterIf)
       pps.setWrapAroundOffset(0);
     }
   }
-#endif
 
 #if ER_CHROMA_QP_WCG_PPS
   if (m_wcgChromaQpControl.isEnabled())
@@ -523,14 +519,12 @@ void EncLib::init(AUWriterIf *auWriterIf)
   m_cSliceEncoder.init( this, sps0 );
   m_cCuEncoder.   init( this, sps0 );
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   if (m_priSEIEnabled)
   {
     SEIPackedRegionsInfo sei;
     m_cGOPEncoder.getSEIEncoder().initSEIPackedRegionsInfo(&sei);
     m_priProcess.init(sei, sps0, packedRegionsWidth, packedRegionsHeight);
   }
-#endif
 
   // initialize transform & quantization class
   m_cTrQuant.init( nullptr,
@@ -856,12 +850,10 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, const InputColourSp
       ppsID = m_vps->getGeneralLayerIdx( m_layerId );
     }
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     if (m_priSEIEnabled)
     {
       ppsID = ENC_PPS_ID_RPR + m_layerId;
     }
-#endif
 
     xGetNewPicBuffer( rcListPicYuvRecOut, pcPicCurr, ppsID );
 
@@ -904,7 +896,6 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, const InputColourSp
                               pPPS->getScalingWindow(), chromaFormatIdc, pSPS->getBitDepths(), true, true,
                               pSPS->getHorCollocatedChromaFlag(), pSPS->getVerCollocatedChromaFlag());
     }
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     else if (m_priSEIEnabled)
     {
       pcPicCurr->M_BUFS( 0, PIC_ORIGINAL_INPUT ).getBuf( COMPONENT_Y ).copyFrom( pcPicYuvOrg->getBuf( COMPONENT_Y ) );
@@ -914,7 +905,6 @@ bool EncLib::encodePrep(bool flush, PelStorage *pcPicYuvOrg, const InputColourSp
       PelUnitBuf dst = pcPicCurr->getOrigBuf();
       m_priProcess.packRegions(*pcPicYuvOrg, m_layerId, dst, *pSPS);
     }
-#endif
     else
     {
       pcPicCurr->M_BUFS( 0, PIC_ORIGINAL ).swap( *pcPicYuvOrg );
@@ -1196,11 +1186,7 @@ void EncLib::xGetNewPicBuffer ( std::list<PelUnitBuf*>& rcListPicYuvRecOut, Pict
     rpcPic->create(sps.getWrapAroundEnabledFlag(), sps.getChromaFormatIdc(), Size(pps.getPicWidthInLumaSamples(), pps.getPicHeightInLumaSamples()),
       sps.getMaxCUWidth(), sps.getMaxCUWidth() + PIC_MARGIN, false, m_layerId, getShutterFilterFlag());
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     if (m_resChangeInClvsEnabled || m_priSEIEnabled)
-#else
-    if (m_resChangeInClvsEnabled)
-#endif
     {
       int thePPS = m_layerId;
       const PPS& pps0 = *m_ppsMap.getPS(thePPS);
@@ -1818,11 +1804,7 @@ void EncLib::xInitSPS( SPS& sps )
   sps.setInterLayerPresentFlag( m_layerId > 0 && m_vps->getMaxLayers() > 1 && !m_vps->getAllIndependentLayersFlag() && !m_vps->getIndependentLayerFlag( m_vps->getGeneralLayerIdx( m_layerId ) ) );
   CHECK( m_vps->getIndependentLayerFlag( m_vps->getGeneralLayerIdx( m_layerId ) ) && sps.getInterLayerPresentFlag(), " When vps_independent_layer_flag[GeneralLayerIdx[nuh_layer_id ]]  is equal to 1, the value of inter_layer_ref_pics_present_flag shall be equal to 0." );
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   sps.setResChangeInClvsEnabledFlag(m_resChangeInClvsEnabled || m_constrainedRaslEncoding || scalingWindowResChanged || m_priSEIEnabled);
-#else
-  sps.setResChangeInClvsEnabledFlag(m_resChangeInClvsEnabled || m_constrainedRaslEncoding || scalingWindowResChanged);
-#endif
   sps.setRprEnabledFlag(m_rprEnabledFlag || m_explicitScalingWindowEnabled || scalingWindowResChanged);
   sps.setGOPBasedRPREnabledFlag(m_gopBasedRPREnabledFlag);
   sps.setLog2ParallelMergeLevelMinus2( m_log2ParallelMergeLevelMinus2 );

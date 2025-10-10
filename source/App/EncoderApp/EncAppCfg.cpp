@@ -855,7 +855,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 #endif
 #endif
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   SMultiValueInput<uint32_t> cfg_priSEIResamplingWidthNumMinus1(0, 65535, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEIResamplingWidthDenomMinus1(0, 65535, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEIResamplingHeightNumMinus1(0, std::numeric_limits<uint32_t>::max() - 1, 0, std::numeric_limits<uint32_t>::max());
@@ -870,7 +869,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t> cfg_priSEITargetRegionTopLeftInUnitsY(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEIRegionLayerId(0, std::numeric_limits<uint32_t>::max(), 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<bool> cfg_priSEIRegionIsALayerFlag(0, 1, 0, std::numeric_limits<uint32_t>::max());
-#endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   std::vector<SMultiValueInput<uint8_t>> cfg_ifmDataPayloadByteDataValuesList;
   for (int i = 0; i < MAX_NUM_IMAGE_FORMAT_METADATA_SEI; i++)
@@ -1890,7 +1888,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   //SEI prefix indication
   ("SEISEIPrefixIndicationEnabled",                   m_SEIPrefixIndicationSEIEnabled,                   false, "Controls if SEI Prefix Indications SEI messages enabled")
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   ("SEIPRIEnabled",                                   m_priSEIEnabled,                                   false, "Specifies whether packet regions info SEI is enabled")
   ("SEIPRICancelFlag",                                m_priSEICancelFlag,                                false, "Specifies the persistence of any previous packed regions info SEI message in output order")
   ("SEIPRIPersistenceFlag",                           m_priSEIPersistenceFlag,                            true, "Specifies the persistence of the packed regions info SEI message for the current layer")
@@ -1918,7 +1915,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   ("SEIPRIMultilayerFlag",                            m_priSEIMultilayerFlag,                            false, "Specifies whether layer IDs are signalled")
   ("SEIPRIRegionLayerId",                             cfg_priSEIRegionLayerId,         cfg_priSEIRegionLayerId, "Specifies a list of the layer ids of the picture that the region information relate to")
   ("SEIPRIRegionIsALayerFlag",                        cfg_priSEIRegionIsALayerFlag, cfg_priSEIRegionIsALayerFlag, "Specifies a list of flags indicating for each region if the picture width and height in the layer are the same as the region's")
-#endif
 
   ("DebugBitstream",                                  m_decodeBitstreams[0],             std::string( "" ), "Assume the frames up to POC DebugPOC will be the same as in this bitstream. Load those frames from the bitstream instead of encoding them." )
   ("DebugPOC",                                        m_switchPOC,                                 -1, "If DebugBitstream is present, load frames up to this POC from this bitstream. Starting with DebugPOC, return to normal encoding." )
@@ -4906,7 +4902,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   CHECK(m_bimEnabled && m_dpfEnabled, "DPF is not compatible with BIM");
   CHECK(m_dpfEnabled && m_resChangeInClvsEnabled, "DPF is not compatible with resolution change in CLVS");
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   if (m_priSEIEnabled)
   {
     CHECK(m_priSEICancelFlag, "SEIPRICancelFlag must be 0 in this implementation");
@@ -4986,7 +4981,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_priSEITargetRegionTopLeftInUnitsX = cfg_priSEITargetRegionTopLeftInUnitsX.values;
     m_priSEITargetRegionTopLeftInUnitsY = cfg_priSEITargetRegionTopLeftInUnitsY.values;
   }
-#endif
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   for (int i = 0; i < MAX_NUM_IMAGE_FORMAT_METADATA_SEI; i++)

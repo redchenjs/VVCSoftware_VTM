@@ -493,9 +493,7 @@ static const std::map<SEI::PayloadType, const char *> payloadTypeStrings = {
 #if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   { SEI::PayloadType::AI_USAGE_RESTRICTIONS, "AI usage restrictions" },
 #endif
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   { SEI::PayloadType::PACKED_REGIONS_INFO, "Packed regions info" },
-#endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   { SEI::PayloadType::IMAGE_FORMAT_METADATA, "Image format metadata" },
 #endif
@@ -1368,7 +1366,6 @@ SEIGenerativeFaceVideoEnhancement::SEIGenerativeFaceVideoEnhancement(const SEIGe
   m_pupilRightEyeCoordinateY = sei.m_pupilRightEyeCoordinateY;
 }
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 SEIPackedRegionsInfo::SEIPackedRegionsInfo(SEIPackedRegionsInfo& sei)
 {
   m_cancelFlag = sei.m_cancelFlag;
@@ -1399,7 +1396,6 @@ SEIPackedRegionsInfo::SEIPackedRegionsInfo(SEIPackedRegionsInfo& sei)
   m_targetRegionTopLeftInUnitsX = sei.m_targetRegionTopLeftInUnitsX;
   m_targetRegionTopLeftInUnitsY = sei.m_targetRegionTopLeftInUnitsY;
 }
-#endif
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
 SEIImageFormatMetadata::SEIImageFormatMetadata(const SEIImageFormatMetadata& sei)

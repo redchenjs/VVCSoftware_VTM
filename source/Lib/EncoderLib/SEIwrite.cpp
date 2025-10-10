@@ -229,11 +229,9 @@ void SEIWriter::xWriteSEIpayloadData(OutputBitstream &bs, const SEI &sei, HRD &h
     xWriteSEIAIUsageRestrictions(*static_cast<const SEIAIUsageRestrictions *>(&sei));
     break;
 #endif 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   case SEI::PayloadType::PACKED_REGIONS_INFO:
     xWriteSEIPackedRegionsInfo(*static_cast<const SEIPackedRegionsInfo*>(&sei));
     break;
-#endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   case SEI::PayloadType::IMAGE_FORMAT_METADATA:
     xWriteSEIImageFormatMetadata(*static_cast<const SEIImageFormatMetadata*>(&sei));
@@ -3216,7 +3214,6 @@ void SEIWriter::xWriteSEIAIUsageRestrictions(const SEIAIUsageRestrictions &sei)
 }
 #endif
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 void SEIWriter::xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei)
 {
   xWriteFlag(sei.m_cancelFlag, "pri_cancel_flag");
@@ -3277,7 +3274,6 @@ void SEIWriter::xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei)
     }
   }
 }
-#endif
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
 void SEIWriter::xWriteSEIImageFormatMetadata(const SEIImageFormatMetadata &sei)

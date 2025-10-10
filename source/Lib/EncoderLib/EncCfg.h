@@ -1033,7 +1033,6 @@ protected:
   std::vector<std::string> m_textSEIDescriptionStringLang;
   std::vector<std::string> m_textSEIDescriptionString;
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   bool     m_priSEIEnabled;
   bool     m_priSEICancelFlag;
   bool     m_priSEIPersistenceFlag;
@@ -1062,7 +1061,6 @@ protected:
   std::vector<uint32_t> m_priSEIResamplingRatioIdx;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsX;
   std::vector<uint32_t> m_priSEITargetRegionTopLeftInUnitsY;
-#endif
 
   bool      m_constrainedRaslEncoding;
 
@@ -3170,7 +3168,6 @@ public:
 #endif
 #endif
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void     setPriSEIEnabled(bool b)                                       { m_priSEIEnabled = b; }
   bool     getPriSEIEnabled()                                             { return m_priSEIEnabled; }
   void     setPriSEICancelFlag(bool b)                                    { m_priSEICancelFlag = b; }
@@ -3227,7 +3224,6 @@ public:
   uint32_t getPriSEITargetRegionTopLeftInUnitsX(int i) { return m_priSEITargetRegionTopLeftInUnitsX[i]; }
   void     setPriSEITargetRegionTopLeftInUnitsY(std::vector<uint32_t>& b) { m_priSEITargetRegionTopLeftInUnitsY = b; }
   uint32_t getPriSEITargetRegionTopLeftInUnitsY(int i) { return m_priSEITargetRegionTopLeftInUnitsY[i]; }
-#endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   bool                        getIfmSEIEnabled() const { return m_ifmSeiEnabled; }
   void                        setIfmSEIEnabled(bool b) { m_ifmSeiEnabled = b;    }

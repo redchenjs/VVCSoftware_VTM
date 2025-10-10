@@ -136,9 +136,7 @@ protected:
 #if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   void xParseSEIAIUsageRestrictions                 (SEIAIUsageRestrictions& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream);
 #endif
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void xParsePackedRegionsInfo(SEIPackedRegionsInfo &sei, const uint32_t nuhLayerId, uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream);
-#endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   void xParseSEIImageFormatMetadata(SEIImageFormatMetadata & sei,uint32_t payLoadSize, std::ostream *pDecodedMessageOutputStream);
 #endif

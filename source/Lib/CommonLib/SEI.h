@@ -114,9 +114,7 @@ public:
 #if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
     AI_USAGE_RESTRICTIONS                   = 225,   
 #endif
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
     PACKED_REGIONS_INFO                     = 226,
-#endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
     IMAGE_FORMAT_METADATA                   = 227,
 #endif
@@ -1911,7 +1909,6 @@ public:
 };
 #endif
 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 class SEIPackedRegionsInfo : public SEI
 {
 public:
@@ -1963,7 +1960,6 @@ public:
   std::vector<uint32_t> m_regionLayerId;
   std::vector<uint8_t>  m_regionIsALayerFlag;
 };
-#endif
 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
 class SEIImageFormatMetadata : public SEI

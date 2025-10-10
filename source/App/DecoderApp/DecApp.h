@@ -123,7 +123,6 @@ private:
   void  writeLineToOutputLog(Picture * pcPic);
   void xOutputAnnotatedRegions(PicList* pcListPic);
   void xOutputObjectMaskInfos(Picture* pcPic);
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void xOutputPackedRegionsInfo(Picture* pcPic);
   template <typename T>
   void xOutputPackedRegionsInfoVector(FILE* fp, const char* paramName, const std::vector<T>& l)
@@ -135,7 +134,6 @@ private:
     }
     fprintf(fp, "\n");
   }
-#endif
 };
 
 //! \}

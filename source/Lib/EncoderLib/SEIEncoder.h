@@ -127,9 +127,7 @@ public:
 #if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   void initSEIAIUsageRestrictions(SEIAIUsageRestrictions *sei);
 #endif 
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   void initSEIPackedRegionsInfo(SEIPackedRegionsInfo *sei);
-#endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   void initSEIImageFormatMetadata(SEIImageFormatMetadata *sei);
 #endif

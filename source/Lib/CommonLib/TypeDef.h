@@ -65,7 +65,6 @@
 
 
 
-#define JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI        1
 
 
 #define JVET_AK0055_SPO_SEI_CONSTRAINT                    1 // Add FPA, RWP, ERP, GCMP constraints

@@ -55,9 +55,7 @@
 #include "CommonLib/Unit.h"
 #include "CommonLib/Reshape.h"
 #include "CommonLib/SEINeuralNetworkPostFiltering.h"
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
 #include "CommonLib/SEIPackedRegionsInfoProcess.h"
-#endif
 
 #if JVET_AJ0151_DSC_SEI
 #include "SEIDigitallySignedContent.h"
@@ -249,9 +247,7 @@ private:
   int m_lastGdrRecoveryPocCnt;
 #endif
   SEINeuralNetworkPostFiltering m_nnPostFiltering;
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   SEIPackedRegionsInfoProcess m_priProcess;
-#endif
 
 public:
   int                     m_targetSubPicIdx;
@@ -411,9 +407,7 @@ public:
     m_trustStoreDir = trustStoreDir;
   }
 #endif
-#if JVET_AK0140_PACKED_REGIONS_INFORMATION_SEI
   SEIPackedRegionsInfoProcess& getPriProcess() { return m_priProcess; }
-#endif
 
 protected:
   void  xUpdateRasInit(Slice* slice);
