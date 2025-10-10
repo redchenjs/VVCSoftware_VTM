@@ -90,9 +90,7 @@ public:
   int                       hashMethod = 0;
   int                            numVerificationSubstreams = 1;
   std::vector<std::vector<bool>> refSubstreamFlag;
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   bool                      implicitAssociationModeFlag = false;
-#endif
   bool                      signAURSEI = false;
   bool                      signGFVSEI = false;
   bool                      signGFVESEI = false;

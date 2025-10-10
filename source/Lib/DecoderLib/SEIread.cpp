@@ -5313,10 +5313,8 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
       sei.dsciRefSubstreamFlag[i][j] = (val!=0);
     }
   }
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   sei_read_flag(pDecodedMessageOutputStream, val, "dsci_vss_implicit_association_mode_flag");
   sei.dsciVSSImplicitAssociationModeFlag = (val!=0);
-#endif
 #if JVET_AL0222_DSC_START_END
   sei_read_flag(pDecodedMessageOutputStream, val, "dsci_signed_content_start_flag");
   sei.dsciSignedContentStartFlag = (val!=0);

@@ -72,9 +72,7 @@ public:
   std::string  dsciKeySourceUri;
   int8_t       dsciNumVerificationSubstreams = 0;
   std::vector<std::vector<bool>> dsciRefSubstreamFlag;
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   bool         dsciVSSImplicitAssociationModeFlag = false;
-#endif
   int8_t       dsciKeyRetrievalModeIdc       = 0;
   bool         dsciUseKeyRegisterIdxFlag     = false;
   int32_t      dsciKeyRegisterIdx            = 0;
@@ -220,19 +218,13 @@ private:
   bool    m_sigInitialized = false;
 
   std::vector<std::vector<bool>> m_refSubstreamFlag;
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   bool m_implicitAssociationModeFlag = false;
-#endif
   bool m_seiSigningFlag = false;
 
 public:
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   bool getDscAssociationModeFlag(){return m_implicitAssociationModeFlag;}
   bool getSeiSigningFlag(){return m_seiSigningFlag;}
   void initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid, const std::vector<std::vector<bool>> &refFlags, bool implicitAssociationFlag, bool seiSigningFlag);
-#else
-  void initDscSubstreamManager (int numSubstreams, int hashMethodType, const std::string &certUri, bool hasContentUuid, std::array<uint8_t,16> &contentUuid, const std::vector<std::vector<bool>> &refFlags);
-#endif
 
   void initSignature   (const std::string &privKeyFile);
   bool initVerificator (const std::string &keyStoreDir, const std::string &trustStoreDir);

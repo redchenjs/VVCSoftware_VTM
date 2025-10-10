@@ -747,22 +747,14 @@ void DecLib::xInitDscSubstreamManager(SEIMessages &SEIs)
     }
 #if JVET_AK0206_DSC_SEI_ID
     m_dscSubstreamManagerMap[dsci->dsciId].initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag, dsci->dsciSEISigningFlag);
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
-#endif
     if (!m_dscSubstreamManagerMap[dsci->dsciId].initVerificator(m_keyStoreDir, m_trustStoreDir))
     {
       printf("Error: Cannot initialize Digitally Signed Content verification\n");
     }
 #else
     m_dscSubstreamManager.initDscSubstreamManager(dsci->dsciNumVerificationSubstreams, dsci->dsciHashMethodType, dsci->dsciKeySourceUri,
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
                                                   dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag, dsci->dsciVSSImplicitAssociationModeFlag);
-#else
-                                                  dsci->dsciContentUuidPresentFlag, dsci->dsciContentUuid, dsci->dsciRefSubstreamFlag);
-#endif
     if (!m_dscSubstreamManager.initVerificator(m_keyStoreDir, m_trustStoreDir))
     {
       printf("Error: Cannot initialize Digitally Signed Content verification\n");
@@ -3355,15 +3347,11 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     else
     {
       // inference of substream ID
-#if !JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
-      const int32_t dscsVSSID = 0;
-#else
       int32_t dscsVSSID = 0;
       if( m_dscSubstreamManagerMap[dscId].getDscAssociationModeFlag() )
       {
         dscsVSSID = vps->getMaxLayers()*nalu.m_nuhLayerId + nalu.m_temporalId;
       }
-#endif
       xProcessStoredNALUnitsForSignature(dscId, dscsVSSID);
     }
     xClearStoredNALUnitsForSignature();
@@ -3382,9 +3370,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
   {
     // process as substream 0, when no selection SEI is received
     // todo: multiples slices
-#if !JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
-    xProcessStoredNALUnitsForSignature(0);
-#else
     if(m_dscSubstreamManager.getDscAssociationModeFlag())
     {
       int32_t dscsVSSID = vps->getMaxLayers()*nalu.m_nuhLayerId + nalu.m_temporalId;
@@ -3394,7 +3379,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     {
       xProcessStoredNALUnitsForSignature(0);
     }
-#endif
   }
 #endif
 #endif

@@ -2316,9 +2316,7 @@ void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedC
   sei->dsciRefSubstreamFlag = m_pcCfg->getDigitallySignedContentSEICfg().refSubstreamFlag;
   sei->dsciHashMethodType = m_pcCfg->getDigitallySignedContentSEICfg().hashMethod;
   sei->dsciKeySourceUri = m_pcCfg->getDigitallySignedContentSEICfg().publicKeyUri;
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION  
   sei->dsciVSSImplicitAssociationModeFlag = m_pcCfg->getDigitallySignedContentSEICfg().implicitAssociationModeFlag;
-#endif
   sei->dsciUseKeyRegisterIdxFlag = m_pcCfg->getDigitallySignedContentSEICfg().keyIdEnabled;
   sei->dsciKeyRegisterIdx = m_pcCfg->getDigitallySignedContentSEICfg().keyId;
 #if JVET_AL0222_DSC_START_END

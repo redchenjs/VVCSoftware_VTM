@@ -3136,9 +3136,7 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
       xWriteFlag(sei.dsciRefSubstreamFlag[i][j], "dsci_ref_substream_flag");
     }
   }
-#if JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION
   xWriteFlag(sei.dsciVSSImplicitAssociationModeFlag, "dsci_vss_implicit_association_mode_flag");
-#endif
 #if JVET_AL0222_DSC_START_END
   xWriteFlag(sei.dsciSignedContentStartFlag, "dsci_signed_content_start_flag");
 #endif

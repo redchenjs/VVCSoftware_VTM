@@ -68,7 +68,6 @@
 
 
 
-#define JVET_AL0117_DSC_VSS_IMPLICIT_ASSOCIATION          1 // dsci_vss_implicit_association_mode_flag
 
 
 #define JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION            1 // add fg_pic_width_in_luma_samples and fg_pic_height_in_luma_samples to the extension of FGC SEI
