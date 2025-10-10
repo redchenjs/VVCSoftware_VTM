@@ -104,7 +104,6 @@ void SEIReader::sei_read_string(std::ostream* os, std::string& code, const char*
   }
 }
 
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
 bool SEIReader::xPayloadExtensionPresent()
 {
   if (getBitstream()->getNumBitsLeft() == 0)
@@ -119,7 +118,6 @@ bool SEIReader::xPayloadExtensionPresent()
   uint32_t remBits = getBitstream()->peekBits(getBitstream()->getNumBitsLeft());
   return remBits != (1 << (getBitstream()->getNumBitsLeft() - 1));
 }
-#endif
 
 
 static inline void output_sei_message_header(SEI &sei, std::ostream *pDecodedMessageOutputStream, uint32_t payloadSize)
@@ -2657,7 +2655,6 @@ void SEIReader::xParseSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics& s
     } // for c
     sei_read_flag(pDecodedMessageOutputStream, code, "fg_characteristics_persistence_flag");         sei.m_filmGrainCharacteristicsPersistenceFlag = code != 0;
   } // cancel flag
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
   if (xPayloadExtensionPresent())
   {
     sei_read_flag(pDecodedMessageOutputStream, code, "fg_spatialresolution_present_flag");           sei.m_spatialResolutionPresentFlag = code != 0;
@@ -2667,7 +2664,6 @@ void SEIReader::xParseSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics& s
       sei_read_uvlc(pDecodedMessageOutputStream, code, "fg_pic_height_in_luma_samples");             sei.m_picHeightInLumaSamples = code;
     }
   }
-#endif
 }
 
 void SEIReader::xParseSEIContentLightLevelInfo(SEIContentLightLevelInfo& sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)

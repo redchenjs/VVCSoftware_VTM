@@ -70,7 +70,6 @@
 
 
 
-#define JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION            1 // add fg_pic_width_in_luma_samples and fg_pic_height_in_luma_samples to the extension of FGC SEI
 
 #define JVET_AK0326_NNPF_SEED                             1 // JVET-AK0326: seed value for NNPFC and NNPFA SEI messages
 

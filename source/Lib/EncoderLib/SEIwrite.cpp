@@ -1592,7 +1592,6 @@ void SEIWriter::xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacterist
     } // for c
     xWriteFlag(sei.m_filmGrainCharacteristicsPersistenceFlag, "fg_characteristics_persistence_flag");
   } // cancel flag
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
   if (sei.m_spatialResolutionPresentFlag)
   {
     // SEI payload extension bits
@@ -1605,7 +1604,6 @@ void SEIWriter::xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacterist
       xWriteFlag(0,                                           "payload_bit_equal_to_zero");
     }
   }
-#endif
 }
 
 void SEIWriter::xWriteSEIContentLightLevelInfo(const SEIContentLightLevelInfo& sei)

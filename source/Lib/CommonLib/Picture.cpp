@@ -1436,7 +1436,6 @@ PelUnitBuf Picture::getDisplayBufFG(bool wrap)
 
   if (FGS_SUCCESS == m_grainCharacteristic->m_errorCode)
   {
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
     int width = getRecoBuf().get(COMPONENT_Y).width;
     int height = getRecoBuf().get(COMPONENT_Y).height;
     if (m_grainBuf->get(COMPONENT_Y).width != width || m_grainBuf->get(COMPONENT_Y).height != height)
@@ -1449,7 +1448,6 @@ PelUnitBuf Picture::getDisplayBufFG(bool wrap)
       m_grainBuf->create(chromaFormat, Area(0, 0, width, height), 0, m_padValue, 0, false);
       m_grainCharacteristic->fgsInit();
     }
-#endif
     m_grainBuf->copyFrom(getRecoBuf());
     m_grainBuf->extendBorderPel(m_padValue); // Padding to make wd and ht multiple of max fgs window size(64)
 
@@ -1460,19 +1458,13 @@ PelUnitBuf Picture::getDisplayBufFG(bool wrap)
   }
   else
   {
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
     if (message != SEIs.end())
-#else
-    if (payloadType == SEI::PayloadType::FILM_GRAIN_CHARACTERISTICS)
-#endif
     {
       msg(WARNING, "Film Grain synthesis is not performed. Error code: 0x%x \n", m_grainCharacteristic->m_errorCode);
     }
     return M_BUFS(scheduler.getSplitPicId(), wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION);
   }
 }
-
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
 
 bool Picture::filmGrainAfterUpscale()
 {
@@ -1579,8 +1571,6 @@ PelUnitBuf Picture::getDisplayBufFGUpscaled(const SPS& sps, const PPS& pps, int 
     return M_BUFS(scheduler.getSplitPicId(), wrap ? PIC_RECON_WRAP : PIC_RECONSTRUCTION);
   }
 }
-
-#endif
 
 void Picture::createColourTransfProcessor(bool firstPictureInSequence, SEIColourTransformApply* ctiCharacteristics, PelStorage* ctiBuf, int width, int height, ChromaFormat fmt, int bitDepth)
 {

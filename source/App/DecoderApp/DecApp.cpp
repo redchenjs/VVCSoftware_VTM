@@ -1178,7 +1178,6 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
           ChromaFormat  chromaFormatIdc    = sps->getChromaFormatIdc();
           if (m_upscaledOutput)
           {
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
             if (pcPic->filmGrainAfterUpscale())
             {
               const Window& confSps = sps->getConformanceWindow();
@@ -1198,11 +1197,6 @@ void DecApp::xWriteOutput( PicList* pcListPic, uint32_t tId )
                 *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
                 m_upscaledOutput, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight);
             }
-#else
-            m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
-              *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
-              m_upscaledOutput, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight);
-#endif
           }
           else
           {
@@ -1435,7 +1429,6 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
             ChromaFormat  chromaFormatIdc = sps->getChromaFormatIdc();
             if (m_upscaledOutput)
             {
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
               if (pcPic->filmGrainAfterUpscale())
               {
                 const Window& confSps = sps->getConformanceWindow();
@@ -1455,11 +1448,6 @@ void DecApp::xFlushOutput( PicList* pcListPic, const int layerId )
                   *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
                   m_upscaledOutput, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight);
               }
-#else
-              m_videoIOYuvSEIFGSFile[pcPic->layerId].writeUpscaledPicture(
-                *sps, *pcPic->cs->pps, pcPic->getDisplayBufFG(), m_outputColourSpaceConvert, m_packedYUVMode,
-                m_upscaledOutput, ChromaFormat::UNDEFINED, m_clipOutputVideoToRec709Range, m_upscaleFilterForDisplay, m_upscaledOutputWidth, m_upscaledOutputHeight);
-#endif
             }
             else
             {

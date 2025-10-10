@@ -904,11 +904,9 @@ SEIFilmGrainCharacteristics::SEIFilmGrainCharacteristics(const SEIFilmGrainChara
     m_compModel[i].intensityValues = sei.m_compModel[i].intensityValues;
   }
   m_filmGrainCharacteristicsPersistenceFlag = sei.m_filmGrainCharacteristicsPersistenceFlag;
-#if JVET_AL0339_FGS_SEI_SPATIAL_RESOLUTION
   m_spatialResolutionPresentFlag = sei.m_spatialResolutionPresentFlag;
   m_picWidthInLumaSamples = sei.m_picWidthInLumaSamples;
   m_picHeightInLumaSamples = sei.m_picHeightInLumaSamples;
-#endif
 }
 
 SEIContentLightLevelInfo::SEIContentLightLevelInfo(const SEIContentLightLevelInfo& sei)
