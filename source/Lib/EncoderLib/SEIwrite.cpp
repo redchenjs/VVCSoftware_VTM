@@ -2231,12 +2231,10 @@ void SEIWriter::xWriteSEINeuralNetworkPostFilterCharacteristics(const SEINeuralN
         xWriteFlag(sei.m_applicationPurposeTagUriPresentFlag, "nnpfc_application_purpose_tag_uri_present_flag");
         if ( sei.m_applicationPurposeTagUriPresentFlag )
         {
-#if JVET_AI0070_BYTE_ALIGNMENT
           while (!isByteAligned())
           {
             xWriteFlag(0, "nnpfc_metadata_alignment_zero_bit");
           }
-#endif
           xWriteString(sei.m_applicationPurposeTagUri, "nnpfc_application_purpose_tag_uri"); 
         }
       }

@@ -3810,13 +3810,11 @@ void SEIReader::xParseSEINNPostFilterCharacteristics(SEINeuralNetworkPostFilterC
         if ( sei.m_applicationPurposeTagUriPresentFlag )
         { 
           std::string val2;
-#if JVET_AI0070_BYTE_ALIGNMENT
           while (!isByteAligned())
           {
             sei_read_flag(pDecodedMessageOutputStream, val, "nnpfc_metadata_alignment_zero_bit");
             CHECK(val != 0, "nnpfc_metadata_alignment_zero_bit not equal to zero");
           }
-#endif
           sei_read_string(pDecodedMessageOutputStream, val2, "nnpfc_application_purpose_tag_uri");
           sei.m_applicationPurposeTagUri = val2;
           numberExtensionBitsUsed += (static_cast<uint32_t>(sei.m_applicationPurposeTagUri.length() + 1) * 8);

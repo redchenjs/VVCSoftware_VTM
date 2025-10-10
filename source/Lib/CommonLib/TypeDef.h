@@ -72,7 +72,6 @@
 
 
 
-#define JVET_AI0070_BYTE_ALIGNMENT                        1 // JVET-AI0070: byte alignment in NNPFC SEI message
 
 #define JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI             1 // Implementation of AI-usage restrictions SEI message
 
