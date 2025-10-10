@@ -2369,12 +2369,10 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     opts.addOptions()("SEINNPostFilterActivationPrompt", m_nnPostFilterSEIActivationPrompt, std::string(""), "Specifies the text string prompt used as input for the target NNPF");
     opts.addOptions()("SEINNPostFilterActivationSeedUpdateFlag", m_nnPostFilterSEIActivationSeedUpdateFlag, false, "Specifies the value of nnpfa_seed_update_flag in the Neural Network Post Filter Activation SEI message");
     opts.addOptions()("SEINNPostFilterActivationSeed", m_nnPostFilterSEIActivationSeed, 0u, "Specifies the seed value used as input for the target NNPF");
-#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
 #if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
     opts.addOptions()("SEINNPostFilterActivationSelectedInputFlag", m_nnPostFilterSEIActivationSelectedInputFlag, false, "Specifies whether nnpfa_num_input_pic_shift is written to the bitstream");
 #endif
     opts.addOptions()("SEINNPostFilterActivationNumInputPicShift", m_nnPostFilterSEIActivationNumInputPicShift, 0u, "specifies the number of input pictures shift in the list of candidate input pictures to get the final input pictures for the target NNPF");
-#endif
   }
 
   opts.addOptions()("SEITextDescriptionID", m_SEITextDescriptionID, 1u, "Identifier value of this text description information SEI message, must be in the range 1-16383");

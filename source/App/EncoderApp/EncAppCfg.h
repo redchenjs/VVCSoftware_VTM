@@ -854,12 +854,10 @@ protected:
   std::string           m_nnPostFilterSEIActivationPrompt;
   bool                  m_nnPostFilterSEIActivationSeedUpdateFlag;
   uint32_t              m_nnPostFilterSEIActivationSeed;
-#if JVET_AJ0114_NNPFA_NUM_PIC_SHIFT
 #if JVET_AL0075_NNPFA_SELECTED_INPUT_FLAG
   bool                  m_nnPostFilterSEIActivationSelectedInputFlag;
 #endif
   uint32_t              m_nnPostFilterSEIActivationNumInputPicShift;
-#endif 
 
   bool                  m_poSEIEnabled;
   uint32_t              m_poSEIId;
