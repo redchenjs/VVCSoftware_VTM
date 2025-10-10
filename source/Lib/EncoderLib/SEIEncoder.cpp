@@ -2347,7 +2347,6 @@ void SEIEncoder::initSEIDigitallySignedContentVerification(SEIDigitallySignedCon
 }
 #endif
 
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
 void SEIEncoder::initSEIAIUsageRestrictions(SEIAIUsageRestrictions *sei)
 {
   CHECK(!(m_isInitialized), "Unspecified error");
@@ -2377,7 +2376,6 @@ void SEIEncoder::initSEIAIUsageRestrictions(SEIAIUsageRestrictions *sei)
     }
   }
 }
-#endif 
 
 void SEIEncoder::initSEIPackedRegionsInfo(SEIPackedRegionsInfo* sei)
 {

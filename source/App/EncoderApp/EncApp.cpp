@@ -1640,7 +1640,6 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setMaxNumALFAPS                                      (m_maxNumAlfAps);
   m_cEncLib.setALFAPSIDShift                                     (m_alfapsIDShift);
   m_cEncLib.setConstantJointCbCrSignFlag                         (m_constantJointCbCrSignFlag != 0);
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   m_cEncLib.setAURSEIEnabled                                     (m_aurSEIEnabled);
   m_cEncLib.setAURSEICancelFlag                                  (m_aurSEICancelFlag);
   m_cEncLib.setAURSEIPersistenceFlag                             (m_aurSEIPersistenceFlag);
@@ -1651,7 +1650,6 @@ void EncApp::xInitLibCfg( int layerIdx )
 #if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   m_cEncLib.setAURSEIExclusionFlag                               (m_aurSEIExclusionFlag);
 #endif
-#endif 
 #if JVET_O0756_CALCULATE_HDRMETRICS
   for (int i=0; i<hdrtoolslib::NB_REF_WHITE; i++)
   {

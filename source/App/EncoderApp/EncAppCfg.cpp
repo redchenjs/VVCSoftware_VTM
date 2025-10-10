@@ -846,13 +846,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<double>     cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateX            (-50960.0, 50960.0, 0, 5095000);
   SMultiValueInput<double>     cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY            (-50960.0, 50960.0, 0, 5095000);
 
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   SMultiValueInput<uint32_t>   cfg_aurSEIRestrictions                                        (0, 2, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<bool>       cfg_aurSEIContextPresentFlag                                  (0, 1, 0, 4096);
   SMultiValueInput<uint32_t>   cfg_aurSEIContext                                             (0, 15, 0, std::numeric_limits<uint32_t>::max());
 #if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   SMultiValueInput<bool>       cfg_aurSEIExclusionFlag                                       (0, 1, 0, 4096);
-#endif
 #endif
 
   SMultiValueInput<uint32_t> cfg_priSEIResamplingWidthNumMinus1(0, 65535, 0, std::numeric_limits<uint32_t>::max());
@@ -2085,7 +2083,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("SEIGenerativeFaceVideoEnhancementPupilRightEyeCoordinateY",        cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY,       cfg_generativeFaceVideoEnhancementSEIPupilRightEyeCoordinateY,       "the Y coordinate of the right eye pupil")
     ("SEIGenerativeFaceVideoEnhancementPayloadFilename",                 m_generativeFaceVideoEnhancementSEIPayloadFilename,                  std::string(""),                                                     "specify path to payloadfile") ;
   
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   opts.addOptions()
     ("SEIAUREnabled",                                         m_aurSEIEnabled,                                          false,                                                         "Control use of the AI usage restrictions SEI")
     ("SEIAURCancelFlag",                                      m_aurSEICancelFlag,                                       false,                                                         "Specifies the persistence of any previous AI usage restrictions SEI message in output order")
@@ -2098,7 +2095,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("SEIAURExclusionFlag",                                   cfg_aurSEIExclusionFlag,                                  cfg_aurSEIExclusionFlag,                                       "List of flags indicating whether NNPFC, NNPFA, GFV and GFVE SEI messages are excluded from AI usage restrictions");
 #else
     ("SEIAURContext",                                         cfg_aurSEIContext,                                        cfg_aurSEIContext,                                             "List of context");
-#endif
 #endif
   // clang-format on
 
@@ -4848,7 +4844,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     }
   }
 
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   if (m_aurSEIEnabled)
   {
     m_aurSEIRestrictions = cfg_aurSEIRestrictions.values;
@@ -4858,7 +4853,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_aurSEIExclusionFlag = cfg_aurSEIExclusionFlag.values;
 #endif
   }
-#endif 
 
   if( m_costMode == COST_LOSSLESS_CODING )
   {

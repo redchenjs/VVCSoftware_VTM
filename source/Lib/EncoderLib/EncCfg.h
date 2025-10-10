@@ -1058,7 +1058,6 @@ protected:
 
   bool      m_constrainedRaslEncoding;
 
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   bool  m_aurSEIEnabled;
   bool  m_aurSEICancelFlag;
   bool  m_aurSEIPersistenceFlag;
@@ -1068,7 +1067,6 @@ protected:
   std::vector<uint32_t>  m_aurSEIContext;
 #if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   std::vector<bool>  m_aurSEIExclusionFlag;
-#endif
 #endif
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   bool                  m_ifmSeiEnabled;
@@ -3135,7 +3133,6 @@ public:
   std::string  getTextSEIDescriptionStringLang(int idx) const {return m_textSEIDescriptionStringLang[idx];}
   void         setTextSEIDescriptionString(const std::vector<std::string> b) {m_textSEIDescriptionString = b;}
   std::string  getTextSEIDescriptionString(int idx) const {return m_textSEIDescriptionString[idx];}
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   void         setAURSEIEnabled(bool b) { m_aurSEIEnabled = b; }
   bool         getAURSEIEnabled() const { return m_aurSEIEnabled; }
   void         setAURSEICancelFlag(bool b) { m_aurSEICancelFlag = b; }
@@ -3153,7 +3150,6 @@ public:
 #if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   void         setAURSEIExclusionFlag(std::vector<bool> b) { m_aurSEIExclusionFlag = b; }
   bool         getAURSEIExclusionFlag(uint32_t idx) const { return m_aurSEIExclusionFlag[idx]; }
-#endif
 #endif
 
   void     setPriSEIEnabled(bool b)                                       { m_priSEIEnabled = b; }

@@ -1275,7 +1275,6 @@ protected:
   bool        m_calculateHdrMetrics;
 #endif
 
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   bool        m_aurSEIEnabled;
   bool        m_aurSEICancelFlag;
   bool        m_aurSEIPersistenceFlag;
@@ -1285,7 +1284,6 @@ protected:
   std::vector<uint32_t>  m_aurSEIContext;
 #if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   std::vector<bool>      m_aurSEIExclusionFlag;
-#endif
 #endif
 
   bool     m_priSEIEnabled;

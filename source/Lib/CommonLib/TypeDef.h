@@ -73,7 +73,6 @@
 
 
 
-#define JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI             1 // Implementation of AI-usage restrictions SEI message
 
 #define JVET_AK0281_AUR_SEI_IN_SPO_SEI                    1 // AUR SEI message in SPO SEI message
 
@@ -900,7 +899,6 @@ enum POST_FILTER_MODE
   URI = 1
 };
 
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
 enum AUR_CONTEXT
 {
   AUR_UNDEFINED = 0,
@@ -916,7 +914,6 @@ enum AUR_RESTICTION
   AUR_GERNERATIVE,
   AUR_INFERENCE,
 };
-#endif
 
 struct Fraction
 {

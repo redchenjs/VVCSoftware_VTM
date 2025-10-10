@@ -111,9 +111,7 @@ public:
     DIGITALLY_SIGNED_CONTENT_VERIFICATION   = 222,
     GENERATIVE_FACE_VIDEO                   = 223,
     GENERATIVE_FACE_VIDEO_ENHANCEMENT       = 224,
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
     AI_USAGE_RESTRICTIONS                   = 225,   
-#endif
     PACKED_REGIONS_INFO                     = 226,
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
     IMAGE_FORMAT_METADATA                   = 227,
@@ -1874,7 +1872,6 @@ public:
   uint8_t          m_miMaxWavelengthExponentPlus15;  
 };
 
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
 class SEIAIUsageRestrictions : public SEI
 {
 public:
@@ -1897,7 +1894,6 @@ public:
   std::vector<bool>     m_exclusionFlag;
 #endif
 };
-#endif
 
 class SEIPackedRegionsInfo : public SEI
 {

@@ -1189,14 +1189,12 @@ void EncGOP::xCreatePerPictureSEIMessages (int picInGOP, SEIMessages& seiMessage
     seiMessages.push_back(sei);
   }
 #endif
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   if (m_pcCfg->getAURSEIEnabled())
   {
     SEIAIUsageRestrictions *aurSEI = new SEIAIUsageRestrictions;
     m_seiEncoder.initSEIAIUsageRestrictions(aurSEI);
     seiMessages.push_back(aurSEI);
   }
-#endif 
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   if (m_pcCfg->getIfmSEIEnabled())
   {

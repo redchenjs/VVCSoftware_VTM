@@ -165,9 +165,7 @@ protected:
   void xWriteSEIDigitallySignedContentSelection(const SEIDigitallySignedContentSelection &sei);
   void xWriteSEIDigitallySignedContentVerification(const SEIDigitallySignedContentVerification &sei);
 #endif
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
   void xWriteSEIAIUsageRestrictions(const SEIAIUsageRestrictions &sei);
-#endif 
   void xWriteSEIPackedRegionsInfo(const SEIPackedRegionsInfo& sei);
 #if JVET_AJ0258_IMAGE_FORMAT_METADATA_SEI
   void xWriteSEIImageFormatMetadata(const SEIImageFormatMetadata &sei);

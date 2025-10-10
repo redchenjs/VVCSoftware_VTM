@@ -588,12 +588,10 @@ bool SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
       sei = new SEIDigitallySignedContentSelection;
       xParseSEIDigitallySignedContentSelection((SEIDigitallySignedContentSelection &) *sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#if JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
     case SEI::PayloadType::AI_USAGE_RESTRICTIONS:
       sei = new SEIAIUsageRestrictions;
       xParseSEIAIUsageRestrictions((SEIAIUsageRestrictions &)*sei, payloadSize, pDecodedMessageOutputStream);
       break;
-#endif
     case SEI::PayloadType::PACKED_REGIONS_INFO:
       sei = new SEIPackedRegionsInfo;
       xParsePackedRegionsInfo((SEIPackedRegionsInfo &) *sei, nuh_layer_id, payloadSize, pDecodedMessageOutputStream);
@@ -5361,7 +5359,6 @@ void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedCo
 
 }
 
-#if  JVET_AK0114_AI_USAGE_RESTRICTIONS_SEI
 void SEIReader::xParseSEIAIUsageRestrictions(SEIAIUsageRestrictions& sei, uint32_t payloadSize, std::ostream* pDecodedMessageOutputStream)
 {
   uint32_t val;
@@ -5398,7 +5395,6 @@ void SEIReader::xParseSEIAIUsageRestrictions(SEIAIUsageRestrictions& sei, uint32
     }
   }
 }
-#endif
 
 void SEIReader::xParsePackedRegionsInfo(SEIPackedRegionsInfo& sei, const uint32_t nuhLayerId, uint32_t payLoadSize, std::ostream* pDecodedMessageOutputStream)
 {
