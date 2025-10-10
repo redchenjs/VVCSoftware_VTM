@@ -1829,16 +1829,10 @@ public:
 #endif
     , m_numIntPics(0)
     , m_origPicDimensionsFlag(false)
-#if JVET_AL0123_AL0310_EOI
     , m_origPicWidthMinus1(0)
     , m_origPicHeightMinus1(0)
     , m_spatialHorResamplingTypeIdc(0)
     , m_spatialVerResamplingTypeIdc(0)
-#else
-    , m_origPicWidth(0)
-    , m_origPicHeight(0)
-    , m_spatialResamplingTypeFlag(false)
-#endif
     , m_privacyProtectionTypeIdc(0)
     , m_privacyProtectedInfoType(0)
   {}
@@ -1860,16 +1854,10 @@ public:
 #endif
   uint32_t m_numIntPics;
   bool     m_origPicDimensionsFlag;
-#if JVET_AL0123_AL0310_EOI
   uint32_t m_origPicWidthMinus1;
   uint32_t m_origPicHeightMinus1;
   bool     m_spatialHorResamplingTypeIdc;
   bool     m_spatialVerResamplingTypeIdc;
-#else
-  uint32_t m_origPicWidth;
-  uint32_t m_origPicHeight;
-  bool     m_spatialResamplingTypeFlag;
-#endif
   uint32_t m_privacyProtectionTypeIdc;
   uint32_t m_privacyProtectedInfoType;
 

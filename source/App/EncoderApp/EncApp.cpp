@@ -1175,16 +1175,10 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setEOISEISrcPicFlag(m_eoiSEISrcPicFlag);
 #endif
   m_cEncLib.setEOISEIOrigPicDimensionsFlag(m_eoiSEIOrigPicDimensionsFlag);
-#if JVET_AL0123_AL0310_EOI
   m_cEncLib.setEOISEIOrigPicWidthMinus1(m_eoiSEIOrigPicWidthMinus1);
   m_cEncLib.setEOISEIOrigPicHeightMinus1(m_eoiSEIOrigPicHeightMinus1);
   m_cEncLib.setEOISEISpatialHorResamplingTypeIdc(m_eoiSEISpatialHorResamplingTypeIdc);
   m_cEncLib.setEOISEISpatialVerResamplingTypeIdc(m_eoiSEISpatialVerResamplingTypeIdc);
-#else
-  m_cEncLib.setEOISEIOrigPicWidth(m_eoiSEIOrigPicWidth);
-  m_cEncLib.setEOISEIOrigPicHeight(m_eoiSEIOrigPicHeight);
-  m_cEncLib.setEOISEISpatialResamplingTypeFlag(m_eoiSEISpatialResamplingTypeFlag);
-#endif
   m_cEncLib.setEOISEIPrivacyProtectionTypeIdc(m_eoiSEIPrivacyProtectionTypeIdc);
   m_cEncLib.setEOISEIPrivacyProtectedInfoType(m_eoiSEIPrivacyProtectedInfoType);
   // Modality Information SEI

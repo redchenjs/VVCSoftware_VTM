@@ -1249,16 +1249,10 @@ SEIEncoderOptimizationInfo::SEIEncoderOptimizationInfo(
 #endif
   m_numIntPics = sei.m_numIntPics;
   m_origPicDimensionsFlag = sei.m_origPicDimensionsFlag;
-#if JVET_AL0123_AL0310_EOI
   m_origPicWidthMinus1 = sei.m_origPicWidthMinus1;
   m_origPicHeightMinus1 = sei.m_origPicHeightMinus1;
   m_spatialHorResamplingTypeIdc = sei.m_spatialHorResamplingTypeIdc;
   m_spatialVerResamplingTypeIdc = sei.m_spatialVerResamplingTypeIdc;
-#else
-  m_origPicWidth = sei.m_origPicWidth;
-  m_origPicHeight = sei.m_origPicHeight;
-  m_spatialResamplingTypeFlag = sei.m_spatialResamplingTypeFlag;
-#endif
   m_privacyProtectionTypeIdc = sei.m_privacyProtectionTypeIdc;
   m_privacyProtectedInfoType = sei.m_privacyProtectedInfoType;
 
