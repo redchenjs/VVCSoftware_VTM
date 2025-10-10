@@ -942,9 +942,7 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
     xWriteUvlc((uint32_t) sei.m_hdr.m_numAuxPicLayerMinus1, "omi_num_aux_pic_layer_minus1");
     xWriteUvlc((uint32_t) sei.m_hdr.m_maskIdLengthMinus1, "omi_mask_id_length_minus1");
     xWriteUvlc((uint32_t) sei.m_hdr.m_maskSampleValueLengthMinus8, "omi_mask_sample_value_length_minus8");
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
     xWriteFlag(sei.m_hdr.m_tolerancePresentFlag, "omi_tolerance_present_flag");
-#endif
     xWriteFlag(sei.m_hdr.m_maskConfidenceInfoPresentFlag, "omi_mask_confidence_info_present_flag");
     if (sei.m_hdr.m_maskConfidenceInfoPresentFlag)
     {
@@ -984,12 +982,10 @@ void SEIWriter::xWriteSEIObjectMaskInfos(const SEIObjectMaskInfos& sei)
       if (sei.m_maskPicUpdateFlag[i])
       {
         xWriteUvlc((uint32_t) sei.m_numMaskInPic[i], "omi_num_mask_in_pic[i]");
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
         if (sei.m_hdr.m_tolerancePresentFlag)
         {
           xWriteCode(sei.m_auxSampleTolerance[i], sei.m_hdr.m_maskSampleValueLengthMinus8 + 8, "omi_aux_sample_tolerance[i]");
         }
-#endif
         for (uint32_t j = 0; j < sei.m_numMaskInPic[i]; j++)
         {
           xWriteCode(sei.m_objectMaskInfos[maskCnt].maskId, sei.m_hdr.m_maskIdLengthMinus1 + 1, "omi_mask_id[i][j]");

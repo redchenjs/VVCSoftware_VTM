@@ -1737,9 +1737,7 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
     if (seiObjectMaskInfo.m_hdr.m_cancelFlag)
     {
       m_omiMasks.clear();
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
       m_auxSampleTolerance.clear();
-#endif
     }
     else
     {
@@ -1748,9 +1746,7 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
         CHECK(m_omiHeader.m_numAuxPicLayerMinus1 != seiObjectMaskInfo.m_hdr.m_numAuxPicLayerMinus1, "The value of omi_num_aux_pic_layer_minus1 should be consistent within the CLVS.")
         CHECK(m_omiHeader.m_maskIdLengthMinus1 != seiObjectMaskInfo.m_hdr.m_maskIdLengthMinus1, "The value of omi_mask_id_length_minus1 should be consistent within the CLVS.")
         CHECK(m_omiHeader.m_maskSampleValueLengthMinus8 != seiObjectMaskInfo.m_hdr.m_maskSampleValueLengthMinus8,"The value of omi_mask_sample_value_length_minus8 should be consistent within the CLVS.")
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
         CHECK(m_omiHeader.m_tolerancePresentFlag != seiObjectMaskInfo.m_hdr.m_tolerancePresentFlag,"Tolerance present flag should be consistent within the CLVS.");
-#endif
         CHECK(m_omiHeader.m_maskConfidenceInfoPresentFlag != seiObjectMaskInfo.m_hdr.m_maskConfidenceInfoPresentFlag,"Confidence info present flag should be consistent within the CLVS.");
         if (m_omiHeader.m_maskConfidenceInfoPresentFlag)
         {
@@ -1804,9 +1800,7 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
           }
         }
       }
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
       m_auxSampleTolerance = seiObjectMaskInfo.m_auxSampleTolerance;
-#endif
     }
   }
   if ((!objectMaskInfoSEIs.empty() && !m_omiMasks.empty()) || (objectMaskInfoSEIs.empty() && m_omiHeader.m_persistenceFlag))
@@ -1827,9 +1821,7 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
         fprintf(fpPersist, "OMI AuxPicLayer Num = %d\n", m_omiHeader.m_numAuxPicLayerMinus1 + 1);
         fprintf(fpPersist, "OMI MaskId Length = %d\n", m_omiHeader.m_maskIdLengthMinus1 + 1);
         fprintf(fpPersist, "OMI MaskSampleValue Length = %d\n", m_omiHeader.m_maskSampleValueLengthMinus8 + 8);
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
         fprintf(fpPersist, "OMI Tolerance Present = %d\n", m_omiHeader.m_tolerancePresentFlag);
-#endif
         fprintf(fpPersist, "OMI MaskConf Present = %d\n", m_omiHeader.m_maskConfidenceInfoPresentFlag);
         if (m_omiHeader.m_maskConfidenceInfoPresentFlag)
         {
@@ -1854,15 +1846,11 @@ void DecApp::xOutputObjectMaskInfos(Picture* pcPic)
         for (int layerIdx = 0; layerIdx < m_omiMasks.size(); layerIdx++)
         {
           fprintf(fpPersist, "[Auxiliary Layer-%d]\n", layerIdx);
-#if JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE
           fprintf(fpPersist, "MaskNumInPic[%d]: %d\n", layerIdx, (int)m_omiMasks[layerIdx].size());
           if (m_omiHeader.m_tolerancePresentFlag)
           {
             fprintf(fpPersist, "AuxSampleTolerance[%d]: %d\n\n", layerIdx, (int)m_auxSampleTolerance[layerIdx]);
           }
-#else
-          fprintf(fpPersist, "MaskNumInPic[%d]: %d\n\n", layerIdx, (int)m_omiMasks[layerIdx].size());
-#endif
 
           for (int maskIdx = 0; maskIdx < m_omiMasks[layerIdx].size(); maskIdx++)
           {

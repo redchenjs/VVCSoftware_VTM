@@ -60,7 +60,6 @@
 
 
 
-#define JVET_AL0066_OMI_AUX_SAMPLE_TOLERANCE              1 // JVET-AL0066: Add sample tolerance value to OMI SEI
 
 #define JVET_AL0301_MATRIXCOEFFS_CONSTRAINTS              1 // JVET_AL0301: Add constraints to matrix_coeffs
 
