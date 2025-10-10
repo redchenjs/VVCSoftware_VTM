@@ -837,7 +837,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
         break;
       }
-#if JVET_AK0281_AUR_SEI_IN_SPO_SEI
       case SEI::PayloadType::AI_USAGE_RESTRICTIONS:
       {
         SEIAIUsageRestrictions* sei = new SEIAIUsageRestrictions;
@@ -845,7 +844,6 @@ void SEIEncoder::initSEIProcessingOrderInfo(SEIProcessingOrderInfo *seiProcessin
         seiProcessingOrderNesting->m_ponWrapSeiMessages.push_back(sei);
         break;
       }
-#endif
 #if JVET_AM0121_SPO_SEI_CONSTRAINTS
       case SEI::PayloadType::PACKED_REGIONS_INFO:
       {

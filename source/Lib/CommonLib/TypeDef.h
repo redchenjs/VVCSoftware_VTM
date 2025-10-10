@@ -74,7 +74,6 @@
 
 
 
-#define JVET_AK0281_AUR_SEI_IN_SPO_SEI                    1 // AUR SEI message in SPO SEI message
 
 #define JVET_AL0056_EOI_SEI_QUANT_CONSTRAINT              1 // JVET-AL0056: On the encoder optimization information SEI message
 
