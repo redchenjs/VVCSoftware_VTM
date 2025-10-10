@@ -1703,24 +1703,14 @@ void EncApp::xInitLibCfg( int layerIdx )
   m_cEncLib.setGenerativeFaceVideoSEINNModeIdc                          ( m_generativeFaceVideoSEINNModeIdc );
   m_cEncLib.setGenerativeFaceVideoSEINNTagURI                           ( m_generativeFaceVideoSEINNTagURI );
   m_cEncLib.setGenerativeFaceVideoSEINNURI                              ( m_generativeFaceVideoSEINNURI );
-#if JVET_AM0334_GFV_CHROMA_KEY
   m_cEncLib.setGenerativeFaceVideoSEIFusionPicFlag                      ( m_generativeFaceVideoSEIFusionPicFlag );
-#else
-  m_cEncLib.setGenerativeFaceVideoSEIDrivePicFusionFlag                 ( m_generativeFaceVideoSEIDrivePicFusionFlag );
-#endif
   m_cEncLib.setGenerativeFaceVideoSEIChromaKeyInfoPresentFlag           ( m_generativeFaceVideoSEIChromaKeyInfoPresentFlag );
-#if JVET_AM0334_GFV_CHROMA_KEY
   m_cEncLib.setGenerativeFaceVideoSEIChromaKeyPurposeIdc                ( m_generativeFaceVideoSEIChromaKeyPurposeIdc );
-#endif
   m_cEncLib.setGenerativeFaceVideoSEIChromaKeyValuePresentFlag          ( m_generativeFaceVideoSEIChromaKeyValuePresentFlag );
   m_cEncLib.setGenerativeFaceVideoSEIChromaKeyValue                     ( m_generativeFaceVideoSEIChromaKeyValue );
   m_cEncLib.setGenerativeFaceVideoSEIChromaKeyThrPresentFlag            ( m_generativeFaceVideoSEIChromaKeyThrPresentFlag );
-#if JVET_AM0334_GFV_CHROMA_KEY
   m_cEncLib.setGenerativeFaceVideoSEIChromaKeyThrLower                  ( m_generativeFaceVideoSEIChromaKeyThrLower );
   m_cEncLib.setGenerativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1       ( m_generativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1 );
-#else
-  m_cEncLib.setGenerativeFaceVideoSEIChromaKeyThrValue                  ( m_generativeFaceVideoSEIChromaKeyThrValue );
-#endif
   m_cEncLib.setGenerativeFaceVideoSEILowConfidenceFaceParameterFlag     ( m_generativeFaceVideoSEILowConfidenceFaceParameterFlag );
   m_cEncLib.setGenerativeFaceVideoSEICoordinatePresentFlag              ( m_generativeFaceVideoSEICoordinatePresentFlag );
   m_cEncLib.setGenerativeFaceVideoSEICoordinateQuantizationFactor       ( m_generativeFaceVideoSEICoordinateQuantizationFactor );

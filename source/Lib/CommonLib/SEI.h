@@ -1706,21 +1706,13 @@ public:
   std::string    m_nnTagURI;
   std::string    m_nnURI;
   bool                    m_chromaKeyInfoPresentFlag; 
-#if JVET_AM0334_GFV_CHROMA_KEY
   uint32_t                m_chromaKeyPurposeIdc;
-#endif
   std::vector<bool>       m_chromaKeyValuePresentFlag;
   std::vector<uint32_t>   m_chromaKeyValue; 
-#if JVET_AM0334_GFV_CHROMA_KEY
   bool                    m_chromaKeyThrPresentFlag; 
   uint32_t                m_chromaKeyThrLower;
   uint32_t                m_chromaKeyThrUpperDeltaMinus1;
   bool                    m_fusionPicFlag;
-#else
-  std::vector<bool>       m_chromaKeyThrPresentFlag; 
-  std::vector<uint32_t>   m_chromaKeyThrValue;
-  bool       m_drivePicFusionFlag;
-#endif
   uint32_t   m_id;
   uint32_t   m_cnt;
   bool   m_lowConfidenceFaceParameterFlag;

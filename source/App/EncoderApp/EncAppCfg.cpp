@@ -793,11 +793,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
 
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIId                                  (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEICnt                                 (0, 2550, 0, 102400);
-#if JVET_AM0334_GFV_CHROMA_KEY
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIFusionPicFlag                       (0, 2550, 0, 102400);
-#else
-  SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIDrivePicFusionFlag                  (0, 2550, 0, 102400);
-#endif
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEILowConfidenceFaceParameterFlag      (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEICoordinatePresentFlag               (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEICoordinateQuantizationFactor        (0, 2550, 0, 102400);
@@ -822,10 +818,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<double>     cfg_generativeFaceVideoSEIMatrixElement                       (-50960.0, 50960.0, 0, 5095000);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyValuePresentFlag           (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyValue                      (0, 2550, 0, 102400);
-#if !JVET_AM0334_GFV_CHROMA_KEY
-  SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag             (0, 2550, 0, 102400);
-  SMultiValueInput<uint32_t>   cfg_generativeFaceVideoSEIChromaKeyThrValue                   (0, 2550, 0, 102400);  
-#endif
 
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoEnhancementSEIId                                  (0, 2550, 0, 102400);
   SMultiValueInput<uint32_t>   cfg_generativeFaceVideoEnhancementSEIGFVId                               (0, 2550, 0, 102400);
@@ -2009,11 +2001,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("SEIGenerativeFaceVideoCnt",                             cfg_generativeFaceVideoSEICnt,                            cfg_generativeFaceVideoSEICnt,                                 "Target cnt of Generative Face Video SEI on current picture")
     ("SEIGenerativeFaceVideoCoordinatePresentFlag",           cfg_generativeFaceVideoSEICoordinatePresentFlag,          cfg_generativeFaceVideoSEICoordinatePresentFlag,               "Specifies whether to carry coorinate parameter")
     ("SEIGenerativeFaceVideoLowConfidenceFaceParameterFlag",  cfg_generativeFaceVideoSEILowConfidenceFaceParameterFlag, cfg_generativeFaceVideoSEILowConfidenceFaceParameterFlag,      "Indicates the facial parameters have been derived with low confidence ")
-#if JVET_AM0334_GFV_CHROMA_KEY
     ("SEIGenerativeFaceVideoFusionPicFlag",                   cfg_generativeFaceVideoSEIFusionPicFlag,                  cfg_generativeFaceVideoSEIFusionPicFlag,                       "Specifies whether to use DrivePicFusion function")
-#else
-    ("SEIGenerativeFaceVideoDrivePicFusionFlag",              cfg_generativeFaceVideoSEIDrivePicFusionFlag,             cfg_generativeFaceVideoSEIDrivePicFusionFlag,                  "Specifies whether to use DrivePicFusion function")
-#endif
     ("SEIGenerativeFaceVideoCoordinateQuantizationFactor",    cfg_generativeFaceVideoSEICoordinateQuantizationFactor,   cfg_generativeFaceVideoSEICoordinateQuantizationFactor,        "Specifies the quantization factor to process the facial coordinate paramters")
     ("SEIGenerativeFaceVideoCoordinatePredFlag",              cfg_generativeFaceVideoSEICoordinatePredFlag,             cfg_generativeFaceVideoSEICoordinatePredFlag,                  "Specifies whether to use the difference operation to process data")
     ("SEIGenerativeFaceVideo3DCoordinateFlag",                cfg_generativeFaceVideoSEI3DCoordinateFlag,               cfg_generativeFaceVideoSEI3DCoordinateFlag,                    "Specifies whether to carry 3D coordinate-type paramters")
@@ -2036,19 +2024,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("SEIGenerativeFaceVideoNumMatricesInfo",                 cfg_generativeFaceVideoSEINumMatricesInfo,                cfg_generativeFaceVideoSEINumMatricesInfo,                     "provides information to derive the number of the matrices of the i-th matrix type.")
     ("SEIGenerativeFaceVideoPayloadFilename",                 m_generativeFaceVideoSEIPayloadFilename,                  std::string(""),                                               "specify path to payloadfile")
     ("SEIGenerativeFaceVideoChromaKeyInfoPresentFlag",        m_generativeFaceVideoSEIChromaKeyInfoPresentFlag,         false,                                                         "Specifies the syntax elements gfv_chroma_key information")
-#if JVET_AM0334_GFV_CHROMA_KEY
     ("SEIGenerativeFaceVideoChromaKeyPurposeIdc",             m_generativeFaceVideoSEIChromaKeyPurposeIdc,              0u,                                                            "specifies the chroma key purpose")
-#endif
     ("SEIGenerativeFaceVideoChromaKeyValuePresentFlag",       cfg_generativeFaceVideoSEIChromaKeyValuePresentFlag,      cfg_generativeFaceVideoSEIChromaKeyValuePresentFlag,           "indicates that the syntax element gfv_chroma_key_value[ c ] is present.")
     ("SEIGenerativeFaceVideoChromaKeyValue",                  cfg_generativeFaceVideoSEIChromaKeyValue,                 cfg_generativeFaceVideoSEIChromaKeyValue,                      "specifies the chroma key value corresponding to the c-th colour component")
-#if JVET_AM0334_GFV_CHROMA_KEY
     ("SEIGenerativeFaceVideoChromaKeyThrPresentFlag",         m_generativeFaceVideoSEIChromaKeyThrPresentFlag,          false,                                                         "indicates that the chroma key threshold syntax elements are present")
     ("SEIGenerativeFaceVideoChromaKeyThrLower",               m_generativeFaceVideoSEIChromaKeyThrLower,                0u,                                                             "specifies the chroma key threshold lower value")
     ("SEIGenerativeFaceVideoChromaKeyThrUpperDeltaMinus1",    m_generativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1,     0u,                                                             "specifies the chroma key threshold upper value");
-#else
-    ("SEIGenerativeFaceVideoChromaKeyThrPresentFlag",         cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag,        cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag,             "indicates that the syntax element gfv_chroma_thr_value[ i ] is present")
-    ("SEIGenerativeFaceVideoChromaKeyThrValue",               cfg_generativeFaceVideoSEIChromaKeyThrValue,              cfg_generativeFaceVideoSEIChromaKeyThrValue,                   "specifies the i-th chroma key threshold value");
-#endif
   opts.addOptions()
     ("SEIGenerativeFaceVideoEnhancementEnabled",                         m_generativeFaceVideoEnhancementEnabled,                             false,                                                               "Control use of the Generative Face Video Enhancement SEI on current picture")
     ("SEIGenerativeFaceVideoEnhancementNumber",                          m_generativeFaceVideoEnhancementSEINumber,                           0u,                                                                  "Total number of Generative Face Video Enhancement SEI to be carried")  
@@ -4499,22 +4480,14 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   {
     CHECK(cfg_generativeFaceVideoSEIId.values.size() != m_generativeFaceVideoSEINumber, "Number of GFV ID must be equal to SEINumber");
     CHECK(cfg_generativeFaceVideoSEICnt.values.size() != m_generativeFaceVideoSEINumber, "Number of GFV Cnt must be equal to SEINumber");
-#if JVET_AM0334_GFV_CHROMA_KEY
     CHECK(m_generativeFaceVideoSEIChromaKeyThrUpperDeltaMinus1 > 255, "The value of gfv_chroma_key_thr_upper_delta_minus1 shall be in the range of 0 to 255, inclusive");
     CHECK(cfg_generativeFaceVideoSEIFusionPicFlag.values.size() != m_generativeFaceVideoSEINumber, "Number of GFV FusionPicFlag must be equal to SEINumber");
-#else
-    CHECK(cfg_generativeFaceVideoSEIDrivePicFusionFlag.values.size() != m_generativeFaceVideoSEINumber, "Number of GFV DrivePicFusionFlag must be equal to SEINumber");
-#endif
     CHECK(cfg_generativeFaceVideoSEILowConfidenceFaceParameterFlag.values.size() != m_generativeFaceVideoSEINumber, "Number of GFV LowConfidenceFaceParameterFlag must be equal to SEINumber");
     CHECK(cfg_generativeFaceVideoSEICoordinatePresentFlag.values.size() != m_generativeFaceVideoSEINumber, "Number of Coordinate PresentFlag must be equal to SEINumber");
     CHECK(cfg_generativeFaceVideoSEICoordinatePredFlag.values.size() != m_generativeFaceVideoSEINumber, "Number of CoordinatePredFlag must be equal to SEINumber");
     m_generativeFaceVideoSEIId.resize(m_generativeFaceVideoSEINumber);
     m_generativeFaceVideoSEICnt.resize(m_generativeFaceVideoSEINumber);
-#if JVET_AM0334_GFV_CHROMA_KEY
     m_generativeFaceVideoSEIFusionPicFlag.resize(m_generativeFaceVideoSEINumber);
-#else
-    m_generativeFaceVideoSEIDrivePicFusionFlag.resize(m_generativeFaceVideoSEINumber);
-#endif
     m_generativeFaceVideoSEILowConfidenceFaceParameterFlag.resize(m_generativeFaceVideoSEINumber);
     m_generativeFaceVideoSEICoordinatePresentFlag.resize(m_generativeFaceVideoSEINumber);
     m_generativeFaceVideoSEICoordinateQuantizationFactor.resize(m_generativeFaceVideoSEINumber);
@@ -4532,10 +4505,6 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     int matrixDimensionBeforeSum = 0;
     m_generativeFaceVideoSEIChromaKeyValuePresentFlag.resize(3);
     m_generativeFaceVideoSEIChromaKeyValue.resize(3);
-#if !JVET_AM0334_GFV_CHROMA_KEY
-    m_generativeFaceVideoSEIChromaKeyThrPresentFlag.resize(2);
-    m_generativeFaceVideoSEIChromaKeyThrValue.resize(2);
-#endif
     if(m_generativeFaceVideoSEIChromaKeyInfoPresentFlag)
     {
       CHECK(m_generativeFaceVideoSEIChromaKeyPurposeIdc > 2, "Chroma key purpose idc shall be in the range 0 to 2, inclusive");
@@ -4544,34 +4513,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
         m_generativeFaceVideoSEIChromaKeyValuePresentFlag[chromac] = cfg_generativeFaceVideoSEIChromaKeyValuePresentFlag.values[chromac];
         m_generativeFaceVideoSEIChromaKeyValue[chromac] = cfg_generativeFaceVideoSEIChromaKeyValue.values[chromac];
       }
-#if !JVET_AM0334_GFV_CHROMA_KEY
-      for (uint32_t chromai = 0; chromai < 2; chromai++)
-      {
-        m_generativeFaceVideoSEIChromaKeyThrPresentFlag[chromai] = cfg_generativeFaceVideoSEIChromaKeyThrPresentFlag.values[chromai];
-        m_generativeFaceVideoSEIChromaKeyThrValue[chromai] = cfg_generativeFaceVideoSEIChromaKeyThrValue.values[chromai];
-      }
-#endif
     }
     for (uint32_t frameIdx = 0; frameIdx < m_generativeFaceVideoSEINumber; frameIdx++) 
     {
       m_generativeFaceVideoSEIId[frameIdx] = cfg_generativeFaceVideoSEIId.values[frameIdx];
       m_generativeFaceVideoSEICnt[frameIdx] = cfg_generativeFaceVideoSEICnt.values[frameIdx];
-#if JVET_AM0334_GFV_CHROMA_KEY
       m_generativeFaceVideoSEIFusionPicFlag[frameIdx] = cfg_generativeFaceVideoSEIFusionPicFlag.values[frameIdx];
-#else
-      m_generativeFaceVideoSEIDrivePicFusionFlag[frameIdx] = cfg_generativeFaceVideoSEIDrivePicFusionFlag.values[frameIdx];
-#endif
       m_generativeFaceVideoSEILowConfidenceFaceParameterFlag[frameIdx] = cfg_generativeFaceVideoSEILowConfidenceFaceParameterFlag.values[frameIdx];
       m_generativeFaceVideoSEICoordinatePresentFlag[frameIdx] = cfg_generativeFaceVideoSEICoordinatePresentFlag.values[frameIdx];
-#if JVET_AM0334_GFV_CHROMA_KEY
       CHECK(m_generativeFaceVideoSEICnt[frameIdx] && m_generativeFaceVideoSEIBasePicFlag && m_generativeFaceVideoSEIFusionPicFlag[frameIdx],
             "When a GFV SEI message gfvSeiA with a particular gfv_id value has gfv_cnt greater than 0 and a GFV SEI message gfvSeiB with the same gfv_id value "
             "in the same picture unit has gfv_base_pic_flag equal to 1 (i.e., the current decoded picture is a base picture), the GFV SEI message gfvSeiA shall have gfv_drive_pic_fusion_flag equal to 0");
-#else
-      CHECK(m_generativeFaceVideoSEICnt[frameIdx] && m_generativeFaceVideoSEIBasePicFlag && m_generativeFaceVideoSEIDrivePicFusionFlag[frameIdx],
-            "When a GFV SEI message gfvSeiA with a particular gfv_id value has gfv_cnt greater than 0 and a GFV SEI message gfvSeiB with the same gfv_id value "
-            "in the same picture unit has gfv_base_pic_flag equal to 1 (i.e., the current decoded picture is a base picture), the GFV SEI message gfvSeiA shall have gfv_drive_pic_fusion_flag equal to 0");
-#endif
       m_generativeFaceVideoSEICoordinatePredFlag[frameIdx] = cfg_generativeFaceVideoSEICoordinatePredFlag.values[frameIdx];
       m_generativeFaceVideoSEIZCoordinateMaxValue.push_back(std::vector<uint32_t>());
       int basePicFlag = (frameIdx == 0) ? 1 : 0;
