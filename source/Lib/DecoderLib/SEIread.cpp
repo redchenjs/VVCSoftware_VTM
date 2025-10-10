@@ -5211,9 +5211,6 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
   sei.dsciId = val;
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dsci_hash_method_type");
   sei.dsciHashMethodType = val;
-#if !JVET_AM0164_DSC_SYNTAX
-  sei_read_string(pDecodedMessageOutputStream, sei.dsciKeySourceUri, "dsci_key_source_uri");
-#endif
   sei_read_uvlc(pDecodedMessageOutputStream, val, "dsci_key_retrieval_mode_idc");
   sei.dsciKeyRetrievalModeIdc = val;
   if (sei.dsciKeyRetrievalModeIdc == 1)
@@ -5254,14 +5251,12 @@ void SEIReader::xParseSEIDigitallySignedContentInitialization(SEIDigitallySigned
   sei.dsciSignedContentStartFlag = (val!=0);
   sei_read_flag(pDecodedMessageOutputStream, val, "dsci_sei_signing_flag");
   sei.dsciSEISigningFlag = (val!=0);
-#if JVET_AM0164_DSC_SYNTAX
   while (!isByteAligned())
   {
     sei_read_flag(pDecodedMessageOutputStream, val, "dsci_alignment_zero_bit");
     CHECK(val!=0, "dsci_alignment_zero_bit not equal to zero")
   }
   sei_read_string(pDecodedMessageOutputStream, sei.dsciKeySourceUri, "twci_key_source_uri");
-#endif
 }
 
 void SEIReader::xParseSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection &sei, uint32_t payloadSize, std::ostream *pDecodedMessageOutputStream)
@@ -5269,11 +5264,7 @@ void SEIReader::xParseSEIDigitallySignedContentSelection(SEIDigitallySignedConte
   unsigned int val;
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dscs_id");
   sei.dscsId = val;
-#if JVET_AM0164_DSC_SYNTAX
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dscs_verification_substream_id");
-#else
-  sei_read_uvlc(pDecodedMessageOutputStream, val, "dscs_verification_substream_id");
-#endif
   sei.dscsVerificationSubstreamId = val;
 }
 
@@ -5282,17 +5273,10 @@ void SEIReader::xParseSEIDigitallySignedContentVerification(SEIDigitallySignedCo
   unsigned int val;
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dscv_id");
   sei.dscvId = val;
-#if JVET_AM0164_DSC_SYNTAX
   sei_read_code(pDecodedMessageOutputStream, 8, val, "dscv_verification_substream_id");
   sei.dscvVerificationSubstreamId = val;
   sei_read_code(pDecodedMessageOutputStream, 24, val, "dscv_signature_length_in_octets_minus1");
   sei.dscvSignatureLengthInOctets = val + 1;
-#else
-  sei_read_uvlc(pDecodedMessageOutputStream, val, "dscv_verification_substream_id");
-  sei.dscvVerificationSubstreamId = val;
-  sei_read_uvlc(pDecodedMessageOutputStream, val, "dscv_signature_length_in_octets_minus1");
-  sei.dscvSignatureLengthInOctets = val + 1;
-#endif
   sei.dscvSignature.resize(sei.dscvSignatureLengthInOctets);
   for (int i=0; i< sei.dscvSignature.size(); i++)
   {
