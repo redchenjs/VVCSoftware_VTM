@@ -2396,12 +2396,10 @@ void SEIWriter::xWriteSEIEncoderOptimizationInfo(const SEIEncoderOptimizationInf
     {
       xWriteFlag(sei.m_temporalResamplingTypeFlag, "eoi_temporal_resampling_type_flag");
       xWriteUvlc(sei.m_numIntPics, "eoi_num_int_pics");
-#if JVET_AJ0183_EOI_SEI_SRC_PIC_FLAG
       if (sei.m_temporalResamplingTypeFlag && sei.m_numIntPics > 0)
       {
         xWriteFlag(sei.m_srcPicFlag, "eoi_src_pic_flag");
       }
-#endif
     }
     if ((sei.m_type & EOI_OptimizationType::SPATIAL_RESAMPLING) != 0)
     {
