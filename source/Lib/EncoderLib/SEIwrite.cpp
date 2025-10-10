@@ -3181,9 +3181,7 @@ void SEIWriter::xWriteSEIAIUsageRestrictions(const SEIAIUsageRestrictions &sei)
       {
         xWriteCode(sei.m_context[i], 16, "aur_context");
       }
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
       xWriteFlag(sei.m_exclusionFlag[i], "aur_sei_exclusion_flag");
-#endif
     }
   }
 }

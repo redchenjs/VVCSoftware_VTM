@@ -2339,9 +2339,7 @@ void SEIEncoder::initSEIAIUsageRestrictions(SEIAIUsageRestrictions *sei)
     sei->m_restrictions.resize(sei->m_numRestrictionsMinus1 + 1);
     sei->m_contextPresentFlag.resize(sei->m_numRestrictionsMinus1 + 1);
     sei->m_context.resize(sei->m_numRestrictionsMinus1 + 1);
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
     sei->m_exclusionFlag.resize(sei->m_numRestrictionsMinus1 + 1);
-#endif
     for (uint32_t i = 0; i <= sei->m_numRestrictionsMinus1; i++)
     {
       sei->m_restrictions[i] = m_pcCfg->getAURSEIRestrictions(i);
@@ -2350,9 +2348,7 @@ void SEIEncoder::initSEIAIUsageRestrictions(SEIAIUsageRestrictions *sei)
       {
         sei->m_context[i] = m_pcCfg->getAURSEIContext(i);
       }
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
       sei->m_exclusionFlag[i] = m_pcCfg->getAURSEIExclusionFlag(i);
-#endif
     }
   }
 }

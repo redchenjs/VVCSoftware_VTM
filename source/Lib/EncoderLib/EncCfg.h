@@ -1065,9 +1065,7 @@ protected:
   std::vector<uint32_t>  m_aurSEIRestrictions;
   std::vector<bool>  m_aurSEIContextPresentFlag;
   std::vector<uint32_t>  m_aurSEIContext;
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   std::vector<bool>  m_aurSEIExclusionFlag;
-#endif
   bool                  m_ifmSeiEnabled;
   bool                  m_ifmCancelFlag;
   bool                  m_ifmPersistenceFlag;
@@ -3145,10 +3143,8 @@ public:
   bool         getAURSEIContextPresentFlag(uint32_t idx) const { return m_aurSEIContextPresentFlag[idx]; }
   void         setAURSEIContext(std::vector<uint32_t> b) { m_aurSEIContext = b; }
   uint32_t     getAURSEIContext(uint32_t idx) const { return m_aurSEIContext[idx]; }
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   void         setAURSEIExclusionFlag(std::vector<bool> b) { m_aurSEIExclusionFlag = b; }
   bool         getAURSEIExclusionFlag(uint32_t idx) const { return m_aurSEIExclusionFlag[idx]; }
-#endif
 
   void     setPriSEIEnabled(bool b)                                       { m_priSEIEnabled = b; }
   bool     getPriSEIEnabled()                                             { return m_priSEIEnabled; }

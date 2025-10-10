@@ -1315,9 +1315,7 @@ SEIAIUsageRestrictions::SEIAIUsageRestrictions(
   m_restrictions = sei.m_restrictions;
   m_contextPresentFlag = sei.m_contextPresentFlag;
   m_context = sei.m_context;
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   m_exclusionFlag = sei.m_exclusionFlag;
-#endif
 }
 
 SEIGenerativeFaceVideoEnhancement::SEIGenerativeFaceVideoEnhancement(const SEIGenerativeFaceVideoEnhancement & sei)

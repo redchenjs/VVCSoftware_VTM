@@ -1886,9 +1886,7 @@ public:
   std::vector<uint32_t> m_restrictions;
   std::vector<bool>     m_contextPresentFlag;
   std::vector<uint32_t> m_context;
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   std::vector<bool>     m_exclusionFlag;
-#endif
 };
 
 class SEIPackedRegionsInfo : public SEI

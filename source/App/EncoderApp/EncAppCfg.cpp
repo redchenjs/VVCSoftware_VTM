@@ -847,9 +847,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
   SMultiValueInput<uint32_t>   cfg_aurSEIRestrictions                                        (0, 2, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<bool>       cfg_aurSEIContextPresentFlag                                  (0, 1, 0, 4096);
   SMultiValueInput<uint32_t>   cfg_aurSEIContext                                             (0, 15, 0, std::numeric_limits<uint32_t>::max());
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
   SMultiValueInput<bool>       cfg_aurSEIExclusionFlag                                       (0, 1, 0, 4096);
-#endif
 
   SMultiValueInput<uint32_t> cfg_priSEIResamplingWidthNumMinus1(0, 65535, 0, std::numeric_limits<uint32_t>::max());
   SMultiValueInput<uint32_t> cfg_priSEIResamplingWidthDenomMinus1(0, 65535, 0, std::numeric_limits<uint32_t>::max());
@@ -2084,12 +2082,8 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     ("SEIAURNumRestrictionsMinus1",                           m_aurSEINumRestrictionsMinus1,                            0u,                                                            "plus one specifies the number of restriction")
     ("SEIAURRestrictions",                                    cfg_aurSEIRestrictions,                                   cfg_aurSEIRestrictions,                                        "List of restrictions")
     ("SEIAURContextPresentFlag",                              cfg_aurSEIContextPresentFlag,                             cfg_aurSEIContextPresentFlag,                                  "List of flags indicating whether aur_context syntax elements are present")
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
     ("SEIAURContext",                                         cfg_aurSEIContext,                                        cfg_aurSEIContext,                                             "List of context")
     ("SEIAURExclusionFlag",                                   cfg_aurSEIExclusionFlag,                                  cfg_aurSEIExclusionFlag,                                       "List of flags indicating whether NNPFC, NNPFA, GFV and GFVE SEI messages are excluded from AI usage restrictions");
-#else
-    ("SEIAURContext",                                         cfg_aurSEIContext,                                        cfg_aurSEIContext,                                             "List of context");
-#endif
   // clang-format on
 
 #if EXTENSION_360_VIDEO
@@ -4841,9 +4835,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
     m_aurSEIRestrictions = cfg_aurSEIRestrictions.values;
     m_aurSEIContextPresentFlag = cfg_aurSEIContextPresentFlag.values;
     m_aurSEIContext = cfg_aurSEIContext.values;
-#if JVET_AM0117_AUR_SEI_EXCLUSION_FLAG
     m_aurSEIExclusionFlag = cfg_aurSEIExclusionFlag.values;
-#endif
   }
 
   if( m_costMode == COST_LOSSLESS_CODING )
