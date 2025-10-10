@@ -1041,11 +1041,7 @@ void EncGOP::xCreateIRAPLeadingSEIMessages (SEIMessages& seiMessages, const SPS 
   if (m_pcCfg->getDigitallySignedContentSEICfg().enabled && m_dscSubstreamId == 0)
   {
     SEIDigitallySignedContentInitialization *sei = new SEIDigitallySignedContentInitialization;
-#if JVET_AL0222_DSC_START_END
     m_seiEncoder.initSEIDigitallySignedContentInitialization(sei, m_first);
-#else
-    m_seiEncoder.initSEIDigitallySignedContentInitialization(sei);
-#endif
     seiMessages.push_back(sei);
   }
 #endif
@@ -4132,11 +4128,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           std::vector<uint8_t> signature;
           m_dscSubstreamManager.signSubstream(0, signature);
           SEIDigitallySignedContentVerification *sei = new SEIDigitallySignedContentVerification;
-#if JVET_AL0222_DSC_START_END
           m_seiEncoder.initSEIDigitallySignedContentVerification(sei, 0, signature, false);
-#else
-          m_seiEncoder.initSEIDigitallySignedContentVerification(sei, 0, signature);
-#endif
           twcSeiMessages.push_back(sei);
           xWriteTrailingSEIMessages(twcSeiMessages, accessUnit, m_prevPicTemporalId);
         }
@@ -4774,11 +4766,7 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
           std::vector<uint8_t> signature;
           m_dscSubstreamManager.signSubstream(m_dscSubstreamId, signature);
           SEIDigitallySignedContentVerification *sei = new SEIDigitallySignedContentVerification;
-#if JVET_AL0222_DSC_START_END
           m_seiEncoder.initSEIDigitallySignedContentVerification(sei, m_dscSubstreamId, signature, true);
-#else
-          m_seiEncoder.initSEIDigitallySignedContentVerification(sei, m_dscSubstreamId, signature);
-#endif
           twcSeiMessages.push_back(sei);
           xWriteTrailingSEIMessages(twcSeiMessages, accessUnit, pcSlice->getTLayer());
           if (isLastPicture && m_dscSubstreamId == (m_pcCfg->getDigitallySignedContentSEICfg().numVerificationSubstreams - 1))

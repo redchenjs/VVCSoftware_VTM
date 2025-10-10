@@ -76,9 +76,7 @@ public:
   int32_t      dsciKeyRegisterIdx            = 0;
   bool         dsciContentUuidPresentFlag    = false;
   std::array<uint8_t, 16> dsciContentUuid = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-#if JVET_AL0222_DSC_START_END
   bool         dsciSignedContentStartFlag    = false;
-#endif
   bool         dsciSEISigningFlag            = false;
 public:
   SEIDigitallySignedContentInitialization()
@@ -113,9 +111,7 @@ public:
   int32_t              dscvVerificationSubstreamId = 0;
   int32_t              dscvSignatureLengthInOctets = 0;
   std::vector<uint8_t> dscvSignature;
-#if JVET_AL0222_DSC_START_END
   bool                 dscvSignedContentEndFlag    = false;
-#endif
 
 public:
   SEIDigitallySignedContentVerification()

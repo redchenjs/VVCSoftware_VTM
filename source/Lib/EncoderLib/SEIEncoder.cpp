@@ -2295,11 +2295,7 @@ void SEIEncoder::initSEIGenerativeFaceVideoEnhancement(SEIGenerativeFaceVideoEnh
   }
 }
 #if JVET_AJ0151_DSC_SEI
-#if JVET_AL0222_DSC_START_END
 void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei, bool startFlag)
-#else
-void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei)
-#endif
 {
   sei->dsciId = m_pcCfg->getDigitallySignedContentSEICfg().dscId;
   sei->dsciNumVerificationSubstreams = m_pcCfg->getDigitallySignedContentSEICfg().numVerificationSubstreams;
@@ -2309,9 +2305,7 @@ void SEIEncoder::initSEIDigitallySignedContentInitialization(SEIDigitallySignedC
   sei->dsciVSSImplicitAssociationModeFlag = m_pcCfg->getDigitallySignedContentSEICfg().implicitAssociationModeFlag;
   sei->dsciUseKeyRegisterIdxFlag = m_pcCfg->getDigitallySignedContentSEICfg().keyIdEnabled;
   sei->dsciKeyRegisterIdx = m_pcCfg->getDigitallySignedContentSEICfg().keyId;
-#if JVET_AL0222_DSC_START_END
   sei->dsciSignedContentStartFlag = startFlag;
-#endif
   sei->dsciSEISigningFlag = m_pcCfg->getDigitallySignedContentSEICfg().signAURSEI ||
                             m_pcCfg->getDigitallySignedContentSEICfg().signGFVSEI ||
                             m_pcCfg->getDigitallySignedContentSEICfg().signGFVESEI ||
@@ -2323,19 +2317,13 @@ void SEIEncoder::initSEIDigitallySignedContentSelection(SEIDigitallySignedConten
   sei->dscsId = m_pcCfg->getDigitallySignedContentSEICfg().dscId;
   sei->dscsVerificationSubstreamId = substream;
 }
-#if JVET_AL0222_DSC_START_END
 void SEIEncoder::initSEIDigitallySignedContentVerification(SEIDigitallySignedContentVerification *sei, int32_t substream, const std::vector<uint8_t> &signature, bool endFlag)
-#else
-void SEIEncoder::initSEIDigitallySignedContentVerification(SEIDigitallySignedContentVerification *sei, int32_t substream, const std::vector<uint8_t> &signature)
-#endif
 {
   sei->dscvId = m_pcCfg->getDigitallySignedContentSEICfg().dscId;
   sei->dscvVerificationSubstreamId = substream;
   sei->dscvSignatureLengthInOctets = (int32_t) signature.size();
   sei->dscvSignature = signature;
-#if JVET_AL0222_DSC_START_END
   sei->dscvSignedContentEndFlag = endFlag;
-#endif
 }
 #endif
 

@@ -107,17 +107,9 @@ public:
   void initSEIModalityInfo(SEIModalityInfo *sei);
   void initSEITextDescription(SEITextDescription *sei);
 #if JVET_AJ0151_DSC_SEI
-#if JVET_AL0222_DSC_START_END
   void initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei, bool startFlag);
-#else
-  void initSEIDigitallySignedContentInitialization(SEIDigitallySignedContentInitialization *sei);
-#endif
   void initSEIDigitallySignedContentSelection(SEIDigitallySignedContentSelection *sei, int substream);
-#if JVET_AL0222_DSC_START_END
   void initSEIDigitallySignedContentVerification(SEIDigitallySignedContentVerification *sei, int32_t substream, const std::vector<uint8_t> &signature, bool endFlag);
-#else
-  void initSEIDigitallySignedContentVerification(SEIDigitallySignedContentVerification *sei, int32_t substream, const std::vector<uint8_t> &signature);
-#endif
 #endif
 #if GREEN_METADATA_SEI_ENABLED
   void initSEIGreenMetadataInfo(SEIGreenMetadataInfo *sei, FeatureCounterStruct featureCounter, SEIQualityMetrics metrics, SEIComplexityMetrics greenMetadata);

@@ -3123,9 +3123,7 @@ void SEIWriter::xWriteSEIDigitallySignedContentInitialization(const SEIDigitally
     }
   }
   xWriteFlag(sei.dsciVSSImplicitAssociationModeFlag, "dsci_vss_implicit_association_mode_flag");
-#if JVET_AL0222_DSC_START_END
   xWriteFlag(sei.dsciSignedContentStartFlag, "dsci_signed_content_start_flag");
-#endif
   xWriteFlag(sei.dsciSEISigningFlag, "dsci_sei_signing_flag");
 #if JVET_AM0164_DSC_SYNTAX
   while (!isByteAligned())
@@ -3164,9 +3162,7 @@ void SEIWriter::xWriteSEIDigitallySignedContentVerification(const SEIDigitallySi
   {
     xWriteCode(sei.dscvSignature[i], 8, "dscv_signature");
   }
-#if JVET_AL0222_DSC_START_END
   xWriteFlag(sei.dscvSignedContentEndFlag, "dsci_signed_content_end_flag");
-#endif
 }
 #endif
 

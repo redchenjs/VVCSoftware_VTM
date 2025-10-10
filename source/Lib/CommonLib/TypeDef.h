@@ -78,7 +78,6 @@
 
 
 
-#define JVET_AL0222_DSC_START_END                         1 // add start and end flags to DSC SEI messages
 
 #define JVET_AM0117_AUR_SEI_EXCLUSION_FLAG                1 // JVET-AM0117: On the AI usage restrictions SEI message
 
