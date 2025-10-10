@@ -3499,7 +3499,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
     printf("-lmcs_chroma : %d\n", picHeader->getLmcsChromaResidualScaleFlag() ? 1 : 0);
 #endif
 
-#if JVET_AL0056_EOI_SEI_QUANT_CONSTRAINT
     SEIMessages eoiSEIs = getSeisByType(m_pcPic->SEIs, SEI::PayloadType::ENCODER_OPTIMIZATION_INFO);
     if (!eoiSEIs.empty())
     {
@@ -3516,7 +3515,6 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
         }
       }
     }
-#endif
   }
   pcSlice->getPic()->sliceSubpicIdx.push_back(pps->getSubPicIdxFromSubPicId(pcSlice->getSliceSubPicId()));
   pcSlice->checkCRA(pcSlice->getRpl(REF_PIC_LIST_0), pcSlice->getRpl(REF_PIC_LIST_1), m_pocCRA[nalu.m_nuhLayerId],

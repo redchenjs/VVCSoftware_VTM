@@ -4471,7 +4471,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
             CHECK(pcSlice->getPictureHeaderInSliceHeader() == false, "PH shall be present in SH, when pic_header_in_slice_header_constraint_flag is equal to 1");
           }
 
-#if JVET_AL0056_EOI_SEI_QUANT_CONSTRAINT
           if (m_pcCfg->getEOISEIEnabled() && !m_pcCfg->getEOISEICancelFlag() && (m_pcCfg->getEOISEIType() & EOI_OptimizationType::OBJECT_BASED_OPTIMIZATION) && (m_pcCfg->getEOISEIObjectBasedIdc() & EOI_OBJECT_BASED::COARSER_QUANTIZATION))
           {
             if (m_pcCfg->getEOISEIPicQuantObjectFlag())
@@ -4483,7 +4482,6 @@ void EncGOP::compressGOP(int pocLast, int numPicRcvd, PicList &rcListPic, std::l
               CHECK(m_pcCfg->getEOISEIQuantThresholdDelta() < 1 || m_pcCfg->getEOISEIQuantThresholdDelta() > (pcSlice->getSPS()->getQpBDOffset(ChannelType::LUMA) + pcSlice->getSliceQp()), "When eoi_pic_quant_object_flag is equal to 0, the value of eoi_quant_threshold_delta shall be in the range of 1 to QpBdOffset + PicQuant, inclusive");
             }
           }
-#endif
         }
         pcSlice->setPicHeader( pcPic->cs->picHeader );
         pcSlice->setNalUnitLayerId( m_pcEncLib->getLayerId() );
