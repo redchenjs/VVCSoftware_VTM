@@ -60,7 +60,11 @@ class Analyze
 {
 private:
   uint32_t m_picCount;
-
+#if JVET_AN0348
+  uint32_t m_decodedLumaWidth;
+  uint32_t m_decodedLumaHeight;
+  bool m_useUpscaledOutput;
+#endif
   double m_dPSNRSum[MAX_NUM_COMPONENT];
   double m_dAddBits;
   Fraction m_frameRate;
@@ -80,7 +84,17 @@ private:
 public:
   virtual ~Analyze()  {}
   Analyze() { clear(); }
-
+#if JVET_AN0348
+  void setcodedPictureSize(const int width, const int height)
+  {
+    m_decodedLumaWidth = width;
+    m_decodedLumaHeight = height;
+  }
+  void setUpscaledOutput(const int upscaledOutput)
+  {
+    m_useUpscaledOutput = upscaledOutput == 2;
+  }
+#endif
   void addResult(const double psnr[MAX_NUM_COMPONENT], double bits, const double mseYuvFrame[MAX_NUM_COMPONENT],
                  const double upscaledPSNR[MAX_NUM_COMPONENT], const double msssim[MAX_NUM_COMPONENT],
                  const double upscaledMsssim[MAX_NUM_COMPONENT], bool isEncodeLtRef)
@@ -102,8 +116,17 @@ public:
     m_picCount++;
   }
   double getWPSNR(ComponentID compID) const { return m_dPSNRSum[compID] / (double) m_picCount; }
+#if JVET_AN0348
+  double getWPSNRUpscaled(ComponentID compID) const { return m_upscaledPSNR[compID] / (double)m_picCount; }
+#endif
   double getPsnr(ComponentID compID) const { return m_dPSNRSum[compID]; }
+#if JVET_AN0348
+  double getPsnrUpscaled(ComponentID compID) const { return m_upscaledPSNR[compID]; }
+#endif
   double getMsssim(ComponentID compID) const { return m_msssim[compID]; }
+#if JVET_AN0348
+  double getMsssimUpscaled(ComponentID compID) const { return m_upscaledMsssim[compID]; }
+#endif
 #if JVET_O0756_CALCULATE_HDRMETRICS
   double getDeltaE() const { return m_logDeltaESum[0]; }
   double getPsnrL() const { return m_psnrLSum[0]; }
@@ -139,6 +162,9 @@ public:
       m_upscaledMsssim[i] = 0;
     }
     m_picCount = 0;
+#if JVET_AN0348
+    m_useUpscaledOutput = false;
+#endif
 #if EXTENSION_360_VIDEO
     m_ext360.clear();
 #endif
@@ -245,16 +271,42 @@ public:
 
     if (useWPSNR)
     {
-      addField("Y-WPSNR   ", "%-8.4lf  ", getWPSNR(COMPONENT_Y));
-      addField("U-WPSNR   ", "%-8.4lf  ", getWPSNR(COMPONENT_Cb), withchroma);
-      addField("V-WPSNR   ", "%-8.4lf  ", getWPSNR(COMPONENT_Cr), withchroma);
+#if JVET_AN0348
+      if (printRprPsnr && m_useUpscaledOutput)
+      {
+        addField("Y-WPSNR   ", "%-8.4lf  ", getWPSNRUpscaled(COMPONENT_Y));
+        addField("U-WPSNR   ", "%-8.4lf  ", getWPSNRUpscaled(COMPONENT_Cb), withchroma);
+        addField("V-WPSNR   ", "%-8.4lf  ", getWPSNRUpscaled(COMPONENT_Cr), withchroma);
+      }
+      else
+      {
+#endif
+        addField("Y-WPSNR   ", "%-8.4lf  ", getWPSNR(COMPONENT_Y));
+        addField("U-WPSNR   ", "%-8.4lf  ", getWPSNR(COMPONENT_Cb), withchroma);
+        addField("V-WPSNR   ", "%-8.4lf  ", getWPSNR(COMPONENT_Cr), withchroma);
+#if JVET_AN0348
+      }
+#endif
       addField("YUV-WPSNR ", "%-8.4lf  ", psnrYUV, withchroma);
     }
     else
     {
-      addField("Y-PSNR   ", "%-8.4lf ", getPsnr(COMPONENT_Y) / (double) getNumPic());
-      addField("U-PSNR   ", "%-8.4lf ", getPsnr(COMPONENT_Cb) / (double) getNumPic(), withchroma);
-      addField("V-PSNR   ", "%-8.4lf ", getPsnr(COMPONENT_Cr) / (double) getNumPic(), withchroma);
+#if JVET_AN0348
+      if (printRprPsnr && m_useUpscaledOutput)
+      {
+        addField("Y-PSNR   ", "%-8.4lf ", getPsnrUpscaled(COMPONENT_Y) / (double)getNumPic());
+        addField("U-PSNR   ", "%-8.4lf ", getPsnrUpscaled(COMPONENT_Cb) / (double)getNumPic(), withchroma);
+        addField("V-PSNR   ", "%-8.4lf ", getPsnrUpscaled(COMPONENT_Cr) / (double)getNumPic(), withchroma);
+      }
+      else
+      {
+#endif
+        addField("Y-PSNR   ", "%-8.4lf ", getPsnr(COMPONENT_Y) / (double)getNumPic());
+        addField("U-PSNR   ", "%-8.4lf ", getPsnr(COMPONENT_Cb) / (double)getNumPic(), withchroma);
+        addField("V-PSNR   ", "%-8.4lf ", getPsnr(COMPONENT_Cr) / (double)getNumPic(), withchroma);
+#if JVET_AN0348
+      }
+#endif
       addField("YUV-PSNR ", "%-8.4lf ", psnrYUV, withchroma);
     }
 #if JVET_O0756_CALCULATE_HDRMETRICS
@@ -271,17 +323,45 @@ public:
     {
       if (useWPSNR)
       {
-        addField("xY-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNR(COMPONENT_Y)));
-        addField("xU-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNR(COMPONENT_Cb)), withchroma);
-        addField("xV-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNR(COMPONENT_Cr)), withchroma);
+#if JVET_AN0348
+        if (printRprPsnr && m_useUpscaledOutput)
+        {
+          addField("xY-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNRUpscaled(COMPONENT_Y)));
+          addField("xU-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNRUpscaled(COMPONENT_Cb)), withchroma);
+          addField("xV-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNRUpscaled(COMPONENT_Cr)), withchroma);
+        }
+        else
+        {
+#endif
+          addField("xY-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNR(COMPONENT_Y)));
+          addField("xU-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNR(COMPONENT_Cb)), withchroma);
+          addField("xV-WPSNR         ", "%-16" PRIx64 " ", hexValue(getWPSNR(COMPONENT_Cr)), withchroma);
+#if JVET_AN0348
+        }
+#endif
       }
       else
       {
-        addField("xY-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnr(COMPONENT_Y) / (double) getNumPic()));
-        addField("xU-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnr(COMPONENT_Cb) / (double) getNumPic()),
-                 withchroma);
-        addField("xV-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnr(COMPONENT_Cr) / (double) getNumPic()),
-                 withchroma);
+#if JVET_AN0348
+        if (printRprPsnr && m_useUpscaledOutput)
+        {
+          addField("xY-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnrUpscaled(COMPONENT_Y) / (double)getNumPic()));
+          addField("xU-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnrUpscaled(COMPONENT_Cb) / (double)getNumPic()),
+            withchroma);
+          addField("xV-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnrUpscaled(COMPONENT_Cr) / (double)getNumPic()),
+            withchroma);
+        }
+        else
+        {
+#endif
+          addField("xY-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnr(COMPONENT_Y) / (double)getNumPic()));
+          addField("xU-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnr(COMPONENT_Cb) / (double)getNumPic()),
+            withchroma);
+          addField("xV-PSNR          ", "%-16" PRIx64 " ", hexValue(getPsnr(COMPONENT_Cr) / (double)getNumPic()),
+            withchroma);
+#if JVET_AN0348
+        }
+#endif
       }
     }
 #if JVET_O0756_CALCULATE_HDRMETRICS
@@ -293,9 +373,22 @@ public:
 #endif
     if (printMSSSIM)
     {
-      addField("Y-MS-SSIM  ", "%-9.7lf  ", getMsssim(COMPONENT_Y) / (double) getNumPic());
-      addField("U-MS-SSIM  ", "%-9.7lf  ", getMsssim(COMPONENT_Cb) / (double) getNumPic(), withchroma);
-      addField("V-MS-SSIM  ", "%-9.7lf  ", getMsssim(COMPONENT_Cr) / (double) getNumPic(), withchroma);
+#if JVET_AN0348
+      if (printRprPsnr && m_useUpscaledOutput)
+      {
+        addField("Y-MS-SSIM  ", "%-9.7lf  ", getMsssimUpscaled(COMPONENT_Y) / (double)getNumPic());
+        addField("U-MS-SSIM  ", "%-9.7lf  ", getMsssimUpscaled(COMPONENT_Cb) / (double)getNumPic(), withchroma);
+        addField("V-MS-SSIM  ", "%-9.7lf  ", getMsssimUpscaled(COMPONENT_Cr) / (double)getNumPic(), withchroma);
+      }
+      else
+      {
+#endif
+        addField("Y-MS-SSIM  ", "%-9.7lf  ", getMsssim(COMPONENT_Y) / (double)getNumPic());
+        addField("U-MS-SSIM  ", "%-9.7lf  ", getMsssim(COMPONENT_Cb) / (double)getNumPic(), withchroma);
+        addField("V-MS-SSIM  ", "%-9.7lf  ", getMsssim(COMPONENT_Cr) / (double)getNumPic(), withchroma);
+#if JVET_AN0348
+      }
+#endif
     }
     if (printSequenceMSE)
     {
@@ -317,12 +410,24 @@ public:
       addField("Y-PSNR1  ", "%-8.4lf ", mseBasedSNR[COMPONENT_Y]);
       addField("U-PSNR1  ", "%-8.4lf ", mseBasedSNR[COMPONENT_Cb], withchroma);
       addField("V-PSNR1  ", "%-8.4lf ", mseBasedSNR[COMPONENT_Cr], withchroma);
-      addField("Y-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Y] / (double) getNumPic());
-      addField("U-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Cb] / (double) getNumPic(), withchroma);
-      addField("V-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Cr] / (double) getNumPic(), withchroma);
-      addField("Y-MS-SSIM2  ", "%-11.7lf ", m_upscaledMsssim[COMPONENT_Y] / (double) getNumPic());
-      addField("U-MS-SSIM2  ", "%-11.7lf ", m_upscaledMsssim[COMPONENT_Cb] / (double) getNumPic(), withchroma);
-      addField("V-MS-SSIM2  ", "%-11.7lf ", m_upscaledMsssim[COMPONENT_Cr] / (double) getNumPic(), withchroma);
+#if JVET_AN0348
+      if (!m_useUpscaledOutput)
+      {
+#endif
+        addField("Y-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Y] / (double)getNumPic());
+        addField("U-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Cb] / (double)getNumPic(), withchroma);
+        addField("V-PSNR2  ", "%-8.4lf ", m_upscaledPSNR[COMPONENT_Cr] / (double)getNumPic(), withchroma);
+#if JVET_AN0348
+        if (printMSSSIM)
+        {
+#endif
+          addField("Y-MS-SSIM2  ", "%-11.7lf ", m_upscaledMsssim[COMPONENT_Y] / (double)getNumPic());
+          addField("U-MS-SSIM2  ", "%-11.7lf ", m_upscaledMsssim[COMPONENT_Cb] / (double)getNumPic(), withchroma);
+          addField("V-MS-SSIM2  ", "%-11.7lf ", m_upscaledMsssim[COMPONENT_Cr] / (double)getNumPic(), withchroma);
+#if JVET_AN0348
+        }
+      }
+#endif
     }
     header=headeross.str();
     metrics=metricoss.str();
