@@ -5450,6 +5450,9 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 #if WCG_WPSNR
   const bool    useLumaWPSNR = m_pcEncLib->getPrintWPSNR();
   double  dPSNRWeighted[MAX_NUM_COMPONENT];
+#if JVET_AN0348
+  double  upscaledPSNRWeighted[MAX_NUM_COMPONENT];
+#endif
   double  MSEyuvframeWeighted[MAX_NUM_COMPONENT];
 #endif
   double  upscaledPSNR[MAX_NUM_COMPONENT];
@@ -5459,6 +5462,9 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     dPSNR[i]=0.0;
 #if WCG_WPSNR
     dPSNRWeighted[i]=0.0;
+#if JVET_AN0348
+    upscaledPSNRWeighted[i] = 0.0;
+#endif
     MSEyuvframeWeighted[i] = 0.0;
 #endif
     upscaledPSNR[i] = 0.0;
@@ -5492,7 +5498,10 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   const Slice*  pcSlice      = pcPic->slices[0];
 
   PelStorage upscaledRec;
-
+#if JVET_AN0348
+  uint32_t decodedLumaWidth = 0;
+  uint32_t decodedLumaHeight = 0;
+#endif
   if (m_pcEncLib->isResChangeInClvsEnabled())
   {
     const CPelBuf& upscaledOrg = (sps.getUseLmcs() || m_pcCfg->getGopBasedTemporalFilterEnabled()) ? pcPic->M_BUFS( 0, PIC_TRUE_ORIGINAL_INPUT).get( COMPONENT_Y ) : pcPic->M_BUFS( 0, PIC_ORIGINAL_INPUT).get( COMPONENT_Y );
@@ -5574,7 +5583,13 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 
     const uint32_t width = p.width - ( padX >> ::getComponentScaleX( compID, format ) );
     const uint32_t height = p.height - ( padY >> ( !!bPicIsField + ::getComponentScaleY( compID, format ) ) );
-
+#if JVET_AN0348
+    if (comp == 0)
+    {
+      decodedLumaWidth = width;
+      decodedLumaHeight = height;
+    }
+#endif
     // create new buffers with correct dimensions
     const CPelBuf recPB(p.bufAt(0, 0), p.stride, width, height);
     const CPelBuf orgPB(o.bufAt(0, 0), o.stride, width, height);
@@ -5629,6 +5644,15 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
           xCalculateMSSSIM(upscaledOrgPB.bufAt(0, 0), upscaledOrgPB.stride, upscaledRecPB.bufAt(0, 0),
                            upscaledRecPB.stride, upscaledWidth, upscaledHeight, bitDepth);
       }
+#if JVET_AN0348
+#if WCG_WPSNR
+      if (useLumaWPSNR)
+      {
+        const double uiSSDtempWeighted = xFindDistortionPlaneWPSNR(upscaledRecPB, upscaledOrgPB, 0, (sps.getUseLmcs() || m_pcCfg->getGopBasedTemporalFilterEnabled()) ? pcPic->m_bufs[PIC_TRUE_ORIGINAL_INPUT].get(COMPONENT_Y) : pcPic->M_BUFS(0, PIC_ORIGINAL_INPUT).get(COMPONENT_Y), compID, format);
+        upscaledPSNRWeighted[comp] = uiSSDtempWeighted ? 10.0 * log10((double)maxval * maxval * upscaledWidth * upscaledHeight / (double)uiSSDtempWeighted) : 999.99;
+      }
+#endif
+#endif
     }
     else if (picRefLayer)
     {
@@ -5694,7 +5718,12 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   m_rvm.push_back(uibits);
 
   //===== add PSNR =====
+#if JVET_AN0348
+  m_gcAnalyzeAll.setUpscaledOutput(m_pcEncLib->getUpscaledOutput());
+  m_gcAnalyzeAll.setcodedPictureSize(decodedLumaWidth, decodedLumaHeight);
+#endif
   m_gcAnalyzeAll.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, upscaledMsssim, isEncodeLtRef);
+
 #if EXTENSION_360_VIDEO
   m_ext360.addResult(m_gcAnalyzeAll);
 #endif
@@ -5706,6 +5735,10 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 #endif
   if (pcSlice->isIntra())
   {
+#if JVET_AN0348
+    m_gcAnalyzeI.setUpscaledOutput(m_pcEncLib->getUpscaledOutput());
+    m_gcAnalyzeI.setcodedPictureSize(decodedLumaWidth, decodedLumaHeight);
+#endif
     m_gcAnalyzeI.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, upscaledMsssim, isEncodeLtRef);
     *PSNR_Y = dPSNR[COMPONENT_Y];
 #if EXTENSION_360_VIDEO
@@ -5720,6 +5753,10 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   }
   if (pcSlice->isInterP())
   {
+#if JVET_AN0348
+    m_gcAnalyzeP.setUpscaledOutput(m_pcEncLib->getUpscaledOutput());
+    m_gcAnalyzeP.setcodedPictureSize(decodedLumaWidth, decodedLumaHeight);
+#endif
     m_gcAnalyzeP.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, upscaledMsssim, isEncodeLtRef);
     *PSNR_Y = dPSNR[COMPONENT_Y];
 #if EXTENSION_360_VIDEO
@@ -5734,6 +5771,10 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
   }
   if (pcSlice->isInterB())
   {
+#if JVET_AN0348
+    m_gcAnalyzeB.setUpscaledOutput(m_pcEncLib->getUpscaledOutput());
+    m_gcAnalyzeB.setcodedPictureSize(decodedLumaWidth, decodedLumaHeight);
+#endif
     m_gcAnalyzeB.addResult(dPSNR, (double) uibits, mseYuvFrame, upscaledPSNR, msssim, upscaledMsssim, isEncodeLtRef);
     *PSNR_Y = dPSNR[COMPONENT_Y];
 #if EXTENSION_360_VIDEO
@@ -5749,6 +5790,10 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 #if WCG_WPSNR
   if (useLumaWPSNR)
   {
+#if JVET_AN0348
+    m_gcAnalyzeWPSNR.setUpscaledOutput(m_pcEncLib->getUpscaledOutput());
+    m_gcAnalyzeWPSNR.setcodedPictureSize(decodedLumaWidth, decodedLumaHeight);
+#endif
     m_gcAnalyzeWPSNR.addResult( dPSNRWeighted, (double)uibits, MSEyuvframeWeighted, upscaledPSNR, msssim, upscaledMsssim, isEncodeLtRef );
   }
 #endif
@@ -5777,9 +5822,18 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
          c,
          pcSlice->getSliceQp(),
          uibits );
-
-    msg( NOTICE, " [Y %6.4lf dB    U %6.4lf dB    V %6.4lf dB]", dPSNR[COMPONENT_Y], dPSNR[COMPONENT_Cb], dPSNR[COMPONENT_Cr] );
-
+#if JVET_AN0348
+    if (m_pcEncLib->isResChangeInClvsEnabled() && m_pcEncLib->getUpscaledOutput() == 2)
+    {
+      msg(NOTICE, " [Y %6.4lf dB  U %6.4lf dB  V %6.4lf dB]", upscaledPSNR[COMPONENT_Y], upscaledPSNR[COMPONENT_Cb], upscaledPSNR[COMPONENT_Cr]);
+    }
+    else
+    {
+#endif
+      msg(NOTICE, " [Y %6.4lf dB    U %6.4lf dB    V %6.4lf dB]", dPSNR[COMPONENT_Y], dPSNR[COMPONENT_Cb], dPSNR[COMPONENT_Cr]);
+#if JVET_AN0348
+    }
+#endif
 #if EXTENSION_360_VIDEO
     m_ext360.printPerPOCInfo(NOTICE);
 #endif
@@ -5789,8 +5843,20 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
       uint64_t xPsnr[MAX_NUM_COMPONENT];
       for (int i = 0; i < MAX_NUM_COMPONENT; i++)
       {
-        std::copy(reinterpret_cast<uint8_t *>(&dPSNR[i]), reinterpret_cast<uint8_t *>(&dPSNR[i]) + sizeof(dPSNR[i]),
-                  reinterpret_cast<uint8_t *>(&xPsnr[i]));
+#if JVET_AN0348
+        if (m_pcEncLib->isResChangeInClvsEnabled() && m_pcEncLib->getUpscaledOutput() == 2)
+        {
+          std::copy(reinterpret_cast<uint8_t*>(&upscaledPSNR[i]), reinterpret_cast<uint8_t*>(&upscaledPSNR[i]) + sizeof(upscaledPSNR[i]),
+            reinterpret_cast<uint8_t*>(&xPsnr[i]));
+        }
+        else
+        {
+#endif
+          std::copy(reinterpret_cast<uint8_t*>(&dPSNR[i]), reinterpret_cast<uint8_t*>(&dPSNR[i]) + sizeof(dPSNR[i]),
+            reinterpret_cast<uint8_t*>(&xPsnr[i]));
+#if JVET_AN0348
+        }
+#endif
       }
       msg(NOTICE, " [xY %16" PRIx64 " xU %16" PRIx64 " xV %16" PRIx64 "]", xPsnr[COMPONENT_Y], xPsnr[COMPONENT_Cb], xPsnr[COMPONENT_Cr]);
 
@@ -5800,7 +5866,18 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     }
     if (printMSSSIM)
     {
-      msg( NOTICE, " [MS-SSIM Y %1.6lf    U %1.6lf    V %1.6lf]", msssim[COMPONENT_Y], msssim[COMPONENT_Cb], msssim[COMPONENT_Cr] );
+#if JVET_AN0348
+      if (m_pcEncLib->isResChangeInClvsEnabled() && m_pcEncLib->getUpscaledOutput() == 2)
+      {
+        msg(NOTICE, " [MS-SSIM Y %1.6lf    U %1.6lf    V %1.6lf]", upscaledMsssim[COMPONENT_Y], upscaledMsssim[COMPONENT_Cb], upscaledMsssim[COMPONENT_Cr]);
+      }
+      else
+      {
+#endif
+        msg(NOTICE, " [MS-SSIM Y %1.6lf    U %1.6lf    V %1.6lf]", msssim[COMPONENT_Y], msssim[COMPONENT_Cb], msssim[COMPONENT_Cr]);
+#if JVET_AN0348
+      }
+#endif
     }
 
     if( printFrameMSE )
@@ -5811,16 +5888,39 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
 #if WCG_WPSNR
     if (useLumaWPSNR)
     {
-      msg(NOTICE, " [WY %6.4lf dB    WU %6.4lf dB    WV %6.4lf dB]", dPSNRWeighted[COMPONENT_Y], dPSNRWeighted[COMPONENT_Cb], dPSNRWeighted[COMPONENT_Cr]);
-
+#if JVET_AN0348
+      if (m_pcEncLib->isResChangeInClvsEnabled() && m_pcEncLib->getUpscaledOutput() == 2)
+      {
+        msg(NOTICE, " [WY %6.4lf dB    WU %6.4lf dB    WV %6.4lf dB]", upscaledPSNRWeighted[COMPONENT_Y], upscaledPSNRWeighted[COMPONENT_Cb], upscaledPSNRWeighted[COMPONENT_Cr]);
+      }
+      else
+      {
+#endif
+        msg(NOTICE, " [WY %6.4lf dB    WU %6.4lf dB    WV %6.4lf dB]", dPSNRWeighted[COMPONENT_Y], dPSNRWeighted[COMPONENT_Cb], dPSNRWeighted[COMPONENT_Cr]);
+#if JVET_AN0348
+      }
+#endif
       if (m_pcEncLib->getPrintHexPsnr())
       {
         uint64_t xPsnrWeighted[MAX_NUM_COMPONENT];
         for (int i = 0; i < MAX_NUM_COMPONENT; i++)
         {
-          std::copy(reinterpret_cast<uint8_t *>(&dPSNRWeighted[i]),
-                    reinterpret_cast<uint8_t *>(&dPSNRWeighted[i]) + sizeof(dPSNRWeighted[i]),
-                    reinterpret_cast<uint8_t *>(&xPsnrWeighted[i]));
+#if JVET_AN0348
+          if (m_pcEncLib->isResChangeInClvsEnabled() && m_pcEncLib->getUpscaledOutput() == 2)
+          {
+            std::copy(reinterpret_cast<uint8_t*>(&upscaledPSNRWeighted[i]),
+              reinterpret_cast<uint8_t*>(&upscaledPSNRWeighted[i]) + sizeof(upscaledPSNRWeighted[i]),
+              reinterpret_cast<uint8_t*>(&xPsnrWeighted[i]));
+          }
+          else
+          {
+#endif
+            std::copy(reinterpret_cast<uint8_t*>(&dPSNRWeighted[i]),
+              reinterpret_cast<uint8_t*>(&dPSNRWeighted[i]) + sizeof(dPSNRWeighted[i]),
+              reinterpret_cast<uint8_t*>(&xPsnrWeighted[i]));
+#if JVET_AN0348
+          }
+#endif
         }
         msg(NOTICE, " [xWY %16" PRIx64 " xWU %16" PRIx64 " xWV %16" PRIx64 "]", xPsnrWeighted[COMPONENT_Y], xPsnrWeighted[COMPONENT_Cb], xPsnrWeighted[COMPONENT_Cr]);
       }
@@ -5907,11 +6007,42 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
     }
     if (m_pcEncLib->isResChangeInClvsEnabled() || m_pcEncLib->isRefLayerRescaledAvailable())
     {
+#if JVET_AN0348
+      if (m_pcEncLib->getUpscaledOutput() == 2)
+      {
+        msg(NOTICE, " [decoded wxh %dx%d] [Y %6.4lf dB  U %6.4lf dB  V %6.4lf dB]", decodedLumaWidth, decodedLumaHeight, dPSNR[COMPONENT_Y], dPSNR[COMPONENT_Cb], dPSNR[COMPONENT_Cr]);
+        if (printMSSSIM)
+        {
+          msg(NOTICE, " MS-SSIM: [Y %1.6lf  U %1.6lf  V %1.6lf ]", msssim[COMPONENT_Y], msssim[COMPONENT_Cb], msssim[COMPONENT_Cr]);
+        }
+#if WCG_WPSNR
+        if (useLumaWPSNR)
+        {
+          msg(NOTICE, " [WY %6.4lf dB    WU %6.4lf dB    WV %6.4lf dB]", dPSNRWeighted[COMPONENT_Y], dPSNRWeighted[COMPONENT_Cb], dPSNRWeighted[COMPONENT_Cr]);
+        }
+#endif
+      }
+      else
+      {
+        msg(NOTICE, " [Y2 %6.4lf dB  U2 %6.4lf dB  V2 %6.4lf dB]", upscaledPSNR[COMPONENT_Y], upscaledPSNR[COMPONENT_Cb], upscaledPSNR[COMPONENT_Cr]);
+        if (printMSSSIM)
+        {
+          msg(NOTICE, " MS-SSIM2: [Y %1.6lf  U %1.6lf  V %1.6lf ]", upscaledMsssim[COMPONENT_Y], upscaledMsssim[COMPONENT_Cb], upscaledMsssim[COMPONENT_Cr]);
+        }
+#if WCG_WPSNR
+        if (useLumaWPSNR)
+        {
+          msg(NOTICE, " [WY2 %6.4lf dB    WU2 %6.4lf dB    WV2 %6.4lf dB]", upscaledPSNRWeighted[COMPONENT_Y], upscaledPSNRWeighted[COMPONENT_Cb], upscaledPSNRWeighted[COMPONENT_Cr]);
+        }
+#endif
+      }
+#else
       msg( NOTICE, " [Y2 %6.4lf dB  U2 %6.4lf dB  V2 %6.4lf dB]", upscaledPSNR[COMPONENT_Y], upscaledPSNR[COMPONENT_Cb], upscaledPSNR[COMPONENT_Cr] );
       if (printMSSSIM)
       {
         msg( NOTICE, " MS-SSIM2: [Y %1.6lf  U %1.6lf  V %1.6lf ]", upscaledMsssim[COMPONENT_Y], upscaledMsssim[COMPONENT_Cb], upscaledMsssim[COMPONENT_Cr] );
       }
+#endif
     }
   }
   else if( g_verbosity >= INFO )
@@ -6419,6 +6550,12 @@ void EncGOP::xCalculateInterlacedAddPSNR( Picture* pcPicOrgFirstField, Picture* 
   uint32_t uibits = 0; // the number of bits for the pair is not calculated here - instead the overall total is used elsewhere.
 
   //===== add PSNR =====
+#if JVET_AN0348
+  const uint32_t width = acPicRecFields[0].get(ComponentID(0)).width - (m_pcEncLib->getSourcePadding(0) >> ::getComponentScaleX(ComponentID(0), format));
+  const uint32_t height = acPicRecFields[0].get(ComponentID(0)).height - ((m_pcEncLib->getSourcePadding(1) >> 1) >> ::getComponentScaleY(ComponentID(0), format));
+  m_gcAnalyzeAllField.setUpscaledOutput(m_pcEncLib->getUpscaledOutput());
+  m_gcAnalyzeAllField.setcodedPictureSize(width, height);
+#endif
   m_gcAnalyzeAllField.addResult(dPSNR, (double) uibits, mseYuvFrame, mseYuvFrame, msssim, msssim, isEncodeLtRef);
 
   *PSNR_Y = dPSNR[COMPONENT_Y];

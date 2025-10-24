@@ -955,13 +955,13 @@ Specifies the value of sps_ref_pic_resampling_enabled_flag.
 \Option{ScalingRatioHor} &
 %\ShortOption{\None} &
 \Default{1.0} &
-Scaling ratio in horizontal direction for reference picture resampling. When GOPBasedRPR is true unless ratio is defined the ratio will be set to 2.0.
+Scaling ratio in horizontal direction for reference picture resampling. When GOPBasedRPR is true unless ratio is defined the ratio will be set to 2.0. When this scaling ratio or ScalingRatioVer is different from 1.0 and RPR is enabled a measure of PSNR1 is given in summary. PSNR1 is measured on the decoded picture resolution by calculating MSE for each picture, accumulating MSEs for all pictures and calculating average PSNR from the accumulated MSE.
 \\
 
 \Option{ScalingRatioVer} &
 %\ShortOption{\None} &
 \Default{1.0} &
-Scaling ratio in vertical direction for reference picture resampling. When GOPBasedRPR is true unless ratio is defined the ratio will be set to 2.0.
+Scaling ratio in vertical direction for reference picture resampling. When GOPBasedRPR is true unless ratio is defined the ratio will be set to 2.0. When this scaling ratio or ScalingRatioHor is different from 1.0 and RPR is enabled a measure of PSNR1 is given in summary. PSNR1 is measured on the decoded picture resolution by calculating MSE for each picture, accumulating MSEs for all pictures and calculating average PSNR from the accumulated MSE.
 \\
 
 \Option{GOPBasedRPR} &
@@ -1110,7 +1110,7 @@ POC period at which resolution is changed.
 \Option{UpscaledOutput} &
 %\ShortOption{\None} &
 \Default{0} &
-Picture output options: output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for reference picture resampling. When GOPBasedRPR is true it will be set to 2.
+Picture output options: output upscaled (2), decoded but in full resolution buffer (1) or decoded cropped (0, default) picture for reference picture resampling. When GOPBasedRPR is true it will be set to 2. When UpscaledOutput is equal to 2, PSNR for a picture after upscaling to full resolution is given first and PSNR in decoded resolution is given after size of decoded resolution. Otherwise PSNR in decoded resolution is given first and PSNR2 is given to represent PSNR after upscaling to full resolution.
 \\
 
 \Option{UpscaledOutputWidth} &
